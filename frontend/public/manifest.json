@@ -1,0 +1,31 @@
+{
+  "short_name": "D&D Character Sheet",
+  "name": "D&D 2024 Character Sheet Generator",
+  "description": "Create and manage D&D 2024 characters with Nimble TTRPG homebrew mechanics",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#8B0000",
+  "background_color": "#1a1a1a",
+  "orientation": "portrait-primary",
+  "categories": ["games", "entertainment"],
+  "lang": "en-US",
+  "scope": "/",
+  "prefer_related_applications": false
+}

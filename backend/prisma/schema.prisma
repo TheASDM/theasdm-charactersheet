@@ -1,0 +1,384 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users and Authentication
+model User {
+  id        Int      @id @default(autoincrement())
+  discordId BigInt?  @unique @map("discord_id")
+  username  String   @db.VarChar(50)
+  email     String?  @db.VarChar(255)
+  isDm      Boolean  @default(false) @map("is_dm")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  characters Character[]
+  campaigns  Campaign[]
+
+  @@map("users")
+}
+
+// Character Management
+model Character {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String   @db.VarChar(100)
+  level        Int      @default(1)
+  characterData Json    @map("character_data") // JSONB for flexible character data
+  passwordHash String?  @map("password_hash") @db.VarChar(255)
+  isPublic     Boolean  @default(false) @map("is_public")
+  campaignId   Int?     @map("campaign_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user                User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign            Campaign?                 @relation(fields: [campaignId], references: [id])
+  characterVersions   CharacterVersionHistory[]
+
+  @@map("characters")
+}
+
+// Campaign Management
+model Campaign {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  description String?
+  dmId        Int      @map("dm_id")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  dm         User        @relation(fields: [dmId], references: [id])
+  characters Character[]
+
+  @@map("campaigns")
+}
+
+// Game Content - D&D 2024 + Homebrew
+model Spell {
+  id              Int     @id @default(autoincrement())
+  name            String  @unique @db.VarChar(100)
+  source          String? @db.VarChar(20) // XPHB, PHB, XGE, etc.
+  page            Int?
+  level           Int
+  school          String? @db.VarChar(1) // V, E, T, A, D, I, N, C (single letter codes)
+  
+  // Casting details - stored as JSONB for complex structures
+  time            Json? // Array of time objects: [{number: 1, unit: "action"}]
+  range           Json? // Complex range: {type: "point", distance: {type: "feet", amount: 60}}
+  components      Json? // {v: true, s: true, m: "material component text"}
+  duration        Json? // Array: [{type: "instant"} or {type: "timed", duration: {...}, concentration: true}]
+  
+  // Content - rich text with D&D references
+  entries         Json? // Array of description entries with formatting
+  entriesHigherLevel Json? @map("entries_higher_level") // Higher level casting effects
+  
+  // Mechanical properties
+  scalingLevelDice Json? @map("scaling_level_dice") // Cantrip scaling: {label: "damage", scaling: {"1": "1d6", "5": "2d6"}}
+  damageInflict   String[] @map("damage_inflict") // Array: ["acid", "fire"]
+  conditionInflict String[] @map("condition_inflict") // Array: ["charmed", "frightened"]
+  savingThrow     String[] @map("saving_throw") // Array: ["dexterity", "wisdom"]
+  affectsCreatureType String[] @map("affects_creature_type") // Array: ["beast", "humanoid"]
+  
+  // Metadata and tags for filtering/searching
+  miscTags        String[] @map("misc_tags") // SCL, HL, SGT, etc.
+  areaTags        String[] @map("area_tags") // MT, ST, S, C, etc.
+  
+  // D&D 2024 specific flags
+  srd52           Boolean? // Available in SRD 5.2
+  basicRules2024  Boolean? @map("basic_rules_2024") // In Basic Rules 2024
+  
+  // Ritual casting
+  isRitual        Boolean? @map("is_ritual") // True if can be cast as ritual
+  
+  // Source and homebrew tracking
+  sourceBook      String? @map("source_book") @db.VarChar(100)
+  contentVersion  String @map("content_version") @db.VarChar(20)
+  isHomebrew      Boolean @default(false) @map("is_homebrew")
+  
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("spells")
+}
+
+// Reference tables for spell data normalization
+model SpellSchool {
+  id          String @id @db.VarChar(1) // V, E, T, A, D, I, N, C
+  name        String @unique @db.VarChar(50) // Evocation, Transmutation, etc.
+  description String?
+
+  @@map("spell_schools")
+}
+
+model DamageType {
+  id          String @id @db.VarChar(20) // acid, fire, cold, etc.
+  name        String @unique @db.VarChar(50)
+  description String?
+
+  @@map("damage_types")
+}
+
+model Condition {
+  id          String @id @db.VarChar(20) // charmed, frightened, etc.
+  name        String @unique @db.VarChar(50)
+  description String?
+
+  @@map("conditions")
+}
+
+model CreatureType {
+  id          String @id @db.VarChar(20) // beast, humanoid, etc.
+  name        String @unique @db.VarChar(50)
+  description String?
+
+  @@map("creature_types")
+}
+
+model Class {
+  id            Int    @id @default(autoincrement())
+  name          String @unique @db.VarChar(50)
+  source        String? @db.VarChar(20) // XPHB, PHB, etc.
+  page          Int?
+  
+  // Core class mechanics
+  hitDie        Int    @map("hit_die")
+  primaryAbility String[] @map("primary_ability") // ["strength", "dexterity"]
+  savingThrowProficiencies String[] @map("saving_throw_proficiencies")
+  
+  // Proficiencies - stored as JSONB for flexibility
+  armorProficiencies Json? @map("armor_proficiencies")
+  weaponProficiencies Json? @map("weapon_proficiencies") 
+  toolProficiencies Json? @map("tool_proficiencies")
+  skillProficiencies Json? @map("skill_proficiencies")
+  
+  // Class features by level
+  classFeatures Json? @map("class_features") // JSONB for level-based features
+  subclassFeatures Json? @map("subclass_features") // JSONB for subclass options
+  
+  // Spellcasting (if applicable)
+  spellcasting Json? @map("spellcasting") // JSONB for spellcasting progression
+  spellcastingAbility String? @map("spellcasting_ability") // intelligence, wisdom, charisma
+  
+  // D&D 2024 specific
+  srd52         Boolean? // Available in SRD 5.2
+  basicRules2024 Boolean? @map("basic_rules_2024")
+  
+  // Metadata
+  sourceBook    String? @map("source_book") @db.VarChar(100)
+  contentVersion String @map("content_version") @db.VarChar(20)
+  isHomebrew    Boolean @default(false) @map("is_homebrew")
+  
+  // Timestamps
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("classes")
+}
+
+model Species {
+  id            Int    @id @default(autoincrement())
+  name          String @unique @db.VarChar(50)
+  source        String? @db.VarChar(20) // XPHB, PHB, etc.
+  page          Int?
+  
+  // Physical characteristics
+  size          String @db.VarChar(20) // Small, Medium, Large
+  speed         Int // Base walking speed
+  additionalSpeeds Json? @map("additional_speeds") // fly, swim, climb speeds
+  
+  // D&D 2024 Species traits
+  creatureType  String @default("humanoid") @map("creature_type") // humanoid, fey, etc.
+  lifespan      String? // Average lifespan
+  
+  // Abilities and traits
+  traits        Json? // JSONB for species traits with descriptions
+  abilityScoreIncrease Json? @map("ability_score_increase") // JSONB for ASI choices
+  
+  // Languages and proficiencies  
+  languages     String[] // Known languages
+  languageOptions Json? @map("language_options") // Choose X from Y options
+  skillProficiencies Json? @map("skill_proficiencies")
+  toolProficiencies Json? @map("tool_proficiencies")
+  weaponProficiencies Json? @map("weapon_proficiencies")
+  
+  // Spells and magical abilities
+  innateSpells  Json? @map("innate_spells") // Racial spells
+  
+  // D&D 2024 specific
+  srd52         Boolean? // Available in SRD 5.2
+  basicRules2024 Boolean? @map("basic_rules_2024")
+  
+  // Metadata
+  sourceBook    String? @map("source_book") @db.VarChar(100)
+  contentVersion String @map("content_version") @db.VarChar(20)
+  isHomebrew    Boolean @default(false) @map("is_homebrew")
+  
+  // Timestamps
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("species")
+}
+
+model Background {
+  id            Int     @id @default(autoincrement())
+  name          String  @unique @db.VarChar(50)
+  description   String?
+  skillProficiencies Json? @map("skill_proficiencies") // JSONB
+  languages     String[]
+  equipment     Json? // JSONB for starting equipment
+  feature       Json? // JSONB for background feature
+  originFeat    String? @map("origin_feat") // D&D 2024 Origin Feat
+  abilityScoreIncrease Json? @map("ability_score_increase") // D&D 2024 ASI from background
+  contentVersion String @map("content_version") @db.VarChar(20)
+
+  @@map("backgrounds")
+}
+
+model Item {
+  id            Int     @id @default(autoincrement())
+  name          String  @db.VarChar(100)
+  source        String? @db.VarChar(20) // XPHB, PHB, DMG, etc.
+  page          Int?
+  
+  // Item classification
+  type          String  @db.VarChar(50) // weapon, armor, adventuring gear, etc.
+  typeAlt       String? @map("type_alt") @db.VarChar(50) // Alternative type classification
+  rarity        String? @db.VarChar(20) // common, uncommon, rare, very rare, legendary, artifact
+  
+  // Basic properties
+  weight        Float?
+  value         Int? // Cost in copper pieces (base unit)
+  valueCurrency String? @map("value_currency") @db.VarChar(10) // gp, sp, cp
+  
+  // Content and descriptions - stored as JSONB for rich formatting
+  entries       Json? // Array of description entries with D&D formatting
+  additionalEntries Json? @map("additional_entries") // Additional lore/mechanics
+  
+  // Weapon properties
+  weaponCategory String? @map("weapon_category") @db.VarChar(20) // simple, martial
+  property      String[] // Array of weapon properties: versatile, finesse, etc.
+  range         String? // melee, ranged
+  dmg1          String? // Primary damage (e.g., "1d8")
+  dmg2          String? // Secondary damage for versatile weapons
+  dmgType       String? @map("dmg_type") @db.VarChar(20) // slashing, piercing, bludgeoning
+  
+  // Armor properties  
+  ac            Int? // Armor Class
+  strength      Int? // Required strength
+  stealth       Boolean? // Disadvantage on stealth
+  armorType     String? @map("armor_type") @db.VarChar(20) // light, medium, heavy, shield
+  
+  // Magic item properties
+  reqAttune     String? @map("req_attune") @db.VarChar(50) // Attunement requirements
+  charges       Int? // Number of charges (if applicable)
+  recharge      String? // Recharge condition
+  
+  // Item tags and categories for filtering
+  modifySpeed   Json? @map("modify_speed") // Speed modifications
+  bonusWeapon   String? @map("bonus_weapon") // Weapon bonus (+1, +2, etc.)
+  bonusAc       Int? @map("bonus_ac") // AC bonus
+  bonusSpellAttack Int? @map("bonus_spell_attack") // Spell attack bonus
+  bonusSpellSaveDc Int? @map("bonus_spell_save_dc") // Spell save DC bonus
+  
+  // Associated spells and abilities
+  spells        Json? // Spells granted or stored in item
+  
+  // Variants and base items
+  baseItem      String? @map("base_item") // Base item this is variant of
+  variants      Json? // Array of variant names/sources
+  
+  // D&D 2024 specific flags
+  srd52         Boolean? // Available in SRD 5.2
+  basicRules2024 Boolean? @map("basic_rules_2024") // In Basic Rules 2024
+  
+  // Metadata
+  sourceBook    String? @map("source_book") @db.VarChar(100)
+  contentVersion String @map("content_version") @db.VarChar(20)
+  isHomebrew    Boolean @default(false) @map("is_homebrew")
+  
+  // Timestamps
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([name, source])
+  @@map("items")
+}
+
+// Content Version Control
+model ContentVersion {
+  id               Int      @id @default(autoincrement())
+  version          String   @db.VarChar(20)
+  releaseDate      DateTime? @map("release_date")
+  description      String?
+  breakingChanges  Boolean  @default(false) @map("breaking_changes")
+  migrationScripts Json? @map("migration_scripts") // JSONB for migration logic
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@unique([version])
+  @@map("content_versions")
+}
+
+// Character Version History for Migrations
+model CharacterVersionHistory {
+  id             Int      @id @default(autoincrement())
+  characterId    Int      @map("character_id")
+  versionApplied String   @map("version_applied") @db.VarChar(20)
+  appliedAt      DateTime @default(now()) @map("applied_at")
+  migrationNotes String?  @map("migration_notes")
+
+  // Relations
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@map("character_version_history")
+}
+
+// Game Content - Feats
+model Feat {
+  id            Int    @id @default(autoincrement())
+  name          String @unique @db.VarChar(100)
+  source        String? @db.VarChar(20) // XPHB, PHB, etc.
+  page          Int?
+  
+  // D&D 2024 feat categories
+  category      String? @db.VarChar(10) // G=General, O=Origin, FS=Fighting Style, EB=Epic Boon
+  
+  // Prerequisites
+  prerequisites Json? // JSONB for complex prerequisites (level, ability scores, features, etc.)
+  
+  // Ability score improvements
+  abilityScoreIncrease Json? @map("ability_score_increase") // JSONB for ASI options
+  
+  // Feat mechanics
+  repeatable    Boolean @default(false) // Can be taken multiple times
+  entries       Json? // JSONB for feat description and benefits
+  additionalSpells Json? @map("additional_spells") // Spells granted by feat
+  
+  // D&D 2024 specific
+  srd52         Boolean? // Available in SRD 5.2
+  basicRules2024 Boolean? @map("basic_rules_2024") // In Basic Rules 2024
+  
+  // Metadata
+  sourceBook    String? @map("source_book") @db.VarChar(100)
+  contentVersion String @map("content_version") @db.VarChar(20)
+  isHomebrew    Boolean @default(false) @map("is_homebrew")
+  
+  // Timestamps
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("feats")
+}
