@@ -48,7 +48,7 @@ const SpellsPage: React.FC = () => {
       style={{
         minHeight: '100vh',
         backgroundColor: '#f5f5f5',
-        paddingTop: '20px',
+        paddingTop: '0px',
       }}
     >
       {/* Header */}
@@ -61,30 +61,21 @@ const SpellsPage: React.FC = () => {
       >
         <h1
           style={{
+            color: '#2c3e50',
+            paddingTop: '1rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
             fontSize: '2.5rem',
-            color: '#8B5A2B',
-            fontFamily: '"Cinzel", serif',
-            marginBottom: '10px',
           }}
         >
           📜 D&D Spells
         </h1>
-        <p
-          style={{
-            fontSize: '1.1rem',
-            color: '#666',
-            maxWidth: '600px',
-            margin: '0 auto',
-          }}
-        >
-          Browse the complete D&D 2024 spell collection
-        </p>
       </div>
 
       {/* Filters */}
       <div
         style={{
-          maxWidth: '1200px',
+          maxWidth: '1150px',
           margin: '0 auto 20px',
           padding: '0 20px',
         }}

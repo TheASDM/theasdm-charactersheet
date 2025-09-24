@@ -7,3 +7,5 @@ export { default as SpellModal } from './SpellModal';
 export { default as ClassCard } from './ClassCard';
 export { default as ClassList } from './ClassList';
 export { default as ClassModal } from './ClassModal';
+export { default as Navigation } from './Navigation';
+export { default as ResponsiveTable } from './ResponsiveTable';

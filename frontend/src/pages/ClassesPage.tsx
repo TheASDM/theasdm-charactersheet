@@ -19,9 +19,9 @@ const ClassesPage: React.FC = () => {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '50vh',
         backgroundColor: '#f5f5f5',
-        paddingTop: '20px',
+        paddingTop: '0px',
       }}
     >
       {/* Header */}
@@ -34,24 +34,15 @@ const ClassesPage: React.FC = () => {
       >
         <h1
           style={{
+            color: '#2c3e50',
+            paddingTop: '1rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
             fontSize: '2.5rem',
-            color: '#8B5A2B',
-            fontFamily: '"Cinzel", serif',
-            marginBottom: '10px',
           }}
         >
           ⚔️ D&D Classes
         </h1>
-        <p
-          style={{
-            fontSize: '1.1rem',
-            color: '#666',
-            maxWidth: '600px',
-            margin: '0 auto',
-          }}
-        >
-          Choose your path with the 12 official D&D 2024 character classes
-        </p>
       </div>
 
       {/* Class List */}
@@ -65,7 +56,7 @@ const ClassesPage: React.FC = () => {
         <ClassList
           onLevelsClick={handleLevelsClick}
           onDetailsClick={handleDetailsClick}
-          showSearch={true}
+          showSearch={false}
         />
       </div>
     </div>

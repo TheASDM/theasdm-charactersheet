@@ -12,6 +12,7 @@ COPY tsconfig.json ./
 RUN npm ci && npm cache clean --force
 
 # Copy source code
+COPY index.html ./
 COPY public ./public
 COPY src ./src
 
@@ -21,11 +22,8 @@ RUN npm run build
 # Production stage with nginx
 FROM nginx:alpine AS production
 
-# Copy custom nginx config
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-
 # Copy built application
-COPY --from=builder /app/build /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration for React Router
 RUN echo 'server { \

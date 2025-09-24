@@ -8,17 +8,17 @@ import SpellModal from '../components/SpellModal';
 
 // Styled components for D&D reference-style layout
 const PageContainer = styled.div`
-  min-height: 100vh;
+  min-height: 50vh;
   background: linear-gradient(135deg, #f4f1e8 0%, #e8dcc0 100%);
   font-family: 'Georgia', serif;
 `;
 
 const ContentContainer = styled.div`
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   background: white;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  min-height: 100vh;
+  min-height: 50vh;
 `;
 
 const Header = styled.div`
@@ -29,11 +29,12 @@ const Header = styled.div`
   border-bottom: 3px solid #654321;
 `;
 
-const HeaderTitle = styled.div`
-  font-size: 14px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  letter-spacing: 2px;
+const Title = styled.h1`
+  color: #2c3e50;
+  padding-top: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 2.5rem;
 `;
 
 const ClassTitle = styled.h1`
@@ -161,7 +162,20 @@ const FeatureName = styled.h4`
 
 const FeatureDescription = styled.div`
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
+
+  p {
+    margin-bottom: 12px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  ul,
+  ol {
+    margin: 8px 0 12px 20px;
+  }
 `;
 
 const ProficiencyList = styled.ul`
@@ -400,6 +414,39 @@ const ClassDetailsPage: React.FC = () => {
     return [];
   };
 
+  const getProficiencyBonus = (level: number): string => {
+    if (level >= 17) return '+6';
+    if (level >= 13) return '+5';
+    if (level >= 9) return '+4';
+    if (level >= 5) return '+3';
+    return '+2';
+  };
+
+  const getFeaturesForLevel = (level: number): string => {
+    const classFeatures = getClassFeatures();
+    const levelFeatures = classFeatures.find((f) => f.level === level);
+
+    if (!levelFeatures || !levelFeatures.features) {
+      return '—';
+    }
+
+    if (Array.isArray(levelFeatures.features)) {
+      return levelFeatures.features
+        .map((feature: any) =>
+          typeof feature === 'string'
+            ? feature
+            : feature.name || feature.title || 'Unknown Feature'
+        )
+        .join(', ');
+    } else if (typeof levelFeatures.features === 'object') {
+      return Object.keys(levelFeatures.features).join(', ');
+    } else if (typeof levelFeatures.features === 'string') {
+      return levelFeatures.features;
+    }
+
+    return '—';
+  };
+
   const getSubclasses = () => {
     if (!characterClass?.subclassFeatures) return [];
     if (
@@ -430,6 +477,85 @@ const ClassDetailsPage: React.FC = () => {
       );
     }
     return [];
+  };
+
+  // Universal D&D template tag parser
+  const parseTemplateTag = (text: string): string => {
+    return text.replace(/\{@([^}]+)\}/g, (_match, content) => {
+      // Split on first space to get tag type and content
+      const parts = content.split(' ');
+      const tagType = parts[0];
+      const tagContent = parts.slice(1).join(' ');
+
+      // Handle pipe-separated content (name|source)
+      const [name, _source] = tagContent.includes('|')
+        ? tagContent.split('|')
+        : [tagContent, null];
+
+      switch (tagType) {
+        // Formatting
+        case 'b':
+          return `<strong>${name}</strong>`;
+        case 'i':
+          return `<em>${name}</em>`;
+        case 'u':
+          return `<u>${name}</u>`;
+
+        // Game mechanics
+        case 'dice':
+          return name;
+        case 'damage':
+          return `${name} damage`;
+        case 'hit':
+          return `+${name} to hit`;
+        case 'dc':
+          return `DC ${name}`;
+        case 'h':
+          return 'hit';
+        case 'm':
+          return 'miss';
+
+        // Game elements
+        case 'spell':
+          return name;
+        case 'item':
+          return name;
+        case 'feat':
+          return `${name} feat`;
+        case 'condition':
+          return name;
+        case 'creature':
+          return name;
+        case 'class':
+          return name;
+        case 'background':
+          return name;
+        case 'race':
+          return name;
+        case 'skill':
+          return name;
+        case 'action':
+          return name;
+        case 'filter':
+          return name;
+
+        // Time and rest
+        case 'rest':
+          if (name === 'long') return 'long rest';
+          if (name === 'short') return 'short rest';
+          return name;
+        case 'recharge':
+          return `Recharge ${name}`;
+
+        // Combat
+        case 'atk':
+          return `${name} attack`;
+
+        // Fallback - return the content without the tag
+        default:
+          return name || '';
+      }
+    });
   };
 
   const getClassDescription = () => {
@@ -542,42 +668,35 @@ const ClassDetailsPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>1st</td>
-                      <td>+2</td>
-                      <td>See Class Features</td>
-                      <td>{characterClass.hitDie} + Con modifier</td>
-                    </tr>
-                    <tr>
-                      <td>2nd</td>
-                      <td>+2</td>
-                      <td>See Class Features</td>
-                      <td>
-                        +{Math.floor(characterClass.hitDie / 2) + 1} (or{' '}
-                        {characterClass.hitDie}) + Con modifier
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>3rd</td>
-                      <td>+2</td>
-                      <td>See Class Features</td>
-                      <td>
-                        +{Math.floor(characterClass.hitDie / 2) + 1} (or{' '}
-                        {characterClass.hitDie}) + Con modifier
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        colSpan={4}
-                        style={{
-                          textAlign: 'center',
-                          fontStyle: 'italic',
-                          color: '#666',
-                        }}
-                      >
-                        ... continues through 20th level
-                      </td>
-                    </tr>
+                    {Array.from({ length: 20 }, (_, i) => {
+                      const level = i + 1;
+                      const levelSuffix =
+                        level === 1
+                          ? 'st'
+                          : level === 2
+                          ? 'nd'
+                          : level === 3
+                          ? 'rd'
+                          : 'th';
+                      const hitPoints =
+                        level === 1
+                          ? `${characterClass.hitDie} + Con modifier`
+                          : `+${
+                              Math.floor(characterClass.hitDie / 2) + 1
+                            } (or ${characterClass.hitDie}) + Con modifier`;
+
+                      return (
+                        <tr key={level}>
+                          <td>
+                            {level}
+                            {levelSuffix}
+                          </td>
+                          <td>{getProficiencyBonus(level)}</td>
+                          <td>{getFeaturesForLevel(level)}</td>
+                          <td>{hitPoints}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </QuickRefTable>
               </QuickReference>
@@ -656,43 +775,417 @@ const ClassDetailsPage: React.FC = () => {
               </EquipmentSection>
 
               {/* Individual Class Features */}
-              {getClassFeatures()
-                .slice(0, 3)
-                .map(({ level, features }) => {
-                  if (!Array.isArray(features)) return null;
+              <SectionHeader>Class Features by Level</SectionHeader>
+              {getClassFeatures().map(({ level, features }) => {
+                if (!Array.isArray(features)) return null;
 
-                  return features.map((feature: any, index: number) => {
-                    if (typeof feature === 'object' && feature.name) {
-                      return (
-                        <FeatureBlock key={`${level}-${index}`}>
-                          <FeatureName>{feature.name}</FeatureName>
-                          <FeatureDescription>
-                            {feature.entries &&
-                            Array.isArray(feature.entries) ? (
-                              feature.entries
-                                .slice(0, 2)
-                                .map((entry: any, i: number) => (
-                                  <p key={i}>
-                                    {typeof entry === 'string'
-                                      ? entry
-                                          .replace(/\{@[^}]+\}/g, '')
-                                          .substring(0, 200) + '...'
-                                      : 'See class description for full details.'}
-                                  </p>
-                                ))
-                            ) : (
-                              <p>
-                                Advanced class feature - see{' '}
-                                {characterClass.source} for full details.
-                              </p>
-                            )}
-                          </FeatureDescription>
-                        </FeatureBlock>
-                      );
-                    }
-                    return null;
-                  });
-                })}
+                return features.map((feature: any, index: number) => {
+                  if (typeof feature === 'object' && feature.name) {
+                    return (
+                      <FeatureBlock key={`${level}-${index}`}>
+                        <FeatureName>
+                          Level {level} - {feature.name}
+                        </FeatureName>
+                        <FeatureDescription>
+                          {feature.entries && Array.isArray(feature.entries) ? (
+                            feature.entries
+                              .map((entry: any, i: number) => {
+                                if (typeof entry === 'string') {
+                                  // Better template tag handling
+                                  const cleanedEntry = parseTemplateTag(entry);
+
+                                  // Only show if there's actual content after cleaning
+                                  if (cleanedEntry.trim()) {
+                                    return (
+                                      <p
+                                        key={i}
+                                        dangerouslySetInnerHTML={{
+                                          __html: cleanedEntry,
+                                        }}
+                                      />
+                                    );
+                                  }
+                                  return null;
+                                } else if (typeof entry === 'object') {
+                                  // Handle nested entries that might contain tables
+                                  if (
+                                    entry.type === 'entries' &&
+                                    entry.entries
+                                  ) {
+                                    return (
+                                      <div key={i} style={{ marginTop: '8px' }}>
+                                        {entry.name && (
+                                          <h4
+                                            style={{
+                                              color: '#8b5a2b',
+                                              fontSize: '16px',
+                                              fontWeight: 'bold',
+                                              marginBottom: '8px',
+                                            }}
+                                          >
+                                            {entry.name}
+                                          </h4>
+                                        )}
+                                        {entry.entries.map(
+                                          (
+                                            nestedEntry: any,
+                                            nestedIdx: number
+                                          ) => {
+                                            if (
+                                              typeof nestedEntry === 'string'
+                                            ) {
+                                              const cleanedEntry =
+                                                parseTemplateTag(nestedEntry);
+
+                                              return (
+                                                <p
+                                                  key={nestedIdx}
+                                                  style={{
+                                                    marginBottom: '8px',
+                                                  }}
+                                                  dangerouslySetInnerHTML={{
+                                                    __html: cleanedEntry,
+                                                  }}
+                                                />
+                                              );
+                                            } else if (
+                                              nestedEntry.type === 'table'
+                                            ) {
+                                              return (
+                                                <div
+                                                  key={nestedIdx}
+                                                  style={{
+                                                    marginTop: '16px',
+                                                    marginBottom: '16px',
+                                                  }}
+                                                >
+                                                  {nestedEntry.caption && (
+                                                    <p
+                                                      style={{
+                                                        fontWeight: 'bold',
+                                                        marginBottom: '8px',
+                                                        color: '#8b5a2b',
+                                                      }}
+                                                    >
+                                                      {nestedEntry.caption}
+                                                    </p>
+                                                  )}
+                                                  <table
+                                                    style={{
+                                                      width: '100%',
+                                                      borderCollapse:
+                                                        'collapse',
+                                                      border:
+                                                        '1px solid #d0c4a0',
+                                                      fontSize: '14px',
+                                                      backgroundColor:
+                                                        '#fafaf7',
+                                                    }}
+                                                  >
+                                                    {nestedEntry.colLabels && (
+                                                      <thead>
+                                                        <tr
+                                                          style={{
+                                                            backgroundColor:
+                                                              '#8b5a2b',
+                                                          }}
+                                                        >
+                                                          {nestedEntry.colLabels.map(
+                                                            (
+                                                              label: string,
+                                                              idx: number
+                                                            ) => (
+                                                              <th
+                                                                key={idx}
+                                                                style={{
+                                                                  padding:
+                                                                    '8px 12px',
+                                                                  border:
+                                                                    '1px solid #d0c4a0',
+                                                                  color:
+                                                                    'white',
+                                                                  fontWeight:
+                                                                    'bold',
+                                                                  textAlign:
+                                                                    'left',
+                                                                }}
+                                                              >
+                                                                {typeof label ===
+                                                                'string'
+                                                                  ? label.replace(
+                                                                      /\{@[^}]+\}/g,
+                                                                      ''
+                                                                    )
+                                                                  : label}
+                                                              </th>
+                                                            )
+                                                          )}
+                                                        </tr>
+                                                      </thead>
+                                                    )}
+                                                    <tbody>
+                                                      {nestedEntry.rows &&
+                                                        nestedEntry.rows.map(
+                                                          (
+                                                            row: any[],
+                                                            rowIdx: number
+                                                          ) => (
+                                                            <tr
+                                                              key={rowIdx}
+                                                              style={{
+                                                                backgroundColor:
+                                                                  rowIdx % 2 ===
+                                                                  0
+                                                                    ? 'white'
+                                                                    : '#f9f7f0',
+                                                              }}
+                                                            >
+                                                              {row.map(
+                                                                (
+                                                                  cell: any,
+                                                                  cellIdx: number
+                                                                ) => (
+                                                                  <td
+                                                                    key={
+                                                                      cellIdx
+                                                                    }
+                                                                    style={{
+                                                                      padding:
+                                                                        '8px 12px',
+                                                                      border:
+                                                                        '1px solid #d0c4a0',
+                                                                      verticalAlign:
+                                                                        'top',
+                                                                    }}
+                                                                  >
+                                                                    {typeof cell ===
+                                                                    'string'
+                                                                      ? cell
+                                                                          .replace(
+                                                                            /\{@dice ([^}]+)\}/g,
+                                                                            '$1'
+                                                                          )
+                                                                          .replace(
+                                                                            /\{@item ([^|]+)\|[^}]+\}/g,
+                                                                            '$1'
+                                                                          )
+                                                                          .replace(
+                                                                            /\{@b ([^}]+)\}/g,
+                                                                            '$1'
+                                                                          )
+                                                                          .replace(
+                                                                            /\{@[^}]+\}/g,
+                                                                            ''
+                                                                          )
+                                                                      : typeof cell ===
+                                                                          'object' &&
+                                                                        cell.type ===
+                                                                          'entries'
+                                                                      ? cell.entries?.join(
+                                                                          ' '
+                                                                        ) || ''
+                                                                      : cell?.toString() ||
+                                                                        ''}
+                                                                  </td>
+                                                                )
+                                                              )}
+                                                            </tr>
+                                                          )
+                                                        )}
+                                                    </tbody>
+                                                  </table>
+                                                </div>
+                                              );
+                                            }
+                                            return null;
+                                          }
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  // Handle list entries
+                                  else if (
+                                    entry.type === 'list' &&
+                                    entry.items
+                                  ) {
+                                    return (
+                                      <ul
+                                        key={i}
+                                        style={{
+                                          marginLeft: '20px',
+                                          marginTop: '8px',
+                                        }}
+                                      >
+                                        {entry.items.map(
+                                          (item: any, idx: number) => (
+                                            <li
+                                              key={idx}
+                                              style={{ marginBottom: '4px' }}
+                                            >
+                                              {typeof item === 'string'
+                                                ? item.replace(
+                                                    /\{@[^}]+\}/g,
+                                                    ''
+                                                  )
+                                                : item.name || 'List item'}
+                                            </li>
+                                          )
+                                        )}
+                                      </ul>
+                                    );
+                                  }
+                                  // Handle table entries
+                                  else if (entry.type === 'table') {
+                                    return (
+                                      <div
+                                        key={i}
+                                        style={{
+                                          marginTop: '16px',
+                                          marginBottom: '16px',
+                                        }}
+                                      >
+                                        {entry.caption && (
+                                          <p
+                                            style={{
+                                              fontWeight: 'bold',
+                                              marginBottom: '8px',
+                                              color: '#8b5a2b',
+                                            }}
+                                          >
+                                            {entry.caption}
+                                          </p>
+                                        )}
+                                        <table
+                                          style={{
+                                            width: '100%',
+                                            borderCollapse: 'collapse',
+                                            border: '1px solid #d0c4a0',
+                                            fontSize: '14px',
+                                            backgroundColor: '#fafaf7',
+                                          }}
+                                        >
+                                          {entry.colLabels && (
+                                            <thead>
+                                              <tr
+                                                style={{
+                                                  backgroundColor: '#8b5a2b',
+                                                }}
+                                              >
+                                                {entry.colLabels.map(
+                                                  (
+                                                    label: string,
+                                                    idx: number
+                                                  ) => (
+                                                    <th
+                                                      key={idx}
+                                                      style={{
+                                                        padding: '8px 12px',
+                                                        border:
+                                                          '1px solid #d0c4a0',
+                                                        color: 'white',
+                                                        fontWeight: 'bold',
+                                                        textAlign: 'left',
+                                                      }}
+                                                    >
+                                                      {typeof label === 'string'
+                                                        ? label.replace(
+                                                            /\{@[^}]+\}/g,
+                                                            ''
+                                                          )
+                                                        : label}
+                                                    </th>
+                                                  )
+                                                )}
+                                              </tr>
+                                            </thead>
+                                          )}
+                                          <tbody>
+                                            {entry.rows &&
+                                              entry.rows.map(
+                                                (
+                                                  row: any[],
+                                                  rowIdx: number
+                                                ) => (
+                                                  <tr
+                                                    key={rowIdx}
+                                                    style={{
+                                                      backgroundColor:
+                                                        rowIdx % 2 === 0
+                                                          ? 'white'
+                                                          : '#f9f7f0',
+                                                    }}
+                                                  >
+                                                    {row.map(
+                                                      (
+                                                        cell: any,
+                                                        cellIdx: number
+                                                      ) => (
+                                                        <td
+                                                          key={cellIdx}
+                                                          style={{
+                                                            padding: '8px 12px',
+                                                            border:
+                                                              '1px solid #d0c4a0',
+                                                            verticalAlign:
+                                                              'top',
+                                                          }}
+                                                        >
+                                                          {typeof cell ===
+                                                          'string'
+                                                            ? cell
+                                                                .replace(
+                                                                  /\{@dice ([^}]+)\}/g,
+                                                                  '$1'
+                                                                )
+                                                                .replace(
+                                                                  /\{@item ([^|]+)\|[^}]+\}/g,
+                                                                  '$1'
+                                                                )
+                                                                .replace(
+                                                                  /\{@b ([^}]+)\}/g,
+                                                                  '$1'
+                                                                )
+                                                                .replace(
+                                                                  /\{@[^}]+\}/g,
+                                                                  ''
+                                                                )
+                                                            : typeof cell ===
+                                                                'object' &&
+                                                              cell.type ===
+                                                                'entries'
+                                                            ? cell.entries?.join(
+                                                                ' '
+                                                              ) || ''
+                                                            : cell?.toString() ||
+                                                              ''}
+                                                        </td>
+                                                      )
+                                                    )}
+                                                  </tr>
+                                                )
+                                              )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    );
+                                  }
+                                }
+                                return null;
+                              })
+                              .filter(Boolean) // Remove null entries
+                          ) : (
+                            <p>
+                              Advanced class feature - see{' '}
+                              {characterClass.source} for full details.
+                            </p>
+                          )}
+                        </FeatureDescription>
+                      </FeatureBlock>
+                    );
+                  }
+                  return null;
+                });
+              })}
 
               {/* Spellcasting */}
               {characterClass.spellcastingAbility && (
@@ -715,37 +1208,6 @@ const ClassDetailsPage: React.FC = () => {
                       )}
                     </FeatureDescription>
                   </FeatureBlock>
-                </>
-              )}
-
-              {/* Subclasses */}
-              {getSubclasses().length > 0 && (
-                <>
-                  <SectionHeader>Subclasses</SectionHeader>
-                  <p>
-                    At a certain level, you choose a subclass that grants you
-                    features at certain levels. The available subclasses are:
-                  </p>
-                  {getSubclasses()
-                    .slice(0, 4)
-                    .map(({ name, details }) => (
-                      <FeatureBlock key={name}>
-                        <FeatureName>{name}</FeatureName>
-                        <FeatureDescription>
-                          <p>
-                            Source: {details?.source || 'Official'} • See full
-                            details in the source material
-                          </p>
-                        </FeatureDescription>
-                      </FeatureBlock>
-                    ))}
-                  {getSubclasses().length > 4 && (
-                    <p>
-                      <em>
-                        ... and {getSubclasses().length - 4} more subclasses
-                      </em>
-                    </p>
-                  )}
                 </>
               )}
             </>
@@ -802,14 +1264,49 @@ const ClassDetailsPage: React.FC = () => {
                                     {features.map((feature, idx) => (
                                       <li
                                         key={idx}
-                                        style={{ marginBottom: '4px' }}
+                                        style={{ marginBottom: '12px' }}
                                       >
+                                        <strong>
+                                          {typeof feature === 'object' &&
+                                          feature.name
+                                            ? feature.name
+                                            : typeof feature === 'string'
+                                            ? feature
+                                            : 'Special feature'}
+                                        </strong>
                                         {typeof feature === 'object' &&
-                                        feature.name
-                                          ? feature.name
-                                          : typeof feature === 'string'
-                                          ? feature
-                                          : 'Special feature'}
+                                          feature.entries &&
+                                          Array.isArray(feature.entries) && (
+                                            <div
+                                              style={{
+                                                marginTop: '4px',
+                                                marginLeft: '16px',
+                                                fontSize: '14px',
+                                                color: '#555',
+                                              }}
+                                            >
+                                              {feature.entries.map(
+                                                (
+                                                  entry: any,
+                                                  entryIdx: number
+                                                ) => (
+                                                  <p
+                                                    key={entryIdx}
+                                                    style={{
+                                                      marginBottom: '8px',
+                                                    }}
+                                                  >
+                                                    {typeof entry === 'string'
+                                                      ? entry.replace(
+                                                          /\{@[^}]+\}/g,
+                                                          ''
+                                                        )
+                                                      : ''}
+                                                  </p>
+                                                )
+                                              )}
+                                            </div>
+                                          )}
                                       </li>
                                     ))}
                                   </ul>

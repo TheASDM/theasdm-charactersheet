@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { networkInterfaces } from 'os';
 import dotenv from 'dotenv';
 
 import { PrismaClient } from '@prisma/client';
@@ -21,6 +21,7 @@ import raceRoutes from './routes/races';
 import backgroundRoutes from './routes/backgrounds';
 import itemRoutes from './routes/items';
 import campaignRoutes from './routes/campaigns';
+import featRoutes from './routes/feats';
 
 // Load environment variables
 dotenv.config();
@@ -42,22 +43,32 @@ const io = new Server(server, {
   },
 });
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW || '15') * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Get local IP for CORS
+const getLocalIP = () => {
+  const nets = networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]!) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+const localIP = getLocalIP();
+const allowedOrigins = [
+  'http://localhost:3000',
+  `http://${localIP}:3000`,
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+];
 
 // Middleware
 app.use(helmet());
 app.use(compression());
-app.use(limiter);
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -83,6 +94,7 @@ app.use('/api/races', raceRoutes);
 app.use('/api/backgrounds', backgroundRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/feats', featRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -108,11 +120,30 @@ io.on('connection', (socket) => {
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3001');
+const HOST = process.env.HOST || '0.0.0.0';
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
+  const networkAddress = networkInterfaces();
+  let localIP = 'localhost';
+
+  // Find the local IP address
+  for (const interfaceName of Object.keys(networkAddress)) {
+    const interfaces = networkAddress[interfaceName];
+    if (interfaces) {
+      for (const interfaceInfo of interfaces) {
+        if (interfaceInfo.family === 'IPv4' && !interfaceInfo.internal) {
+          localIP = interfaceInfo.address;
+          break;
+        }
+      }
+      if (localIP !== 'localhost') break;
+    }
+  }
+
   logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`📊 Health check available at http://localhost:${PORT}/health`);
+  logger.info(`📊 Local:    http://localhost:${PORT}/health`);
+  logger.info(`📊 Network:  http://${localIP}:${PORT}/health`);
   logger.info(`🔌 Socket.IO server initialized`);
 });
 

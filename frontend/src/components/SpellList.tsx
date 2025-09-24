@@ -14,7 +14,7 @@ const SpellList: React.FC<SpellListProps> = ({
   filters = {},
   onSpellClick,
   compact = false,
-  showSearch = false
+  showSearch = false,
 }) => {
   const [spells, setSpells] = useState<Spell[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,16 +31,16 @@ const SpellList: React.FC<SpellListProps> = ({
     try {
       setLoading(true);
       setError(null);
-      
+
       const searchFilters: SpellFilters = {
         ...filters,
         ...(searchTerm && { search: searchTerm }),
         ...(filters.search && !searchTerm && { search: filters.search }),
-        page: currentPage
+        page: currentPage,
       };
-      
+
       const response = await spellService.getAll(searchFilters);
-      
+
       if (response.error) {
         setError(response.error);
       } else if (response.data) {
@@ -66,13 +66,15 @@ const SpellList: React.FC<SpellListProps> = ({
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '200px',
-        color: '#666'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '200px',
+          color: '#666',
+        }}
+      >
         <div>Loading spells...</div>
       </div>
     );
@@ -80,16 +82,18 @@ const SpellList: React.FC<SpellListProps> = ({
 
   if (error) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '200px',
-        color: '#f44336'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '200px',
+          color: '#f44336',
+        }}
+      >
         <div>Error: {error}</div>
-        <button 
+        <button
           onClick={loadSpells}
           style={{
             marginTop: '12px',
@@ -98,7 +102,7 @@ const SpellList: React.FC<SpellListProps> = ({
             border: 'none',
             padding: '8px 16px',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           Retry
@@ -122,7 +126,7 @@ const SpellList: React.FC<SpellListProps> = ({
               padding: '8px 12px',
               border: '1px solid #ddd',
               borderRadius: '4px',
-              fontSize: '14px'
+              fontSize: '14px',
             }}
           />
         </div>
@@ -130,28 +134,34 @@ const SpellList: React.FC<SpellListProps> = ({
 
       {/* Spell Grid */}
       {spells.length === 0 ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '200px',
-          color: '#666',
-          flexDirection: 'column'
-        }}>
-          <div style={{ fontSize: '18px', marginBottom: '8px' }}>No spells found</div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '200px',
+            color: '#666',
+            flexDirection: 'column',
+          }}
+        >
+          <div style={{ fontSize: '18px', marginBottom: '8px' }}>
+            No spells found
+          </div>
           <div style={{ fontSize: '14px' }}>
             Try adjusting your search or filter criteria.
           </div>
         </div>
       ) : (
         <>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: compact 
-              ? 'repeat(auto-fill, minmax(250px, 1fr))'
-              : 'repeat(auto-fill, minmax(350px, 1fr))',
-            gap: '16px'
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: compact
+                ? 'repeat(auto-fill, minmax(250px, 1fr))'
+                : 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: '16px',
+            }}
+          >
             {spells.map((spell) => (
               <SpellCard
                 key={spell.id}
@@ -164,13 +174,15 @@ const SpellList: React.FC<SpellListProps> = ({
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              marginTop: '24px',
-              gap: '8px'
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: '24px',
+                gap: '8px',
+              }}
+            >
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage <= 1}
@@ -180,26 +192,27 @@ const SpellList: React.FC<SpellListProps> = ({
                   border: 'none',
                   padding: '8px 12px',
                   borderRadius: '4px',
-                  cursor: currentPage <= 1 ? 'not-allowed' : 'pointer'
+                  cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
                 }}
               >
                 Previous
               </button>
-              
+
               <span style={{ margin: '0 16px', color: '#666' }}>
                 Page {currentPage} of {totalPages}
               </span>
-              
+
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages}
                 style={{
-                  backgroundColor: currentPage >= totalPages ? '#ccc' : '#2196F3',
+                  backgroundColor:
+                    currentPage >= totalPages ? '#ccc' : '#2196F3',
                   color: 'white',
                   border: 'none',
                   padding: '8px 12px',
                   borderRadius: '4px',
-                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer'
+                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
                 }}
               >
                 Next

@@ -1,12 +1,16 @@
 import React from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { Navigation } from './components';
 import {
   CharactersPage,
   SpellsPage,
   ClassesPage,
   ClassLevelsPage,
   ClassDetailsPage,
+  BackgroundsPage,
+  FeatsPage,
+  SpeciesPage,
 } from './pages';
 
 // HomePage component with interactive features
@@ -21,10 +25,6 @@ const HomePage: React.FC = () => {
 
   const handleViewCharacters = () => {
     navigate('/characters');
-  };
-
-  const handleViewSpells = () => {
-    navigate('/spells');
   };
 
   return (
@@ -111,28 +111,6 @@ const HomePage: React.FC = () => {
         >
           📋 View My Characters
         </button>
-
-        <button
-          onClick={handleViewSpells}
-          style={{
-            padding: '1rem 2rem',
-            fontSize: '1.1rem',
-            backgroundColor: '#4A90E2',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-          }}
-          onMouseOver={(e) =>
-            (e.currentTarget.style.backgroundColor = '#5BA0F2')
-          }
-          onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor = '#4A90E2')
-          }
-        >
-          📜 Browse Spells
-        </button>
       </div>
 
       <div
@@ -196,71 +174,6 @@ const HomePage: React.FC = () => {
   );
 };
 
-// Navigation Component
-const Navigation: React.FC = () => {
-  const location = useLocation();
-
-  const navItems = [
-    { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/characters', label: 'Characters', icon: '🐉' },
-    { path: '/spells', label: 'Spells', icon: '📜' },
-    { path: '/classes', label: 'Classes', icon: '⚔️' },
-  ];
-
-  return (
-    <nav
-      style={{
-        backgroundColor: '#1a1a1a',
-        padding: '10px 0',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '20px',
-          padding: '0 20px',
-        }}
-      >
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            style={{
-              color: location.pathname === item.path ? '#8B5A2B' : '#ffffff',
-              textDecoration: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              transition: 'color 0.2s ease',
-              backgroundColor:
-                location.pathname === item.path
-                  ? 'rgba(139, 90, 43, 0.2)'
-                  : 'transparent',
-            }}
-            onMouseEnter={(e) => {
-              if (location.pathname !== item.path) {
-                (e.currentTarget as HTMLElement).style.color = '#DAA520';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (location.pathname !== item.path) {
-                (e.currentTarget as HTMLElement).style.color = '#ffffff';
-              }
-            }}
-          >
-            {item.icon} {item.label}
-          </Link>
-        ))}
-      </div>
-    </nav>
-  );
-};
-
 const App: React.FC = () => {
   return (
     <>
@@ -279,6 +192,9 @@ const App: React.FC = () => {
           <Route path="/characters" element={<CharactersPage />} />
           <Route path="/spells" element={<SpellsPage />} />
           <Route path="/classes" element={<ClassesPage />} />
+          <Route path="/backgrounds" element={<BackgroundsPage />} />
+          <Route path="/feats" element={<FeatsPage />} />
+          <Route path="/species" element={<SpeciesPage />} />
           <Route
             path="/classes/:classId/levels"
             element={<ClassLevelsPage />}

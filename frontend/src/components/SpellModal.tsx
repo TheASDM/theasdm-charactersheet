@@ -1,6 +1,7 @@
 import React from 'react';
-import { Spell } from '../types/api';
 import styled from 'styled-components';
+import { Spell } from '../types/api';
+import { parseDnDTemplateTag } from '../utils/dndTemplateParser';
 
 interface SpellModalProps {
   spell: Spell | null;
@@ -247,16 +248,7 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
   };
 
   const parseSpellText = (text: string): string => {
-    if (!text) return '';
-
-    // Simple text parsing to remove D&D Beyond markup
-    return text
-      .replace(/\{@[^}]+\}/g, (match) => {
-        // Extract the display text from {@damage 1d6} -> 1d6
-        const parts = match.slice(2, -1).split(' ');
-        return parts[1] || parts[0] || match;
-      })
-      .replace(/\{@variantrule [^|]+\|[^|]+\|([^}]+)\}/g, '$1'); // Extract variant rule text
+    return parseDnDTemplateTag(text);
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {

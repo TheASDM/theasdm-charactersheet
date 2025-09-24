@@ -3,8 +3,8 @@ import { CharacterClass } from '../types/api';
 
 interface ClassCardProps {
   characterClass: CharacterClass;
-  onLevelsClick?: () => void;
-  onDetailsClick?: () => void;
+  onLevelsClick?: (() => void) | undefined;
+  onDetailsClick?: (() => void) | undefined;
   compact?: boolean;
 }
 

@@ -70,27 +70,27 @@ services:
     networks:
       - dnd-network
 
-  # Discord Bot
-  discord-bot:
-    build:
-      context: ./discord-bot
-      dockerfile: Dockerfile
-    container_name: dnd-discord-bot
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DISCORD_TOKEN: ${DISCORD_TOKEN}
-      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
-      API_BASE_URL: http://backend:3001/api
-      DATABASE_URL: postgresql://${POSTGRES_USER:-dnd_user}:${POSTGRES_PASSWORD:-password}@database:5432/${POSTGRES_DB:-dnd_character_sheet}
-    depends_on:
-      database:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    networks:
-      - dnd-network
+  # Discord Bot (commented out for now)
+  # discord-bot:
+  #   build:
+  #     context: ./discord-bot
+  #     dockerfile: Dockerfile
+  #   container_name: dnd-discord-bot
+  #   restart: unless-stopped
+  #   environment:
+  #     NODE_ENV: production
+  #     DISCORD_TOKEN: ${DISCORD_TOKEN}
+  #     DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+  #     DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
+  #     API_BASE_URL: http://backend:3001/api
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-dnd_user}:${POSTGRES_PASSWORD:-password}@database:5432/${POSTGRES_DB:-dnd_character_sheet}
+  #   depends_on:
+  #     database:
+  #       condition: service_healthy
+  #     backend:
+  #       condition: service_healthy
+  #   networks:
+  #     - dnd-network
 
   # Nginx Reverse Proxy
   nginx:

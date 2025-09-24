@@ -8,6 +8,7 @@ export {
 export { default as classService, CHARACTER_CLASSES } from './classService';
 export { default as speciesService, SPECIES_LIST } from './speciesService';
 export { default as backgroundService } from './backgroundService';
+export { default as featService } from './featService';
 export {
   default as itemService,
   ITEM_TYPES,

@@ -210,6 +210,25 @@ export interface Item {
   updatedAt: string;
 }
 
+// Feat Types
+export interface Feat {
+  id: number;
+  name: string;
+  source?: string;
+  page?: number;
+  category: string;
+  level?: number;
+  prerequisites?: any; // JSONB for complex prerequisites
+  abilityScoreIncrease?: any; // JSONB
+  repeatable?: boolean;
+  entries?: any; // JSONB for feat description and benefits
+  additionalSpells?: any; // JSONB for spells granted by feat
+  contentVersion: string;
+  isHomebrew: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Campaign Types
 export interface Campaign {
   id: number;

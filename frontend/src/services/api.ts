@@ -1,9 +1,23 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { ApiResponse } from '../types/api';
 
+// Function to get the current host's base URL for API calls
+const getApiBaseUrl = (): string => {
+  // If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // Get the current host (IP or hostname) from the browser
+  const currentHost = window.location.hostname;
+
+  // Use the same host as the frontend for the backend API
+  return `http://${currentHost}:3001/api`;
+};
+
 // Create axios instance with base configuration
 const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: getApiBaseUrl(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
