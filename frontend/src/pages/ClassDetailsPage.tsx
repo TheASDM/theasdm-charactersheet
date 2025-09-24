@@ -29,12 +29,10 @@ const Header = styled.div`
   border-bottom: 3px solid #654321;
 `;
 
-const Title = styled.h1`
-  color: #2c3e50;
-  padding-top: 1rem;
-  margin-bottom: 1.5rem;
+const HeaderTitle = styled.h4`
+  color: #000000ff;
   text-align: center;
-  font-size: 2.5rem;
+  font-size: 1rem;
 `;
 
 const ClassTitle = styled.h1`
