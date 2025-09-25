@@ -1,19 +1,340 @@
 import React, { useState, useEffect } from 'react';
-import SpellCard from './SpellCard';
+import styled from 'styled-components';
+import { SpellCard } from './';
+import { spellService } from '../services';
 import { Spell } from '../types/api';
-import { spellService, SpellFilters } from '../services';
+import type { SpellFilters } from '../services/spellService';
+
+// Styled components updated for medieval forest green theme
+const ListContainer = styled.div`
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    rgba(90, 58, 42, 0.8),
+    rgba(74, 42, 26, 0.8)
+  );
+  border-radius: 15px;
+  border: 2px solid #8b6914;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(139, 105, 20, 0.3);
+  padding: 30px;
+  margin: 1rem 0;
+  backdrop-filter: blur(10px);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="paper"><feTurbulence baseFrequency="0.02" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/></filter></defs><rect width="100" height="100" fill="rgba(101,67,33,0.1)" filter="url(%23paper)"/></svg>')
+      repeat;
+    border-radius: 15px;
+    pointer-events: none;
+    opacity: 0.6;
+    z-index: 1;
+  }
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    margin: 0.5rem 0;
+  }
+
+  @media (max-width: 480px) {
+    padding: 15px;
+    margin: 0.25rem 0;
+  }
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  color: #d4af37;
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-family: 'Cinzel', serif;
+  background: linear-gradient(
+    145deg,
+    rgba(90, 58, 42, 0.6),
+    rgba(74, 42, 26, 0.6)
+  );
+  border-radius: 15px;
+  border: 2px solid #8b6914;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+  letter-spacing: 1px;
+`;
+
+const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  color: #d4af37;
+  text-align: center;
+  background: linear-gradient(
+    145deg,
+    rgba(90, 58, 42, 0.8),
+    rgba(74, 42, 26, 0.8)
+  );
+  border-radius: 15px;
+  border: 2px solid #8b6914;
+  padding: 2rem;
+  font-family: 'Cinzel', serif;
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+
+  .error-title {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .error-message {
+    margin-bottom: 1rem;
+    opacity: 0.8;
+  }
+
+  button {
+    background: linear-gradient(145deg, #d4af37, #b8941f);
+    color: #2c1810;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+      background: linear-gradient(145deg, #b8941f, #a0801b);
+    }
+  }
+`;
+
+const SearchContainer = styled.div`
+  margin-bottom: 25px;
+  padding: 30px;
+  background: linear-gradient(
+    145deg,
+    rgba(90, 58, 42, 0.8),
+    rgba(74, 42, 26, 0.8)
+  );
+  border-radius: 15px;
+  border: 2px solid #8b6914;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 2;
+`;
+
+const SearchInput = styled.input`
+  background: linear-gradient(145deg, #4a2a1a, #3a1a0a);
+  border: 2px solid #8b6914;
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: #d4af37;
+  font-family: 'Crimson Text', serif;
+  font-size: 18px;
+  width: 100%;
+  transition: all 0.3s ease;
+  font-style: italic;
+  outline: none;
+  display: block;
+  margin: 0 auto;
+  max-width: 600px;
+
+  &::placeholder {
+    color: #a0824a;
+    font-style: italic;
+  }
+
+  &:focus {
+    border-color: #d4af37;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    font-style: normal;
+    transform: translateY(-1px);
+  }
+
+  &:hover {
+    border-color: #d4af37;
+  }
+`;
+
+const SpellsGrid = styled.div<{ compact?: boolean }>`
+  display: grid;
+  grid-template-columns: ${(props) =>
+    props.compact
+      ? 'repeat(auto-fit, minmax(300px, 1fr))'
+      : 'repeat(auto-fit, minmax(350px, 1fr))'};
+  gap: 25px;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 2;
+  justify-items: stretch;
+  width: 100%;
+  contain: layout style;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 5px;
+    gap: 15px;
+  }
+`;
+
+const NoResultsMessage = styled.div`
+  text-align: center;
+  color: #a0824a;
+  font-size: 1.4rem;
+  margin-top: 60px;
+  padding: 60px 20px;
+  background: linear-gradient(
+    145deg,
+    rgba(90, 58, 42, 0.6),
+    rgba(74, 42, 26, 0.6)
+  );
+  border: 2px solid #8b6914;
+  border-radius: 15px;
+  font-family: 'Cinzel', serif;
+  font-style: italic;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 2;
+
+  .title {
+    font-size: 1.6rem;
+    color: #d4af37;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+    color: #c9a961;
+    line-height: 1.5;
+  }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 40px;
+  padding: 25px;
+  background: linear-gradient(
+    145deg,
+    rgba(90, 58, 42, 0.8),
+    rgba(74, 42, 26, 0.8)
+  );
+  border: 2px solid #8b6914;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 2;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 10px;
+  }
+`;
+
+const PaginationButton = styled.button<{ active?: boolean }>`
+  padding: 12px 20px;
+  border: 2px solid ${(props) => (props.active ? '#d4af37' : '#8b6914')};
+  border-radius: 8px;
+  background: ${(props) =>
+    props.active
+      ? 'linear-gradient(145deg, #d4af37, #b8941f)'
+      : 'linear-gradient(145deg, #4a2a1a, #3a1a0a)'};
+  color: ${(props) => (props.active ? '#2c1810' : '#d4af37')};
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Cinzel', serif;
+  text-shadow: ${(props) =>
+    props.active ? '1px 1px 2px rgba(0, 0, 0, 0.5)' : 'none'};
+  min-width: 80px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+  box-shadow: ${(props) =>
+    props.active
+      ? '0 4px 15px rgba(212, 175, 55, 0.3)'
+      : '0 2px 8px rgba(0, 0, 0, 0.3)'};
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: ${(props) =>
+      props.active
+        ? '0 6px 20px rgba(212, 175, 55, 0.4)'
+        : '0 4px 15px rgba(139, 105, 20, 0.3)'};
+    background: ${(props) =>
+      props.active
+        ? 'linear-gradient(145deg, #b8941f, #a0801b)'
+        : 'linear-gradient(145deg, #5a3a2a, #4a2a1a)'};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+
+    &:hover {
+      transform: none;
+      box-shadow: ${(props) =>
+        props.active
+          ? '0 4px 15px rgba(212, 175, 55, 0.3)'
+          : '0 2px 8px rgba(0, 0, 0, 0.3)'};
+    }
+  }
+`;
+
+const PaginationInfo = styled.span`
+  color: #d4af37;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
+  padding: 0 20px;
+
+  @media (max-width: 480px) {
+    padding: 0;
+    text-align: center;
+  }
+`;
 
 interface SpellListProps {
-  filters?: SpellFilters;
-  onSpellClick?: (spell: Spell) => void;
-  compact?: boolean;
+  filters?: {
+    level?: number;
+    school?: string;
+  };
+  onSpellClick: (spell: Spell) => void;
   showSearch?: boolean;
 }
 
 const SpellList: React.FC<SpellListProps> = ({
   filters = {},
   onSpellClick,
-  compact = false,
   showSearch = false,
 }) => {
   const [spells, setSpells] = useState<Spell[]>([]);
@@ -23,9 +344,21 @@ const SpellList: React.FC<SpellListProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Debounce search to prevent excessive API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when search changes
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   useEffect(() => {
     loadSpells();
-  }, [filters, searchTerm, currentPage]);
+  }, [filters, debouncedSearchTerm, currentPage]);
 
   const loadSpells = async () => {
     try {
@@ -34,8 +367,7 @@ const SpellList: React.FC<SpellListProps> = ({
 
       const searchFilters: SpellFilters = {
         ...filters,
-        ...(searchTerm && { search: searchTerm }),
-        ...(filters.search && !searchTerm && { search: filters.search }),
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         page: currentPage,
       };
 
@@ -43,12 +375,28 @@ const SpellList: React.FC<SpellListProps> = ({
 
       if (response.error) {
         setError(response.error);
+        setSpells([]);
+        setTotalPages(1);
       } else if (response.data) {
-        setSpells(response.data.spells || []);
-        setTotalPages(response.data.pagination.pages);
+        const spellsData = response.data.spells || [];
+        setSpells(spellsData);
+
+        // Simple pagination logic - if we get fewer than 20 spells, assume last page
+        const pageSize = 20;
+        if (spellsData.length < pageSize && currentPage > 1) {
+          setTotalPages(currentPage);
+        } else if (spellsData.length === pageSize) {
+          // If we got a full page, assume there might be more
+          setTotalPages(Math.max(currentPage + 1, totalPages));
+        } else {
+          // First page with less than full results
+          setTotalPages(Math.max(1, currentPage));
+        }
       }
     } catch (err) {
-      setError('Failed to load spells');
+      setError('Failed to load spells from the magical archives.');
+      setSpells([]);
+      setTotalPages(1);
       console.error('Error loading spells:', err);
     } finally {
       setLoading(false);
@@ -57,171 +405,155 @@ const SpellList: React.FC<SpellListProps> = ({
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
   };
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
+    if (newPage >= 1 && newPage <= totalPages && !loading) {
+      setCurrentPage(newPage);
+      // Scroll to top when changing pages
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '200px',
-          color: '#666',
-        }}
-      >
-        <div>Loading spells...</div>
-      </div>
+      <LoadingContainer>
+        ✨ Summoning Spells from the Arcane Library...
+      </LoadingContainer>
     );
   }
 
   if (error) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '200px',
-          color: '#f44336',
-        }}
-      >
-        <div>Error: {error}</div>
-        <button
-          onClick={loadSpells}
-          style={{
-            marginTop: '12px',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Retry
-        </button>
-      </div>
+      <ErrorContainer>
+        <div className="error-title">🔮 Magical Interference Detected</div>
+        <div className="error-message">{error}</div>
+        <button onClick={loadSpells}>Retry Incantation</button>
+      </ErrorContainer>
     );
   }
 
   return (
-    <div style={{ padding: '16px' }}>
+    <ListContainer>
       {/* Search Bar */}
       {showSearch && (
-        <div style={{ marginBottom: '16px' }}>
-          <input
+        <SearchContainer>
+          <SearchInput
             type="text"
-            placeholder="Search spells..."
+            placeholder="Search the ancient grimoire..."
             value={searchTerm}
             onChange={handleSearchChange}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '14px',
-            }}
           />
-        </div>
+        </SearchContainer>
       )}
 
       {/* Spell Grid */}
       {spells.length === 0 ? (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '200px',
-            color: '#666',
-            flexDirection: 'column',
-          }}
-        >
-          <div style={{ fontSize: '18px', marginBottom: '8px' }}>
-            No spells found
+        <NoResultsMessage>
+          <div className="title">📜 No Spells Found in the Archives</div>
+          <div className="subtitle">
+            The magical energies have shifted. Try different search terms or
+            adjust your mystical filters.
           </div>
-          <div style={{ fontSize: '14px' }}>
-            Try adjusting your search or filter criteria.
-          </div>
-        </div>
+        </NoResultsMessage>
       ) : (
         <>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: compact
-                ? 'repeat(auto-fill, minmax(250px, 1fr))'
-                : 'repeat(auto-fill, minmax(350px, 1fr))',
-              gap: '16px',
-            }}
-          >
+          <SpellsGrid compact={false}>
             {spells.map((spell) => (
               <SpellCard
                 key={spell.id}
                 spell={spell}
                 onClick={onSpellClick ? () => onSpellClick(spell) : undefined}
-                compact={compact}
+                compact={false}
               />
             ))}
-          </div>
+          </SpellsGrid>
 
-          {/* Pagination */}
+          {/* Enhanced Pagination */}
           {totalPages > 1 && (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: '24px',
-                gap: '8px',
-              }}
-            >
-              <button
+            <PaginationContainer>
+              <PaginationButton
                 onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage <= 1}
-                style={{
-                  backgroundColor: currentPage <= 1 ? '#ccc' : '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
-                }}
+                disabled={currentPage <= 1 || loading}
               >
-                Previous
-              </button>
+                ← Previous
+              </PaginationButton>
 
-              <span style={{ margin: '0 16px', color: '#666' }}>
-                Page {currentPage} of {totalPages}
-              </span>
+              <div
+                style={{ display: 'flex', gap: '5px', alignItems: 'center' }}
+              >
+                {/* First page */}
+                {currentPage > 3 && (
+                  <>
+                    <PaginationButton
+                      onClick={() => handlePageChange(1)}
+                      disabled={loading}
+                    >
+                      1
+                    </PaginationButton>
+                    {currentPage > 4 && (
+                      <span style={{ color: '#d4af37', padding: '0 5px' }}>
+                        ...
+                      </span>
+                    )}
+                  </>
+                )}
 
-              <button
+                {/* Pages around current */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageStart = Math.max(
+                    1,
+                    Math.min(currentPage - 2, totalPages - 4)
+                  );
+                  const pageNum = pageStart + i;
+
+                  if (pageNum > totalPages) return null;
+
+                  return (
+                    <PaginationButton
+                      key={pageNum}
+                      active={pageNum === currentPage}
+                      onClick={() => handlePageChange(pageNum)}
+                      disabled={loading}
+                    >
+                      {pageNum}
+                    </PaginationButton>
+                  );
+                })}
+
+                {/* Last page */}
+                {currentPage < totalPages - 2 && (
+                  <>
+                    {currentPage < totalPages - 3 && (
+                      <span style={{ color: '#d4af37', padding: '0 5px' }}>
+                        ...
+                      </span>
+                    )}
+                    <PaginationButton
+                      onClick={() => handlePageChange(totalPages)}
+                      disabled={loading}
+                    >
+                      {totalPages}
+                    </PaginationButton>
+                  </>
+                )}
+              </div>
+
+              <PaginationInfo>
+                Tome {currentPage} of {totalPages} ({spells.length} spells)
+              </PaginationInfo>
+
+              <PaginationButton
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-                style={{
-                  backgroundColor:
-                    currentPage >= totalPages ? '#ccc' : '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
-                }}
+                disabled={currentPage >= totalPages || loading}
               >
-                Next
-              </button>
-            </div>
+                Next →
+              </PaginationButton>
+            </PaginationContainer>
           )}
         </>
       )}
-    </div>
+    </ListContainer>
   );
 };
 

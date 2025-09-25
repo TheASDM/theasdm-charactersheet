@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Navigation } from './components';
 import {
   CharactersPage,
-  SpellsPage,
+  CharacterSheetTestPage,
   ClassesPage,
   ClassLevelsPage,
   ClassDetailsPage,
@@ -12,6 +12,7 @@ import {
   FeatsPage,
   SpeciesPage,
 } from './pages';
+import SpellsPage from './pages/SpellsPage';
 
 // HomePage component with interactive features
 const HomePage: React.FC = () => {
@@ -190,6 +191,10 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/characters" element={<CharactersPage />} />
+          <Route
+            path="/character-sheet-test"
+            element={<CharacterSheetTestPage />}
+          />
           <Route path="/spells" element={<SpellsPage />} />
           <Route path="/classes" element={<ClassesPage />} />
           <Route path="/backgrounds" element={<BackgroundsPage />} />

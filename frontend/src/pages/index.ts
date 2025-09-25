@@ -1,5 +1,6 @@
 // Export all pages
 export { default as CharactersPage } from './CharactersPage';
+export { default as CharacterSheetTestPage } from './CharacterSheetTestPage';
 export { default as SpellsPage } from './SpellsPage';
 export { default as ClassesPage } from './ClassesPage';
 export { default as ClassLevelsPage } from './ClassLevelsPage';

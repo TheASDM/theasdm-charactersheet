@@ -1,6 +1,8 @@
 // Export all components
 export { default as CharacterCard } from './CharacterCard';
 export { default as CharacterList } from './CharacterList';
+export { default as CharacterSheet } from './CharacterSheet';
+export { default as CharacterSheetModal } from './CharacterSheetModal';
 export { default as SpellCard } from './SpellCard';
 export { default as SpellList } from './SpellList';
 export { default as SpellModal } from './SpellModal';
@@ -9,3 +11,5 @@ export { default as ClassList } from './ClassList';
 export { default as ClassModal } from './ClassModal';
 export { default as Navigation } from './Navigation';
 export { default as ResponsiveTable } from './ResponsiveTable';
+export { default as SpeciesCard } from './SpeciesCard';
+export { default as Hero } from './Hero';

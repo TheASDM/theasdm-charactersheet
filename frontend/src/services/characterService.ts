@@ -47,6 +47,14 @@ export const characterService = {
   getPublic: async (): Promise<ApiResponse<Character[]>> => {
     return apiClient.get<Character[]>('/characters?public=true');
   },
+
+  // Update just the character sheet data
+  updateCharacterSheet: async (
+    id: number,
+    characterSheetData: any
+  ): Promise<ApiResponse<Character>> => {
+    return characterService.update(id, { characterData: characterSheetData });
+  },
 };
 
 export default characterService;

@@ -16,48 +16,91 @@ interface ResponsiveTableProps {
 }
 
 const TableContainer = styled.div`
-  background: white;
+  background: rgba(255, 248, 240, 0.95);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.3);
+  border: 2px solid rgba(139, 115, 85, 0.4);
 
   @media (max-width: 768px) {
-    box-shadow: none;
-    border-radius: 0;
+    box-shadow: 0 2px 8px rgba(139, 115, 85, 0.2);
+    border-radius: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    /* Add scrollbar styling */
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(139, 115, 85, 0.1);
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(139, 115, 85, 0.4);
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 115, 85, 0.6);
+    }
   }
 `;
 
 const DesktopTable = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px; /* Ensure minimum width for content */
 
-  @media (max-width: 768px) {
-    display: none;
+  @media (max-width: 480px) {
+    display: none; /* Hide table on mobile for card view */
   }
 `;
 
 const TableHeader = styled.thead`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #d4af7a 0%, #b8956a 50%, #8b7355 100%);
+  color: #6d4423;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #6d4423, transparent);
+  }
 `;
 
 const TableHeaderCell = styled.th`
-  padding: 1rem;
+  padding: 1.2rem 1rem;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  color: #6d4423;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  font-family: 'Georgia', serif;
+  background: rgba(255, 248, 240, 0.1);
+  border-right: 1px solid rgba(109, 68, 35, 0.2);
+
+  &:last-child {
+    border-right: none;
+  }
 `;
 
 const TableBody = styled.tbody``;
 
 const TableRow = styled.tr`
-  border-bottom: 1px solid #e1e5e9;
+  border-bottom: 1px solid rgba(139, 115, 85, 0.2);
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #f8f9fa;
+    background-color: rgba(212, 175, 122, 0.1);
   }
 
   &:last-child {
@@ -68,41 +111,57 @@ const TableRow = styled.tr`
 const TableCell = styled.td`
   padding: 1rem;
   vertical-align: top;
+  color: #6d4423;
+  font-family: 'Georgia', serif;
+  background: rgba(255, 248, 240, 0.3);
+  border-right: 1px solid rgba(139, 115, 85, 0.1);
+
+  &:last-child {
+    border-right: none;
+  }
 `;
 
 // Mobile Card Layout
 const MobileCardContainer = styled.div`
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 480px) {
     display: block;
-    padding: 0;
+    padding: 0.5rem;
   }
 `;
 
 const MobileCard = styled.div`
-  background: white;
+  background: rgba(255, 248, 240, 0.95);
   margin-bottom: 1rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(139, 115, 85, 0.2);
   overflow: hidden;
-  border: 1px solid #e1e5e9;
+  border: 2px solid rgba(139, 115, 85, 0.3);
 
   &:last-child {
     margin-bottom: 0;
   }
+
+  @media (max-width: 480px) {
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const MobileCardHeader = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 0.75rem;
-  font-weight: 600;
-  font-size: 1rem;
+  background: linear-gradient(135deg, #d4af7a 0%, #b8956a 50%, #8b7355 100%);
+  color: #6d4423;
+  padding: 0.9rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  font-family: 'Georgia', serif;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  border-bottom: 2px solid rgba(109, 68, 35, 0.3);
 `;
 
 const MobileCardContent = styled.div`
-  padding: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 248, 240, 0.5);
 `;
 
 const MobileCardField = styled.div`
@@ -114,18 +173,25 @@ const MobileCardField = styled.div`
 `;
 
 const MobileFieldLabel = styled.span`
-  font-weight: 600;
-  color: #666;
-  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8b7355;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   display: block;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.4rem;
+  font-family: 'Georgia', serif;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
 `;
 
 const MobileFieldValue = styled.div`
-  color: #2c3e50;
-  line-height: 1.4;
+  color: #6d4423;
+  line-height: 1.5;
+  font-family: 'Georgia', serif;
+  background: rgba(212, 175, 122, 0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(139, 115, 85, 0.2);
 `;
 
 const ResponsiveTable: React.FC<ResponsiveTableProps> = ({

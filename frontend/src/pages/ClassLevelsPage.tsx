@@ -4,27 +4,38 @@ import styled from 'styled-components';
 import { CharacterClass } from '../types/api';
 import { classService } from '../services';
 
-// Styled components for the levels table view
+// Styled components for clean D&D styling
 const PageContainer = styled.div`
   min-height: 100vh;
-  background-color: #f5f5f5;
-  padding: 20px;
+  background: #2c2c2c;
+  font-family: 'Georgia', serif;
+  position: relative;
 `;
 
 const ContentContainer = styled.div`
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #f8f6f0;
+  min-height: calc(100vh - 4rem);
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+  @media (max-width: 768px) {
+    margin: 1rem;
+    min-height: calc(100vh - 2rem);
+  }
 `;
 
 const Header = styled.div`
-  background: linear-gradient(135deg, #8b5a2b 0%, #a0522d 100%);
-  color: white;
-  padding: 24px;
+  background: #c85450;
+  color: #f8f6f0;
+  padding: 2rem;
   text-align: center;
+  border-bottom: 2px solid #a94442;
 `;
 
 const ClassTitle = styled.h1`

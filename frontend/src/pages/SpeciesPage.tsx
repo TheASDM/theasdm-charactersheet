@@ -2,128 +2,156 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Species } from '../types/api';
 import { speciesService } from '../services/speciesService';
-import { ResponsiveTable } from '../components';
-import {
-  parseDnDTemplateTag,
-  parseComplexDnDEntry,
-} from '../utils/dndTemplateParser';
+import SpeciesCard from '../components/SpeciesCard';
+import { Hero } from '../components';
 
-const Container = styled.div`
-  padding: 0 rem;
+// Import medieval fonts
+const FontImport = styled.div`
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600&display=swap');
+`;
+
+// Main page container with forest green background (matching feats page)
+const PageContainer = styled.div`
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    #363636ff 0%,
+    #4b4b4bff 25%,
+    #323232ff 50%,
+    #222222ff 75%,
+    #0e0e0eff 100%
+  );
+  padding: 0;
+  font-family: 'Crimson Text', serif;
+`;
+
+// Content wrapper
+const ContentContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
 `;
 
-const Title = styled.h1`
-  color: #2c3e50;
-  padding-top: 1rem;
-  margin-bottom: 40px;
-  text-align: center;
-  font-size: 2.5rem;
-`;
+// Main container that holds everything below the hero (matching feats page)
+const MainContainer = styled.div`
+  background: linear-gradient(
+    145deg,
+    rgba(90, 58, 42, 0.8),
+    rgba(74, 42, 26, 0.8)
+  );
+  border: 2px solid #8b6914;
+  border-radius: 20px 20px 15px 15px;
+  margin: 0 20px;
+  margin-top: -5px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(139, 105, 20, 0.3);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
 
-const SearchContainer = styled.div`
-  margin-bottom: 2rem;
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
-`;
+  /* Medieval parchment texture */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="paper"><feTurbulence baseFrequency="0.02" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/></filter></defs><rect width="100" height="100" fill="rgba(101,67,33,0.1)" filter="url(%23paper)"/></svg>')
+      repeat;
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 1;
+  }
 
-const SearchInput = styled.input`
-  flex: 1;
-  min-width: 300px;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
+  @media (max-width: 768px) {
+    margin: 0 10px;
+    margin-top: -2px;
+  }
 
-  &:focus {
-    outline: none;
-    border-color: #3498db;
+  @media (max-width: 480px) {
+    margin: 0 5px;
+    margin-top: -2px;
   }
 `;
 
-const FilterSelect = styled.select`
-  padding: 0.75rem 1rem;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 1rem;
-  min-width: 150px;
-  background-color: white;
-`;
+// Content inside the main container
+const MainContent = styled.div`
+  position: relative;
+  z-index: 2;
+  padding: 30px;
 
-const SpeciesName = styled.div`
-  font-weight: 600;
-  color: #2c3e50;
-  font-size: 1.1rem;
-  margin-bottom: 0.25rem;
-`;
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 
-const SpeciesSource = styled.div`
-  font-size: 0.8rem;
-  color: #666;
-  background: #f1f3f4;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  display: inline-block;
-`;
-
-const SizeSpeed = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-`;
-
-const SizeSpeedItem = styled.div`
-  font-size: 0.9rem;
-  color: #555;
-`;
-
-const TraitsList = styled.div`
-  min-width: 400px;
-`;
-
-const TraitName = styled.div`
-  font-weight: 600;
-  color: #4a90e2;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-`;
-
-const TraitDescription = styled.div`
-  font-size: 0.8rem;
-  color: #666;
-  line-height: 1.4;
-  margin-bottom: 0.75rem;
-  white-space: pre-line;
+  @media (max-width: 480px) {
+    padding: 15px;
+  }
 `;
 
 const LoadingMessage = styled.div`
-  text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: #666;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  color: #d4af37;
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-family: 'Cinzel', serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 1px;
 `;
 
 const ErrorMessage = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  color: #d4af37;
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: #e74c3c;
-  background: #ffeaea;
-  border-radius: 8px;
-  margin: 2rem 0;
+  font-family: 'Cinzel', serif;
+
+  .error-title {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .error-message {
+    margin-bottom: 1rem;
+    opacity: 0.8;
+  }
+`;
+
+const NoResultsMessage = styled.div`
+  text-align: center;
+  color: #a0824a;
+  font-size: 1.4rem;
+  margin-top: 60px;
+  padding: 60px 20px;
+  font-family: 'Cinzel', serif;
+  font-style: italic;
+
+  .title {
+    font-size: 1.6rem;
+    color: #d4af37;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+    color: #c9a961;
+    line-height: 1.5;
+  }
 `;
 
 const SpeciesPage: React.FC = () => {
   const [species, setSpecies] = useState<Species[]>([]);
-  const [filteredSpecies, setFilteredSpecies] = useState<Species[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('all');
 
   useEffect(() => {
     const fetchSpecies = async () => {
@@ -132,12 +160,14 @@ const SpeciesPage: React.FC = () => {
         const response = await speciesService.getAll();
         if (response.data) {
           setSpecies(response.data);
-          setFilteredSpecies(response.data);
         } else {
-          setError(response.error || 'Failed to fetch species data');
+          setError(
+            response.error ||
+              'Failed to gather species knowledge from the ancient tomes.'
+          );
         }
       } catch (err) {
-        setError('Error loading species data');
+        setError('Error loading species data from the archives');
         console.error('Error fetching species:', err);
       } finally {
         setLoading(false);
@@ -147,170 +177,90 @@ const SpeciesPage: React.FC = () => {
     fetchSpecies();
   }, []);
 
-  useEffect(() => {
-    let filtered = species;
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter((s) =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Apply source filter
-    if (sourceFilter !== 'all') {
-      filtered = filtered.filter((s) => s.source === sourceFilter);
-    }
-
-    setFilteredSpecies(filtered);
-  }, [species, searchTerm, sourceFilter]);
-
-  const formatSize = (size: string | string[], speciesName: string): string => {
-    // Handle the fact that size can be an array or string
-    const sizeValue = Array.isArray(size) ? size[0] : size;
-
-    // Fix incorrect data in database - these should all be Medium
-    const correctSizes: Record<string, string> = {
-      Aasimar: 'Medium',
-      Human: 'Medium',
-      Tiefling: 'Medium',
-    };
-
-    if (correctSizes[speciesName]) {
-      return correctSizes[speciesName];
-    }
-
-    const sizeMap: Record<string, string> = {
-      S: 'Small',
-      M: 'Medium',
-      L: 'Large',
-      T: 'Tiny',
-      H: 'Huge',
-      G: 'Gargantuan',
-    };
-    return sizeMap[sizeValue] || sizeValue;
-  };
-
-  const parseTraits = (
-    traits: any
-  ): Array<{ name: string; description: string }> => {
-    if (!traits) return [];
-
-    if (Array.isArray(traits)) {
-      return traits.map((trait) => ({
-        name: trait.name || 'Trait',
-        description: Array.isArray(trait.description)
-          ? trait.description
-              .map((desc: any) => parseComplexDnDEntry(desc))
-              .join('\n\n')
-          : typeof trait.description === 'string'
-          ? parseDnDTemplateTag(trait.description)
-          : typeof trait.description === 'object'
-          ? parseComplexDnDEntry(trait.description)
-          : 'See source material for details.',
-      }));
-    }
-
-    return [];
-  };
-
-  const getUniqueSourcesFromSpecies = (speciesList: Species[]): string[] => {
-    const sources = speciesList
-      .map((s) => s.source)
-      .filter((source) => source)
-      .filter(
-        (source, index, array) => array.indexOf(source) === index
-      ) as string[];
-    return sources.sort();
-  };
-
-  const uniqueSources = getUniqueSourcesFromSpecies(species);
-
   if (loading) {
-    return <LoadingMessage>Loading species data...</LoadingMessage>;
+    return (
+      <>
+        <FontImport />
+        <PageContainer>
+          <ContentContainer>
+            <Hero
+              title="D&D SPECIES"
+              subtitle="Discover Your Heritage"
+              height="400px"
+            />
+            <MainContainer>
+              <MainContent>
+                <LoadingMessage>
+                  📚 Gathering Ancient Knowledge from the Bloodlines...
+                </LoadingMessage>
+              </MainContent>
+            </MainContainer>
+          </ContentContainer>
+        </PageContainer>
+      </>
+    );
   }
 
   if (error) {
-    return <ErrorMessage>{error}</ErrorMessage>;
+    return (
+      <>
+        <FontImport />
+        <PageContainer>
+          <ContentContainer>
+            <Hero
+              title="D&D SPECIES"
+              subtitle="Discover Your Heritage"
+              height="400px"
+            />
+            <MainContainer>
+              <MainContent>
+                <ErrorMessage>
+                  <div className="error-title">
+                    🏛️ Ancient Records Unavailable
+                  </div>
+                  <div className="error-message">{error}</div>
+                </ErrorMessage>
+              </MainContent>
+            </MainContainer>
+          </ContentContainer>
+        </PageContainer>
+      </>
+    );
   }
 
   return (
-    <Container>
-      <Title>🧝 Species & Races</Title>
-      <ResponsiveTable
-        keyField="id"
-        data={filteredSpecies}
-        columns={[
-          {
-            key: 'name',
-            header: 'Name',
-            render: (_value, row) => (
-              <div>
-                <SpeciesName>{row.name}</SpeciesName>
-                {row.source && <SpeciesSource>{row.source}</SpeciesSource>}
-              </div>
-            ),
-          },
-          {
-            key: 'sizeSpeed',
-            header: 'Size & Speed',
-            mobile: false, // Hide on mobile to save space
-            render: (_value, row) => (
-              <SizeSpeed>
-                <SizeSpeedItem>
-                  <strong>Size:</strong> {formatSize(row.size, row.name)}
-                </SizeSpeedItem>
-                <SizeSpeedItem>
-                  <strong>Speed:</strong> {row.speed} ft
-                </SizeSpeedItem>
-                <SizeSpeedItem>
-                  <strong>Type:</strong> {row.creatureType}
-                </SizeSpeedItem>
-              </SizeSpeed>
-            ),
-          },
-          {
-            key: 'traits',
-            header: 'Traits',
-            render: (_value, row) => (
-              <TraitsList>
-                {parseTraits(row.traits).map((trait, index) => (
-                  <div key={index}>
-                    <TraitName>{trait.name}</TraitName>
-                    <TraitDescription>{trait.description}</TraitDescription>
-                  </div>
-                ))}
-              </TraitsList>
-            ),
-          },
-          // Mobile-specific columns
-          {
-            key: 'sizeSpeedMobile',
-            header: 'Details',
-            desktop: false, // Only show on mobile
-            render: (_value, row) => (
-              <div>
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <strong>Size:</strong> {formatSize(row.size, row.name)}
-                </div>
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <strong>Speed:</strong> {row.speed} ft
-                </div>
-                <div>
-                  <strong>Type:</strong> {row.creatureType}
-                </div>
-              </div>
-            ),
-          },
-        ]}
-      />
+    <>
+      <FontImport />
+      <PageContainer>
+        <ContentContainer>
+          <Hero
+            title="D&D SPECIES"
+            subtitle="Discover Your Heritage"
+            height="400px"
+          />
 
-      {filteredSpecies.length === 0 && !loading && (
-        <LoadingMessage>
-          No species found matching your criteria.
-        </LoadingMessage>
-      )}
-    </Container>
+          <MainContainer>
+            <MainContent>
+              {species.map((speciesItem) => (
+                <SpeciesCard key={speciesItem.id} species={speciesItem} />
+              ))}
+
+              {species.length === 0 && !loading && (
+                <NoResultsMessage>
+                  <div className="title">
+                    🏛️ No Species Found in the Chronicles
+                  </div>
+                  <div className="subtitle">
+                    The ancient bloodlines remain hidden. Check back as new
+                    knowledge is gathered from distant realms.
+                  </div>
+                </NoResultsMessage>
+              )}
+            </MainContent>
+          </MainContainer>
+        </ContentContainer>
+      </PageContainer>
+    </>
   );
 };
 
