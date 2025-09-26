@@ -1,0 +1,414 @@
+import React, { useState, useMemo, useCallback } from 'react';
+import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, Shield, Heart, Zap, Sword, Book, Package, User, Settings, ChevronDown, ChevronRight, Plus, Minus } from 'lucide-react';
+
+// Mock data structure - you'd replace this with your actual character data
+const initialCharacter = {
+  name: "Thorin Ironforge",
+  class: "Fighter",
+  level: 5,
+  species: "Dwarf",
+  background: "Soldier",
+  alignment: "Lawful Good",
+  experiencePoints: 6500,
+  abilityScores: {
+    strength: 16,
+    dexterity: 14,
+    constitution: 15,
+    intelligence: 12,
+    wisdom: 13,
+    charisma: 10
+  },
+  proficiencyBonus: 3,
+  inspiration: false,
+  armorClass: 18,
+  hitPoints: { current: 45, max: 45, temp: 0 },
+  hitDice: { current: 5, max: 5 },
+  speed: 25,
+  skills: {
+    athletics: { proficient: true },
+    intimidation: { proficient: true },
+    perception: { proficient: false },
+    survival: { proficient: true }
+  },
+  savingThrows: {
+    strength: { proficient: true },
+    constitution: { proficient: true }
+  },
+  spellSlots: {
+    1: { current: 2, max: 2 },
+    2: { current: 0, max: 0 },
+    3: { current: 0, max: 0 }
+  }
+};
+
+const CharacterSheet = () => {
+  const [character, setCharacter] = useState(initialCharacter);
+  const [activeTab, setActiveTab] = useState('main');
+  const [collapsedSections, setCollapsedSections] = useState({});
+  const [rollHistory, setRollHistory] = useState([]);
+
+  // Helper functions
+  const getModifier = (score) => Math.floor((score - 10) / 2);
+  const formatModifier = (mod) => mod >= 0 ? `+${mod}` : `${mod}`;
+
+  // Dice rolling system
+  const rollDice = useCallback((sides, count = 1, modifier = 0, label = '') => {
+    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+    const total = rolls.reduce((sum, roll) => sum + roll, 0) + modifier;
+    
+    const rollResult = {
+      id: Date.now(),
+      label,
+      rolls,
+      sides,
+      modifier,
+      total,
+      timestamp: new Date().toLocaleTimeString()
+    };
+    
+    setRollHistory(prev => [rollResult, ...prev.slice(0, 9)]);
+    return rollResult;
+  }, []);
+
+  // Interactive roll button component
+  const RollButton = ({ onClick, children, className = '', disabled = false }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`
+        inline-flex items-center justify-center min-w-[2.5rem] h-8 px-2 
+        bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 
+        text-white text-sm font-bold rounded border border-red-800 
+        shadow-sm hover:shadow-md transition-all duration-150 
+        disabled:opacity-50 disabled:cursor-not-allowed
+        ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+
+  // Collapsible section component
+  const CollapsibleSection = ({ title, children, sectionKey, defaultOpen = true }) => {
+    const isOpen = collapsedSections[sectionKey] ?? defaultOpen;
+    
+    return (
+      <div className="border border-gray-300 rounded-lg mb-4 bg-white shadow-sm">
+        <button
+          onClick={() => setCollapsedSections(prev => ({ ...prev, [sectionKey]: !isOpen }))}
+          className="w-full px-4 py-3 text-left font-bold bg-gray-100 hover:bg-gray-200 flex items-center justify-between rounded-t-lg"
+        >
+          {title}
+          {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+        {isOpen && <div className="p-4">{children}</div>}
+      </div>
+    );
+  };
+
+  // Resource tracker component
+  const ResourceTracker = ({ current, max, onChange, label, color = "blue" }) => (
+    <div className="flex flex-col items-center space-y-1">
+      <span className="text-xs font-bold text-gray-600 uppercase">{label}</span>
+      <div className="flex items-center space-x-1">
+        <button
+          onClick={() => onChange(Math.max(0, current - 1))}
+          className="w-6 h-6 rounded bg-red-500 hover:bg-red-600 text-white flex items-center justify-center"
+        >
+          <Minus size={12} />
+        </button>
+        <div className={`px-3 py-1 bg-${color}-100 border border-${color}-300 rounded text-center min-w-[3rem]`}>
+          <span className="font-bold">{current}</span>
+          <span className="text-gray-500">/{max}</span>
+        </div>
+        <button
+          onClick={() => onChange(Math.min(max, current + 1))}
+          className="w-6 h-6 rounded bg-green-500 hover:bg-green-600 text-white flex items-center justify-center"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+    </div>
+  );
+
+  const MainSheet = () => (
+    <div className="space-y-6">
+      {/* Character Header */}
+      <div className="bg-gradient-to-r from-blue-800 to-purple-800 text-white p-6 rounded-lg shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">{character.name}</h1>
+            <p className="text-blue-200">
+              Level {character.level} {character.species} {character.class}
+            </p>
+            <p className="text-sm text-blue-300">{character.background} • {character.alignment}</p>
+          </div>
+          <div className="text-right">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCharacter(prev => ({ ...prev, inspiration: !prev.inspiration }))}
+                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                  character.inspiration 
+                    ? 'bg-yellow-400 border-yellow-500 text-yellow-900' 
+                    : 'border-gray-400 text-gray-400'
+                }`}
+              >
+                <Zap size={16} />
+              </button>
+              <span className="text-sm">Inspiration</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Core Stats Row */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border-2 border-red-300 p-4 text-center">
+          <div className="text-2xl font-bold text-red-600">{character.armorClass}</div>
+          <div className="text-sm text-gray-600 uppercase font-bold">Armor Class</div>
+        </div>
+        <ResourceTracker
+          current={character.hitPoints.current}
+          max={character.hitPoints.max}
+          onChange={(val) => setCharacter(prev => ({ 
+            ...prev, 
+            hitPoints: { ...prev.hitPoints, current: val } 
+          }))}
+          label="Hit Points"
+          color="red"
+        />
+        <ResourceTracker
+          current={character.hitDice.current}
+          max={character.hitDice.max}
+          onChange={(val) => setCharacter(prev => ({ 
+            ...prev, 
+            hitDice: { ...prev.hitDice, current: val } 
+          }))}
+          label="Hit Dice"
+          color="green"
+        />
+        <div className="bg-white rounded-lg border-2 border-blue-300 p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600">{character.speed} ft</div>
+          <div className="text-sm text-gray-600 uppercase font-bold">Speed</div>
+        </div>
+      </div>
+
+      {/* Ability Scores */}
+      <CollapsibleSection title="Ability Scores" sectionKey="abilities">
+        <div className="grid grid-cols-6 gap-4">
+          {Object.entries(character.abilityScores).map(([ability, score]) => {
+            const modifier = getModifier(score);
+            return (
+              <div key={ability} className="bg-gray-50 rounded-lg p-4 text-center border">
+                <div className="text-xs uppercase font-bold text-gray-600 mb-1">
+                  {ability.slice(0, 3)}
+                </div>
+                <div className="text-2xl font-bold mb-2">{score}</div>
+                <RollButton
+                  onClick={() => rollDice(20, 1, modifier, `${ability} check`)}
+                  className="w-full"
+                >
+                  {formatModifier(modifier)}
+                </RollButton>
+                {character.savingThrows[ability] && (
+                  <div className="mt-2">
+                    <RollButton
+                      onClick={() => rollDice(20, 1, modifier + (character.savingThrows[ability].proficient ? character.proficiencyBonus : 0), `${ability} save`)}
+                      className="w-full text-xs"
+                    >
+                      Save {formatModifier(modifier + (character.savingThrows[ability].proficient ? character.proficiencyBonus : 0))}
+                    </RollButton>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CollapsibleSection>
+
+      {/* Skills */}
+      <CollapsibleSection title="Skills" sectionKey="skills">
+        <div className="grid grid-cols-2 gap-2">
+          {Object.entries(character.skills).map(([skill, data]) => {
+            const abilityMap = {
+              athletics: 'strength',
+              intimidation: 'charisma',
+              perception: 'wisdom',
+              survival: 'wisdom'
+            };
+            const ability = abilityMap[skill] || 'wisdom';
+            const abilityMod = getModifier(character.abilityScores[ability]);
+            const skillMod = abilityMod + (data.proficient ? character.proficiencyBonus : 0);
+            
+            return (
+              <div key={skill} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${data.proficient ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                  <span className="capitalize">{skill.replace(/([A-Z])/g, ' $1')}</span>
+                </div>
+                <RollButton
+                  onClick={() => rollDice(20, 1, skillMod, `${skill} check`)}
+                >
+                  {formatModifier(skillMod)}
+                </RollButton>
+              </div>
+            );
+          })}
+        </div>
+      </CollapsibleSection>
+
+      {/* Combat */}
+      <CollapsibleSection title="Combat" sectionKey="combat">
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-lg font-bold">+{character.proficiencyBonus}</div>
+              <div className="text-sm text-gray-600">Proficiency Bonus</div>
+            </div>
+            <div className="text-center">
+              <RollButton onClick={() => rollDice(20, 1, getModifier(character.abilityScores.dexterity), 'Initiative')}>
+                {formatModifier(getModifier(character.abilityScores.dexterity))} Initiative
+              </RollButton>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold">{10 + getModifier(character.abilityScores.wisdom)}</div>
+              <div className="text-sm text-gray-600">Passive Perception</div>
+            </div>
+          </div>
+          
+          <div className="border-t pt-4">
+            <h4 className="font-bold mb-2">Attacks & Spellcasting</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <div className="font-bold">Longsword</div>
+                  <div className="text-sm text-gray-600">1d8 + 3 slashing</div>
+                </div>
+                <RollButton onClick={() => rollDice(20, 1, 8, 'Longsword attack')}>
+                  +8
+                </RollButton>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <div className="font-bold">Shortbow</div>
+                  <div className="text-sm text-gray-600">1d6 + 2 piercing</div>
+                </div>
+                <RollButton onClick={() => rollDice(20, 1, 7, 'Shortbow attack')}>
+                  +7
+                </RollButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+    </div>
+  );
+
+  const SpellsTab = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-4">Spells & Magic</h2>
+        
+        {/* Spell Slots */}
+        <div className="grid grid-cols-9 gap-2 mb-6">
+          {[1,2,3,4,5,6,7,8,9].map(level => (
+            <div key={level} className="text-center">
+              <div className="text-xs font-bold mb-1">Level {level}</div>
+              {character.spellSlots[level] && (
+                <ResourceTracker
+                  current={character.spellSlots[level].current}
+                  max={character.spellSlots[level].max}
+                  onChange={(val) => setCharacter(prev => ({
+                    ...prev,
+                    spellSlots: {
+                      ...prev.spellSlots,
+                      [level]: { ...prev.spellSlots[level], current: val }
+                    }
+                  }))}
+                  label=""
+                  color="purple"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="text-center text-gray-500">
+        <p>Spell management coming soon...</p>
+      </div>
+    </div>
+  );
+
+  const InventoryTab = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold mb-4 text-center">Equipment & Inventory</h2>
+      <div className="text-center text-gray-500">
+        <p>Inventory system coming soon...</p>
+      </div>
+    </div>
+  );
+
+  const tabs = [
+    { id: 'main', label: 'Character', icon: User, component: MainSheet },
+    { id: 'spells', label: 'Spells', icon: Book, component: SpellsTab },
+    { id: 'inventory', label: 'Inventory', icon: Package, component: InventoryTab },
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 bg-gray-100 min-h-screen">
+      <div className="flex space-x-1 mb-6 bg-white rounded-lg p-1 shadow">
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`
+                flex items-center space-x-2 px-4 py-2 rounded-md transition-all duration-200 flex-1 justify-center
+                ${activeTab === tab.id 
+                  ? 'bg-blue-500 text-white shadow-md' 
+                  : 'text-gray-600 hover:bg-gray-100'
+                }
+              `}
+            >
+              <Icon size={18} />
+              <span className="font-medium">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-4 gap-6">
+        <div className="col-span-3">
+          {tabs.find(tab => tab.id === activeTab)?.component()}
+        </div>
+        
+        {/* Roll History Sidebar */}
+        <div className="bg-white rounded-lg p-4 shadow-lg h-fit">
+          <h3 className="font-bold mb-3 flex items-center space-x-2">
+            <Dice6 size={18} />
+            <span>Recent Rolls</span>
+          </h3>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {rollHistory.length === 0 ? (
+              <p className="text-gray-500 text-sm">No rolls yet</p>
+            ) : (
+              rollHistory.map(roll => (
+                <div key={roll.id} className="text-xs p-2 bg-gray-50 rounded border-l-4 border-blue-400">
+                  <div className="font-bold text-blue-600">{roll.label}</div>
+                  <div className="text-gray-600">
+                    {roll.rolls.join(' + ')} {roll.modifier !== 0 && `+ ${roll.modifier}`} = <span className="font-bold">{roll.total}</span>
+                  </div>
+                  <div className="text-gray-400">{roll.timestamp}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CharacterSheet;

@@ -14,8 +14,8 @@ const NavContainer = styled.nav`
     #1a1a1aff 50%,
     #000000ff 100%
   );
-  padding: 20px 0;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  padding: 10px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -27,19 +27,19 @@ const NavWrapper = styled.div`
   margin: 0 auto;
   display: flex;
   justify-content: center;
-  gap: 10px;
-  padding: 0 20px;
+  gap: 6px;
+  padding: 0 15px;
   position: relative;
 
   /* Golden decorative line underneath */
   &::after {
     content: '';
     position: absolute;
-    bottom: -15px;
+    bottom: -8px;
     left: 0;
     right: 0;
     width: 100%;
-    height: 2px;
+    height: 1px;
     background: linear-gradient(
       90deg,
       transparent 0%,
@@ -47,14 +47,14 @@ const NavWrapper = styled.div`
       #d4af37 90%,
       transparent 100%
     );
-    border-radius: 2px;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-radius: 1px;
+    box-shadow: 0 0 4px rgba(212, 175, 55, 0.3);
   }
 
   @media (max-width: 768px) {
     justify-content: flex-start;
-    gap: 8px;
-    padding: 0 10px;
+    gap: 4px;
+    padding: 0 8px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 
@@ -72,9 +72,9 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
     props.$isActive
       ? 'linear-gradient(145deg, #d4af37, #b8941f)'
       : 'linear-gradient(145deg, #5a3a2a, #4a2a1a)'};
-  border: 2px solid ${(props) => (props.$isActive ? '#d4af37' : '#8b6914')};
-  border-radius: 12px;
-  padding: 12px 24px;
+  border: 1px solid ${(props) => (props.$isActive ? '#d4af37' : '#8b6914')};
+  border-radius: 8px;
+  padding: 8px 16px;
   color: ${(props) => (props.$isActive ? '#2c1810' : '#d4af37')};
   font-family: 'Cinzel', serif;
   font-weight: 600;
@@ -82,16 +82,16 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
+  gap: 6px;
+  font-size: 14px;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-decoration: none;
   white-space: nowrap;
   box-shadow: ${(props) =>
     props.$isActive
-      ? '0 6px 20px rgba(212, 175, 55, 0.4)'
-      : '0 4px 15px rgba(0, 0, 0, 0.3)'};
+      ? '0 3px 10px rgba(212, 175, 55, 0.4)'
+      : '0 2px 8px rgba(0, 0, 0, 0.3)'};
   text-shadow: ${(props) =>
     props.$isActive ? '1px 1px 2px rgba(0, 0, 0, 0.5)' : 'none'};
 
@@ -102,23 +102,23 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
         : 'linear-gradient(145deg, #6a4a3a, #5a3a2a)'};
     box-shadow: ${(props) =>
       props.$isActive
-        ? '0 8px 25px rgba(212, 175, 55, 0.5)'
-        : '0 6px 20px rgba(212, 175, 55, 0.3)'};
-    transform: translateY(-2px);
+        ? '0 4px 12px rgba(212, 175, 55, 0.5)'
+        : '0 3px 10px rgba(212, 175, 55, 0.3)'};
+    transform: translateY(-1px);
     color: ${(props) => (props.$isActive ? '#2c1810' : '#d4af37')};
   }
 
   @media (max-width: 768px) {
-    padding: 10px 16px;
-    font-size: 14px;
+    padding: 6px 12px;
+    font-size: 12px;
     min-width: fit-content;
-    gap: 6px;
+    gap: 4px;
   }
 
   @media (max-width: 480px) {
-    padding: 8px 12px;
-    font-size: 12px;
-    gap: 4px;
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 3px;
 
     /* Show only icons on very small screens */
     span.label {
@@ -128,10 +128,10 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
 `;
 
 const NavIcon = styled.span`
-  font-size: 1.1em;
+  font-size: 1em;
 
   @media (max-width: 480px) {
-    font-size: 1.2em;
+    font-size: 1.1em;
   }
 `;
 
@@ -146,6 +146,7 @@ const Navigation: React.FC = () => {
 
   const navItems = [
     { path: '/characters', label: 'Characters', icon: '🧙‍♂️' },
+    { path: '/generator', label: 'Generator', icon: '🎲' },
     { path: '/species', label: 'Species', icon: '🐉' },
     { path: '/classes', label: 'Classes', icon: '⚔️' },
     { path: '/backgrounds', label: 'Backgrounds', icon: '📜' },

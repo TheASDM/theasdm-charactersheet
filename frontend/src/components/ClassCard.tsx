@@ -11,12 +11,12 @@ interface ClassCardProps {
 // Individual class card (matching FeatCard)
 const ClassCard = styled.div`
   background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
-  border: 3px solid #8b6914;
-  border-radius: 15px;
+  border: 2px solid #8b6914;
+  border-radius: 10px;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
   font-family: 'Crimson Text', serif;
   overflow: hidden;
   position: relative;
@@ -25,8 +25,8 @@ const ClassCard = styled.div`
   contain: layout style paint;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
     border-color: #d4af37;
   }
 `;
@@ -38,42 +38,42 @@ const ClassHeader = styled.div`
     rgba(74, 42, 26, 0.9)
   );
   color: #d4af37;
-  padding: 20px 25px;
+  padding: 12px 16px;
   border-bottom: 2px solid #8b6914;
   position: relative;
 
   @media (max-width: 480px) {
-    padding: 15px 20px;
+    padding: 10px 14px;
   }
 `;
 
 const ClassName = styled.h3`
-  margin: 0 0 8px 0;
-  font-size: 1.6rem;
+  margin: 0 0 6px 0;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #d4af37;
   font-family: 'Cinzel', serif;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   line-height: 1.2;
 `;
 
 const ClassType = styled.div`
   display: inline-block;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   color: white;
   font-family: 'Cinzel', serif;
   background: linear-gradient(145deg, #8b6914, #6d5411);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 `;
 
 const ClassContent = styled.div`
-  padding: 25px;
+  padding: 16px;
   background: transparent;
   flex: 1;
   display: flex;
@@ -83,50 +83,52 @@ const ClassContent = styled.div`
 const InfoGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 16px;
 
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 `;
 
 const InfoBox = styled.div`
   background: rgba(139, 105, 20, 0.1);
-  padding: 12px 15px;
-  border-radius: 8px;
-  border-left: 4px solid #8b6914;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #8b6914;
   text-align: center;
 
   .label {
     color: #8b6914;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     font-family: 'Cinzel', serif;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     display: block;
   }
 
   .value {
     color: #2c1810;
     font-weight: 700;
-    font-size: 1.1rem;
-    line-height: 1.4;
+    font-size: 1rem;
+    line-height: 1.3;
   }
 `;
 
 const DetailsList = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(139, 105, 20, 0.2);
 `;
 
 const DetailsItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(139, 105, 20, 0.2);
 
   &:last-child {
@@ -137,16 +139,16 @@ const DetailsItem = styled.div`
 const DetailsLabel = styled.span`
   color: #8b6914;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   font-family: 'Cinzel', serif;
-  min-width: 100px;
+  min-width: 90px;
 `;
 
 const AbilityTags = styled.div`
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
   justify-content: flex-end;
 `;
@@ -154,45 +156,45 @@ const AbilityTags = styled.div`
 const AbilityTag = styled.span`
   background: linear-gradient(145deg, #8b6914, #6d5411);
   color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.7rem;
+  padding: 3px 6px;
+  border-radius: 10px;
+  font-size: 0.65rem;
   font-weight: 600;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   font-family: 'Cinzel', serif;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 `;
 
 const SpellcastingInfo = styled.div`
   background: rgba(139, 105, 20, 0.1);
-  padding: 12px 15px;
-  border-radius: 8px;
-  border-left: 4px solid #8b6914;
-  margin-bottom: 15px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #8b6914;
+  margin-bottom: 12px;
 
   .label {
     color: #8b6914;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     font-family: 'Cinzel', serif;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     display: block;
   }
 
   .content {
     color: #2c1810;
     font-weight: 600;
-    line-height: 1.4;
+    line-height: 1.3;
     text-transform: capitalize;
   }
 `;
 
 const ClassSource = styled.div`
-  margin-top: auto;
-  padding: 12px 16px;
-  font-size: 0.8rem;
+  margin-top: 12px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
   color: #6d5411;
   font-style: italic;
   text-align: center;
@@ -202,48 +204,47 @@ const ClassSource = styled.div`
     rgba(139, 105, 20, 0.05)
   );
   border-top: 1px solid rgba(139, 105, 20, 0.3);
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 8px 8px;
 
   strong {
     color: #8b6914;
     font-weight: 600;
     font-style: normal;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    font-size: 0.7rem;
     font-family: 'Cinzel', serif;
   }
 `;
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 2px solid rgba(139, 105, 20, 0.2);
+  margin-top: 12px;
+  margin-bottom: 0;
 `;
 
 const ActionButton = styled.button`
   background: linear-gradient(145deg, #d4af37, #b8941f);
   color: #2c1810;
   border: none;
-  padding: 12px 18px;
-  border-radius: 8px;
+  padding: 10px 14px;
+  border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Cinzel', serif;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  font-size: 0.8rem;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  font-size: 0.75rem;
   text-align: center;
   line-height: 1.2;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4);
     background: linear-gradient(145deg, #b8941f, #a0801b);
   }
 
@@ -253,13 +254,13 @@ const ActionButton = styled.button`
 
   .icon {
     display: block;
-    font-size: 1.2rem;
-    margin-bottom: 4px;
+    font-size: 1rem;
+    margin-bottom: 3px;
   }
 
   .text {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 `;
 
@@ -330,7 +331,7 @@ export default function ClassCardComponent({
             </AbilityTags>
           </DetailsItem>
 
-          <DetailsItem>
+          <DetailsItem style={{ borderBottom: 'none' }}>
             <DetailsLabel>Saving Throws</DetailsLabel>
             <AbilityTags>
               {characterClass.savingThrowProficiencies?.map((save) => (

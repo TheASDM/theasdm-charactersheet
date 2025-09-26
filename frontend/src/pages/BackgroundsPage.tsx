@@ -568,7 +568,7 @@ const BackgroundsPage: React.FC = () => {
             <Hero
               title="D&D BACKGROUNDS"
               subtitle="Forge Your Past"
-              height="400px"
+              height="280px"
             />
             <MainContainer>
               <ContainerContent>
@@ -592,7 +592,7 @@ const BackgroundsPage: React.FC = () => {
             <Hero
               title="D&D BACKGROUNDS"
               subtitle="Forge Your Past"
-              height="400px"
+              height="280px"
             />
             <MainContainer>
               <ContainerContent>
@@ -621,7 +621,7 @@ const BackgroundsPage: React.FC = () => {
           <Hero
             title="D&D BACKGROUNDS"
             subtitle="Forge Your Past"
-            height="400px"
+            height="280px"
           />
 
           <MainContainer>

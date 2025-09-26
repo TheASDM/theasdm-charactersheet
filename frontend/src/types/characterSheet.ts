@@ -67,7 +67,7 @@ export interface CharacterSheetData {
 export interface CharacterSheetProps {
   character: CharacterSheetData;
   onUpdate: (character: CharacterSheetData) => void;
-  onSave?: (character: CharacterSheetData) => void;
+  onSave?: ((character: CharacterSheetData) => void | Promise<void>) | undefined;
 }
 
 // Helper functions for character sheet calculations

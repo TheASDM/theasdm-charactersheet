@@ -8,10 +8,13 @@ const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_URL;
   }
 
-  // Get the current host (IP or hostname) from the browser
-  const currentHost = window.location.hostname;
+  // In development, use the proxy setup from vite.config.ts
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
 
-  // Use the same host as the frontend for the backend API
+  // In production, use the full API URL
+  const currentHost = window.location.hostname;
   return `http://${currentHost}:3001/api`;
 };
 

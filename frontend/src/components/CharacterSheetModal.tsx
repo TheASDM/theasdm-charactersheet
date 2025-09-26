@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
-import CharacterSheet from './CharacterSheet';
+import CharacterSheetPretty from './CharacterSheetPretty';
 import {
   CharacterSheetData,
   createDefaultCharacterSheet,
@@ -97,30 +97,53 @@ export default function CharacterSheetModal({
   character,
   onSave,
 }: CharacterSheetModalProps) {
-  const [characterSheetData, setCharacterSheetData] =
-    useState<CharacterSheetData>(() => {
-      if (character?.characterData) {
-        // If character already has character data, use it
-        return { ...createDefaultCharacterSheet(), ...character.characterData };
-      } else if (character) {
-        // If character exists but no character data, create basic sheet from character info
-        const defaultSheet = createDefaultCharacterSheet();
-        return {
-          ...defaultSheet,
-          name: character.name,
-          level: character.level,
-        };
-      } else {
-        // New character
-        return createDefaultCharacterSheet();
-      }
-    });
+  // Initialize character sheet data from the passed character, similar to generator page
+  const [characterSheetData, setCharacterSheetData] = useState<CharacterSheetData>(() => {
+    if (character?.characterData && typeof character.characterData === 'object') {
+      return { ...createDefaultCharacterSheet(), ...character.characterData };
+    } else if (character) {
+      const defaultSheet = createDefaultCharacterSheet();
+      return {
+        ...defaultSheet,
+        name: character.name || '',
+        level: character.level || 1,
+      };
+    }
+    return createDefaultCharacterSheet();
+  });
+
+  // Update character sheet data when character prop changes (like generator page)
+  useEffect(() => {
+    console.log('🔄 Modal: Character prop changed:', character);
+
+    let newData: CharacterSheetData;
+
+    if (character?.characterData && typeof character.characterData === 'object') {
+      console.log('📋 Modal: Using existing character data');
+      newData = { ...createDefaultCharacterSheet(), ...character.characterData };
+    } else if (character) {
+      console.log('📋 Modal: Creating sheet from character info');
+      const defaultSheet = createDefaultCharacterSheet();
+      newData = {
+        ...defaultSheet,
+        name: character.name || '',
+        level: character.level || 1,
+      };
+    } else {
+      console.log('📋 Modal: Using default character sheet');
+      newData = createDefaultCharacterSheet();
+    }
+
+    setCharacterSheetData(newData);
+  }, [character]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Simple update handler like the generator page
   const handleUpdate = useCallback((updatedData: CharacterSheetData) => {
+    console.log('🖊️ Modal: handleUpdate called');
     setCharacterSheetData(updatedData);
     setError(null);
     setSuccess(null);
@@ -133,22 +156,36 @@ export default function CharacterSheetModal({
         return;
       }
 
+      console.log('🔄 Modal: Attempting to save character sheet...');
+      console.log('📋 Character ID:', character.id);
+      console.log('🎭 Character Data:', {
+        name: data.name,
+        level: data.level,
+        species: data.species,
+        class: data.class
+      });
+
       setIsSaving(true);
       setError(null);
       setSuccess(null);
 
       try {
+        console.log('📡 Modal: Calling characterService.updateCharacterSheet...');
         const response = await characterService.updateCharacterSheet(
           character.id,
           data
         );
 
+        console.log('📨 Modal: API Response:', response);
+
         if (response.error) {
+          console.error('❌ Modal: API Error:', response.error);
           setError(response.error);
           return;
         }
 
         if (response.data) {
+          console.log('✅ Modal: Character saved successfully:', response.data.id);
           setSuccess('Character sheet saved successfully!');
           if (onSave) {
             onSave(response.data);
@@ -158,9 +195,12 @@ export default function CharacterSheetModal({
           setTimeout(() => {
             onClose();
           }, 1500);
+        } else {
+          console.warn('⚠️ Modal: No data in successful response');
+          setError('Save completed but no data returned');
         }
       } catch (err) {
-        console.error('Error saving character sheet:', err);
+        console.error('❌ Modal: Exception saving character sheet:', err);
         setError('Failed to save character sheet. Please try again.');
       } finally {
         setIsSaving(false);
@@ -193,10 +233,10 @@ export default function CharacterSheetModal({
         {error && <ErrorMessage>{error}</ErrorMessage>}
         {success && <SuccessMessage>{success}</SuccessMessage>}
 
-        <CharacterSheet
+        <CharacterSheetPretty
           character={characterSheetData}
           onUpdate={handleUpdate}
-          {...(isSaving ? {} : { onSave: handleSave })}
+          onSave={isSaving ? undefined : handleSave}
         />
       </ModalContent>
     </ModalOverlay>

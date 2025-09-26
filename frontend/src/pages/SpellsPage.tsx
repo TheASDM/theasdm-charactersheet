@@ -434,7 +434,7 @@ const SpellsPageNew: React.FC = () => {
           <Hero
             title="D&D SPELLS"
             subtitle="Discover the Magic Within"
-            height="400px"
+            height="280px"
           />
 
           {/* Main Content Container */}

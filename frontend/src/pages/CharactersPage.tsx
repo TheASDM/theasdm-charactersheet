@@ -182,7 +182,7 @@ const CharactersPage: React.FC = () => {
           <Hero
             title="D&D CHARACTERS"
             subtitle="Manage Your Heroes"
-            height="400px"
+            height="280px"
           />
 
           <MainContainer>

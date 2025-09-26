@@ -590,7 +590,7 @@ const FeatsPage: React.FC = () => {
             <Hero
               title="D&D FEATS"
               subtitle="Unlock Your Potential"
-              height="400px"
+              height="280px"
             />
             <MainContainer>
               <ContainerContent>
@@ -614,7 +614,7 @@ const FeatsPage: React.FC = () => {
             <Hero
               title="D&D FEATS"
               subtitle="Unlock Your Potential"
-              height="400px"
+              height="280px"
             />
             <MainContainer>
               <ContainerContent>
@@ -643,7 +643,7 @@ const FeatsPage: React.FC = () => {
           <Hero
             title="D&D FEATS"
             subtitle="Unlock Your Potential"
-            height="400px"
+            height="280px"
           />
 
           <MainContainer>

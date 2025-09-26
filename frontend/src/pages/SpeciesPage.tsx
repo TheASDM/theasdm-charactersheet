@@ -186,7 +186,7 @@ const SpeciesPage: React.FC = () => {
             <Hero
               title="D&D SPECIES"
               subtitle="Discover Your Heritage"
-              height="400px"
+              height="280px"
             />
             <MainContainer>
               <MainContent>
@@ -210,7 +210,7 @@ const SpeciesPage: React.FC = () => {
             <Hero
               title="D&D SPECIES"
               subtitle="Discover Your Heritage"
-              height="400px"
+              height="280px"
             />
             <MainContainer>
               <MainContent>
@@ -236,7 +236,7 @@ const SpeciesPage: React.FC = () => {
           <Hero
             title="D&D SPECIES"
             subtitle="Discover Your Heritage"
-            height="400px"
+            height="280px"
           />
 
           <MainContainer>

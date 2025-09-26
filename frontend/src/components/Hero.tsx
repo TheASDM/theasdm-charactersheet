@@ -69,11 +69,11 @@ const HeroContainer = styled.div<{ backgroundImage: string; height: string }>`
   }
 
   @media (max-width: 768px) {
-    height: 300px;
+    height: 200px;
   }
 
   @media (max-width: 480px) {
-    height: 250px;
+    height: 180px;
   }
 `;
 
@@ -82,19 +82,19 @@ const HeroContent = styled.div`
   z-index: 3;
   text-align: center;
   color: #d4af37;
-  padding: 2rem;
-  max-width: 900px;
+  padding: 1rem;
+  max-width: 800px;
 `;
 
 const HeroTitle = styled.h1`
-  font-size: clamp(3.5rem, 10vw, 8rem);
+  font-size: clamp(2rem, 8vw, 4rem);
   font-weight: 700;
   margin: 0;
   font-family: 'Cinzel', serif;
-  letter-spacing: 4px;
+  letter-spacing: 2px;
   color: #d4af37;
-  text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.4),
-    0 0 40px rgba(212, 175, 55, 0.2);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(212, 175, 55, 0.4),
+    0 0 20px rgba(212, 175, 55, 0.2);
 
   /* Medieval gold gradient effect */
   background: linear-gradient(
@@ -115,40 +115,40 @@ const HeroTitle = styled.h1`
   }
 
   /* Enhanced glow effect */
-  filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.5));
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
 
   @media (max-width: 768px) {
-    font-size: clamp(2.5rem, 12vw, 5rem);
-    letter-spacing: 2px;
+    font-size: clamp(1.8rem, 10vw, 3rem);
+    letter-spacing: 1px;
   }
 
   @media (max-width: 480px) {
-    font-size: clamp(2rem, 14vw, 4rem);
-    letter-spacing: 1px;
+    font-size: clamp(1.5rem, 12vw, 2.5rem);
+    letter-spacing: 0.5px;
   }
 `;
 
 const HeroSubtitle = styled.h2`
-  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-size: clamp(1rem, 3vw, 1.5rem);
   font-weight: 400;
-  margin: 1rem 0 0 0;
+  margin: 0.5rem 0 0 0;
   font-family: 'Crimson Text', serif;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   color: #c9a961;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(201, 169, 97, 0.3);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 0 0 5px rgba(201, 169, 97, 0.3);
   font-style: italic;
   opacity: 0.95;
 
   @media (max-width: 768px) {
-    font-size: clamp(1.2rem, 5vw, 2rem);
-    margin-top: 0.75rem;
-    letter-spacing: 1px;
+    font-size: clamp(0.9rem, 4vw, 1.3rem);
+    margin-top: 0.4rem;
+    letter-spacing: 0.5px;
   }
 
   @media (max-width: 480px) {
-    font-size: clamp(1rem, 6vw, 1.5rem);
-    margin-top: 0.5rem;
-    letter-spacing: 0.5px;
+    font-size: clamp(0.8rem, 5vw, 1.1rem);
+    margin-top: 0.3rem;
+    letter-spacing: 0.3px;
   }
 `;
 
@@ -156,7 +156,7 @@ const Hero: React.FC<HeroProps> = ({
   title,
   subtitle,
   backgroundImage = '/images/cover.png',
-  height = '400px',
+  height = '280px',
 }) => {
   return (
     <>

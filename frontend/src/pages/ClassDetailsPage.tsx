@@ -871,7 +871,7 @@ const ClassDetailsPage: React.FC = () => {
           <Hero
             title={characterClass.name}
             subtitle="Master of Skills and Shadows"
-            height="400px"
+            height="280px"
           />
 
           <Navigation

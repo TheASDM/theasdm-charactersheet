@@ -9,19 +9,19 @@ interface SpeciesCardProps {
 // Updated to match medieval theme (matching FeatCard)
 const Card = styled.div`
   background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
-  border: 3px solid #8b6914;
-  border-radius: 15px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  border: 2px solid #8b6914;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
   font-family: 'Crimson Text', serif;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   overflow: hidden;
   position: relative;
   color: #2c1810;
   transition: all 0.3s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   }
 
   &:last-child {
@@ -35,24 +35,24 @@ const SpeciesHeader = styled.div`
     rgba(90, 58, 42, 0.9),
     rgba(74, 42, 26, 0.9)
   );
-  padding: 20px 25px;
+  padding: 12px 16px;
   text-align: center;
   position: relative;
   z-index: 1;
   border-bottom: 2px solid #8b6914;
 
   @media (max-width: 480px) {
-    padding: 15px 20px;
+    padding: 10px 14px;
   }
 `;
 
 const SpeciesTitle = styled.h2`
   color: #d4af37;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
   text-transform: uppercase;
   font-family: 'Cinzel', serif;
 `;
@@ -92,43 +92,43 @@ const ColumnHeader = styled.div`
     rgba(90, 58, 42, 0.6),
     rgba(74, 42, 26, 0.6)
   );
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1rem;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #d4af37;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   border-bottom: 1px solid #8b6914;
   font-family: 'Cinzel', serif;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 `;
 
 const ColumnContent = styled.div`
-  padding: 1.5rem;
+  padding: 1rem;
 `;
 
 const SourceTag = styled.div`
   background: linear-gradient(145deg, #8b6914, #6d5411);
   color: white;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.7rem;
   font-weight: 600;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   display: inline-block;
   font-family: 'Cinzel', serif;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
 `;
 
 const SizeSpeedInfo = styled.div`
   color: #2c1810;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.4;
 `;
 
 const SizeSpeedItem = styled.div`
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 
   strong {
     font-weight: 700;
@@ -143,17 +143,17 @@ const SizeSpeedItem = styled.div`
 
 const SpeciesDescription = styled.div`
   color: #2c1810;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.4;
   background: rgba(139, 105, 20, 0.1);
-  padding: 1.5rem;
-  border-radius: 8px;
+  padding: 0.75rem;
+  border-radius: 6px;
   border: 2px solid rgba(139, 105, 20, 0.3);
   font-style: italic;
   text-align: justify;
 
   p {
-    margin: 0 0 1rem 0;
+    margin: 0 0 0.5rem 0;
 
     &:last-child {
       margin-bottom: 0;
@@ -162,27 +162,27 @@ const SpeciesDescription = styled.div`
 
   em {
     color: #8b6914;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 `;
 
 const TraitsSection = styled.div`
-  padding: 25px;
+  padding: 16px;
   position: relative;
   z-index: 1;
 
   @media (max-width: 768px) {
-    padding: 20px;
+    padding: 12px;
   }
 `;
 
 const TraitItem = styled.div`
-  margin-bottom: 2rem;
-  padding: 20px;
+  margin-bottom: 1rem;
+  padding: 12px;
   background: rgba(139, 105, 20, 0.1);
   border: 2px solid rgba(139, 105, 20, 0.3);
-  border-radius: 10px;
-  border-left: 4px solid #8b6914;
+  border-radius: 8px;
+  border-left: 3px solid #8b6914;
 
   &:last-child {
     margin-bottom: 0;
@@ -191,22 +191,22 @@ const TraitItem = styled.div`
 
 const TraitName = styled.h3`
   color: #8b6914;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   font-family: 'Cinzel', serif;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 `;
 
 const TraitDescription = styled.div`
   color: #2c1810;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.4;
   text-align: justify;
 
   p {
-    margin: 0 0 1rem 0;
+    margin: 0 0 0.5rem 0;
 
     &:last-child {
       margin-bottom: 0;
@@ -415,7 +415,7 @@ export default function SpeciesCard({ species }: SpeciesCardProps) {
               </SizeSpeedItem>
             </SizeSpeedInfo>
             {species.source && (
-              <div style={{ marginTop: '1rem' }}>
+              <div style={{ marginTop: '0.5rem' }}>
                 <SourceTag>{species.source}</SourceTag>
               </div>
             )}

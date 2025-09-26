@@ -22,6 +22,7 @@ import backgroundRoutes from './routes/backgrounds';
 import itemRoutes from './routes/items';
 import campaignRoutes from './routes/campaigns';
 import featRoutes from './routes/feats';
+import generatorRoutes from './routes/generator';
 
 // Load environment variables
 dotenv.config();
@@ -95,6 +96,7 @@ app.use('/api/backgrounds', backgroundRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/feats', featRoutes);
+app.use('/api/generator', generatorRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

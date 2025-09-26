@@ -110,7 +110,7 @@ const ClassesPage: React.FC = () => {
           <Hero
             title="D&D CLASSES"
             subtitle="Choose Your Path"
-            height="400px"
+            height="280px"
           />
 
           <MainContainer>

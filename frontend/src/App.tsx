@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Navigation } from './components';
+import { UserProvider } from './contexts/UserContext';
 import {
   CharactersPage,
   CharacterSheetTestPage,
@@ -13,6 +14,7 @@ import {
   SpeciesPage,
 } from './pages';
 import SpellsPage from './pages/SpellsPage';
+import CharacterGeneratorPage from './pages/CharacterGeneratorPage';
 
 // HomePage component with interactive features
 const HomePage: React.FC = () => {
@@ -21,7 +23,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleCreateCharacter = () => {
-    alert('Character creation coming soon! 🐉');
+    navigate('/generator');
   };
 
   const handleViewCharacters = () => {
@@ -186,11 +188,13 @@ const App: React.FC = () => {
         />
       </Helmet>
 
-      <div className="App">
-        <Navigation />
-        <Routes>
+      <UserProvider>
+        <div className="App">
+          <Navigation />
+          <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/characters" element={<CharactersPage />} />
+          <Route path="/generator" element={<CharacterGeneratorPage />} />
           <Route
             path="/character-sheet-test"
             element={<CharacterSheetTestPage />}
@@ -209,7 +213,8 @@ const App: React.FC = () => {
             element={<ClassDetailsPage />}
           />
         </Routes>
-      </div>
+        </div>
+      </UserProvider>
     </>
   );
 };

@@ -53,7 +53,19 @@ export const characterService = {
     id: number,
     characterSheetData: any
   ): Promise<ApiResponse<Character>> => {
-    return characterService.update(id, { characterData: characterSheetData });
+    console.log('🔧 CharacterService: updateCharacterSheet called');
+    console.log('   ID:', id);
+    console.log('   Data keys:', Object.keys(characterSheetData));
+    console.log('   Data name:', characterSheetData.name);
+
+    const result = await characterService.update(id, {
+      characterData: characterSheetData,
+      name: characterSheetData.name, // Also update the character name
+      level: characterSheetData.level, // Also update the character level
+    });
+
+    console.log('🔧 CharacterService: update result:', result);
+    return result;
   },
 };
 
