@@ -103,53 +103,8 @@ const ControlsTitle = styled.h3`
   letter-spacing: 1px;
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  flex-wrap: wrap;
-`;
 
-const GenerateButton = styled.button`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
-  color: #2c1810;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Cinzel', serif;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 
-  &:hover:not(:disabled) {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const SaveButton = styled(GenerateButton)`
-  background: linear-gradient(145deg, #228B22, #1a6b1a);
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(145deg, #1a6b1a, #0f4f0f);
-    box-shadow: 0 6px 20px rgba(34, 139, 34, 0.4);
-  }
-`;
 
 const StatusMessage = styled.div<{ type: 'success' | 'error' | 'info' }>`
   padding: 10px 15px;
@@ -177,110 +132,18 @@ const StatusMessage = styled.div<{ type: 'success' | 'error' | 'info' }>`
   `}
 `;
 
-const SourceInfo = styled.div`
-  background: rgba(139, 105, 20, 0.1);
-  border: 2px solid #8b6914;
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
-  color: #8b6914;
 
-  h4 {
-    font-family: 'Cinzel', serif;
-    font-size: 1rem;
-    margin: 0 0 10px 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .source-item {
-    margin: 5px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .source-name {
-    font-weight: 600;
-  }
-
-  .source-details {
-    font-size: 0.8rem;
-    opacity: 0.8;
-  }
-`;
-
-interface GeneratedCharacterResponse {
-  character: CharacterSheetData;
-  sources: {
-    species: any;
-    class: any;
-    background: any;
-    feat: any;
-    spells: any[];
-    items: any[];
-    indices: any;
-    counts: any;
-  };
-  generated: string;
-}
 
 const CharacterGeneratorPage: React.FC = () => {
   const { user, loading: userLoading } = useUser();
   const [character, setCharacter] = useState<CharacterSheetData>(() =>
     createDefaultCharacterSheet()
   );
-  const [sourceInfo, setSourceInfo] = useState<GeneratedCharacterResponse['sources'] | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     message: string;
     type: 'success' | 'error' | 'info';
   } | null>(null);
 
-  const generateRandomCharacter = async () => {
-    setIsGenerating(true);
-    setStatusMessage({ message: 'Generating random character...', type: 'info' });
-
-    try {
-      const response = await fetch('/api/generator/random', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ mode: 'random' }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to generate character: ${response.statusText}`);
-      }
-
-      const data: GeneratedCharacterResponse = await response.json();
-
-      // Debug log to see what we received
-      console.log('🎲 Generated character data:', data.character);
-      console.log('🎯 Character keys:', Object.keys(data.character));
-      console.log('🧙‍♂️ Name:', data.character.name);
-      console.log('⚔️ Class:', data.character.class);
-      console.log('🐉 Species:', data.character.species);
-
-      setCharacter(data.character);
-      setSourceInfo(data.sources);
-      setStatusMessage({
-        message: `✨ Generated ${data.character.name}, a Level ${data.character.level} ${data.character.species} ${data.character.class}!`,
-        type: 'success'
-      });
-
-    } catch (error) {
-      console.error('Error generating character:', error);
-      setStatusMessage({
-        message: `Failed to generate character: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        type: 'error'
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const saveCharacter = async () => {
     if (!user) {
@@ -389,7 +252,7 @@ const CharacterGeneratorPage: React.FC = () => {
           <MainContainer>
             <MainContent>
               <GeneratorControls>
-                <ControlsTitle>🎲 Character Generator</ControlsTitle>
+                <ControlsTitle>⚔️ Create Character</ControlsTitle>
                 {user && (
                   <div style={{
                     fontSize: '0.9rem',
@@ -400,19 +263,15 @@ const CharacterGeneratorPage: React.FC = () => {
                     👤 Playing as: <strong>{user.username}</strong>
                   </div>
                 )}
-                <ButtonGroup>
-                  <GenerateButton
-                    onClick={generateRandomCharacter}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? '⚡ Generating...' : '🎲 Generate Random Hero'}
-                  </GenerateButton>
-                  {character.name && (
-                    <SaveButton onClick={saveCharacter}>
-                      💾 Save Character
-                    </SaveButton>
-                  )}
-                </ButtonGroup>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: '#f4e7d1',
+                  textAlign: 'center',
+                  lineHeight: '1.4',
+                  marginBottom: '20px'
+                }}>
+                  Build your D&D 2024 character by selecting species, class, background, and skills below.
+                </div>
 
                 {statusMessage && (
                   <StatusMessage type={statusMessage.type}>
@@ -421,47 +280,13 @@ const CharacterGeneratorPage: React.FC = () => {
                 )}
               </GeneratorControls>
 
-              {sourceInfo && (
-                <SourceInfo>
-                  <h4>📚 Generated From Database</h4>
-                  <div className="source-item">
-                    <span className="source-name">Species:</span>
-                    <span className="source-details">
-                      {sourceInfo.species?.name} ({sourceInfo.species?.source})
-                    </span>
-                  </div>
-                  <div className="source-item">
-                    <span className="source-name">Class:</span>
-                    <span className="source-details">
-                      {sourceInfo.class?.name} (d{sourceInfo.class?.hitDie} HD)
-                    </span>
-                  </div>
-                  <div className="source-item">
-                    <span className="source-name">Background:</span>
-                    <span className="source-details">
-                      {sourceInfo.background?.name}
-                    </span>
-                  </div>
-                  <div className="source-item">
-                    <span className="source-name">Feat:</span>
-                    <span className="source-details">
-                      {sourceInfo.feat?.name} ({sourceInfo.feat?.category})
-                    </span>
-                  </div>
-                  <div className="source-item">
-                    <span className="source-name">Database:</span>
-                    <span className="source-details">
-                      {sourceInfo.counts?.spellCount} spells, {sourceInfo.counts?.itemCount} items,
-                      {sourceInfo.counts?.featCount} feats available
-                    </span>
-                  </div>
-                </SourceInfo>
-              )}
-
               <CharacterSheetPretty
                 character={character}
                 onUpdate={handleCharacterUpdate}
                 onSave={saveCharacter}
+                initialEditMode={{
+                  characterInfo: true
+                }}
               />
             </MainContent>
           </MainContainer>

@@ -129,20 +129,16 @@ export default function CharacterSheetModal({
     const fetchCharacterData = async () => {
       if (!isOpen) return;
 
-      console.log('🔄 Modal: Character prop changed:', character);
 
       let newData: CharacterSheetData;
 
       if (character && character.id > 0) {
         // For existing characters, fetch fresh data from server
-        console.log('📋 Modal: Fetching fresh character data from server...');
         try {
           const response = await characterService.getById(character.id);
           if (response.data && response.data.characterData) {
-            console.log('📋 Modal: Using fresh character data from server');
             newData = { ...createDefaultCharacterSheet(), ...response.data.characterData };
           } else {
-            console.log('📋 Modal: Server data incomplete, using prop data');
             newData = character.characterData && typeof character.characterData === 'object'
               ? { ...createDefaultCharacterSheet(), ...character.characterData }
               : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
@@ -155,10 +151,8 @@ export default function CharacterSheetModal({
             : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
         }
       } else if (character?.characterData && typeof character.characterData === 'object') {
-        console.log('📋 Modal: Using existing character data');
         newData = { ...createDefaultCharacterSheet(), ...character.characterData };
       } else if (character) {
-        console.log('📋 Modal: Creating sheet from character info');
         const defaultSheet = createDefaultCharacterSheet();
         newData = {
           ...defaultSheet,
@@ -166,7 +160,6 @@ export default function CharacterSheetModal({
           level: character.level || 1,
         };
       } else {
-        console.log('📋 Modal: Using default character sheet');
         newData = createDefaultCharacterSheet();
       }
 
@@ -182,7 +175,6 @@ export default function CharacterSheetModal({
 
   // Simple update handler like the generator page
   const handleUpdate = useCallback((updatedData: CharacterSheetData) => {
-    console.log('🖊️ Modal: handleUpdate called');
     setCharacterSheetData(updatedData);
     setError(null);
     setSuccess(null);
@@ -195,14 +187,6 @@ export default function CharacterSheetModal({
         return;
       }
 
-      console.log('🔄 Modal: Attempting to save character sheet...');
-      console.log('📋 Character ID:', character.id);
-      console.log('🎭 Character Data:', {
-        name: data.name,
-        level: data.level,
-        species: data.species,
-        class: data.class
-      });
 
       const isSilent = options?.silent || false;
 
@@ -217,7 +201,6 @@ export default function CharacterSheetModal({
 
         if (character.id === 0) {
           // New character - create it
-          console.log('📡 Modal: Creating new character...');
           response = await characterService.create({
             userId: character.userId || 1, // TODO: Get from auth context
             name: data.name || 'Unnamed Character',
@@ -227,14 +210,12 @@ export default function CharacterSheetModal({
           });
         } else {
           // Existing character - update it
-          console.log('📡 Modal: Calling characterService.updateCharacterSheet...');
           response = await characterService.updateCharacterSheet(
             character.id,
             data
           );
         }
 
-        console.log('📨 Modal: API Response:', response);
 
         if (response.error) {
           console.error('❌ Modal: API Error:', response.error);
@@ -245,7 +226,6 @@ export default function CharacterSheetModal({
         }
 
         if (response.data) {
-          console.log('✅ Modal: Character saved successfully:', response.data.id);
 
           // Only show notification for non-silent saves
           if (!isSilent) {
@@ -267,7 +247,6 @@ export default function CharacterSheetModal({
             onSave(response.data);
           }
         } else {
-          console.warn('⚠️ Modal: No data in successful response');
           setError('Save completed but no data returned');
         }
       } catch (err) {

@@ -189,6 +189,8 @@ const CharacterSheetTestPage: React.FC = () => {
         armor: ['Light Armor', 'Medium Armor', 'Heavy Armor', 'Shields'],
         weapons: ['Simple Weapons', 'Martial Weapons'],
         tools: ["Smith's Tools", 'Vehicles (Land)'],
+        skills: ['Athletics', 'Insight', 'Intimidation', 'Medicine'],
+        savingThrows: ['Wisdom', 'Charisma'],
       },
     };
   });
@@ -267,6 +269,8 @@ const CharacterSheetTestPage: React.FC = () => {
         armor: ['Light Armor', 'Medium Armor', 'Heavy Armor', 'Shields'],
         weapons: ['Simple Weapons', 'Martial Weapons'],
         tools: ["Smith's Tools", "Brewer's Supplies"],
+        skills: ['Athletics', 'Intimidation', 'Survival', 'Perception'],
+        savingThrows: ['Strength', 'Constitution'],
       },
     });
   };

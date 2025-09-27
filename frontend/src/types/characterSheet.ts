@@ -78,6 +78,8 @@ export interface CharacterSheetData {
     armor: string[];
     weapons: string[];
     tools: string[];
+    skills: string[];
+    savingThrows: string[];
   };
 }
 
@@ -85,6 +87,16 @@ export interface CharacterSheetProps {
   character: CharacterSheetData;
   onUpdate: (character: CharacterSheetData) => void;
   onSave?: ((character: CharacterSheetData, options?: { silent?: boolean }) => void | Promise<void>) | undefined;
+  initialEditMode?: {
+    abilities?: boolean;
+    stats?: boolean;
+    skills?: boolean;
+    spells?: boolean;
+    mana?: boolean;
+    characterInfo?: boolean;
+    actions?: boolean;
+    inventory?: boolean;
+  };
 }
 
 // Helper functions for character sheet calculations
@@ -213,6 +225,8 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     armor: [],
     weapons: [],
     tools: [],
+    skills: [],
+    savingThrows: [],
   },
 });
 
