@@ -147,6 +147,11 @@ const CharactersPage: React.FC = () => {
     // Character is already deleted by CharacterList component
   };
 
+  const handleCharacterOpenInNewTab = (character: Character) => {
+    const url = `/characters/${character.id}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const handleCloseSheetModal = () => {
     setIsSheetModalOpen(false);
     setSelectedCharacter(null);
@@ -198,6 +203,7 @@ const CharactersPage: React.FC = () => {
                 onCharacterClick={handleCharacterClick}
                 onCharacterEdit={handleCharacterEdit}
                 onCharacterDelete={handleCharacterDelete}
+                onCharacterOpenInNewTab={handleCharacterOpenInNewTab}
               />
             </MainContent>
           </MainContainer>

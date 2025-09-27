@@ -7,6 +7,7 @@ interface CharacterCardProps {
   onClick?: (() => void) | undefined;
   onEdit?: (() => void) | undefined;
   onDelete?: (() => void) | undefined;
+  onOpenInNewTab?: (() => void) | undefined;
   showActions?: boolean;
 }
 
@@ -166,11 +167,19 @@ const ActionButtons = styled.div`
   border-top: 2px solid rgba(139, 105, 20, 0.2);
 `;
 
-const ActionButton = styled.button<{ variant: 'edit' | 'delete' }>`
+const ActionButton = styled.button<{ variant: 'edit' | 'delete' | 'open' }>`
   background: linear-gradient(
     145deg,
-    ${props => props.variant === 'edit' ? '#2196F3' : '#f44336'},
-    ${props => props.variant === 'edit' ? '#1976D2' : '#d32f2f'}
+    ${props => {
+      if (props.variant === 'edit') return '#2196F3';
+      if (props.variant === 'delete') return '#f44336';
+      return '#8b6914'; // open button
+    }},
+    ${props => {
+      if (props.variant === 'edit') return '#1976D2';
+      if (props.variant === 'delete') return '#d32f2f';
+      return '#6d5411'; // open button
+    }}
   );
   color: white;
   border: none;
@@ -202,6 +211,7 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
   onClick,
   onEdit,
   onDelete,
+  onOpenInNewTab,
   showActions = false,
 }) => {
   const handleCardClick = (e: React.MouseEvent) => {
@@ -221,6 +231,13 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
       window.confirm('Are you sure you want to delete this character?')
     ) {
       onDelete();
+    }
+  };
+
+  const handleOpenInNewTab = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onOpenInNewTab) {
+      onOpenInNewTab();
     }
   };
 
@@ -265,6 +282,11 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
 
         {showActions && (
           <ActionButtons>
+            {onOpenInNewTab && (
+              <ActionButton variant="open" onClick={handleOpenInNewTab}>
+                Open Tab
+              </ActionButton>
+            )}
             {onEdit && (
               <ActionButton variant="edit" onClick={handleEdit}>
                 Edit

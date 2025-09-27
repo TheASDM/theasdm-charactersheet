@@ -36,6 +36,18 @@ export interface CharacterSheetData {
     failures: number;
   };
   heroicInspiration: boolean;
+  wounds: number;
+  mana: {
+    current: number;
+    max: number;
+  };
+  resources: {
+    [key: string]: number;
+  };
+  inventory: Array<{
+    name: string;
+    quantity: number;
+  }>;
   skills: {
     [key: string]: {
       proficient: boolean;
@@ -57,6 +69,11 @@ export interface CharacterSheetData {
     damage: string;
     notes: string;
   }>;
+  actions: Array<{
+    name: string;
+    atkBonus: string;
+    damage: string;
+  }>;
   proficiencies: {
     armor: string[];
     weapons: string[];
@@ -67,7 +84,7 @@ export interface CharacterSheetData {
 export interface CharacterSheetProps {
   character: CharacterSheetData;
   onUpdate: (character: CharacterSheetData) => void;
-  onSave?: ((character: CharacterSheetData) => void | Promise<void>) | undefined;
+  onSave?: ((character: CharacterSheetData, options?: { silent?: boolean }) => void | Promise<void>) | undefined;
 }
 
 // Helper functions for character sheet calculations
@@ -139,6 +156,13 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     failures: 0,
   },
   heroicInspiration: false,
+  wounds: 0,
+  mana: {
+    current: 0,
+    max: 0,
+  },
+  resources: {},
+  inventory: [],
   skills: {
     Acrobatics: { proficient: false, modifier: 0 },
     'Animal Handling': { proficient: false, modifier: 0 },
@@ -174,6 +198,16 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     { name: '', atkBonus: '', damage: '', notes: '' },
     { name: '', atkBonus: '', damage: '', notes: '' },
     { name: '', atkBonus: '', damage: '', notes: '' },
+  ],
+  actions: [
+    { name: 'Dash', atkBonus: '—', damage: 'Move Speed × 2' },
+    { name: 'Dodge', atkBonus: '—', damage: '—' },
+    { name: 'Help', atkBonus: '—', damage: '—' },
+    { name: '', atkBonus: '', damage: '' },
+    { name: '', atkBonus: '', damage: '' },
+    { name: '', atkBonus: '', damage: '' },
+    { name: '', atkBonus: '', damage: '' },
+    { name: '', atkBonus: '', damage: '' },
   ],
   proficiencies: {
     armor: [],

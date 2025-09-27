@@ -5,6 +5,7 @@ import { Navigation } from './components';
 import { UserProvider } from './contexts/UserContext';
 import {
   CharactersPage,
+  CharacterViewPage,
   CharacterSheetTestPage,
   ClassesPage,
   ClassLevelsPage,
@@ -194,6 +195,7 @@ const App: React.FC = () => {
           <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/characters" element={<CharactersPage />} />
+          <Route path="/characters/:characterId" element={<CharacterViewPage />} />
           <Route path="/generator" element={<CharacterGeneratorPage />} />
           <Route
             path="/character-sheet-test"

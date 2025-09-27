@@ -9,6 +9,7 @@ interface CharacterListProps {
   onCharacterClick?: (character: Character) => void;
   onCharacterEdit?: (character: Character) => void;
   onCharacterDelete?: (character: Character) => void;
+  onCharacterOpenInNewTab?: (character: Character) => void;
 }
 
 const CharacterList: React.FC<CharacterListProps> = ({
@@ -17,6 +18,7 @@ const CharacterList: React.FC<CharacterListProps> = ({
   onCharacterClick,
   onCharacterEdit,
   onCharacterDelete,
+  onCharacterOpenInNewTab,
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +158,9 @@ const CharacterList: React.FC<CharacterListProps> = ({
               onCharacterEdit ? () => onCharacterEdit(character) : undefined
             }
             onDelete={showActions ? () => handleDelete(character) : undefined}
+            onOpenInNewTab={
+              onCharacterOpenInNewTab ? () => onCharacterOpenInNewTab(character) : undefined
+            }
             showActions={showActions}
           />
         ))}

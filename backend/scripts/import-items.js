@@ -425,11 +425,13 @@ async function main() {
     let items;
     if (data.item && Array.isArray(data.item)) {
       items = data.item;
+    } else if (data.baseitem && Array.isArray(data.baseitem)) {
+      items = data.baseitem;
     } else if (Array.isArray(data)) {
       items = data;
     } else {
       console.error(
-        '❌ Error: Invalid JSON structure. Expected "item" array or root array.'
+        '❌ Error: Invalid JSON structure. Expected "item", "baseitem" array or root array.'
       );
       process.exit(1);
     }

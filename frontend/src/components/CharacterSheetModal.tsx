@@ -81,14 +81,26 @@ const ErrorMessage = styled.div`
 `;
 
 const SuccessMessage = styled.div`
-  background: rgba(40, 167, 69, 0.1);
-  border: 2px solid #28a745;
-  border-radius: 8px;
-  color: #155724;
-  padding: 12px;
-  margin: 10px 0;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(145deg, rgba(34, 139, 34, 0.9), rgba(46, 125, 50, 0.9));
+  border: 3px solid rgba(76, 175, 80, 0.8);
+  border-radius: 20px;
+  color: #ffffff;
+  padding: 24px 48px;
   text-align: center;
   font-weight: 600;
+  font-size: 2rem;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  z-index: 9999;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  opacity: 0.95;
+  transition: all 0.3s ease;
 `;
 
 export default function CharacterSheetModal({
@@ -112,30 +124,57 @@ export default function CharacterSheetModal({
     return createDefaultCharacterSheet();
   });
 
-  // Update character sheet data when character prop changes (like generator page)
+  // Fetch fresh character data when modal opens for existing characters
   useEffect(() => {
-    console.log('🔄 Modal: Character prop changed:', character);
+    const fetchCharacterData = async () => {
+      if (!isOpen) return;
 
-    let newData: CharacterSheetData;
+      console.log('🔄 Modal: Character prop changed:', character);
 
-    if (character?.characterData && typeof character.characterData === 'object') {
-      console.log('📋 Modal: Using existing character data');
-      newData = { ...createDefaultCharacterSheet(), ...character.characterData };
-    } else if (character) {
-      console.log('📋 Modal: Creating sheet from character info');
-      const defaultSheet = createDefaultCharacterSheet();
-      newData = {
-        ...defaultSheet,
-        name: character.name || '',
-        level: character.level || 1,
-      };
-    } else {
-      console.log('📋 Modal: Using default character sheet');
-      newData = createDefaultCharacterSheet();
-    }
+      let newData: CharacterSheetData;
 
-    setCharacterSheetData(newData);
-  }, [character]);
+      if (character && character.id > 0) {
+        // For existing characters, fetch fresh data from server
+        console.log('📋 Modal: Fetching fresh character data from server...');
+        try {
+          const response = await characterService.getById(character.id);
+          if (response.data && response.data.characterData) {
+            console.log('📋 Modal: Using fresh character data from server');
+            newData = { ...createDefaultCharacterSheet(), ...response.data.characterData };
+          } else {
+            console.log('📋 Modal: Server data incomplete, using prop data');
+            newData = character.characterData && typeof character.characterData === 'object'
+              ? { ...createDefaultCharacterSheet(), ...character.characterData }
+              : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
+          }
+        } catch (error) {
+          console.error('❌ Modal: Failed to fetch fresh character data:', error);
+          // Fallback to prop data
+          newData = character.characterData && typeof character.characterData === 'object'
+            ? { ...createDefaultCharacterSheet(), ...character.characterData }
+            : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
+        }
+      } else if (character?.characterData && typeof character.characterData === 'object') {
+        console.log('📋 Modal: Using existing character data');
+        newData = { ...createDefaultCharacterSheet(), ...character.characterData };
+      } else if (character) {
+        console.log('📋 Modal: Creating sheet from character info');
+        const defaultSheet = createDefaultCharacterSheet();
+        newData = {
+          ...defaultSheet,
+          name: character.name || '',
+          level: character.level || 1,
+        };
+      } else {
+        console.log('📋 Modal: Using default character sheet');
+        newData = createDefaultCharacterSheet();
+      }
+
+      setCharacterSheetData(newData);
+    };
+
+    fetchCharacterData();
+  }, [character, isOpen]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +189,7 @@ export default function CharacterSheetModal({
   }, []);
 
   const handleSave = useCallback(
-    async (data: CharacterSheetData) => {
+    async (data: CharacterSheetData, options?: { silent?: boolean }) => {
       if (!character) {
         setError('No character selected to save');
         return;
@@ -165,43 +204,77 @@ export default function CharacterSheetModal({
         class: data.class
       });
 
+      const isSilent = options?.silent || false;
+
       setIsSaving(true);
-      setError(null);
-      setSuccess(null);
+      if (!isSilent) {
+        setError(null);
+        setSuccess(null);
+      }
 
       try {
-        console.log('📡 Modal: Calling characterService.updateCharacterSheet...');
-        const response = await characterService.updateCharacterSheet(
-          character.id,
-          data
-        );
+        let response;
+
+        if (character.id === 0) {
+          // New character - create it
+          console.log('📡 Modal: Creating new character...');
+          response = await characterService.create({
+            userId: character.userId || 1, // TODO: Get from auth context
+            name: data.name || 'Unnamed Character',
+            level: data.level || 1,
+            characterData: data,
+            isPublic: character.isPublic || false,
+          });
+        } else {
+          // Existing character - update it
+          console.log('📡 Modal: Calling characterService.updateCharacterSheet...');
+          response = await characterService.updateCharacterSheet(
+            character.id,
+            data
+          );
+        }
 
         console.log('📨 Modal: API Response:', response);
 
         if (response.error) {
           console.error('❌ Modal: API Error:', response.error);
-          setError(response.error);
+          if (!isSilent) {
+            setError(response.error);
+          }
           return;
         }
 
         if (response.data) {
           console.log('✅ Modal: Character saved successfully:', response.data.id);
-          setSuccess('Character sheet saved successfully!');
+
+          // Only show notification for non-silent saves
+          if (!isSilent) {
+            setSuccess('Saved');
+            // Clear success message after 1 second for brief notification
+            setTimeout(() => {
+              setSuccess(null);
+            }, 1000);
+          }
+
+          // Update the character state to reflect the new/updated character
+          // This is especially important for new characters to get their ID
+          if (character.id === 0 && response.data.id) {
+            // For new characters, update the character with the new ID
+            character.id = response.data.id;
+          }
+
           if (onSave) {
             onSave(response.data);
           }
-
-          // Close modal after short delay to show success message
-          setTimeout(() => {
-            onClose();
-          }, 1500);
         } else {
           console.warn('⚠️ Modal: No data in successful response');
           setError('Save completed but no data returned');
         }
       } catch (err) {
         console.error('❌ Modal: Exception saving character sheet:', err);
-        setError('Failed to save character sheet. Please try again.');
+        if (!isSilent) {
+          setError('Failed to save character sheet. Please try again.');
+        }
       } finally {
         setIsSaving(false);
       }

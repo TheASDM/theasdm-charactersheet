@@ -114,4 +114,83 @@ export const WEAPON_PROPERTIES = {
   VERSATILE: 'versatile',
 } as const;
 
+// Helper functions for item logic
+export const isWeapon = (item: Item): boolean => {
+  return item.type === 'weapon' || item.type === 'M' || item.type === 'R' || !!item.dmg1;
+};
+
+export const isArmor = (item: Item): boolean => {
+  return item.type === 'armor' ||
+         item.type === 'LA' ||
+         item.type === 'MA' ||
+         item.type === 'HA' ||
+         (!!item.ac && item.armorType !== 'shield');
+};
+
+export const isShield = (item: Item): boolean => {
+  return item.type === 'S' || item.armorType === 'shield' || item.name.toLowerCase().includes('shield');
+};
+
+export const getWeaponAttackBonus = (item: Item): string => {
+  if (!isWeapon(item)) return '';
+
+  // Check if it has finesse property
+  if (item.property?.includes('F') || item.property?.includes('finesse')) {
+    return 'STR or DEX';
+  }
+
+  // Ranged weapons use DEX
+  if (item.range === 'ranged' || item.type === 'R') {
+    return 'DEX';
+  }
+
+  // Melee weapons typically use STR
+  return 'STR';
+};
+
+export const getWeaponDamageString = (item: Item): string => {
+  if (!isWeapon(item) || !item.dmg1) return '';
+
+  let damage = item.dmg1;
+  if (item.dmg2) {
+    damage += ` (${item.dmg2} versatile)`;
+  }
+
+  if (item.dmgType) {
+    damage += ` ${item.dmgType}`;
+  }
+
+  return damage;
+};
+
+export const calculateArmorClass = (
+  dexterityModifier: number,
+  equippedArmor?: Item,
+  hasShield: boolean = false
+): number => {
+  let ac = 10; // Base AC
+
+  if (equippedArmor && isArmor(equippedArmor) && equippedArmor.ac) {
+    ac = equippedArmor.ac;
+
+    // Apply dexterity modifier based on armor type
+    if (equippedArmor.armorType === 'light') {
+      ac += dexterityModifier; // No limit for light armor
+    } else if (equippedArmor.armorType === 'medium') {
+      ac += Math.min(dexterityModifier, 2); // Max +2 for medium armor
+    }
+    // Heavy armor gets no dex modifier
+  } else {
+    // No armor worn - base AC 10 + Dex modifier
+    ac = 10 + dexterityModifier;
+  }
+
+  // Add shield bonus
+  if (hasShield) {
+    ac += 2; // Standard shield gives +2 AC
+  }
+
+  return ac;
+};
+
 export default itemService;
