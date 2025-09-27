@@ -16,9 +16,6 @@ const NavContainer = styled.nav`
   );
   padding: 10px 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  position: sticky;
-  top: 0;
-  z-index: 100;
   border-bottom: 1px solid rgba(139, 105, 20, 0.3);
 `;
 
@@ -151,6 +148,7 @@ const Navigation: React.FC = () => {
     { path: '/classes', label: 'Classes', icon: '⚔️' },
     { path: '/backgrounds', label: 'Backgrounds', icon: '📜' },
     { path: '/feats', label: 'Feats', icon: '⭐' },
+    { path: '/equipment', label: 'Equipment', icon: '🛡️' },
     { path: '/spells', label: 'Spells', icon: '✨' },
   ];
 

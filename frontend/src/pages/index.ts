@@ -9,3 +9,4 @@ export { default as ClassDetailsPage } from './ClassDetailsPage';
 export { default as BackgroundsPage } from './BackgroundsPage';
 export { default as FeatsPage } from './FeatsPage';
 export { default as SpeciesPage } from './SpeciesPage';
+export { default as EquipmentPage } from './EquipmentPage';

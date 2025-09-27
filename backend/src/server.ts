@@ -23,6 +23,7 @@ import itemRoutes from './routes/items';
 import campaignRoutes from './routes/campaigns';
 import featRoutes from './routes/feats';
 import generatorRoutes from './routes/generator';
+import classChoicesRoutes from './routes/classChoices';
 
 // Load environment variables
 dotenv.config();
@@ -97,6 +98,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/feats', featRoutes);
 app.use('/api/generator', generatorRoutes);
+app.use('/api/class-choices', classChoicesRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

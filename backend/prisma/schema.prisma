@@ -185,6 +185,10 @@ model Class {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  // Relations
+  subclasses    Subclass[]
+  featureChoices ClassFeatureChoice[]
+
   @@map("classes")
 }
 
@@ -381,4 +385,151 @@ model Feat {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("feats")
+}
+
+// Class Feature Choice System - Normalized approach for complex class choices
+model ClassFeatureChoice {
+  id              Int    @id @default(autoincrement())
+  classId         Int    @map("class_id")
+  featureName     String @map("feature_name") @db.VarChar(100)
+  choiceLevel     Int    @map("choice_level") @default(1)
+  choiceType      String @map("choice_type") @db.VarChar(50) // 'single', 'multiple', 'scaling'
+  maxSelections   Int    @map("max_selections") @default(1)
+  description     String?
+  prerequisites   Json? // Complex prerequisite logic
+  source          String? @db.VarChar(20)
+  contentVersion  String @map("content_version") @db.VarChar(20)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  class           Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  options         ClassFeatureOption[]
+
+  @@unique([classId, featureName], map: "classId_featureName")
+  @@map("class_feature_choices")
+}
+
+model ClassFeatureOption {
+  id              Int    @id @default(autoincrement())
+  choiceId        Int    @map("choice_id")
+  name            String @db.VarChar(100)
+  shortName       String? @map("short_name") @db.VarChar(50) // For UI display
+  description     String
+  detailedText    String? @map("detailed_text") // Extended description
+  prerequisites   Json? // Specific prerequisites for this option
+  effects         Json? // Mechanical effects (spells, bonuses, etc.)
+  source          String? @db.VarChar(20)
+  page            Int?
+  isHomebrew      Boolean @default(false) @map("is_homebrew")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  choice          ClassFeatureChoice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+
+  @@map("class_feature_options")
+}
+
+// Subclass System - Proper normalization for subclass features
+model Subclass {
+  id              Int    @id @default(autoincrement())
+  classId         Int    @map("class_id")
+  name            String @db.VarChar(100)
+  shortName       String? @map("short_name") @db.VarChar(50)
+  description     String?
+  flavorText      String? @map("flavor_text")
+  source          String? @db.VarChar(20)
+  page            Int?
+  contentVersion  String @map("content_version") @db.VarChar(20)
+  isHomebrew      Boolean @default(false) @map("is_homebrew")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  class           Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  features        SubclassFeature[]
+
+  @@unique([classId, name])
+  @@map("subclasses")
+}
+
+model SubclassFeature {
+  id              Int    @id @default(autoincrement())
+  subclassId      Int    @map("subclass_id")
+  name            String @db.VarChar(100)
+  level           Int    @default(1)
+  description     String
+  detailedText    String? @map("detailed_text")
+  effects         Json? // Mechanical effects
+  spellsGranted   String[] @map("spells_granted") // Spell names granted
+  source          String? @db.VarChar(20)
+  page            Int?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  subclass        Subclass @relation(fields: [subclassId], references: [id], onDelete: Cascade)
+
+  @@map("subclass_features")
+}
+
+// Fighting Styles - Separate table for reusability across classes
+model FightingStyle {
+  id              Int    @id @default(autoincrement())
+  name            String @unique @db.VarChar(100)
+  description     String
+  detailedText    String? @map("detailed_text")
+  effects         Json? // Mechanical effects
+  availableToClasses String[] @map("available_to_classes") // Array of class names
+  source          String? @db.VarChar(20)
+  page            Int?
+  contentVersion  String @map("content_version") @db.VarChar(20)
+  isHomebrew      Boolean @default(false) @map("is_homebrew")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("fighting_styles")
+}
+
+// Eldritch Invocations - Special table due to their unique scaling nature
+model EldritchInvocation {
+  id              Int    @id @default(autoincrement())
+  name            String @unique @db.VarChar(100)
+  description     String
+  detailedText    String? @map("detailed_text")
+  prerequisites   Json? // Level, pact boon, spell level requirements
+  effects         Json? // Mechanical effects
+  spellsGranted   String[] @map("spells_granted") // Spells granted at-will or X/day
+  atWillSpells    String[] @map("at_will_spells") // Spells castable at will
+  levelRequirement Int? @map("level_requirement") // Minimum warlock level
+  pactBoonRequired String? @map("pact_boon_required") // Required pact boon
+  spellLevelRequired Int? @map("spell_level_required") // Required spell level
+  source          String? @db.VarChar(20)
+  page            Int?
+  contentVersion  String @map("content_version") @db.VarChar(20)
+  isHomebrew      Boolean @default(false) @map("is_homebrew")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("eldritch_invocations")
+}
+
+// Divine Order choices for Clerics
+model DivineOrder {
+  id              Int    @id @default(autoincrement())
+  name            String @unique @db.VarChar(100)
+  description     String
+  detailedText    String? @map("detailed_text")
+  proficienciesGranted Json? @map("proficiencies_granted") // Armor, weapons granted
+  featuresGranted Json? @map("features_granted") // Special features
+  spellsGranted   String[] @map("spells_granted") // Additional spells
+  source          String? @db.VarChar(20)
+  page            Int?
+  contentVersion  String @map("content_version") @db.VarChar(20)
+  isHomebrew      Boolean @default(false) @map("is_homebrew")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("divine_orders")
 }

@@ -7,3 +7,4 @@ export * from './Resources.styles';
 export * from './Inventory.styles';
 export * from './Traits.styles';
 export * from './Layout.styles';
+export * from './CharacterGeneratorWizard.styles';

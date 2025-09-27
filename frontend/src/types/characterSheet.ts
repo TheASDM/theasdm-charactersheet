@@ -48,6 +48,7 @@ export interface CharacterSheetData {
     name: string;
     quantity: number;
   }>;
+  equipment: string[];
   skills: {
     [key: string]: {
       proficient: boolean;
@@ -175,6 +176,7 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
   },
   resources: {},
   inventory: [],
+  equipment: [],
   skills: {
     Acrobatics: { proficient: false, modifier: 0 },
     'Animal Handling': { proficient: false, modifier: 0 },

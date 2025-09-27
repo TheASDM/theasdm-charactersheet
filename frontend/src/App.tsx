@@ -13,6 +13,7 @@ import {
   BackgroundsPage,
   FeatsPage,
   SpeciesPage,
+  EquipmentPage,
 } from './pages';
 import SpellsPage from './pages/SpellsPage';
 import CharacterGeneratorPage from './pages/CharacterGeneratorPage';
@@ -206,6 +207,7 @@ const App: React.FC = () => {
           <Route path="/backgrounds" element={<BackgroundsPage />} />
           <Route path="/feats" element={<FeatsPage />} />
           <Route path="/species" element={<SpeciesPage />} />
+          <Route path="/equipment" element={<EquipmentPage />} />
           <Route
             path="/classes/:classId/levels"
             element={<ClassLevelsPage />}
