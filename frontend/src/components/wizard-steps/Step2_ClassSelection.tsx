@@ -166,12 +166,12 @@ const ClassStepNavigation = styled.div`
   margin: 1.5rem 0;
 `;
 
-const StepButton = styled.button<{ active?: boolean }>`
+const StepButton = styled.button<{ $active?: boolean }>`
   padding: 0.5rem 1rem;
   background: ${(props) =>
-    props.active ? '#d4af37' : 'rgba(26, 26, 26, 0.8)'};
-  color: ${(props) => (props.active ? '#1a1a1a' : '#ccc')};
-  border: 2px solid ${(props) => (props.active ? '#d4af37' : '#444')};
+    props.$active ? '#d4af37' : 'rgba(26, 26, 26, 0.8)'};
+  color: ${(props) => (props.$active ? '#1a1a1a' : '#ccc')};
+  border: 2px solid ${(props) => (props.$active ? '#d4af37' : '#444')};
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -781,12 +781,15 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         };
       };
 
-      // Extract class features as an array
-      const extractClassFeatures = (classFeatures: any) => {
-        return Object.entries(classFeatures || {}).map(([name, feature]: [string, any]) => ({
-          name,
-          description: feature.description || '',
-          details: feature.details || '',
+      // Extract level 1 class features from API data
+      const extractClassFeatures = (classData: any) => {
+        const level1Features = classData.classFeatures?.["1"] || [];
+        return level1Features.map((feature: any) => ({
+          name: feature.name,
+          description: feature.entries?.join(' ') || '',
+          details: feature.entries?.join(' ') || '',
+          page: feature.page,
+          source: feature.source,
           ...feature
         }));
       };
@@ -818,7 +821,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
         // Extract and store all class data
         classProficiencies: extractProficiencies(classData.proficiencies),
-        classFeatures: extractClassFeatures(classData.classFeatures),
+        classFeatures: extractClassFeatures(classData),
         hitDice: `d${classData.hitDie}`,
         primaryAbility: [classData.primaryAbility],
         spellcaster: isSpellcaster,
@@ -1001,13 +1004,13 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
           {data.selectedClass && (
             <ClassStepNavigation>
               <StepButton
-                active={currentStep === 1}
+                $active={currentStep === 1}
                 onClick={() => handleStepChange(1)}
               >
                 1. Choose Class
               </StepButton>
               <StepButton
-                active={currentStep === 2}
+                $active={currentStep === 2}
                 onClick={() => handleStepChange(2)}
                 disabled={!data.selectedClass}
               >

@@ -9,19 +9,19 @@ interface ClassDetailsModalProps {
   onClose: () => void;
 }
 
-const ModalOverlay = styled.div<{ isOpen: boolean }>`
+const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.9);
-  display: ${props => props.isOpen ? 'flex' : 'none'};
+  display: ${props => props.$isOpen ? 'flex' : 'none'};
   justify-content: center;
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
-  animation: ${props => props.isOpen ? 'fadeIn 0.3s ease' : 'none'};
+  animation: ${props => props.$isOpen ? 'fadeIn 0.3s ease' : 'none'};
 
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -251,7 +251,7 @@ export const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
   if (!classData) return null;
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={onClose}>
+    <ModalOverlay $isOpen={isOpen} onClick={onClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <CloseButton onClick={onClose}>×</CloseButton>
 

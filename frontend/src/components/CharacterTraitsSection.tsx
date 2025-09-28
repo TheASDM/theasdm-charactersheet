@@ -47,7 +47,8 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
         </SectionEditButton>
       </div>
       {(character.speciesTraits && character.speciesTraits.length > 0) ||
-      (character.classFeatures && character.classFeatures.length > 0) ? (
+      (character.classFeatures && character.classFeatures.length > 0) ||
+      (character.feats && character.feats.length > 0) ? (
         <TraitsGrid>
           {/* Render Species Traits */}
           {character.speciesTraits &&
@@ -80,14 +81,65 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
 
           {/* Render Class Features */}
           {character.classFeatures &&
-            character.classFeatures.map((feature: string, index: number) => (
-              <TraitCard key={`class-${index}`}>
-                <TraitName>{feature}</TraitName>
-                <TraitDescription>
-                  Level 1 {character.class} feature
-                </TraitDescription>
-              </TraitCard>
-            ))}
+            character.classFeatures.map((feature: string, index: number) => {
+              // Try to parse feature as "Name: Description" format
+              const colonIndex = feature.indexOf(':');
+              const hasDescription =
+                colonIndex > 0 && colonIndex < feature.length - 1;
+
+              return (
+                <TraitCard key={`class-${index}`}>
+                  {hasDescription ? (
+                    <>
+                      <TraitName>
+                        {feature.substring(0, colonIndex).trim()}
+                      </TraitName>
+                      <TraitDescription>
+                        {feature.substring(colonIndex + 1).trim()}
+                      </TraitDescription>
+                    </>
+                  ) : (
+                    <>
+                      <TraitName>{feature}</TraitName>
+                      <TraitDescription>
+                        Level 1 {character.class} feature
+                      </TraitDescription>
+                    </>
+                  )}
+                </TraitCard>
+              );
+            })}
+
+          {/* Render Feats */}
+          {character.feats &&
+            character.feats.map((feat: string, index: number) => {
+              // Try to parse feat as "Name: Description" format
+              const colonIndex = feat.indexOf(':');
+              const hasDescription =
+                colonIndex > 0 && colonIndex < feat.length - 1;
+
+              return (
+                <TraitCard key={`feat-${index}`}>
+                  {hasDescription ? (
+                    <>
+                      <TraitName>
+                        {feat.substring(0, colonIndex).trim()}
+                      </TraitName>
+                      <TraitDescription>
+                        {feat.substring(colonIndex + 1).trim()}
+                      </TraitDescription>
+                    </>
+                  ) : (
+                    <>
+                      <TraitName>{feat}</TraitName>
+                      <TraitDescription>
+                        Feat
+                      </TraitDescription>
+                    </>
+                  )}
+                </TraitCard>
+              );
+            })}
         </TraitsGrid>
       ) : (
         <EmptyTraitsMessage>

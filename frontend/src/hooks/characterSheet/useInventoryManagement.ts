@@ -1,26 +1,91 @@
-import { useState, useCallback } from 'react';
-import { CharacterSheetData } from '../../types/characterSheet';
+import { useState, useCallback, useMemo } from 'react';
+import { CharacterSheetData, InventoryItem } from '../../types/characterSheet';
 import { Item } from '../../types/api';
-import { itemService, isWeapon, isArmor, isShield, getWeaponAttackBonus, getWeaponDamageString, calculateArmorClass } from '../../services/itemService';
-import { calculateModifier } from '../../types/characterSheet';
+import { itemService } from '../../services/itemService';
+import { EquipmentValidator } from '../../utils/equipmentValidator';
+import { SpecialItemsRegistry } from '../../utils/specialItemsRegistry';
+import { calculateWeaponStats } from '../../utils/weaponCalculator';
 
-interface InventoryItem {
-  name: string;
-  quantity: number;
+interface InventoryOperationResult {
+  success: boolean;
+  message: string;
+  warnings?: string[];
 }
 
-// Helper function to migrate old inventory format to new format
-const migrateInventory = (inventory: string[] | InventoryItem[]): InventoryItem[] => {
-  if (!inventory || inventory.length === 0) return [];
+// Helper function to check if an item name indicates armor (used for manual equipping)
+const isArmorByName = (name: string): boolean => {
+  const lowerName = name.toLowerCase();
 
-  if (typeof inventory[0] === 'string') {
-    return (inventory as string[]).map(item => ({
-      name: item || '',
-      quantity: 1
-    }));
+  // Check specific armor types first to avoid partial matches
+  const specificArmors = ['studded leather', 'chain shirt', 'scale mail', 'half plate', 'ring mail', 'chain mail'];
+  for (const armor of specificArmors) {
+    if (lowerName.includes(armor)) return true;
   }
 
-  return inventory as InventoryItem[];
+  // Then check generic armor types
+  const genericArmors = ['leather', 'breastplate', 'splint', 'plate', 'armor'];
+  return genericArmors.some(type => lowerName.includes(type));
+};
+
+// Helper function to check if an item name indicates a weapon
+const isWeaponByName = (name: string): boolean => {
+  const weaponTypes = [
+    'sword', 'axe', 'mace', 'dagger', 'spear', 'bow', 'crossbow', 'javelin', 'club',
+    'rapier', 'scimitar', 'hammer', 'maul', 'pike', 'glaive', 'halberd', 'trident',
+    'whip', 'sling', 'dart', 'blowgun', 'net', 'lance', 'flail', 'morningstar'
+  ];
+  return weaponTypes.some(type => name.toLowerCase().includes(type));
+};
+
+// Helper function to migrate old inventory format to new format
+const migrateInventory = (inventory: string[] | InventoryItem[] | any[]): InventoryItem[] => {
+  if (!inventory || inventory.length === 0) return [];
+
+  return inventory.map((item, index) => {
+    // If it's already an InventoryItem
+    if (item && typeof item === 'object' && 'id' in item) {
+      return {
+        id: item.id || `migrated-${index}`,
+        name: item.name || '',
+        quantity: item.quantity || 1,
+        equipped: item.equipped || false,
+        attuned: item.attuned || false,
+        itemId: item.itemId,
+        customProperties: item.customProperties
+      };
+    }
+
+    // If it's an old format object with name and quantity
+    if (item && typeof item === 'object' && 'name' in item) {
+      return {
+        id: `migrated-${index}`,
+        name: item.name || '',
+        quantity: item.quantity || 1,
+        equipped: false,
+        attuned: false
+      };
+    }
+
+    // If it's a string
+    if (typeof item === 'string') {
+      return {
+        id: `migrated-${index}`,
+        name: item,
+        quantity: 1,
+        equipped: false,
+        attuned: false
+      };
+    }
+
+    // Default case
+    return {
+      id: `migrated-${index}`,
+      name: '',
+      quantity: 1,
+      equipped: false,
+      attuned: false
+    };
+  });
 };
 
 export const useInventoryManagement = (
@@ -41,48 +106,15 @@ export const useInventoryManagement = (
   const [searchResults, setSearchResults] = useState<Item[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Local inventory state for editing
-  const [localInventory, setLocalInventory] = useState<InventoryItem[]>(() =>
-    migrateInventory(character.inventory)
-  );
-  const [pendingInventoryChanges, setPendingInventoryChanges] = useState(false);
+  // Operation feedback
+  const [operationResult, setOperationResult] = useState<InventoryOperationResult | null>(null);
 
-  // Helper function to recalculate AC based on current inventory
-  const recalculateArmorClass = useCallback((updatedCharacter: CharacterSheetData) => {
-    const dexMod = calculateModifier(updatedCharacter.abilityScores.dexterity);
-    const migratedInventory = migrateInventory(updatedCharacter.inventory);
-    const hasShieldInInventory = migratedInventory.some(item =>
-      item.name && item.name.toLowerCase().includes('shield')
-    );
+  // Ensure inventory is always in the correct format
+  const normalizedInventory = useMemo(() => {
+    return migrateInventory(character.inventory);
+  }, [character.inventory]);
 
-    // Start with base AC 10 + Dex mod and add shield if present
-    let newAC = 10 + dexMod;
-
-    if (hasShieldInInventory) {
-      newAC += 2;
-    }
-
-    return {
-      ...updatedCharacter,
-      armorClass: newAC,
-    };
-  }, []);
-
-  // Add official item modal handler
-  const handleAddOfficialItem = useCallback(() => {
-    setItemModalType('official');
-    setShowItemModal(true);
-    setSearchTerm('');
-    setSearchResults([]);
-  }, []);
-
-  // Add custom item modal handler
-  const handleAddCustomItem = useCallback(() => {
-    setItemModalType('custom');
-    setShowItemModal(true);
-  }, []);
-
-  // Item search handler
+  // Enhanced item search with debouncing
   const handleItemSearch = useCallback(async (term: string) => {
     if (!term.trim()) {
       setSearchResults([]);
@@ -94,304 +126,433 @@ export const useInventoryManagement = (
       const response = await itemService.search(term, 20);
       if (response.data) {
         setSearchResults(response.data.items || []);
+      } else {
+        setSearchResults([]);
       }
     } catch (error) {
       console.error('Error searching items:', error);
       setSearchResults([]);
+      setOperationResult({
+        success: false,
+        message: 'Failed to search items. Please try again.'
+      });
     } finally {
       setIsSearching(false);
     }
   }, []);
 
-  // Item selection handler
-  const handleItemSelect = useCallback((item: Item) => {
-    const migratedInventory = migrateInventory(character.inventory);
-    const updatedInventory = [...migratedInventory];
+  // Helper function to add items to inventory
+  const addItemsToInventory = useCallback((
+    currentInventory: InventoryItem[],
+    itemsToAdd: InventoryItem[],
+    maxItems: number = 20
+  ): { success: boolean; updatedInventory: InventoryItem[]; addedCount: number } => {
+    const updatedInventory = [...currentInventory];
+    let addedCount = 0;
 
-    // Check if item already exists, increment quantity
-    const existingIndex = updatedInventory.findIndex(invItem =>
-      invItem.name && invItem.name.toLowerCase() === item.name.toLowerCase()
-    );
+    for (const newItem of itemsToAdd) {
+      // Check if item already exists, increment quantity
+      const existingIndex = updatedInventory.findIndex(invItem =>
+        invItem.name && invItem.name.toLowerCase() === newItem.name.toLowerCase()
+      );
 
-    if (existingIndex !== -1) {
-      updatedInventory[existingIndex] = {
-        ...updatedInventory[existingIndex],
-        quantity: updatedInventory[existingIndex].quantity + 1
-      };
-    } else {
-      // Find empty slot or add new item
-      const emptyIndex = updatedInventory.findIndex(slot => !slot.name || slot.name.trim() === '');
-
-      if (emptyIndex !== -1) {
-        updatedInventory[emptyIndex] = { name: item.name, quantity: 1 };
-      } else if (updatedInventory.length < 20) { // Allow up to 20 items
-        updatedInventory.push({ name: item.name, quantity: 1 });
+      if (existingIndex !== -1) {
+        updatedInventory[existingIndex] = {
+          ...updatedInventory[existingIndex],
+          quantity: updatedInventory[existingIndex].quantity + newItem.quantity
+        };
+        addedCount++;
       } else {
-        alert('Inventory is full! Remove items to make space.');
-        return;
+        // Find empty slot or add new item
+        const emptyIndex = updatedInventory.findIndex(slot => !slot.name || slot.name.trim() === '');
+
+        if (emptyIndex !== -1) {
+          updatedInventory[emptyIndex] = { ...newItem };
+          addedCount++;
+        } else if (updatedInventory.length < maxItems) {
+          updatedInventory.push({ ...newItem });
+          addedCount++;
+        } else {
+          // Inventory is full, stop trying to add more items
+          break;
+        }
       }
     }
 
-    let updatedCharacter = {
-      ...character,
-      inventory: updatedInventory,
+    return {
+      success: addedCount === itemsToAdd.length,
+      updatedInventory,
+      addedCount
     };
+  }, []);
 
-    // Auto-populate weapon attacks
-    if (isWeapon(item)) {
-      const atkBonus = getWeaponAttackBonus(item);
-      const damage = getWeaponDamageString(item);
+  // Enhanced item selection with validation
+  const handleItemSelect = useCallback((item: Item) => {
+    // Validate if item can be added
+    const validation = EquipmentValidator.validateItemAddition(character, item, 1);
 
-      // Find an empty weapon slot
-      const updatedWeapons = [...character.weapons];
-      const emptyWeaponIndex = updatedWeapons.findIndex(w => !w.name || w.name.trim() === '');
+    if (!validation.isValid) {
+      setOperationResult({
+        success: false,
+        message: `Cannot add item: ${validation.errors.join(', ')}`
+      });
+      return;
+    }
 
-      if (emptyWeaponIndex !== -1) {
-        updatedWeapons[emptyWeaponIndex] = {
-          name: item.name,
-          atkBonus,
-          damage,
-          notes: '',
-        };
-        updatedCharacter.weapons = updatedWeapons;
+    // Check for special items
+    const specialContents = SpecialItemsRegistry.getItemContents(item.name);
+
+    try {
+      let updatedCharacter = { ...character };
+
+      // Add the main item
+      const newInventoryItem: InventoryItem = {
+        id: `item-${Date.now()}`,
+        name: item.name,
+        quantity: 1,
+        itemId: item.id,
+        equipped: false,
+        attuned: false
+      };
+
+      const itemsToAdd = [newInventoryItem, ...specialContents];
+      const result = addItemsToInventory(normalizedInventory, itemsToAdd);
+
+      if (!result.success && result.addedCount === 0) {
+        setOperationResult({
+          success: false,
+          message: 'Inventory is full! Remove items to make space.'
+        });
+        return;
       }
 
-      // Also add to actions
-      const updatedActions = [...character.actions];
-      const emptyActionIndex = updatedActions.findIndex(a => !a.name || a.name.trim() === '');
+      updatedCharacter.inventory = result.updatedInventory;
 
-      if (emptyActionIndex !== -1) {
-        updatedActions[emptyActionIndex] = {
+      // Auto-populate weapons to Actions section
+      if (EquipmentValidator.isWeapon(item)) {
+        const weaponStats = calculateWeaponStats(item, character);
+
+        // Find an empty action slot or add a new one
+        const updatedActions = [...character.actions];
+        const emptyActionIndex = updatedActions.findIndex(action => !action.name || action.name.trim() === '');
+
+        const newAction = {
           name: item.name,
-          atkBonus,
-          damage,
+          atkBonus: weaponStats.attackBonus,
+          damage: weaponStats.damage,
         };
+
+        if (emptyActionIndex !== -1) {
+          // Use existing empty slot
+          updatedActions[emptyActionIndex] = newAction;
+        } else {
+          // Add new action
+          updatedActions.push(newAction);
+        }
+
         updatedCharacter.actions = updatedActions;
       }
-    }
 
-    // Auto-calculate armor AC
-    const dexMod = calculateModifier(character.abilityScores.dexterity);
+      onUpdate(updatedCharacter);
 
-    // Check shields first
-    if (isShield(item)) {
-      const hasExistingShield = character.inventory.some(item =>
-        item && item.name && item.name.toLowerCase().includes('shield')
-      );
-
-      if (!hasExistingShield) {
-        updatedCharacter.armorClass = character.armorClass + 2;
-      } else {
-        alert('You can only equip one shield at a time!');
-        return;
+      // Auto-save the changes
+      if (onSave) {
+        setTimeout(() => {
+          onSave(updatedCharacter, { silent: true });
+        }, 100);
       }
-    } else if (isArmor(item)) {
-      const willHaveShield = updatedInventory.some(item =>
-        item && item.name && item.name.toLowerCase().includes('shield')
-      );
-      const newAC = calculateArmorClass(dexMod, item, willHaveShield);
-      updatedCharacter.armorClass = newAC;
+
+      setShowItemModal(false);
+
+      const message = specialContents.length > 0
+        ? `Added ${item.name} with ${specialContents.length} items inside!`
+        : `Added ${item.name} to inventory`;
+
+      setOperationResult({
+        success: true,
+        message,
+        warnings: validation.warnings
+      });
+
+    } catch (error) {
+      console.error('Error adding item:', error);
+      setOperationResult({
+        success: false,
+        message: 'Failed to add item to inventory'
+      });
     }
+  }, [character, normalizedInventory, addItemsToInventory, onUpdate, onSave]);
 
-    onUpdate(updatedCharacter);
-    setShowItemModal(false);
-  }, [character, onUpdate]);
-
-  // Custom item add handler
+  // Enhanced custom item addition
   const handleCustomItemAdd = useCallback((customItemName: string) => {
     if (!customItemName.trim()) return;
 
     const itemName = customItemName.trim();
-    const migratedInventory = migrateInventory(character.inventory);
 
-    // Check if it's a shield and we already have one
-    if (itemName.toLowerCase().includes('shield')) {
-      const hasExistingShield = migratedInventory.some(item =>
-        item.name && item.name.toLowerCase().includes('shield')
-      );
+    // Check for special items
+    const specialContents = SpecialItemsRegistry.getItemContents(itemName);
 
-      if (hasExistingShield) {
-        alert('You can only equip one shield at a time!');
-        return;
-      }
-    }
-
-    const updatedInventory = [...migratedInventory];
-
-    // Check if item already exists, increment quantity
-    const existingIndex = updatedInventory.findIndex(invItem =>
-      invItem.name && invItem.name.toLowerCase() === itemName.toLowerCase()
-    );
-
-    if (existingIndex !== -1) {
-      updatedInventory[existingIndex] = {
-        ...updatedInventory[existingIndex],
-        quantity: updatedInventory[existingIndex].quantity + 1
-      };
-    } else {
-      // Find empty slot or add new item
-      const emptyIndex = updatedInventory.findIndex(slot => !slot.name || slot.name.trim() === '');
-
-      if (emptyIndex !== -1) {
-        updatedInventory[emptyIndex] = { name: itemName, quantity: 1 };
-      } else if (updatedInventory.length < 20) {
-        updatedInventory.push({ name: itemName, quantity: 1 });
-      } else {
-        alert('Inventory is full! Remove items to make space.');
-        return;
-      }
-    }
-
-    let updatedCharacter = {
-      ...character,
-      inventory: updatedInventory,
+    const newItem: InventoryItem = {
+      id: `custom-${Date.now()}`,
+      name: itemName,
+      quantity: 1,
+      equipped: false,
+      attuned: false
     };
 
-    // If it's a shield, add AC bonus
-    if (itemName.toLowerCase().includes('shield')) {
-      updatedCharacter.armorClass = character.armorClass + 2;
+    try {
+      const itemsToAdd = [newItem, ...specialContents];
+      const result = addItemsToInventory(normalizedInventory, itemsToAdd);
+
+      if (!result.success && result.addedCount === 0) {
+        setOperationResult({
+          success: false,
+          message: 'Inventory is full! Remove items to make space.'
+        });
+        return;
+      }
+
+      let updatedCharacter = {
+        ...character,
+        inventory: result.updatedInventory
+      };
+
+      // Auto-populate custom weapons to Actions section
+      if (isWeaponByName(itemName)) {
+        const weaponStats = calculateWeaponStats(newItem, character);
+
+        // Find an empty action slot or add a new one
+        const updatedActions = [...character.actions];
+        const emptyActionIndex = updatedActions.findIndex(action => !action.name || action.name.trim() === '');
+
+        const newAction = {
+          name: itemName,
+          atkBonus: weaponStats.attackBonus,
+          damage: weaponStats.damage,
+        };
+
+        if (emptyActionIndex !== -1) {
+          // Use existing empty slot
+          updatedActions[emptyActionIndex] = newAction;
+        } else {
+          // Add new action
+          updatedActions.push(newAction);
+        }
+
+        updatedCharacter.actions = updatedActions;
+      }
+
+      onUpdate(updatedCharacter);
+
+      // Auto-save the changes
+      if (onSave) {
+        setTimeout(() => {
+          onSave(updatedCharacter, { silent: true });
+        }, 100);
+      }
+      setShowItemModal(false);
+
+      const message = specialContents.length > 0
+        ? `Added ${itemName} with ${specialContents.length} items inside!`
+        : `Added custom item: ${itemName}`;
+
+      setOperationResult({
+        success: true,
+        message
+      });
+
+    } catch (error) {
+      console.error('Error adding custom item:', error);
+      setOperationResult({
+        success: false,
+        message: 'Failed to add custom item'
+      });
     }
+  }, [character, normalizedInventory, addItemsToInventory, onUpdate, onSave]);
 
-    onUpdate(updatedCharacter);
-    setShowItemModal(false);
-  }, [character, onUpdate]);
-
-  // Show item details handler
-  const handleShowItemDetails = useCallback((item: Item) => {
-    setSelectedItemForDetails(item);
-    setShowItemDetails(true);
-  }, []);
-
-  // Delete item click handler
-  const handleDeleteItemClick = useCallback((index: number) => {
-    const inventoryItem = localInventory[index];
-    if (inventoryItem && inventoryItem.name && inventoryItem.name.trim()) {
-      setItemToDelete({ index, itemName: inventoryItem.name });
-      setShowDeleteConfirmation(true);
-    }
-  }, [localInventory]);
-
-  // Confirm delete handler
+  // Enhanced item deletion
   const handleConfirmDelete = useCallback(() => {
     if (!itemToDelete) return;
 
-    const { index, itemName } = itemToDelete;
-
-    // Remove item from local inventory
-    const updatedLocalInventory = [...localInventory];
-    updatedLocalInventory[index] = { name: '', quantity: 1 };
-    setLocalInventory(updatedLocalInventory);
-
-    // Create character with updated inventory for AC calculation
-    const cleanedInventory = updatedLocalInventory.filter(item => item.name && item.name.trim());
-    let updatedCharacter = {
-      ...character,
-      inventory: cleanedInventory,
-    };
-
-    // Check if the deleted item was a shield or armor and recalculate AC
-    if (itemName && (itemName.toLowerCase().includes('shield') || itemName.toLowerCase().includes('armor'))) {
-      updatedCharacter = recalculateArmorClass(updatedCharacter);
-    }
-
-    // Remove any weapon entries that match this item name
-    const updatedWeapons = character.weapons.map(weapon =>
-      weapon.name === itemName ? { name: '', atkBonus: '', damage: '', notes: '' } : weapon
-    );
-    updatedCharacter.weapons = updatedWeapons;
-
-    // Also remove from actions array
-    const updatedActions = character.actions.map(action =>
-      action.name === itemName ? { name: '', atkBonus: '', damage: '' } : action
-    );
-    updatedCharacter.actions = updatedActions;
-
-    // Update character immediately
-    onUpdate(updatedCharacter);
-
-    // Close modal and reset state
-    setShowDeleteConfirmation(false);
-    setItemToDelete(null);
-  }, [itemToDelete, localInventory, character, onUpdate, recalculateArmorClass]);
-
-  // Cancel delete handler
-  const handleCancelDelete = useCallback(() => {
-    setShowDeleteConfirmation(false);
-    setItemToDelete(null);
-  }, []);
-
-  // Inventory item click handler (for details)
-  const handleInventoryItemClick = useCallback(async (itemName: string) => {
-    if (!itemName || !itemName.trim()) return;
-
     try {
-      const response = await itemService.search(itemName, 10);
-      if (response.data && response.data.items) {
-        // Try to find exact match first
-        let foundItem = response.data.items.find(item =>
-          item.name.toLowerCase() === itemName.toLowerCase()
-        );
+      const { index } = itemToDelete;
+      const itemToRemove = normalizedInventory[index];
 
-        // If no exact match, try partial match
-        if (!foundItem) {
-          foundItem = response.data.items.find(item =>
-            item.name.toLowerCase().includes(itemName.toLowerCase()) ||
-            itemName.toLowerCase().includes(item.name.toLowerCase())
-          );
-        }
+      let updatedCharacter = { ...character };
 
-        // If still no match, just take the first result
-        if (!foundItem && response.data.items.length > 0) {
-          foundItem = response.data.items[0];
-        }
+      // Remove from inventory
+      updatedCharacter.inventory = normalizedInventory.filter((_, i) => i !== index);
 
-        if (foundItem) {
-          setSelectedItemForDetails(foundItem);
-          setShowItemDetails(true);
-        }
+      // Remove from weapons if applicable
+      updatedCharacter.weapons = character.weapons.map(weapon =>
+        weapon.name === itemToRemove.name
+          ? { name: '', atkBonus: '', damage: '', notes: '' }
+          : weapon
+      );
+
+      // Remove from actions if applicable
+      updatedCharacter.actions = character.actions.map(action =>
+        action.name === itemToRemove.name
+          ? { name: '', atkBonus: '', damage: '' }
+          : action
+      );
+
+      // Recalculate AC
+      updatedCharacter.armorClass = EquipmentValidator.calculateArmorClass(updatedCharacter);
+
+      onUpdate(updatedCharacter);
+
+      // Auto-save the changes
+      if (onSave) {
+        setTimeout(() => {
+          onSave(updatedCharacter, { silent: true });
+        }, 100);
       }
+
+      setOperationResult({
+        success: true,
+        message: `Removed ${itemToRemove.name} from inventory`
+      });
+
     } catch (error) {
-      console.error('Error looking up item details:', error);
+      console.error('Error deleting item:', error);
+      setOperationResult({
+        success: false,
+        message: 'Failed to remove item from inventory'
+      });
+    } finally {
+      setShowDeleteConfirmation(false);
+      setItemToDelete(null);
     }
-  }, []);
+  }, [itemToDelete, normalizedInventory, character, onUpdate, onSave]);
 
-  // Check if item is in inventory
-  const isItemInInventory = useCallback((itemName: string) => {
-    const migratedInventory = migrateInventory(character.inventory);
-    return migratedInventory.some(inventoryItem =>
-      inventoryItem.name && inventoryItem.name.toLowerCase() === itemName.toLowerCase()
-    );
-  }, [character.inventory]);
-
-  // Quantity change handler
+  // Quantity management
   const handleQuantityChange = useCallback((index: number, newQuantity: number) => {
     if (newQuantity < 0) return;
 
-    const updatedInventory = [...localInventory];
-    if (updatedInventory[index]) {
-      updatedInventory[index] = { ...updatedInventory[index], quantity: newQuantity };
-      setLocalInventory(updatedInventory);
-      setPendingInventoryChanges(true);
+    try {
+      const updatedInventory = normalizedInventory.map((item, i) =>
+        i === index ? { ...item, quantity: Math.max(1, newQuantity) } : item
+      );
+
+      const updatedCharacter = {
+        ...character,
+        inventory: updatedInventory
+      };
+
+      onUpdate(updatedCharacter);
+
+      // Auto-save the changes
+      if (onSave) {
+        setTimeout(() => {
+          onSave(updatedCharacter, { silent: true });
+        }, 100);
+      }
+
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      setOperationResult({
+        success: false,
+        message: 'Failed to update item quantity'
+      });
     }
-  }, [localInventory]);
+  }, [normalizedInventory, character, onUpdate, onSave]);
 
-  // Save inventory handler
-  const handleSaveInventory = useCallback(async () => {
-    // Filter out empty items and update character
-    const cleanedInventory = localInventory.filter(item => item.name && item.name.trim());
-    const updatedCharacter = { ...character, inventory: cleanedInventory };
+  // Toggle equip/unequip
+  const handleToggleEquip = useCallback((index: number) => {
+    const item = normalizedInventory[index];
+    if (!item) return;
 
-    // Recalculate AC based on new inventory
-    const updatedWithAC = recalculateArmorClass(updatedCharacter);
+    try {
+      const newEquippedState = !item.equipped;
+      let updatedInventory = normalizedInventory.map((invItem, i) =>
+        i === index ? { ...invItem, equipped: newEquippedState } : invItem
+      );
 
-    onUpdate(updatedWithAC);
-    setPendingInventoryChanges(false);
+      let updatedCharacter = {
+        ...character,
+        inventory: updatedInventory
+      };
 
-    // Save to database
-    if (onSave) {
-      await onSave(updatedWithAC, { silent: true });
+      // Update equipped items tracking
+      if (newEquippedState) {
+        if (item.name.toLowerCase().includes('shield')) {
+          // Unequip any existing shield first
+          if (updatedCharacter.equippedShield) {
+            updatedInventory = updatedInventory.map(invItem =>
+              invItem.name.toLowerCase().includes('shield') && invItem.equipped && invItem.id !== item.id
+                ? { ...invItem, equipped: false }
+                : invItem
+            );
+          }
+          updatedCharacter.equippedShield = { ...item, equipped: true };
+        } else if (isArmorByName(item.name)) {
+          // Unequip any existing armor first
+          if (updatedCharacter.equippedArmor) {
+            updatedInventory = updatedInventory.map(invItem =>
+              invItem.equipped && isArmorByName(invItem.name) && invItem.id !== item.id
+                ? { ...invItem, equipped: false }
+                : invItem
+            );
+          }
+          updatedCharacter.equippedArmor = { ...item, equipped: true };
+        } else if (EquipmentValidator.isWeapon({ name: item.name } as Item)) {
+          updatedCharacter.equippedWeapons = [...character.equippedWeapons, { ...item, equipped: true }];
+        }
+      } else {
+        if (item.name.toLowerCase().includes('shield')) {
+          delete updatedCharacter.equippedShield;
+        } else if (isArmorByName(item.name)) {
+          delete updatedCharacter.equippedArmor;
+        } else {
+          updatedCharacter.equippedWeapons = character.equippedWeapons.filter(w => w.id !== item.id);
+        }
+      }
+
+      // Update inventory with any equipment changes
+      updatedCharacter.inventory = updatedInventory;
+
+      // Recalculate AC
+      updatedCharacter.armorClass = EquipmentValidator.calculateArmorClass(updatedCharacter);
+
+      onUpdate(updatedCharacter);
+
+      // Auto-save the changes
+      if (onSave) {
+        setTimeout(() => {
+          onSave(updatedCharacter, { silent: true });
+        }, 100);
+      }
+
+      setOperationResult({
+        success: true,
+        message: `${newEquippedState ? 'Equipped' : 'Unequipped'} ${item.name}`
+      });
+
+    } catch (error) {
+      console.error('Error toggling equipment:', error);
+      setOperationResult({
+        success: false,
+        message: 'Failed to update equipment status'
+      });
     }
-  }, [localInventory, character, onUpdate, recalculateArmorClass, onSave]);
+  }, [normalizedInventory, character, onUpdate, onSave]);
+
+  // Clear operation result after a delay
+  const clearOperationResult = useCallback(() => {
+    setOperationResult(null);
+  }, []);
+
+  // Get inventory weight
+  const getInventoryWeight = useCallback(() => {
+    return normalizedInventory.reduce((total, item) => {
+      // Simplified weight calculation
+      const estimatedWeight = item.name.toLowerCase().includes('armor') ? 30 :
+                              item.name.toLowerCase().includes('shield') ? 6 :
+                              item.name.toLowerCase().includes('sword') ? 3 : 1;
+      return total + (estimatedWeight * item.quantity);
+    }, 0);
+  }, [normalizedInventory]);
 
   return {
     // State
@@ -407,26 +568,87 @@ export const useInventoryManagement = (
     setSearchTerm,
     searchResults,
     isSearching,
-    localInventory,
-    setLocalInventory,
-    pendingInventoryChanges,
+    operationResult,
+    normalizedInventory,
+
+    // Legacy compatibility
+    localInventory: normalizedInventory,
+    pendingInventoryChanges: false,
 
     // Handlers
-    handleAddOfficialItem,
-    handleAddCustomItem,
+    handleAddOfficialItem: () => {
+      setItemModalType('official');
+      setShowItemModal(true);
+      setSearchTerm('');
+      setSearchResults([]);
+    },
+    handleAddCustomItem: () => {
+      setItemModalType('custom');
+      setShowItemModal(true);
+    },
     handleItemSearch,
     handleItemSelect,
     handleCustomItemAdd,
-    handleShowItemDetails,
-    handleDeleteItemClick,
+    handleShowItemDetails: (item: Item) => {
+      setSelectedItemForDetails(item);
+      setShowItemDetails(true);
+    },
+    handleDeleteItemClick: (index: number) => {
+      const item = normalizedInventory[index];
+      if (item && item.name.trim()) {
+        setItemToDelete({ index, itemName: item.name });
+        setShowDeleteConfirmation(true);
+      }
+    },
     handleConfirmDelete,
-    handleCancelDelete,
-    handleInventoryItemClick,
+    handleCancelDelete: () => {
+      setShowDeleteConfirmation(false);
+      setItemToDelete(null);
+    },
+    handleInventoryItemClick: async (itemName: string) => {
+      if (!itemName?.trim()) return;
+
+      try {
+        const response = await itemService.search(itemName, 10);
+        if (response.data?.items) {
+          let foundItem = response.data.items.find(item =>
+            item.name.toLowerCase() === itemName.toLowerCase()
+          );
+
+          if (!foundItem) {
+            foundItem = response.data.items.find(item =>
+              item.name.toLowerCase().includes(itemName.toLowerCase()) ||
+              itemName.toLowerCase().includes(item.name.toLowerCase())
+            );
+          }
+
+          if (foundItem) {
+            setSelectedItemForDetails(foundItem);
+            setShowItemDetails(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error looking up item details:', error);
+      }
+    },
     handleQuantityChange,
-    handleSaveInventory,
+    handleToggleEquip,
+    handleSaveInventory: async () => {
+      // For now, just call the save function if provided
+      if (onSave) {
+        await onSave(character, { silent: true });
+      }
+    },
 
     // Utilities
-    isItemInInventory,
+    isItemInInventory: (itemName: string) => {
+      return normalizedInventory.some(item =>
+        item.name && item.name.toLowerCase() === itemName.toLowerCase()
+      );
+    },
+    getEquippedItems: () => normalizedInventory.filter(item => item.equipped),
+    getInventoryWeight,
+    clearOperationResult,
     migrateInventory,
   };
 };

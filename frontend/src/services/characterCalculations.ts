@@ -1,6 +1,7 @@
 import { CharacterSheetData } from '../types/characterSheet';
 import { calculateModifier, calculateProficiencyBonus, calculateSkillModifier, skillToAbility } from '../types/characterSheet';
 import { getCharacterResources } from '../utils/resourceDetection';
+import { EquipmentValidator } from '../utils/equipmentValidator';
 
 /**
  * Calculate all derived character values
@@ -32,11 +33,8 @@ export function calculateDerivedValues(character: CharacterSheetData) {
       (character.proficiencies?.savingThrows?.includes('Charisma') ? proficiencyBonus : 0),
   };
 
-  // For now, we'll use the character's stored AC value directly
-  // since the inventory items don't have the full Item structure needed
-  // for the calculateArmorClass function (which expects id, type, ac, etc.)
-  // TODO: Enhance inventory system to store full item data
-  const armorClass = character.armorClass;
+  // Calculate AC using equipped items (this ensures AC is always recalculated when derived values are computed)
+  const armorClass = EquipmentValidator.calculateArmorClass(character);
 
   const initiative = abilityModifiers.dexterity;
   const isPerceptionProficient = character.proficiencies?.skills?.includes('Perception') || false;

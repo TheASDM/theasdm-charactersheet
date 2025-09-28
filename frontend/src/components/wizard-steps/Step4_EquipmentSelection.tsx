@@ -173,6 +173,205 @@ const ItemTable = styled.table`
   }
 `;
 
+const EquippedBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  background: linear-gradient(135deg, #d4af37, #b8941f);
+  color: #1a1a1a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  font-family: 'Cinzel', serif;
+  box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+
+  &::before {
+    content: '⚔';
+    margin-right: 0.25rem;
+    font-size: 0.8rem;
+  }
+`;
+
+const WeightDisplay = styled.span<{ $isHeavy?: boolean }>`
+  color: ${props => props.$isHeavy ? '#ff6b6b' : '#ccc'};
+  font-family: 'Monaco', monospace;
+  font-weight: ${props => props.$isHeavy ? '600' : 'normal'};
+
+  ${props => props.$isHeavy && `
+    &::after {
+      content: ' ⚠';
+      color: #ff6b6b;
+      margin-left: 0.25rem;
+    }
+  `}
+`;
+
+const ItemNameCell = styled.td`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .name-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+`;
+
+const SummarySection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  color: #888;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  background: rgba(26, 26, 26, 0.6);
+  border: 1px solid #333;
+  border-radius: 8px;
+
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .label {
+      color: #d4af37;
+      font-weight: 600;
+    }
+
+    .value {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .weight-value {
+      font-family: 'Monaco', monospace;
+    }
+
+    .weight-heavy {
+      color: #ff6b6b;
+    }
+
+    .weight-normal {
+      color: #4caf50;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+`;
+
+const SmartDefaultsSection = styled.div`
+  background: rgba(212, 175, 55, 0.1);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+`;
+
+const SmartDefaultsHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h3 {
+    color: #d4af37;
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .class-info {
+    color: #ccc;
+    font-size: 0.9rem;
+    font-style: italic;
+  }
+`;
+
+const SmartDefaultsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+`;
+
+const DefaultItem = styled.div`
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #d4af37;
+    background: rgba(212, 175, 55, 0.1);
+  }
+
+  .item-info {
+    .name {
+      color: #fff;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .type {
+      color: #888;
+      font-size: 0.8rem;
+      font-style: italic;
+    }
+  }
+
+  .item-weight {
+    color: #ccc;
+    font-family: 'Monaco', monospace;
+    font-size: 0.8rem;
+  }
+`;
+
+const ApplyDefaultsButton = styled.button`
+  background: linear-gradient(135deg, #d4af37, #b8941f);
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  color: #1a1a1a;
+  padding: 0.75rem 1.5rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    background: linear-gradient(135deg, #e0bb43, #c4a025);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
 const FilterBar = styled.div`
   display: flex;
   gap: 1rem;
@@ -312,14 +511,45 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
   const uniqueTypes = [...new Set(equipment.map((item: Equipment) => item.type))].filter(Boolean).sort();
   const uniqueRarities = [...new Set(equipment.map((item: Equipment) => item.rarity))].filter(Boolean).sort();
 
-  useEffect(() => {
-    onUpdate({
-      selectedEquipment: {
-        weapons: [],
-        equipment: selectedItems
+  // Categorize selected items
+  const categorizeSelectedItems = () => {
+    const weapons: string[] = [];
+    const armor: string[] = [];
+    const shields: string[] = [];
+    const otherEquipment: string[] = [];
+
+    // Get full item data for selected items
+    const selectedItemsData = equipment.filter(item => checkedItems.has(item.id));
+
+    selectedItemsData.forEach(item => {
+      const itemType = item.type;
+
+      // Categorize based on type
+      if (['M', 'R', 'A'].includes(itemType)) {
+        weapons.push(item.name);
+      } else if (['LA', 'MA', 'HA'].includes(itemType)) {
+        armor.push(item.name);
+      } else if (itemType === 'S') {
+        shields.push(item.name);
+      } else {
+        otherEquipment.push(item.name);
       }
     });
-  }, [selectedItems, onUpdate]);
+
+    return {
+      weapons,
+      armor: armor[0], // Only one armor piece
+      shield: shields[0], // Only one shield
+      equipment: otherEquipment
+    };
+  };
+
+  useEffect(() => {
+    const categorizedEquipment = categorizeSelectedItems();
+    onUpdate({
+      selectedEquipment: categorizedEquipment
+    });
+  }, [checkedItems, equipment, onUpdate]);
 
   const handleItemClick = (item: Equipment, event: React.MouseEvent) => {
     // Don't open modal if checkbox was clicked
@@ -383,6 +613,73 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
     return '';
   };
 
+  const calculateSelectedWeight = () => {
+    return equipment
+      .filter(item => checkedItems.has(item.id))
+      .reduce((total, item) => total + (item.weight || 0), 0);
+  };
+
+  const selectedWeight = calculateSelectedWeight();
+
+  // Smart defaults based on character class and build
+  const getSmartDefaults = () => {
+    const characterClass = data.selectedClass?.toLowerCase() || '';
+    const suggestions: Equipment[] = [];
+
+    // Class-specific weapon recommendations
+    const weaponSuggestions: {[key: string]: string[]} = {
+      'fighter': ['longsword', 'shield', 'chain mail', 'javelin'],
+      'wizard': ['dagger', 'quarterstaff', 'light crossbow'],
+      'rogue': ['shortsword', 'dagger', 'leather armor', 'thieves\' tools'],
+      'cleric': ['mace', 'shield', 'chain mail', 'holy symbol'],
+      'ranger': ['longbow', 'shortsword', 'leather armor'],
+      'barbarian': ['greataxe', 'javelin', 'leather armor'],
+      'bard': ['rapier', 'dagger', 'leather armor', 'musical instrument'],
+      'druid': ['scimitar', 'shield', 'leather armor', 'druidcraft focus'],
+      'paladin': ['longsword', 'shield', 'chain mail', 'holy symbol'],
+      'sorcerer': ['dagger', 'light crossbow', 'component pouch'],
+      'warlock': ['dagger', 'light crossbow', 'leather armor'],
+      'monk': ['shortsword', 'dart'],
+    };
+
+    const classWeapons = weaponSuggestions[characterClass] || [];
+
+    // Find matching equipment
+    classWeapons.forEach(weaponName => {
+      const foundItems = equipment.filter(item =>
+        item.name.toLowerCase().includes(weaponName.toLowerCase()) &&
+        !item.name.includes('+') // Exclude magic items for defaults
+      );
+
+      if (foundItems.length > 0) {
+        // Prefer common/mundane items for defaults
+        const basicItem = foundItems.find(item => !item.rarity || item.rarity === 'none' || item.rarity === 'common') || foundItems[0];
+        if (!suggestions.find(s => s.id === basicItem.id)) {
+          suggestions.push(basicItem);
+        }
+      }
+    });
+
+    return suggestions.slice(0, 6); // Limit to 6 suggestions
+  };
+
+  const smartDefaults = getSmartDefaults();
+
+  const applySmartDefaults = () => {
+    const newCheckedItems = new Set(checkedItems);
+    const newSelectedItems = [...selectedItems];
+
+    smartDefaults.forEach(item => {
+      if (!newCheckedItems.has(item.id) && !newSelectedItems.includes(item.name)) {
+        newCheckedItems.add(item.id);
+        newSelectedItems.push(item.name);
+      }
+    });
+
+    setCheckedItems(newCheckedItems);
+    setSelectedItems(newSelectedItems);
+  };
+
   if (isLoading) {
     return (
       <StepContainer>
@@ -414,6 +711,39 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
 
       <AbilityScoresHeader data={data} />
 
+      {smartDefaults.length > 0 && (
+        <SmartDefaultsSection>
+          <SmartDefaultsHeader>
+            <h3>Suggested Equipment</h3>
+            <div className="class-info">
+              Recommended for {data.selectedClass || 'your class'}
+            </div>
+          </SmartDefaultsHeader>
+          <SmartDefaultsGrid>
+            {smartDefaults.map(item => (
+              <DefaultItem key={item.id}>
+                <div className="item-info">
+                  <div className="name">{item.name}</div>
+                  <div className="type">{TYPE_LABELS[item.type] || item.type}</div>
+                </div>
+                <div className="item-weight">
+                  {item.weight ? `${item.weight} lb` : '—'}
+                </div>
+              </DefaultItem>
+            ))}
+          </SmartDefaultsGrid>
+          <ApplyDefaultsButton
+            onClick={applySmartDefaults}
+            disabled={smartDefaults.every(item => checkedItems.has(item.id))}
+          >
+            {smartDefaults.every(item => checkedItems.has(item.id))
+              ? 'All Suggested Items Selected'
+              : 'Apply Suggested Equipment'
+            }
+          </ApplyDefaultsButton>
+        </SmartDefaultsSection>
+      )}
+
       <FilterBar>
         <input
           type="text"
@@ -439,14 +769,27 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
         </select>
       </FilterBar>
 
-      <div style={{ color: '#888', fontSize: '0.9rem', margin: '0.5rem 0' }}>
-        Showing {filteredEquipment.length} of {equipment.length} items
+      <SummarySection>
+        <div className="summary-item">
+          <span className="label">Showing:</span>
+          <span className="value">{filteredEquipment.length} of {equipment.length} items</span>
+        </div>
         {selectedItems.length > 0 && (
-          <span style={{ color: '#d4af37', marginLeft: '1rem' }}>
-            • {selectedItems.length} selected
-          </span>
+          <>
+            <div className="summary-item">
+              <span className="label">Selected:</span>
+              <span className="value">{selectedItems.length} items</span>
+            </div>
+            <div className="summary-item">
+              <span className="label">Total Weight:</span>
+              <span className={`weight-value ${selectedWeight > 100 ? 'weight-heavy' : 'weight-normal'}`}>
+                {selectedWeight.toFixed(1)} lb
+                {selectedWeight > 100 && ' ⚠'}
+              </span>
+            </div>
+          </>
         )}
-      </div>
+      </SummarySection>
 
       <TableContainer>
         <ScrollableTable>
@@ -476,13 +819,22 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
                       }}
                     />
                   </td>
-                  <td className="item-name">{item.name}</td>
+                  <ItemNameCell className="item-name">
+                    <div className="name-content">
+                      {item.name}
+                      {checkedItems.has(item.id) && <EquippedBadge>Selected</EquippedBadge>}
+                    </div>
+                  </ItemNameCell>
                   <td className="item-type">{TYPE_LABELS[item.type] || item.type}</td>
                   <td className="item-stats">
                     {formatDamage(item) || formatAC(item) || '-'}
                   </td>
                   <td className="item-weight">
-                    {item.weight ? `${item.weight} lb` : '-'}
+                    {item.weight ? (
+                      <WeightDisplay $isHeavy={item.weight > 20}>
+                        {item.weight} lb
+                      </WeightDisplay>
+                    ) : '-'}
                   </td>
                   <td className={`item-rarity ${item.rarity?.replace(' ', '.')}`}>
                     {item.rarity || '-'}

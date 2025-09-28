@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
 import CharacterCard from './CharacterCard';
 import { Character } from '../types/api';
 import { characterService } from '../services';
@@ -6,15 +7,63 @@ import { characterService } from '../services';
 interface CharacterListProps {
   userId?: number;
   showActions?: boolean;
+  selectionMode?: boolean;
   onCharacterClick?: (character: Character) => void;
   onCharacterEdit?: (character: Character) => void;
   onCharacterDelete?: (character: Character) => void;
   onCharacterOpenInNewTab?: (character: Character) => void;
 }
 
+const BulkActionsBar = styled.div`
+  background: linear-gradient(145deg, #d4af37, #b8941f);
+  border: 2px solid #8b6914;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  color: #2c1810;
+  font-family: 'Cinzel', serif;
+`;
+
+const BulkActionButton = styled.button<{ variant?: 'danger' | 'primary' }>`
+  background: ${props => props.variant === 'danger'
+    ? 'linear-gradient(145deg, #dc3545, #c82333)'
+    : 'linear-gradient(145deg, #5a3a2a, #4a2a1a)'};
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const SelectionInfo = styled.span`
+  font-weight: 600;
+  font-size: 1rem;
+`;
+
 const CharacterList: React.FC<CharacterListProps> = ({
   userId,
   showActions = false,
+  selectionMode = false,
   onCharacterClick,
   onCharacterEdit,
   onCharacterDelete,
@@ -23,10 +72,18 @@ const CharacterList: React.FC<CharacterListProps> = ({
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCharacters, setSelectedCharacters] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadCharacters();
   }, [userId]);
+
+  // Clear selections when exiting selection mode
+  useEffect(() => {
+    if (!selectionMode) {
+      setSelectedCharacters(new Set());
+    }
+  }, [selectionMode]);
 
   const loadCharacters = async () => {
     try {
@@ -66,6 +123,62 @@ const CharacterList: React.FC<CharacterListProps> = ({
       console.error('Error deleting character:', err);
     }
   };
+
+  const handleSelectCharacter = (characterId: number) => {
+    setSelectedCharacters(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(characterId)) {
+        newSelected.delete(characterId);
+      } else {
+        newSelected.add(characterId);
+      }
+      return newSelected;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCharacters.size === characters.length) {
+      setSelectedCharacters(new Set());
+    } else {
+      setSelectedCharacters(new Set(characters.map(c => c.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedCount = selectedCharacters.size;
+    const confirmMessage = `Are you sure you want to delete ${selectedCount} character${selectedCount > 1 ? 's' : ''}? This action cannot be undone.`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    const deletePromises = Array.from(selectedCharacters).map(async (characterId) => {
+      try {
+        const response = await characterService.delete(characterId);
+        if (response.error) {
+          console.error(`Failed to delete character ${characterId}:`, response.error);
+          return { success: false, characterId, error: response.error };
+        }
+        return { success: true, characterId };
+      } catch (err) {
+        console.error(`Error deleting character ${characterId}:`, err);
+        return { success: false, characterId, error: 'Network error' };
+      }
+    });
+
+    const results = await Promise.all(deletePromises);
+    const successfulDeletes = results.filter(r => r.success).map(r => r.characterId);
+    const failedDeletes = results.filter(r => !r.success);
+
+    // Remove successfully deleted characters from state
+    setCharacters(prev => prev.filter(c => !successfulDeletes.includes(c.id)));
+    setSelectedCharacters(new Set());
+
+    if (failedDeletes.length > 0) {
+      alert(`Failed to delete ${failedDeletes.length} character(s). Check console for details.`);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -140,6 +253,29 @@ const CharacterList: React.FC<CharacterListProps> = ({
 
   return (
     <div style={{ padding: '16px' }}>
+      {/* Bulk Actions Bar */}
+      {showActions && selectionMode && (
+        <BulkActionsBar>
+          <div>
+            <BulkActionButton onClick={handleSelectAll}>
+              {selectedCharacters.size === characters.length ? 'Deselect All' : 'Select All'}
+            </BulkActionButton>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {selectedCharacters.size > 0 && (
+              <>
+                <SelectionInfo>
+                  {selectedCharacters.size} selected
+                </SelectionInfo>
+                <BulkActionButton variant="danger" onClick={handleBulkDelete}>
+                  Delete Selected
+                </BulkActionButton>
+              </>
+            )}
+          </div>
+        </BulkActionsBar>
+      )}
+
       <div
         style={{
           display: 'grid',
@@ -152,16 +288,20 @@ const CharacterList: React.FC<CharacterListProps> = ({
             key={character.id}
             character={character}
             onClick={
-              onCharacterClick ? () => onCharacterClick(character) : undefined
+              selectionMode
+                ? () => handleSelectCharacter(character.id)
+                : onCharacterClick ? () => onCharacterClick(character) : undefined
             }
             onEdit={
-              onCharacterEdit ? () => onCharacterEdit(character) : undefined
+              !selectionMode && onCharacterEdit ? () => onCharacterEdit(character) : undefined
             }
-            onDelete={showActions ? () => handleDelete(character) : undefined}
+            onDelete={showActions && !selectionMode ? () => handleDelete(character) : undefined}
             onOpenInNewTab={
-              onCharacterOpenInNewTab ? () => onCharacterOpenInNewTab(character) : undefined
+              !selectionMode && onCharacterOpenInNewTab ? () => onCharacterOpenInNewTab(character) : undefined
             }
-            showActions={showActions}
+            showActions={showActions && !selectionMode}
+            selectionMode={selectionMode}
+            isSelected={selectedCharacters.has(character.id)}
           />
         ))}
       </div>

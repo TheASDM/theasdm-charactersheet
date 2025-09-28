@@ -264,15 +264,31 @@ export const PoolCounter = styled.div`
   }
 `;
 
-// Two-column layout for Resources/Mana
+// Two-column layout - First child gets 1/3, Second child gets 2/3 (for Inventory/Traits layout)
 export const TwoColumnLayout = styled.div`
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
 
+  /* First child (Inventory) gets 1/3 of the width (same as Skills) */
+  > :first-child {
+    flex: 1;
+  }
+
+  /* Second child (Traits) gets 2/3 of the width */
+  > :nth-child(2) {
+    flex: 2;
+  }
+
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 0.5rem;
+
+    /* Reset flex when stacked vertically */
+    > :first-child,
+    > :nth-child(2) {
+      flex: 1;
+    }
   }
 
   @media (max-width: 480px) {

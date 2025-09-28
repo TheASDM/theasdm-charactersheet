@@ -941,7 +941,7 @@ export default function CharacterSheet({
             <h3>Class Features</h3>
             <textarea
               placeholder="List your class features..."
-              value={character.classFeatures.join('\n\n')}
+              value={character.classFeatures?.join('\n\n') || ''}
               onChange={(e) => {
                 const features = e.target.value
                   .split('\n\n')
@@ -955,7 +955,7 @@ export default function CharacterSheet({
             <h3>Species Traits</h3>
             <textarea
               placeholder="List your species traits..."
-              value={character.speciesTraits.join('\n\n')}
+              value={character.speciesTraits?.join('\n\n') || ''}
               onChange={(e) => {
                 const traits = e.target.value
                   .split('\n\n')
@@ -969,7 +969,7 @@ export default function CharacterSheet({
             <h3>Feats</h3>
             <textarea
               placeholder="List your feats..."
-              value={character.feats.join('\n\n')}
+              value={character.feats?.join('\n\n') || ''}
               onChange={(e) => {
                 const feats = e.target.value
                   .split('\n\n')

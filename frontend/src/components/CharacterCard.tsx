@@ -9,31 +9,64 @@ interface CharacterCardProps {
   onDelete?: (() => void) | undefined;
   onOpenInNewTab?: (() => void) | undefined;
   showActions?: boolean;
+  selectionMode?: boolean;
+  isSelected?: boolean;
 }
 
 // Character card container (matching medieval theme)
-const Card = styled.div<{ clickable?: boolean; hasActions?: boolean }>`
-  background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
-  border: 2px solid #8b6914;
+const Card = styled.div<{ $clickable?: boolean; $hasActions?: boolean; $selectionMode?: boolean; $isSelected?: boolean }>`
+  background: ${props => props.$isSelected
+    ? 'linear-gradient(145deg, #d4af37, #b8941f)'
+    : 'linear-gradient(145deg, #f4e7d1, #e8d5b7)'};
+  border: 2px solid ${props => props.$isSelected ? '#d4af37' : '#8b6914'};
   border-radius: 10px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: ${props => props.$isSelected
+    ? '0 6px 18px rgba(212, 175, 55, 0.4)'
+    : '0 3px 12px rgba(0, 0, 0, 0.3)'};
   font-family: 'Crimson Text', serif;
   margin: 8px;
   overflow: hidden;
   position: relative;
   color: #2c1810;
   transition: all 0.3s ease;
-  cursor: ${props => props.clickable ? 'pointer' : 'default'};
+  cursor: ${props => props.$clickable || props.$selectionMode ? 'pointer' : 'default'};
   will-change: transform;
   contain: layout style paint;
-  height: ${props => props.hasActions ? '240px' : '200px'};
+  height: ${props => props.$hasActions ? '240px' : '200px'};
   display: flex;
   flex-direction: column;
+  transform: ${props => props.$isSelected ? 'translateY(-2px)' : 'none'};
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
     border-color: #d4af37;
+  }
+`;
+
+const SelectionIndicator = styled.div<{ $isSelected: boolean }>`
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #d4af37;
+  border-radius: 50%;
+  background: ${props => props.$isSelected ? '#d4af37' : 'rgba(244, 231, 209, 0.9)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+  &::after {
+    content: '✓';
+    color: #2c1810;
+    font-weight: bold;
+    font-size: 14px;
+    opacity: ${props => props.$isSelected ? 1 : 0};
+    transition: opacity 0.3s ease;
   }
 `;
 
@@ -67,13 +100,13 @@ const CharacterNameContainer = styled.div`
   align-items: center;
 `;
 
-const CharacterName = styled.h3<{ nameLength: number }>`
+const CharacterName = styled.h3<{ $nameLength: number }>`
   margin: 0;
   font-size: ${props => {
-    if (props.nameLength > 25) return '0.9rem';
-    if (props.nameLength > 20) return '1.0rem';
-    if (props.nameLength > 15) return '1.1rem';
-    if (props.nameLength > 10) return '1.2rem';
+    if (props.$nameLength > 25) return '0.9rem';
+    if (props.$nameLength > 20) return '1.0rem';
+    if (props.$nameLength > 15) return '1.1rem';
+    if (props.$nameLength > 10) return '1.2rem';
     return '1.3rem';
   }};
   font-weight: 700;
@@ -87,20 +120,20 @@ const CharacterName = styled.h3<{ nameLength: number }>`
 
   @media (max-width: 480px) {
     font-size: ${props => {
-      if (props.nameLength > 25) return '0.8rem';
-      if (props.nameLength > 20) return '0.9rem';
-      if (props.nameLength > 15) return '1.0rem';
-      if (props.nameLength > 10) return '1.1rem';
+      if (props.$nameLength > 25) return '0.8rem';
+      if (props.$nameLength > 20) return '0.9rem';
+      if (props.$nameLength > 15) return '1.0rem';
+      if (props.$nameLength > 10) return '1.1rem';
       return '1.2rem';
     }};
   }
 `;
 
-const PrivacyTag = styled.span<{ isPublic: boolean }>`
+const PrivacyTag = styled.span<{ $isPublic: boolean }>`
   background: linear-gradient(
     145deg,
-    ${props => props.isPublic ? '#4CAF50' : '#ff9800'},
-    ${props => props.isPublic ? '#388E3C' : '#f57c00'}
+    ${props => props.$isPublic ? '#4CAF50' : '#ff9800'},
+    ${props => props.$isPublic ? '#388E3C' : '#f57c00'}
   );
   color: white;
   padding: 4px 8px;
@@ -140,8 +173,8 @@ const InfoRow = styled.p`
   }
 `;
 
-const MetaInfo = styled.div<{ hasActions?: boolean }>`
-  margin-bottom: ${props => props.hasActions ? '12px' : '0'};
+const MetaInfo = styled.div<{ $hasActions?: boolean }>`
+  margin-bottom: ${props => props.$hasActions ? '12px' : '0'};
   margin-top: auto;
 `;
 
@@ -167,17 +200,17 @@ const ActionButtons = styled.div`
   border-top: 2px solid rgba(139, 105, 20, 0.2);
 `;
 
-const ActionButton = styled.button<{ variant: 'edit' | 'delete' | 'open' }>`
+const ActionButton = styled.button<{ $variant: 'edit' | 'delete' | 'open' }>`
   background: linear-gradient(
     145deg,
     ${props => {
-      if (props.variant === 'edit') return '#2196F3';
-      if (props.variant === 'delete') return '#f44336';
+      if (props.$variant === 'edit') return '#2196F3';
+      if (props.$variant === 'delete') return '#f44336';
       return '#8b6914'; // open button
     }},
     ${props => {
-      if (props.variant === 'edit') return '#1976D2';
-      if (props.variant === 'delete') return '#d32f2f';
+      if (props.$variant === 'edit') return '#1976D2';
+      if (props.$variant === 'delete') return '#d32f2f';
       return '#6d5411'; // open button
     }}
   );
@@ -213,6 +246,8 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
   onDelete,
   onOpenInNewTab,
   showActions = false,
+  selectionMode = false,
+  isSelected = false,
 }) => {
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -247,14 +282,20 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
   const characterClass = characterData.class || 'Unknown';
 
   return (
-    <Card clickable={!!onClick} hasActions={showActions} onClick={handleCardClick}>
+    <Card
+      $clickable={!!onClick}
+      $hasActions={showActions}
+      $selectionMode={selectionMode}
+      $isSelected={isSelected}
+      onClick={handleCardClick}
+    >
       <CharacterHeader>
         <CharacterNameContainer>
-          <CharacterName nameLength={character.name.length}>
+          <CharacterName $nameLength={character.name.length}>
             {character.name}
           </CharacterName>
         </CharacterNameContainer>
-        <PrivacyTag isPublic={character.isPublic}>
+        <PrivacyTag $isPublic={character.isPublic}>
           {character.isPublic ? 'Public' : 'Private'}
         </PrivacyTag>
       </CharacterHeader>
@@ -271,7 +312,7 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
           )}
         </CharacterInfo>
 
-        <MetaInfo hasActions={showActions}>
+        <MetaInfo $hasActions={showActions}>
           <CreatedBy>
             Created by: {character.user?.username || 'Unknown'}
           </CreatedBy>
@@ -283,23 +324,27 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
         {showActions && (
           <ActionButtons>
             {onOpenInNewTab && (
-              <ActionButton variant="open" onClick={handleOpenInNewTab}>
+              <ActionButton $variant="open" onClick={handleOpenInNewTab}>
                 Open Tab
               </ActionButton>
             )}
             {onEdit && (
-              <ActionButton variant="edit" onClick={handleEdit}>
+              <ActionButton $variant="edit" onClick={handleEdit}>
                 Edit
               </ActionButton>
             )}
             {onDelete && (
-              <ActionButton variant="delete" onClick={handleDelete}>
+              <ActionButton $variant="delete" onClick={handleDelete}>
                 Delete
               </ActionButton>
             )}
           </ActionButtons>
         )}
       </CharacterContent>
+
+      {selectionMode && (
+        <SelectionIndicator $isSelected={isSelected} />
+      )}
     </Card>
   );
 };

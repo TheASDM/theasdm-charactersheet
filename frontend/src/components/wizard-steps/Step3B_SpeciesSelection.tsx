@@ -382,12 +382,47 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
       // Check if Human for Origin Feat calculation
       const isHuman = speciesData.name.toLowerCase() === 'human';
 
-      // Simplified data extraction with error handling
+      // Extract traits with safe string descriptions for React rendering
       const safeExtractTraits = (traits?: any): any[] => {
         try {
           if (!traits) return [];
-          if (Array.isArray(traits)) return traits;
-          return [traits];
+          if (!Array.isArray(traits)) traits = [traits];
+
+          return traits.map((trait: any) => {
+            // Helper function to extract text from complex description structures
+            const extractTextFromDescription = (desc: any): string => {
+              if (typeof desc === 'string') return desc;
+              if (Array.isArray(desc)) {
+                return desc.map(item => {
+                  if (typeof item === 'string') return item;
+                  if (typeof item === 'object') {
+                    // Handle table objects and other complex structures
+                    if (item.type === 'table') {
+                      return `[Table: ${item.caption || 'Data table'}]`;
+                    }
+                    // Handle other object types
+                    return item.text || item.entry || JSON.stringify(item);
+                  }
+                  return '';
+                }).filter(Boolean).join(' ');
+              }
+              if (typeof desc === 'object') {
+                if (desc.type === 'table') {
+                  return `[Table: ${desc.caption || 'Data table'}]`;
+                }
+                return desc.text || desc.entry || 'Complex trait data';
+              }
+              return 'No description available';
+            };
+
+            return {
+              name: trait.name || 'Unknown Trait',
+              description: extractTextFromDescription(trait.description),
+              type: trait.type || 'entries',
+              // Keep the original entries for potential future use, but don't spread them
+              originalEntries: trait.entries
+            };
+          });
         } catch (error) {
           console.error('Error extracting traits:', error);
           return [];

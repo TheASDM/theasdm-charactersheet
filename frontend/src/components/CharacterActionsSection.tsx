@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { CharacterSheetData } from '../types/characterSheet';
 import {
   ActionsSection,
@@ -39,18 +38,16 @@ export default function CharacterActionsSection({
       <ActionsTitle>Actions & Combat Options</ActionsTitle>
       <ActionsTable>
         {/* Table Headers */}
-        <ActionsTableHeader column={1}>Name</ActionsTableHeader>
-        <ActionsTableHeader column={2}>
-          Atk Bonus / DC
-        </ActionsTableHeader>
-        <ActionsTableHeader column={3}>
-          Damage & Type
+        <ActionsTableHeader $column={1}>
+          <div className="header-cell">Name</div>
+          <div className="header-cell">Atk Bonus / DC</div>
+          <div className="header-cell">Damage & Type</div>
         </ActionsTableHeader>
 
         {/* Table Rows */}
         {character.actions.map((action, index) => (
-          <Fragment key={index}>
-            <ActionsTableCell column={1}>
+          <ActionsTableCell key={index} $column={1}>
+            <div className="action-name">
               {editingSections.actions ? (
                 <input
                   type="text"
@@ -65,18 +62,19 @@ export default function CharacterActionsSection({
                   placeholder="Action name"
                 />
               ) : (
-                action.name
+                action.name || '—'
               )}
               {editingSections.actions && (
                 <RemoveActionButton
                   onClick={() => actions.handleRemoveAction(index)}
                   title="Remove action"
+                  style={{ marginLeft: '0.3rem', fontSize: '0.6rem', padding: '0.1rem 0.2rem' }}
                 >
                   ×
                 </RemoveActionButton>
               )}
-            </ActionsTableCell>
-            <ActionsTableCell column={2}>
+            </div>
+            <div className="action-bonus">
               {editingSections.actions ? (
                 <input
                   type="text"
@@ -91,10 +89,10 @@ export default function CharacterActionsSection({
                   placeholder="—"
                 />
               ) : (
-                action.atkBonus
+                action.atkBonus || '—'
               )}
-            </ActionsTableCell>
-            <ActionsTableCell column={3}>
+            </div>
+            <div className="action-damage">
               {editingSections.actions ? (
                 <input
                   type="text"
@@ -109,10 +107,10 @@ export default function CharacterActionsSection({
                   placeholder="—"
                 />
               ) : (
-                action.damage
+                action.damage || '—'
               )}
-            </ActionsTableCell>
-          </Fragment>
+            </div>
+          </ActionsTableCell>
         ))}
       </ActionsTable>
 

@@ -4,6 +4,8 @@ import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
 import { mapGeneratorDataToCharacterSheet } from '../../utils/characterDataMapper';
+import { characterService } from '../../services/characterService';
+import { StructuredFeaturesDisplay } from '../StructuredFeaturesDisplay';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
@@ -224,22 +226,38 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
       // Log the converted data for debugging
       console.log('Generated Character Sheet Data:', characterSheetData);
+      console.log('Structured Features:', characterSheetData.features);
 
-      // TODO: Implement character creation API call
-      // const response = await characterService.create(characterSheetData);
+      // Create character using the API
+      const response = await characterService.create({
+        userId: 1, // TODO: Get actual user ID from auth context
+        name: characterSheetData.name,
+        level: characterSheetData.level,
+        characterData: characterSheetData,
+        isPublic: false,
+      });
 
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (response.error) {
+        console.error('❌ API Error:', response.error);
+        setCreateStatus('error');
+        return;
+      }
 
-      // Store the character data in localStorage temporarily
-      localStorage.setItem('lastCreatedCharacter', JSON.stringify(characterSheetData));
+      if (!response.data) {
+        console.error('❌ No character data returned from server');
+        setCreateStatus('error');
+        return;
+      }
 
+      console.log('✅ Character created successfully:', response.data);
       setCreateStatus('success');
+
+      // Wait a moment to show success message, then complete
       setTimeout(() => {
         onComplete();
       }, 2000);
     } catch (error) {
-      console.error('Error creating character:', error);
+      console.error('❌ Error creating character:', error);
       setCreateStatus('error');
     } finally {
       setIsCreating(false);
@@ -260,12 +278,34 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
   const getAllEquipment = (): string[] => {
     const equipment: string[] = [];
-    if (data.classStartingEquipment) equipment.push(...data.classStartingEquipment);
-    if (data.backgroundStartingEquipment) equipment.push(...data.backgroundStartingEquipment);
-    if (data.selectedEquipment.weapons) equipment.push(...data.selectedEquipment.weapons);
-    if (data.selectedEquipment.equipment) equipment.push(...data.selectedEquipment.equipment);
-    if (data.selectedEquipment.armor) equipment.push(data.selectedEquipment.armor);
-    if (data.selectedEquipment.shield) equipment.push(data.selectedEquipment.shield);
+
+    // Helper function to extract string from object or return string directly
+    const extractEquipmentName = (item: any): string => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item?.item) return item.item;
+      if (typeof item === 'object' && item?.name) return item.name;
+      return String(item || '');
+    };
+
+    if (data.classStartingEquipment) {
+      equipment.push(...data.classStartingEquipment.map(extractEquipmentName));
+    }
+    if (data.backgroundStartingEquipment) {
+      equipment.push(...data.backgroundStartingEquipment.map(extractEquipmentName));
+    }
+    if (data.selectedEquipment.weapons) {
+      equipment.push(...data.selectedEquipment.weapons.map(extractEquipmentName));
+    }
+    if (data.selectedEquipment.equipment) {
+      equipment.push(...data.selectedEquipment.equipment.map(extractEquipmentName));
+    }
+    if (data.selectedEquipment.armor) {
+      equipment.push(extractEquipmentName(data.selectedEquipment.armor));
+    }
+    if (data.selectedEquipment.shield) {
+      equipment.push(extractEquipmentName(data.selectedEquipment.shield));
+    }
+
     return equipment.filter(Boolean); // Remove empty values
   };
 
@@ -382,55 +422,15 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         </CharacterCard>
       </ReviewContainer>
 
-      {/* Features & Abilities */}
+      {/* Features & Abilities - New Structured Display */}
       <ReviewContainer>
-        <CharacterCard>
+        <CharacterCard style={{ gridColumn: '1 / -1' }}>
           <h3>Features & Abilities</h3>
-
-          <Section>
-            <div className="section-title">Class Features</div>
-            <div className="section-content">
-              {data.classFeatures && data.classFeatures.length > 0 ? (
-                data.classFeatures.map((feature, index) => (
-                  <div key={index} className="list-item">
-                    <strong>{feature.name}:</strong> {feature.description}
-                  </div>
-                ))
-              ) : (
-                <div>No class features recorded</div>
-              )}
-            </div>
-          </Section>
-
-          <Section>
-            <div className="section-title">Species Traits</div>
-            <div className="section-content">
-              {data.speciesTraits && data.speciesTraits.length > 0 ? (
-                data.speciesTraits.map((trait, index) => (
-                  <div key={index} className="list-item">
-                    <strong>{trait.name || `Trait ${index + 1}`}:</strong> {trait.description || 'No description'}
-                  </div>
-                ))
-              ) : (
-                <div>No species traits recorded</div>
-              )}
-            </div>
-          </Section>
-
-          <Section>
-            <div className="section-title">Origin Feats</div>
-            <div className="section-content">
-              {data.selectedOriginFeats && data.selectedOriginFeats.length > 0 ? (
-                data.selectedOriginFeats.map((featName, index) => (
-                  <div key={index} className="list-item">
-                    <strong>{featName}:</strong> {data.featFeatures?.[featName]?.[0]?.description || 'Feat benefits apply'}
-                  </div>
-                ))
-              ) : (
-                <div>No origin feats selected</div>
-              )}
-            </div>
-          </Section>
+          <StructuredFeaturesDisplay
+            features={mapGeneratorDataToCharacterSheet(data).features}
+            compactMode={true}
+            showFilters={false}
+          />
         </CharacterCard>
 
         <CharacterCard>

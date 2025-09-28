@@ -39,10 +39,10 @@ import ActionsManagementModal from './ActionsManagementModal';
 import SkillsManagementModal from './SkillsManagementModal';
 import TraitsManagementModal from './TraitsManagementModal';
 import CharacterHeader from './CharacterHeader';
-import CharacterInventory from './InventorySection';
+import ConsolidatedInventorySection from './ConsolidatedInventorySection';
 import CharacterAbilityScores from './AbilityScoresSection';
 import CharacterSkillsSection from './CharacterSkillsSection';
-import ResourcesAndManaSection from './ResourcesAndManaSection';
+import CompactResourcesBar from './CompactResourcesBar';
 import CharacterActionsSection from './CharacterActionsSection';
 import { CharacterTraitsSection } from './CharacterTraitsSection';
 import { CharacterStatsSection } from './CharacterStatsSection';
@@ -59,8 +59,15 @@ export default function CharacterSheetPretty({
     (updates: Partial<CharacterSheetData>) => {
       const updatedCharacter = { ...character, ...updates };
       onUpdate(updatedCharacter);
+
+      // Silent auto-save the changes (no notification)
+      if (onSave) {
+        setTimeout(() => {
+          onSave(updatedCharacter, { silent: true });
+        }, 100);
+      }
     },
-    [character, onUpdate]
+    [character, onUpdate, onSave]
   );
 
   const [editingSections, setEditingSections] = useState<{
@@ -95,7 +102,7 @@ export default function CharacterSheetPretty({
   const traits = useTraitsManagement(updateCharacter);
   const resources = useResourceTracking(character, updateCharacter, onSave);
   const selection = useSelectionModals(character, updateCharacter, onSave);
-  const abilities = useAbilityScores(character, onUpdate);
+  const abilities = useAbilityScores(character, onUpdate, onSave);
 
   // Get dynamic resources based on character
   const characterResources = useMemo(
@@ -311,6 +318,16 @@ export default function CharacterSheetPretty({
           selection={selection}
         />
 
+        {/* Compact Resources Bar */}
+        <CompactResourcesBar
+          character={character}
+          characterResources={characterResources}
+          needsManaTracking={needsManaTracking}
+          editingSections={{ mana: editingSections.mana }}
+          updateCharacter={updateCharacter}
+          resources={resources}
+        />
+
         <MainLayout>
           <LeftColumn>
             <ThreeColumnContainer>
@@ -344,37 +361,32 @@ export default function CharacterSheetPretty({
               />
             </ThreeColumnContainer>
 
-            {/* Two-column layout for Character Resources and Mana */}
-            <ResourcesAndManaSection
+
+            {/* Actions Section - Full Width */}
+            <CharacterActionsSection
               character={character}
-              characterResources={characterResources}
-              needsManaTracking={needsManaTracking}
-              editingSections={{ mana: editingSections.mana }}
-              updateCharacter={updateCharacter}
+              editingSections={{ actions: editingSections.actions }}
               toggleSectionEdit={toggleSectionEdit}
               cancelSectionEdit={cancelSectionEdit}
-              resources={resources}
+              actions={actions}
             />
 
-            {/* Actions and Inventory Layout */}
+            {/* Inventory and Traits Side-by-Side Layout */}
             <TwoColumnLayout>
-              {/* Actions Section */}
-              <CharacterActionsSection
-                character={character}
-                editingSections={{ actions: editingSections.actions }}
-                toggleSectionEdit={toggleSectionEdit}
-                cancelSectionEdit={cancelSectionEdit}
-                actions={actions}
+              {/* Inventory Section */}
+              <ConsolidatedInventorySection
+                inventory={inventory}
+                mode="scroll"
+                maxHeight="900px"
+                showEquipToggle={true}
+                showWeight={true}
               />
 
-              {/* Inventory Section */}
-              <CharacterInventory inventory={inventory} />
+              {/* Traits and Abilities Section */}
+              <CharacterTraitsSection character={character} traits={traits} />
             </TwoColumnLayout>
           </LeftColumn>
         </MainLayout>
-
-        {/* Traits and Abilities Section */}
-        <CharacterTraitsSection character={character} traits={traits} />
 
         {/* All Modals */}
         <AddItemModal

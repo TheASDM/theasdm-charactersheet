@@ -93,13 +93,24 @@ const calculateFinalAbilityScores = (data: CharacterBuilderData) => {
   const baseScores = data.abilityScores;
   const backgroundBonuses = data.backgroundAbilityScoreAllocations || {};
 
+  // Helper function to safely extract number from value
+  const getScoreValue = (value: any): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return parseInt(value) || 0;
+    if (typeof value === 'object' && value !== null) {
+      // Handle cases where scores might be stored as objects
+      return parseInt(value.value || value.score || 0) || 0;
+    }
+    return 0;
+  };
+
   return {
-    strength: baseScores.strength + (backgroundBonuses.strength || backgroundBonuses.str || 0),
-    dexterity: baseScores.dexterity + (backgroundBonuses.dexterity || backgroundBonuses.dex || 0),
-    constitution: baseScores.constitution + (backgroundBonuses.constitution || backgroundBonuses.con || 0),
-    intelligence: baseScores.intelligence + (backgroundBonuses.intelligence || backgroundBonuses.int || 0),
-    wisdom: baseScores.wisdom + (backgroundBonuses.wisdom || backgroundBonuses.wis || 0),
-    charisma: baseScores.charisma + (backgroundBonuses.charisma || backgroundBonuses.cha || 0),
+    strength: getScoreValue(baseScores.strength) + (backgroundBonuses.strength || backgroundBonuses.str || 0),
+    dexterity: getScoreValue(baseScores.dexterity) + (backgroundBonuses.dexterity || backgroundBonuses.dex || 0),
+    constitution: getScoreValue(baseScores.constitution) + (backgroundBonuses.constitution || backgroundBonuses.con || 0),
+    intelligence: getScoreValue(baseScores.intelligence) + (backgroundBonuses.intelligence || backgroundBonuses.int || 0),
+    wisdom: getScoreValue(baseScores.wisdom) + (backgroundBonuses.wisdom || backgroundBonuses.wis || 0),
+    charisma: getScoreValue(baseScores.charisma) + (backgroundBonuses.charisma || backgroundBonuses.cha || 0),
   };
 };
 
@@ -116,7 +127,7 @@ export const AbilityScoresHeader: React.FC<AbilityScoresHeaderProps> = ({ data }
   ];
 
   // Don't show if no ability scores are set yet
-  const hasAbilityScores = Object.values(data.abilityScores).some(score => score > 0);
+  const hasAbilityScores = Object.values(finalScores).some(score => score > 0);
   if (!hasAbilityScores) {
     return null;
   }

@@ -1,7 +1,16 @@
 // Parse complex D&D data structures (tables, lists, etc.)
 export const parseComplexDnDEntry = (entry: any): string => {
+  console.log('🔧 Processing complex entry:', {
+    type: typeof entry,
+    isArray: Array.isArray(entry),
+    hasType: entry?.type,
+    entryType: entry?.type,
+  });
+
   if (typeof entry === 'string') {
-    return parseDnDTemplateTag(entry);
+    const result = parseDnDTemplateTag(entry);
+    console.log('🔧 String entry processed:', { original: entry, result });
+    return result;
   }
 
   if (typeof entry !== 'object' || entry === null) {
@@ -29,6 +38,7 @@ export const parseComplexDnDEntry = (entry: any): string => {
       });
     }
 
+    console.log('🔧 Table processed:', { result });
     return result;
   }
 
@@ -55,17 +65,40 @@ export const parseComplexDnDEntry = (entry: any): string => {
       });
     }
 
+    console.log('🔧 List processed:', { result });
     return result;
   }
 
   // Handle nested entry objects
   if (entry.entries && Array.isArray(entry.entries)) {
-    return entry.entries
+    const result = entry.entries
       .map((subEntry: any) => parseComplexDnDEntry(subEntry))
       .join(' ');
+    console.log('🔧 Nested entries processed:', { result });
+    return result;
   }
 
   // Fallback for unknown object types
+  console.log('🔧 Unknown object type, using fallback:', entry);
+
+  // Check if it's a simple object with specific properties we can extract
+  if (entry.text) {
+    return parseDnDTemplateTag(entry.text);
+  }
+
+  if (entry.name && entry.description) {
+    return `${entry.name}: ${parseDnDTemplateTag(entry.description)}`;
+  }
+
+  // If it looks like an object with limited keys, try to format it
+  if (typeof entry === 'object' && entry !== null) {
+    const keys = Object.keys(entry);
+    if (keys.length <= 3) {
+      const formatted = keys.map(key => `${key}: ${entry[key]}`).join(', ');
+      return formatted;
+    }
+  }
+
   return '[Complex content - see source material]';
 };
 
@@ -75,8 +108,51 @@ export const parseComplexDnDEntry = (entry: any): string => {
 export const parseDnDTemplateTag = (text: string): string => {
   if (!text) return '';
 
-  return text
-    .replace(/\{@([^}]+)\}/g, (_, content) => {
+  // Enhanced debug logging
+  const originalText = text;
+  const hasTemplates = text.includes('{@') || text.includes('(@');
+
+  if (hasTemplates) {
+    console.log('🔍 PARSING INPUT:', {
+      text: originalText,
+      length: text.length,
+      hasAtSense: text.includes('@sense'),
+      hasCurlyBraces: text.includes('{@'),
+      hasParentheses: text.includes('(@'),
+    });
+  }
+
+  const result = text
+    // Handle parenthetical references like (@sense Darkvision|XPHB)
+    .replace(/\(@([^)]+)\)/g, (fullMatch, content) => {
+      console.log('📝 Processing parenthetical:', { fullMatch, content });
+
+      const parts = content.split(' ');
+      const tagType = parts[0];
+      const tagContent = parts.slice(1).join(' ');
+
+      // Handle pipe-separated content (name|source)
+      const [name] = tagContent.includes('|')
+        ? tagContent.split('|')
+        : [tagContent, null];
+
+      console.log('📝 Parenthetical result:', { tagType, tagContent, name });
+
+      // Handle common parenthetical tags
+      switch (tagType) {
+        case 'sense':
+          return name;
+        case 'spell':
+          return name;
+        case 'item':
+          return name;
+        default:
+          return name || '';
+      }
+    })
+    .replace(/\{@([^}]+)\}/g, (fullMatch, content) => {
+      console.log('📝 Processing curly brace:', { fullMatch, content });
+
       // Split on first space to get tag type and content
       const parts = content.split(' ');
       const tagType = parts[0];
@@ -86,6 +162,8 @@ export const parseDnDTemplateTag = (text: string): string => {
       const [name] = tagContent.includes('|')
         ? tagContent.split('|')
         : [tagContent, null];
+
+      console.log('📝 Curly brace result:', { tagType, tagContent, name });
 
       switch (tagType) {
         // Formatting
@@ -136,6 +214,7 @@ export const parseDnDTemplateTag = (text: string): string => {
         case 'variantrule':
           return name;
         case 'sense':
+          console.log('✅ SENSE TAG PROCESSED:', { name });
           return name;
 
         // Time and rest
@@ -152,11 +231,22 @@ export const parseDnDTemplateTag = (text: string): string => {
 
         // Fallback - return the content without the tag
         default:
+          console.warn('❓ Unknown tag type:', { tagType, content });
           return name || '';
       }
-    })
-    .replace(/\s+/g, ' ')
-    .trim();
+    });
+
+  // Enhanced debug logging for results
+  if (hasTemplates) {
+    console.log('✅ PARSING RESULT:', {
+      original: originalText,
+      result: result,
+      changed: result !== originalText,
+      removedTemplates: !result.includes('{@') && !result.includes('(@'),
+    });
+  }
+
+  return result.replace(/\s+/g, ' ').trim();
 };
 
 // Clean text by removing D&D template tags (simpler version for basic cleaning)

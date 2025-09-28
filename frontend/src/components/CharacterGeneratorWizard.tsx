@@ -1,7 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CharacterSheetData, createDefaultCharacterSheet } from '../types/characterSheet';
-import characterService from '../services/characterService';
 import {
   WizardContainer,
   WizardHeader,
@@ -225,46 +223,156 @@ export default function CharacterGeneratorWizard() {
 
   // Dev mode - quick jump to review with sample data
   const handleQuickTest = useCallback(() => {
+    // Random character names
+    const firstNames = ['Aldric', 'Lyra', 'Thorne', 'Mira', 'Gareth', 'Elara', 'Finn', 'Seraphina', 'Darius', 'Luna'];
+    const lastNames = ['Ironforge', 'Stormwind', 'Nightshade', 'Brightblade', 'Shadowmere', 'Goldleaf', 'Fireborn', 'Moonwhisper'];
+    const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+
+    // Available classes, species, and backgrounds
+    const classes = ['Fighter', 'Wizard', 'Cleric', 'Rogue', 'Ranger', 'Paladin', 'Barbarian', 'Bard', 'Druid', 'Monk', 'Sorcerer', 'Warlock'];
+    const species = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling'];
+    const backgrounds = ['Soldier', 'Noble', 'Sage', 'Criminal', 'Folk Hero', 'Hermit', 'Entertainer', 'Guild Artisan', 'Acolyte', 'Outlander'];
+
+    // Random selections
+    const selectedClass = classes[Math.floor(Math.random() * classes.length)];
+    const selectedSpecies = species[Math.floor(Math.random() * species.length)];
+    const selectedBackground = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+
+    // Random ability scores using standard array randomly distributed
+    const standardArray = [15, 14, 13, 12, 10, 8];
+    const shuffledArray = [...standardArray].sort(() => Math.random() - 0.5);
+
+    // Generate random skill selections (just pick 2 random skills)
+    const allSkills = ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History', 'Insight', 'Intimidation',
+                       'Investigation', 'Medicine', 'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion', 'Sleight of Hand',
+                       'Stealth', 'Survival'];
+    const randomSkills = allSkills.sort(() => Math.random() - 0.5).slice(0, 2);
+
+    // Check if class is a spellcaster
+    const spellcasterClasses = ['Wizard', 'Cleric', 'Bard', 'Druid', 'Sorcerer', 'Warlock', 'Paladin', 'Ranger'];
+    const isSpellcaster = spellcasterClasses.includes(selectedClass);
+
+    // Class-specific data
+    const classData: Record<string, any> = {
+      Fighter: {
+        hitDice: 'd10',
+        primaryAbility: ['Strength'],
+        savingThrows: ['Strength', 'Constitution'],
+        armor: ['Light armor', 'medium armor', 'heavy armor', 'shields'],
+        weapons: ['Simple weapons', 'martial weapons'],
+        features: [
+          {
+            name: 'Fighting Style: Defense',
+            description: 'While wearing armor, you gain a +1 bonus to Armor Class.'
+          },
+          {
+            name: 'Second Wind',
+            description: 'Regain 1d10 + Fighter level HP as a Bonus Action.'
+          },
+          {
+            name: 'Weapon Mastery',
+            description: 'Use weapon mastery properties of three weapons.'
+          }
+        ]
+      },
+      Wizard: {
+        hitDice: 'd6',
+        primaryAbility: ['Intelligence'],
+        savingThrows: ['Intelligence', 'Wisdom'],
+        armor: [],
+        weapons: ['Daggers', 'darts', 'slings', 'quarterstaffs', 'light crossbows'],
+        features: [
+          {
+            name: 'Spellcasting',
+            description: 'Cast wizard spells using Intelligence.'
+          },
+          {
+            name: 'Arcane Recovery',
+            description: 'Recover spell slots during a short rest.'
+          },
+          {
+            name: 'Ritual Casting',
+            description: 'Cast wizard spells with the ritual tag without using a spell slot.'
+          }
+        ]
+      },
+      Rogue: {
+        hitDice: 'd8',
+        primaryAbility: ['Dexterity'],
+        savingThrows: ['Dexterity', 'Intelligence'],
+        armor: ['Light armor'],
+        weapons: ['Simple weapons', 'hand crossbows', 'longswords', 'rapiers', 'shortswords'],
+        features: [
+          {
+            name: 'Sneak Attack',
+            description: 'Deal extra 1d6 damage to one creature you hit with advantage.'
+          },
+          {
+            name: 'Thieves\' Cant',
+            description: 'Secret language known to rogues and criminals.'
+          },
+          {
+            name: 'Expertise',
+            description: 'Double proficiency bonus on two skill or tool checks.'
+          }
+        ]
+      }
+    };
+
+    // Get class-specific data or use Fighter as default
+    const currentClassData = classData[selectedClass] || classData.Fighter;
+
+    // Random background ability score allocations
+    const backgroundBonuses = { str: 1, dex: 1, con: 1 };
+
     const sampleData: CharacterBuilderData = {
-      characterName: 'Test Character',
-      playerName: 'Test Player',
+      characterName: `${randomFirstName} ${randomLastName}`,
+      playerName: 'Quick Test Player',
       abilityScoreMethod: 'standard-array',
       abilityScores: {
-        strength: 15,
-        dexterity: 14,
-        constitution: 13,
-        intelligence: 12,
-        wisdom: 10,
-        charisma: 8
+        strength: shuffledArray[0],
+        dexterity: shuffledArray[1],
+        constitution: shuffledArray[2],
+        intelligence: shuffledArray[3],
+        wisdom: shuffledArray[4],
+        charisma: shuffledArray[5]
       },
-      selectedClass: 'Fighter',
-      selectedClassSkills: ['Athletics', 'Intimidation'],
+      selectedClass,
+      selectedClassSkills: randomSkills,
       selectedClassChoices: {},
       classStep: 3,
       classFeatureData: null,
       classProficiencies: {
-        armor: ['Light armor', 'medium armor', 'heavy armor', 'shields'],
-        weapons: ['Simple weapons', 'martial weapons'],
+        armor: currentClassData.armor,
+        weapons: currentClassData.weapons,
         tools: [],
-        savingThrows: ['Strength', 'Constitution']
+        savingThrows: currentClassData.savingThrows
       },
-      classFeatures: [
-        { name: 'Fighting Style', description: 'You adopt a fighting style that reflects your combat training.' },
-        { name: 'Second Wind', description: 'You can use a bonus action to regain hit points.' }
-      ],
-      hitDice: 'd10',
-      primaryAbility: ['Strength'],
-      spellcaster: false,
-      selectedBackground: 'Soldier',
-      backgroundAbilityScoreAllocations: { str: 2, con: 1 },
-      selectedLanguages: ['Common', 'Orc'],
-      backgroundSkillProficiencies: ['Athletics', 'Intimidation'],
-      backgroundStartingEquipment: ['Insignia of rank', 'Trophy from fallen enemy', 'Deck of cards', 'Common clothes', 'Belt pouch with 10 gp'],
-      selectedSpecies: 'Human',
-      isHuman: true,
+      classFeatures: currentClassData.features,
+      hitDice: currentClassData.hitDice,
+      primaryAbility: currentClassData.primaryAbility,
+      spellcaster: isSpellcaster,
+      selectedBackground,
+      backgroundAbilityScoreAllocations: backgroundBonuses,
+      selectedLanguages: ['Common', 'Elvish'],
+      backgroundSkillProficiencies: randomSkills,
+      backgroundStartingEquipment: ['Traveler\'s clothes', 'Belt pouch with 10 gp'],
+      selectedSpecies,
+      isHuman: selectedSpecies === 'Human',
       speciesTraits: [
-        { name: 'Extra Language', description: 'You know one additional language of your choice.' },
-        { name: 'Extra Skill', description: 'You gain proficiency in one skill of your choice.' }
+        {
+          name: 'Resourceful',
+          description: 'You gain Heroic Inspiration whenever you finish a Long Rest.'
+        },
+        {
+          name: 'Skillful',
+          description: 'You gain proficiency in one skill of your choice.'
+        },
+        {
+          name: 'Versatile',
+          description: 'You gain an Origin feat of your choice.'
+        }
       ],
       speciesSize: 'Medium',
       speciesSpeed: 30,
@@ -282,8 +390,8 @@ export default function CharacterGeneratorWizard() {
 
     setBuilderData(sampleData);
     setWizardState({
-      currentStep: 'review-create',
-      completedSteps: new Set(['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'species-choices', 'origin-feats', 'feat-choices', 'equipment-selection']),
+      currentStep: 'equipment-selection',
+      completedSteps: new Set(['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'species-choices', 'origin-feats', 'feat-choices']),
       canProceed: true
     });
   }, []);
@@ -372,83 +480,6 @@ export default function CharacterGeneratorWizard() {
     }));
   }, [wizardState.currentStep]);
 
-  // Create final character and save
-  const createCharacter = useCallback(async () => {
-    try {
-      // Create default character sheet
-      const character: CharacterSheetData = createDefaultCharacterSheet();
-
-      // Update with character builder data
-      character.name = builderData.characterName;
-      character.class = builderData.selectedClass;
-      character.background = builderData.selectedBackground;
-      character.species = builderData.selectedSpecies;
-      character.level = 1;
-
-      // Apply ability scores
-      character.abilityScores = {
-        strength: builderData.abilityScores.strength,
-        dexterity: builderData.abilityScores.dexterity,
-        constitution: builderData.abilityScores.constitution,
-        intelligence: builderData.abilityScores.intelligence,
-        wisdom: builderData.abilityScores.wisdom,
-        charisma: builderData.abilityScores.charisma,
-      };
-
-      // Apply selected class skills as proficiencies
-      builderData.selectedClassSkills.forEach(skillName => {
-        if (character.skills[skillName]) {
-          character.skills[skillName].proficient = true;
-        }
-      });
-
-      // Store selected skills in proficiencies for reference
-      character.proficiencies.skills = [...builderData.selectedClassSkills];
-
-      // Add selected feats
-      character.feats = [...builderData.selectedOriginFeats];
-
-      // Add selected equipment
-      const allEquipment = [];
-      if (builderData.selectedEquipment.armor) allEquipment.push(builderData.selectedEquipment.armor);
-      if (builderData.selectedEquipment.shield) allEquipment.push(builderData.selectedEquipment.shield);
-      if (builderData.selectedEquipment.weapons) allEquipment.push(...builderData.selectedEquipment.weapons);
-      if (builderData.selectedEquipment.equipment) allEquipment.push(...builderData.selectedEquipment.equipment);
-
-      character.equipment = allEquipment;
-
-      // Store class features (will be processed further by character calculations service)
-      // For now, just store the selected class - the character service can derive features
-      character.classFeatures = []; // Will be populated by backend based on class and choices
-
-      // Save character using the service
-      const response = await characterService.create({
-        userId: 1, // TODO: Get actual user ID from context
-        name: builderData.characterName,
-        level: 1,
-        characterData: character,
-        isPublic: false,
-        // Store additional builder data for backend processing
-        builderData: {
-          selectedClassChoices: builderData.selectedClassChoices,
-          classFeatureData: builderData.classFeatureData
-        }
-      } as any); // TODO: Update service types to support builderData
-
-      if (!response.data) {
-        throw new Error('No character data returned from server');
-      }
-
-      const savedCharacter = response.data;
-
-      // Navigate to character sheet
-      navigate(`/character/${savedCharacter.id}`);
-
-    } catch (error) {
-      console.error('Failed to create character:', error);
-      // TODO: Show error message to user
-    }
-  }, [builderData, navigate]);
 
   // Check if ability scores are complete
   const isAbilityScoresComplete = (): boolean => {
@@ -804,14 +835,7 @@ export default function CharacterGeneratorWizard() {
             </div>
 
             <div className="wizard-controls-right">
-              {wizardState.currentStep === 'review-create' ? (
-                <button
-                  onClick={createCharacter}
-                  className="wizard-btn wizard-btn-primary"
-                >
-                  Create Character
-                </button>
-              ) : (
+              {wizardState.currentStep !== 'review-create' && (
                 <button
                   onClick={goNext}
                   disabled={!canGoNext()}

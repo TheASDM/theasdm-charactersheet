@@ -182,9 +182,7 @@ export default function CharacterHeader({
               onClick={() => selection.setIsManageFeatModalOpen(true)}
             >
               {character.feats && character.feats.length > 0
-                ? `${character.feats.length} feat${
-                    character.feats.length > 1 ? 's' : ''
-                  }`
+                ? character.feats.join(', ')
                 : 'Select Feats'}
             </div>
           </div>

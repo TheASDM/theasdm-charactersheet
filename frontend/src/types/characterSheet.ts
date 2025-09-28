@@ -1,3 +1,45 @@
+import { CharacterFeatures } from './features';
+
+// Enhanced inventory system types
+export interface InventoryItem {
+  id: string; // Unique identifier for the inventory slot
+  name: string;
+  quantity: number;
+  equipped?: boolean; // For armor, weapons, shields
+  attuned?: boolean; // For magic items requiring attunement
+  itemId?: number; // Reference to the official item database
+  customProperties?: {
+    damage?: string;
+    ac?: number;
+    properties?: string[];
+  };
+}
+
+export interface EquipmentConstraints {
+  maxArmor: number; // Usually 1
+  maxShields: number; // Usually 1
+  maxAttunedItems: number; // Usually 3
+  weightLimit?: number; // Optional encumbrance
+}
+
+export interface EquipmentValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+// Utility types for equipment management
+export type EquipmentSlotType = 'armor' | 'shield' | 'weapon' | 'accessory' | 'consumable';
+
+export interface EquipmentSlot {
+  type: EquipmentSlotType;
+  item?: InventoryItem;
+  constraints?: {
+    allowedTypes?: string[];
+    maxQuantity?: number;
+  };
+}
+
 // Character sheet specific types that will be stored in Character.characterData
 export interface CharacterSheetData {
   name: string;
@@ -44,11 +86,19 @@ export interface CharacterSheetData {
   resources: {
     [key: string]: number;
   };
-  inventory: Array<{
-    name: string;
-    quantity: number;
-  }>;
-  equipment: string[];
+
+  // Enhanced inventory system
+  inventory: InventoryItem[];
+  equipment: string[]; // Keep for legacy compatibility
+
+  // Equipment constraints
+  equipmentConstraints: EquipmentConstraints;
+
+  // Equipped items tracking
+  equippedArmor?: InventoryItem;
+  equippedShield?: InventoryItem;
+  equippedWeapons: InventoryItem[];
+  attunedItems: InventoryItem[];
   skills: {
     [key: string]: {
       proficient: boolean;
@@ -61,9 +111,13 @@ export interface CharacterSheetData {
       modifier: number;
     };
   };
-  classFeatures: string[];
-  speciesTraits: string[];
-  feats: string[];
+  // New structured features system
+  features: CharacterFeatures;
+
+  // Legacy support - can be removed after migration
+  classFeatures?: string[];
+  speciesTraits?: string[];
+  feats?: string[];
   weapons: Array<{
     name: string;
     atkBonus: string;
@@ -175,8 +229,21 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     max: 0,
   },
   resources: {},
+
+  // Enhanced inventory system
   inventory: [],
-  equipment: [],
+  equipment: [], // Keep for legacy compatibility
+
+  // Equipment constraints
+  equipmentConstraints: {
+    maxArmor: 1,
+    maxShields: 1,
+    maxAttunedItems: 3,
+  },
+
+  // Equipped items tracking
+  equippedWeapons: [],
+  attunedItems: [],
   skills: {
     Acrobatics: { proficient: false, modifier: 0 },
     'Animal Handling': { proficient: false, modifier: 0 },
@@ -205,6 +272,18 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     wisdom: { proficient: false, modifier: 0 },
     charisma: { proficient: false, modifier: 0 },
   },
+  // New structured features system
+  features: {
+    classFeatures: [],
+    subclassFeatures: [],
+    speciesTraits: [],
+    backgroundFeatures: [],
+    feats: [],
+    magicItemFeatures: [],
+    customFeatures: [],
+  },
+
+  // Legacy support - can be removed after migration
   classFeatures: [],
   speciesTraits: [],
   feats: [],

@@ -1,5 +1,14 @@
 import { CharacterBuilderData } from '../components/CharacterGeneratorWizard';
-import { CharacterSheetData, calculateProficiencyBonus, calculateModifier } from '../types/characterSheet';
+import { CharacterSheetData, calculateProficiencyBonus, calculateModifier, InventoryItem } from '../types/characterSheet';
+import { CharacterFeatures } from '../types/features';
+import {
+  parseClassFeatures,
+  parseSpeciesTraits,
+  parseFeatFeatures,
+  parseBackgroundFeatures
+} from './featureParser';
+import { parseDnDTemplateTag } from './dndTemplateParser';
+import { EquipmentValidator } from './equipmentValidator';
 
 /**
  * Maps CharacterBuilderData from the generator to CharacterSheetData for the character sheet
@@ -27,7 +36,16 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
 
   // Combine all equipment sources
   const equipment = combineEquipment(builderData);
-  const inventory = equipment.map(item => ({ name: item, quantity: 1 }));
+  const inventory = equipment.map((item, index) => ({
+    id: `char-gen-${index}`,
+    name: item,
+    quantity: 1,
+    equipped: false,
+    attuned: false
+  }));
+
+  // Determine which items should be equipped automatically
+  const { equippedArmor, equippedShield, equippedWeapons } = autoEquipItems(inventory);
 
   // Extract weapons from equipment and map to weapon actions
   const weapons = mapEquipmentToWeapons(equipment, finalAbilityScores, proficiencyBonus, builderData);
@@ -38,10 +56,20 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   console.log('⚔️ Mapped weapons:', weapons);
   console.log('🎯 Weapon actions:', weaponActions);
 
-  // Extract features and traits
-  const classFeatures = extractClassFeatures(builderData);
-  const speciesTraits = extractSpeciesTraits(builderData);
-  const feats = builderData.selectedOriginFeats || [];
+  // Extract and parse structured features
+  const structuredFeatures = extractStructuredFeatures(builderData);
+
+  // Legacy features for backward compatibility
+  const legacyClassFeatures = extractClassFeatures(builderData);
+  const legacySpeciesTraits = extractSpeciesTraits(builderData);
+  const legacyFeats = builderData.selectedOriginFeats || [];
+
+  // Debug logging
+  console.log('🔍 Raw builderData.classFeatures:', builderData.classFeatures);
+  console.log('🔍 Raw builderData.speciesTraits:', builderData.speciesTraits);
+  console.log('🔍 Structured features:', structuredFeatures);
+  console.log('🔍 Legacy classFeatures:', legacyClassFeatures);
+  console.log('🔍 Legacy speciesTraits:', legacySpeciesTraits);
 
   // Map all proficiencies
   const proficiencies = {
@@ -55,8 +83,12 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     savingThrows: builderData.classProficiencies?.savingThrows || []
   };
 
-  // Calculate AC (base 10 + Dex modifier, assuming no armor initially)
-  const armorClass = 10 + dexterityModifier;
+  // Calculate AC based on equipped armor and shield
+  const armorClass = EquipmentValidator.calculateArmorClass({
+    abilityScores: finalAbilityScores,
+    equippedArmor,
+    equippedShield
+  } as any); // Cast to avoid full CharacterSheetData type requirement
 
   // Calculate initiative
   const initiative = dexterityModifier;
@@ -107,11 +139,30 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     resources: {},
     inventory,
     equipment,
+
+    // Equipment constraints
+    equipmentConstraints: {
+      maxArmor: 1,
+      maxShields: 1,
+      maxAttunedItems: 3,
+    },
+
+    // Equipped items tracking with auto-equipped items
+    ...(equippedArmor && { equippedArmor }),
+    ...(equippedShield && { equippedShield }),
+    equippedWeapons,
+    attunedItems: [],
     skills,
     savingThrows,
-    classFeatures,
-    speciesTraits,
-    feats,
+
+    // New structured features system
+    features: structuredFeatures,
+
+    // Legacy support - can be removed after migration
+    classFeatures: legacyClassFeatures,
+    speciesTraits: legacySpeciesTraits,
+    feats: legacyFeats,
+
     weapons,
     actions: (() => {
       const actions = [
@@ -126,6 +177,67 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     })(),
     proficiencies,
   };
+}
+
+/**
+ * Extract structured features from builder data
+ */
+function extractStructuredFeatures(builderData: CharacterBuilderData): CharacterFeatures {
+  const features: CharacterFeatures = {
+    classFeatures: [],
+    subclassFeatures: [],
+    speciesTraits: [],
+    backgroundFeatures: [],
+    feats: [],
+    magicItemFeatures: [],
+    customFeatures: [],
+  };
+
+  try {
+    // Parse class features
+    if (builderData.classFeatures && builderData.selectedClass) {
+      features.classFeatures = parseClassFeatures(
+        { classFeatures: builderData.classFeatures },
+        builderData.selectedClass,
+        1 // Level 1 for character creation
+      );
+    }
+
+    // Parse species traits
+    if (builderData.speciesTraits && builderData.selectedSpecies) {
+      features.speciesTraits = parseSpeciesTraits(
+        { traits: builderData.speciesTraits },
+        builderData.selectedSpecies
+      );
+    }
+
+    // Parse background features
+    if (builderData.backgroundFeatures && builderData.selectedBackground) {
+      features.backgroundFeatures = parseBackgroundFeatures(
+        { features: builderData.backgroundFeatures },
+        builderData.selectedBackground
+      );
+    }
+
+    // Parse feat features
+    if (builderData.featFeatures && builderData.selectedOriginFeats) {
+      builderData.selectedOriginFeats.forEach(featName => {
+        if (builderData.featFeatures?.[featName]) {
+          const featFeatures = parseFeatFeatures(
+            builderData.featFeatures[featName],
+            featName
+          );
+          features.feats.push(...featFeatures);
+        }
+      });
+    }
+
+    console.log('✅ Successfully parsed structured features:', features);
+  } catch (error) {
+    console.error('❌ Error extracting structured features:', error);
+  }
+
+  return features;
 }
 
 /**
@@ -242,12 +354,29 @@ function combineEquipment(builderData: CharacterBuilderData): string[] {
 
   // Class starting equipment
   if (builderData.classStartingEquipment) {
-    equipment.push(...builderData.classStartingEquipment);
+    builderData.classStartingEquipment.forEach(item => {
+      // Handle both string and object formats
+      if (typeof item === 'string') {
+        equipment.push(item);
+      } else if (item && typeof item === 'object' && 'item' in item && typeof (item as any).item === 'string') {
+        equipment.push((item as any).item); // Extract the item name from object
+      } else if (item && typeof item === 'object' && 'name' in item && typeof (item as any).name === 'string') {
+        equipment.push((item as any).name); // Alternative object format
+      }
+    });
   }
 
   // Background starting equipment
   if (builderData.backgroundStartingEquipment) {
-    equipment.push(...builderData.backgroundStartingEquipment);
+    builderData.backgroundStartingEquipment.forEach(item => {
+      if (typeof item === 'string') {
+        equipment.push(item);
+      } else if (item && typeof item === 'object' && 'item' in item && typeof (item as any).item === 'string') {
+        equipment.push((item as any).item);
+      } else if (item && typeof item === 'object' && 'name' in item && typeof (item as any).name === 'string') {
+        equipment.push((item as any).name);
+      }
+    });
   }
 
   // Selected equipment from step 4
@@ -256,21 +385,37 @@ function combineEquipment(builderData: CharacterBuilderData): string[] {
       equipment.push(builderData.selectedEquipment.armor);
     }
     if (builderData.selectedEquipment.weapons) {
-      equipment.push(...builderData.selectedEquipment.weapons);
+      builderData.selectedEquipment.weapons.forEach(weapon => {
+        if (typeof weapon === 'string') {
+          equipment.push(weapon);
+        } else if (weapon && typeof weapon === 'object' && 'item' in weapon && typeof (weapon as any).item === 'string') {
+          equipment.push((weapon as any).item);
+        } else if (weapon && typeof weapon === 'object' && 'name' in weapon && typeof (weapon as any).name === 'string') {
+          equipment.push((weapon as any).name);
+        }
+      });
     }
     if (builderData.selectedEquipment.shield) {
       equipment.push(builderData.selectedEquipment.shield);
     }
     if (builderData.selectedEquipment.equipment) {
-      equipment.push(...builderData.selectedEquipment.equipment);
+      builderData.selectedEquipment.equipment.forEach(item => {
+        if (typeof item === 'string') {
+          equipment.push(item);
+        } else if (item && typeof item === 'object' && 'item' in item && typeof (item as any).item === 'string') {
+          equipment.push((item as any).item);
+        } else if (item && typeof item === 'object' && 'name' in item && typeof (item as any).name === 'string') {
+          equipment.push((item as any).name);
+        }
+      });
     }
   }
 
-  return equipment;
+  return equipment.filter(Boolean); // Remove any undefined/null values
 }
 
 /**
- * Extract class features as string array
+ * Extract class features as string array with "Name: Description" format
  */
 function extractClassFeatures(builderData: CharacterBuilderData): string[] {
   const features: string[] = [];
@@ -278,9 +423,31 @@ function extractClassFeatures(builderData: CharacterBuilderData): string[] {
   if (builderData.classFeatures) {
     builderData.classFeatures.forEach((feature: any) => {
       if (typeof feature === 'string') {
-        features.push(feature);
+        features.push(parseDnDTemplateTag(feature));
       } else if (feature.name) {
-        features.push(feature.name);
+        // Safely extract description, handling complex objects
+        let description = feature.description || `Level 1 ${builderData.selectedClass} feature`;
+
+        // Handle complex description objects
+        if (typeof description === 'object') {
+          if (Array.isArray(description)) {
+            description = description.map(item => {
+              if (typeof item === 'string') return item;
+              if (typeof item === 'object' && item.type === 'table') {
+                return `[Table: ${item.caption || 'Data table'}]`;
+              }
+              return item.text || item.entry || '';
+            }).filter(Boolean).join(' ');
+          } else if (description.type === 'table') {
+            description = `[Table: ${description.caption || 'Data table'}]`;
+          } else {
+            description = description.text || description.entry || 'Complex feature data';
+          }
+        }
+
+        // Parse the description and format as "Name: Description" for proper display
+        const parsedDescription = parseDnDTemplateTag(description);
+        features.push(`${feature.name}: ${parsedDescription}`);
       }
     });
   }
@@ -289,7 +456,7 @@ function extractClassFeatures(builderData: CharacterBuilderData): string[] {
 }
 
 /**
- * Extract species traits as string array
+ * Extract species traits as string array with "Name: Description" format
  */
 function extractSpeciesTraits(builderData: CharacterBuilderData): string[] {
   const traits: string[] = [];
@@ -297,9 +464,31 @@ function extractSpeciesTraits(builderData: CharacterBuilderData): string[] {
   if (builderData.speciesTraits) {
     builderData.speciesTraits.forEach((trait: any) => {
       if (typeof trait === 'string') {
-        traits.push(trait);
+        traits.push(parseDnDTemplateTag(trait));
       } else if (trait.name) {
-        traits.push(trait.name);
+        // Safely extract description, handling complex objects
+        let description = trait.description || 'Species trait benefit applies';
+
+        // Handle complex description objects
+        if (typeof description === 'object') {
+          if (Array.isArray(description)) {
+            description = description.map(item => {
+              if (typeof item === 'string') return item;
+              if (typeof item === 'object' && item.type === 'table') {
+                return `[Table: ${item.caption || 'Data table'}]`;
+              }
+              return item.text || item.entry || '';
+            }).filter(Boolean).join(' ');
+          } else if (description.type === 'table') {
+            description = `[Table: ${description.caption || 'Data table'}]`;
+          } else {
+            description = description.text || description.entry || 'Complex trait data';
+          }
+        }
+
+        // Parse the description and format as "Name: Description" for proper display
+        const parsedDescription = parseDnDTemplateTag(description);
+        traits.push(`${trait.name}: ${parsedDescription}`);
       }
     });
   }
@@ -310,7 +499,7 @@ function extractSpeciesTraits(builderData: CharacterBuilderData): string[] {
 /**
  * Map equipment to weapons with stats
  */
-function mapEquipmentToWeapons(equipment: string[], abilityScores: any, proficiencyBonus: number, builderData: CharacterBuilderData) {
+function mapEquipmentToWeapons(equipment: (string | any)[], abilityScores: any, proficiencyBonus: number, builderData: CharacterBuilderData) {
   const weapons = [];
   const weaponProficiencies = builderData.classProficiencies?.weapons || [];
 
@@ -339,11 +528,31 @@ function mapEquipmentToWeapons(equipment: string[], abilityScores: any, proficie
 
   equipment.forEach(item => {
     console.log('🔍 Checking equipment item:', item);
+
+    // Handle both string and object equipment items
+    let itemName: string;
+    if (typeof item === 'string') {
+      itemName = item;
+    } else if (item && typeof item === 'object') {
+      // Try different object properties
+      if ('item' in item && typeof item.item === 'string') {
+        itemName = item.item;
+      } else if ('name' in item && typeof item.name === 'string') {
+        itemName = item.name;
+      } else {
+        console.warn('⚠️ Could not extract item name from object:', item);
+        return; // Skip this item
+      }
+    } else {
+      console.warn('⚠️ Unexpected equipment item format:', item);
+      return; // Skip this item
+    }
+
     const weaponName = Object.keys(weaponData).find(weapon =>
-      item.toLowerCase().includes(weapon.toLowerCase())
+      itemName.toLowerCase().includes(weapon.toLowerCase())
     );
 
-    console.log('🗡️ Found weapon match:', weaponName, 'for item:', item);
+    console.log('🗡️ Found weapon match:', weaponName, 'for item:', itemName);
 
     if (weaponName) {
       const weapon = weaponData[weaponName];
@@ -388,4 +597,49 @@ function mapWeaponsToActions(weapons: any[]) {
       atkBonus: weapon.atkBonus,
       damage: weapon.damage
     }));
+}
+
+/**
+ * Automatically determine which items should be equipped
+ */
+function autoEquipItems(inventory: InventoryItem[]) {
+  let equippedArmor: InventoryItem | undefined;
+  let equippedShield: InventoryItem | undefined;
+  const equippedWeapons: InventoryItem[] = [];
+
+  // Define item patterns
+  const armorPatterns = [
+    'leather armor', 'studded leather', 'chain shirt', 'scale mail',
+    'breastplate', 'half plate', 'ring mail', 'chain mail', 'splint', 'plate'
+  ];
+  const shieldPatterns = ['shield'];
+  const weaponPatterns = [
+    'sword', 'axe', 'mace', 'dagger', 'spear', 'bow', 'crossbow',
+    'javelin', 'club', 'rapier', 'scimitar', 'maul'
+  ];
+
+  inventory.forEach(item => {
+    const itemName = item.name.toLowerCase();
+
+    // Check for armor (only equip one piece)
+    if (!equippedArmor && armorPatterns.some(pattern => itemName.includes(pattern))) {
+      equippedArmor = { ...item, equipped: true };
+      item.equipped = true;
+    }
+
+    // Check for shield (only equip one)
+    else if (!equippedShield && shieldPatterns.some(pattern => itemName.includes(pattern))) {
+      equippedShield = { ...item, equipped: true };
+      item.equipped = true;
+    }
+
+    // Check for weapons (equip up to 2)
+    else if (equippedWeapons.length < 2 && weaponPatterns.some(pattern => itemName.includes(pattern))) {
+      const equippedWeapon = { ...item, equipped: true };
+      equippedWeapons.push(equippedWeapon);
+      item.equipped = true;
+    }
+  });
+
+  return { equippedArmor, equippedShield, equippedWeapons };
 }

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { CharacterList, Hero, CharacterSheetModal } from '../components';
 import { Character } from '../types/api';
-import { CharacterSheetData } from '../types/characterSheet';
 
 // Import medieval fonts
 const FontImport = styled.div`
@@ -90,7 +89,10 @@ const MainContent = styled.div`
 `;
 
 const ActionButtonContainer = styled.div`
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
   padding: 20px;
   background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
@@ -99,9 +101,11 @@ const ActionButtonContainer = styled.div`
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 `;
 
-const ActionButton = styled.button`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
-  color: #2c1810;
+const ActionButton = styled.button<{ variant?: 'secondary' }>`
+  background: ${props => props.variant === 'secondary'
+    ? 'linear-gradient(145deg, #5a3a2a, #4a2a1a)'
+    : 'linear-gradient(145deg, #d4af37, #b8941f)'};
+  color: ${props => props.variant === 'secondary' ? '#f0f0f0' : '#2c1810'};
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -115,9 +119,13 @@ const ActionButton = styled.button`
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: ${props => props.variant === 'secondary'
+      ? 'linear-gradient(145deg, #4a2a1a, #3a1a0a)'
+      : 'linear-gradient(145deg, #b8941f, #a0801b)'};
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px ${props => props.variant === 'secondary'
+      ? 'rgba(0, 0, 0, 0.5)'
+      : 'rgba(212, 175, 55, 0.4)'};
   }
 
   &:active {
@@ -130,60 +138,12 @@ const CharactersPage: React.FC = () => {
     null
   );
   const [isSheetModalOpen, setIsSheetModalOpen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
 
-  // State to hold newly created character data persistently
-  const [newCharacterData, setNewCharacterData] = useState<CharacterSheetData | null>(null);
-
-  // Check for newly created character from generator
-  useEffect(() => {
-    const lastCreatedCharacterData = localStorage.getItem('lastCreatedCharacter');
-    if (lastCreatedCharacterData) {
-      try {
-        const characterSheetData: CharacterSheetData = JSON.parse(lastCreatedCharacterData);
-
-        // Store the character data in component state (persistent across modal opens/closes)
-        setNewCharacterData(characterSheetData);
-
-        // Convert CharacterSheetData to Character format for display
-        const character: Character = {
-          id: -1, // Use -1 to indicate this is a newly created character from generator
-          userId: 1, // TODO: Get from auth context
-          name: characterSheetData.name,
-          level: characterSheetData.level,
-          characterData: characterSheetData,
-          isPublic: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        setSelectedCharacter(character);
-        setIsSheetModalOpen(true);
-
-        // Clear localStorage now that we have the data in component state
-        localStorage.removeItem('lastCreatedCharacter');
-        console.log('📦 CharactersPage: Moved character data from localStorage to component state');
-      } catch (error) {
-        console.error('Error parsing created character data:', error);
-        localStorage.removeItem('lastCreatedCharacter');
-      }
-    }
-  }, []);
 
   const handleCharacterClick = (character: Character) => {
     console.log('Character clicked:', character);
-
-    // For newly created characters, ensure we use the persistent data from component state
-    if (character.id === -1 && newCharacterData) {
-      const updatedCharacter = {
-        ...character,
-        characterData: newCharacterData
-      };
-      setSelectedCharacter(updatedCharacter);
-      console.log('📦 CharactersPage: Using persistent character data for ID -1');
-    } else {
-      setSelectedCharacter(character);
-    }
-
+    setSelectedCharacter(character);
     setIsSheetModalOpen(true);
   };
 
@@ -210,13 +170,6 @@ const CharactersPage: React.FC = () => {
 
   const handleSheetSave = (updatedCharacter: Character) => {
     console.log('Character sheet updated:', updatedCharacter);
-
-    // If a character with id === -1 was saved and now has a real ID, clear the persistent data
-    if (selectedCharacter?.id === -1 && updatedCharacter.id > 0) {
-      setNewCharacterData(null);
-      console.log('📦 CharactersPage: Cleared persistent character data after successful save');
-    }
-
     // The character list will refresh automatically
   };
 
@@ -237,6 +190,10 @@ const CharactersPage: React.FC = () => {
     setIsSheetModalOpen(true);
   };
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+  };
+
   return (
     <>
       <FontImport />
@@ -254,10 +211,14 @@ const CharactersPage: React.FC = () => {
                 <ActionButton onClick={handleCreateNewCharacter}>
                   ⚔️ Create New Hero
                 </ActionButton>
+                <ActionButton variant="secondary" onClick={toggleSelectionMode}>
+                  {selectionMode ? '✖️ Exit Selection' : '☑️ Select Multiple'}
+                </ActionButton>
               </ActionButtonContainer>
 
               <CharacterList
                 showActions={true}
+                selectionMode={selectionMode}
                 onCharacterClick={handleCharacterClick}
                 onCharacterEdit={handleCharacterEdit}
                 onCharacterDelete={handleCharacterDelete}

@@ -13,13 +13,13 @@ const FontImport = styled.div`
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600&display=swap');
 `;
 
-const HeroContainer = styled.div<{ backgroundImage: string; height: string }>`
+const HeroContainer = styled.div<{ $backgroundImage: string; $height: string }>`
   position: relative;
   width: calc(100% - 40px); /* Constrain width to account for margins */
   max-width: 1200px; /* Match your ContentContainer max-width */
   margin: 0 auto; /* Center the container */
-  height: ${(props) => props.height};
-  background-image: url('${(props) => props.backgroundImage}');
+  height: ${(props) => props.$height};
+  background-image: url('${(props) => props.$backgroundImage}');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -161,7 +161,7 @@ const Hero: React.FC<HeroProps> = ({
   return (
     <>
       <FontImport />
-      <HeroContainer backgroundImage={backgroundImage} height={height}>
+      <HeroContainer $backgroundImage={backgroundImage} $height={height}>
         <HeroContent>
           <HeroTitle>{title}</HeroTitle>
           {subtitle && <HeroSubtitle>{subtitle}</HeroSubtitle>}

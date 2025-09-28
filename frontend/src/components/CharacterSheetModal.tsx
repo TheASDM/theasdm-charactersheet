@@ -15,7 +15,7 @@ interface CharacterSheetModalProps {
   onSave?: (updatedCharacter: Character) => void;
 }
 
-const ModalOverlay = styled.div<{ isOpen: boolean }>`
+const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -23,7 +23,7 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
   z-index: 1000;
-  display: ${(props) => (props.isOpen ? 'flex' : 'none')};
+  display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
   align-items: center;
   justify-content: center;
   padding: 20px;
@@ -277,7 +277,7 @@ export default function CharacterSheetModal({
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={handleOverlayClick}>
+    <ModalOverlay $isOpen={isOpen} onClick={handleOverlayClick}>
       <ModalContent>
         <CloseButton onClick={handleClose} disabled={isSaving}>
           ×
