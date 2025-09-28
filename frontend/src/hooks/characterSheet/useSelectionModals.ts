@@ -1,9 +1,8 @@
 import { useState, useCallback } from 'react';
 import { CharacterSheetData } from '../../types/characterSheet';
-import { speciesService } from '../../services/speciesService';
 import { classService, CLASS_SKILL_CHOICES } from '../../services/classService';
-import { speciesChoices } from '../../components/SpeciesSelectionModal';
-import { backgroundsData } from '../../components/BackgroundSelectionModal';
+// import { speciesChoices } from '../../components/SpeciesSelectionModal'; // Removed - now uses API
+// import { backgroundsData } from '../../components/BackgroundSelectionModal'; // Removed - now uses API
 
 export const useSelectionModals = (
   character: CharacterSheetData,
@@ -46,141 +45,14 @@ export const useSelectionModals = (
   }, []);
 
   const handleSpeciesConfirm = useCallback(async () => {
-    const speciesChoiceData = speciesChoices[selectedSpecies];
-    if (!speciesChoiceData) return;
+    // TODO: Replace with API-based species selection - function temporarily disabled
+    console.warn('handleSpeciesConfirm temporarily disabled - needs API refactor');
 
-    let finalSpeciesName = selectedSpecies;
-    let traits: string[] = [speciesChoiceData.description];
-
-    // Validate choices if required
-    if (speciesChoiceData.choices && speciesChoiceData.choices.length > 0) {
-      const allChoicesMade = speciesChoiceData.choices.every(choice =>
-        selectedSpeciesChoices[choice.category]
-      );
-
-      if (!allChoicesMade) return;
-
-      // Build traits from selected choices
-      speciesChoiceData.choices.forEach(choiceCategory => {
-        const selectedOption = selectedSpeciesChoices[choiceCategory.category];
-        if (selectedOption) {
-          const optionData = choiceCategory.options.find(opt => opt.name === selectedOption);
-          if (optionData) {
-            traits.push(`${choiceCategory.category}: ${optionData.name} - ${optionData.description}`);
-          }
-        }
-      });
-    }
-
-    // Apply skill proficiencies
-    const updatedSkills = { ...character.skills };
-
-    if (speciesChoiceData.choices && speciesChoiceData.choices.length > 0) {
-      speciesChoiceData.choices.forEach(choiceCategory => {
-        const selectedOption = selectedSpeciesChoices[choiceCategory.category];
-        if (selectedOption && choiceCategory.category === 'Keen Senses') {
-          const skillName = selectedOption;
-          if (updatedSkills[skillName]) {
-            updatedSkills[skillName] = {
-              ...updatedSkills[skillName],
-              proficient: true
-            };
-          }
-        }
-      });
-    }
-
-    // Fetch database species data
-    try {
-      const response = await speciesService.getByName(selectedSpecies);
-      if (response.data) {
-        // Add database traits
-        if (response.data.traits) {
-          const databaseTraits = Array.isArray(response.data.traits)
-            ? response.data.traits
-            : Object.values(response.data.traits || {});
-
-          databaseTraits.forEach((trait: any) => {
-            if (typeof trait === 'string') {
-              traits.push(trait);
-            } else if (trait && typeof trait === 'object') {
-              if (trait.name && trait.description) {
-                traits.push(`${trait.name}: ${trait.description}`);
-              } else if (trait.name) {
-                traits.push(trait.name);
-              }
-            }
-          });
-        }
-
-        // Add basic species information
-        if (response.data.size && response.data.size.length > 0) {
-          traits.push(`Size: ${response.data.size.join(', ')}`);
-        }
-
-        if (response.data.speed) {
-          const speedText = typeof response.data.speed === 'object'
-            ? `Speed: ${response.data.speed.walk || 30} feet`
-            : `Speed: ${response.data.speed} feet`;
-          traits.push(speedText);
-        }
-
-        if (response.data.languages && response.data.languages.length > 0) {
-          traits.push(`Languages: ${response.data.languages.join(', ')}`);
-        }
-
-        // Apply skill proficiencies from database
-        if (response.data.skillProficiencies) {
-          let dbSkillProfs = response.data.skillProficiencies;
-
-          if (Array.isArray(dbSkillProfs)) {
-            dbSkillProfs.forEach((skill: string) => {
-              if (updatedSkills[skill]) {
-                updatedSkills[skill] = {
-                  ...updatedSkills[skill],
-                  proficient: true
-                };
-              }
-            });
-          } else if (typeof dbSkillProfs === 'object') {
-            Object.keys(dbSkillProfs).forEach(skill => {
-              if (updatedSkills[skill]) {
-                updatedSkills[skill] = {
-                  ...updatedSkills[skill],
-                  proficient: true
-                };
-              }
-            });
-          }
-        }
-      }
-    } catch (error) {
-      // Continue with predefined choices
-    }
-
-    const updatedCharacter = {
-      ...character,
-      species: finalSpeciesName,
-      speciesTraits: traits,
-      skills: updatedSkills
-    };
-
-    updateCharacter({
-      species: finalSpeciesName,
-      speciesTraits: traits,
-      skills: updatedSkills
-    });
-
-    if (onSave) {
-      setTimeout(() => {
-        onSave(updatedCharacter, { silent: true });
-      }, 300);
-    }
-
+    // Close modal for now
     setShowSpeciesPopup(false);
     setSelectedSpecies('');
     setSelectedSpeciesChoices({});
-  }, [selectedSpecies, selectedSpeciesChoices, character, updateCharacter, onSave]);
+  }, []);
 
   const handleSpeciesCancel = useCallback(() => {
     setShowSpeciesPopup(false);
@@ -356,27 +228,13 @@ export const useSelectionModals = (
   }, []);
 
   const handleBackgroundConfirm = useCallback(() => {
-    const backgroundData = backgroundsData[selectedBackground];
-    if (!backgroundData) return;
+    // TODO: Replace with API-based background selection - function temporarily disabled
+    console.warn('handleBackgroundConfirm temporarily disabled - needs API refactor');
 
-    const updatedCharacter = {
-      ...character,
-      background: selectedBackground
-    };
-
-    updateCharacter({
-      background: selectedBackground
-    });
-
-    if (onSave) {
-      setTimeout(() => {
-        onSave(updatedCharacter, { silent: true });
-      }, 300);
-    }
-
+    // Close modal for now
     setShowBackgroundPopup(false);
     setSelectedBackground('');
-  }, [selectedBackground, character, updateCharacter, onSave]);
+  }, []);
 
   const handleBackgroundCancel = useCallback(() => {
     setShowBackgroundPopup(false);

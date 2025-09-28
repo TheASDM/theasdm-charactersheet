@@ -419,18 +419,20 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
       if (typeof item === 'string') {
         return (
           <div key={index} className="list-item">
-            <div className="item-description">
-              {processTraitDescription(item)}
-            </div>
+            <div
+              className="item-description"
+              dangerouslySetInnerHTML={{ __html: processTraitDescription(item) }}
+            />
           </div>
         );
       } else if (item.name && item.entries) {
         return (
           <div key={index} className="list-item">
             <div className="item-name">{item.name}</div>
-            <div className="item-description">
-              {processTraitDescription(item.entries)}
-            </div>
+            <div
+              className="item-description"
+              dangerouslySetInnerHTML={{ __html: processTraitDescription(item.entries) }}
+            />
           </div>
         );
       }
@@ -440,9 +442,10 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     return (
       <>
         {text && (
-          <div className="trait-description">
-            {text}
-          </div>
+          <div
+            className="trait-description"
+            dangerouslySetInnerHTML={{ __html: text }}
+          />
         )}
 
         {tables.length > 0 && tables.map((table, tableIndex) => (
@@ -544,30 +547,17 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
           ))}
         </SpeciesGrid>
 
-        {data.selectedSpecies && (
+
+        {!data.selectedSpecies && (
           <div style={{
-            marginTop: '1rem',
+            marginTop: '1.5rem',
             textAlign: 'center',
-            color: '#4caf50',
-            fontWeight: 600
+            color: '#888',
+            fontSize: '0.9rem'
           }}>
-            ✓ {data.selectedSpecies} selected!
-            {data.isHuman && (
-              <div style={{ color: '#d4af37', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                🌟 Humans get 2 Origin Feats (instead of 1)
-              </div>
-            )}
+            💡 Tip: Each species has unique traits that can complement your class and background choices.
           </div>
         )}
-
-        <div style={{
-          marginTop: '1.5rem',
-          textAlign: 'center',
-          color: '#888',
-          fontSize: '0.9rem'
-        }}>
-          💡 Tip: Each species has unique traits that can complement your class and background choices.
-        </div>
       </div>
 
       {/* Species Detail Modal */}
@@ -604,7 +594,11 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
                            JSON.stringify(prof)}
                         </div>
                       ))
-                    : processTraitDescription(selectedSpeciesForModal.skillProficiencies)}
+                    : (
+                      <div dangerouslySetInnerHTML={{
+                        __html: processTraitDescription(selectedSpeciesForModal.skillProficiencies)
+                      }} />
+                    )}
                 </div>
               </ModalSection>
             )}

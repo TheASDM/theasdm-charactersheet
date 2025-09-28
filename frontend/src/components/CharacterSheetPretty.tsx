@@ -450,11 +450,11 @@ export default function CharacterSheetPretty({
 
         <SpeciesSelectionModal
           isOpen={selection.showSpeciesPopup}
-          selectedSpecies={selection.selectedSpecies}
-          selectedSpeciesChoices={selection.selectedSpeciesChoices}
-          onSpeciesSelect={selection.handleSpeciesSelect}
-          onChoiceSelect={selection.handleSpeciesChoiceSelect}
-          onConfirm={selection.handleSpeciesConfirm}
+          onSpeciesSelect={(species) => {
+            // TODO: Update to handle API species object
+            console.log('Species selected:', species);
+            selection.handleSpeciesCancel();
+          }}
           onCancel={selection.handleSpeciesCancel}
         />
 
@@ -476,9 +476,11 @@ export default function CharacterSheetPretty({
 
         <BackgroundSelectionModal
           isOpen={selection.showBackgroundPopup}
-          selectedBackground={selection.selectedBackground}
-          onBackgroundSelect={selection.handleBackgroundSelect}
-          onConfirm={selection.handleBackgroundConfirm}
+          onBackgroundSelect={(background) => {
+            // TODO: Update to handle API background object
+            console.log('Background selected:', background);
+            selection.handleBackgroundCancel();
+          }}
           onCancel={selection.handleBackgroundCancel}
         />
       </SheetContainer>

@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import { CLASS_SKILLS, CLASS_SKILL_CHOICES } from '../services/classService';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -219,8 +218,9 @@ const ClassSelectionModal: React.FC<ClassSelectionModalProps> = ({
 }) => {
   if (!isOpen || !selectedClass) return null;
 
-  const classSkills = CLASS_SKILLS[selectedClass as keyof typeof CLASS_SKILLS] || [];
-  const requiredSkillCount = CLASS_SKILL_CHOICES[selectedClass as keyof typeof CLASS_SKILL_CHOICES] || 0;
+  // Extract skills and skill count from API data
+  const classSkills = currentClassData?.skillProficiencies || [];
+  const requiredSkillCount = currentClassData?.skillChoices || 2;
 
   return (
     <ModalOverlay isOpen={isOpen} onClick={(e) => {
@@ -244,7 +244,7 @@ const ClassSelectionModal: React.FC<ClassSelectionModalProps> = ({
                   Choose {requiredSkillCount} Skills:
                 </ClassSkillsTitle>
                 <ClassSkillsGrid>
-                  {classSkills.map((skill) => (
+                  {classSkills.map((skill: any) => (
                     <ClassSkillChoice
                       key={skill}
                       selected={selectedClassSkills.includes(skill)}

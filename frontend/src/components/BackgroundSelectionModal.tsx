@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import backgroundService from '../services/backgroundService';
+import { Background as ApiBackground } from '../types/api';
+import { processTraitDescription } from '../utils/textProcessor';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -49,9 +52,6 @@ const BackgroundDescription = styled.p`
   font-style: italic;
 `;
 
-const BackgroundChoicesContainer = styled.div`
-  margin: 15px 0;
-`;
 
 const BackgroundChoicesTitle = styled.h4`
   color: #d4af37;
@@ -127,170 +127,243 @@ const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
   }
 `;
 
-// D&D 2024 Background data with skills and tools
-interface BackgroundData {
-  description: string;
-  skills: string[];
-  toolProficiency: string;
-}
+// Loading and error states
+const LoadingSpinner = styled.div`
+  text-align: center;
+  color: #d4af37;
+  padding: 2rem;
+  font-size: 1.1rem;
+`;
 
-const backgroundsData: { [key: string]: BackgroundData } = {
-  'Acolyte': {
-    description: 'You spent your early days in service to a god or pantheon, performing sacred rites.',
-    skills: ['Insight', 'Religion'],
-    toolProficiency: 'Calligrapher\'s Supplies'
-  },
-  'Artisan': {
-    description: 'You apprenticed under a master craftsperson, learning to create items of value.',
-    skills: ['Investigation', 'Persuasion'],
-    toolProficiency: 'Artisan\'s Tools (one of your choice)'
-  },
-  'Charlatan': {
-    description: 'You have always had a talent for deception and made your way through clever schemes.',
-    skills: ['Deception', 'Sleight of Hand'],
-    toolProficiency: 'Forgery Kit'
-  },
-  'Criminal': {
-    description: 'You fell in with thieves and scoundrels, learning the ways of the underworld.',
-    skills: ['Sleight of Hand', 'Stealth'],
-    toolProficiency: 'Thieves\' Tools'
-  },
-  'Entertainer': {
-    description: 'You have practiced your art before audiences, bringing joy through performance.',
-    skills: ['Acrobatics', 'Performance'],
-    toolProficiency: 'Musical Instrument (one of your choice)'
-  },
-  'Farmer': {
-    description: 'You worked the land, understanding the cycles of nature and honest labor.',
-    skills: ['Animal Handling', 'Nature'],
-    toolProficiency: 'Carpenter\'s Tools'
-  },
-  'Folk Hero': {
-    description: 'You come from humble beginnings but are destined for greatness.',
-    skills: ['Animal Handling', 'Survival'],
-    toolProficiency: 'Artisan\'s Tools (one of your choice)'
-  },
-  'Guard': {
-    description: 'You served as a protector, maintaining order and defending the innocent.',
-    skills: ['Athletics', 'Perception'],
-    toolProficiency: 'Gaming Set (one of your choice)'
-  },
-  'Guide': {
-    description: 'You know the wilderness and have led others through dangerous terrain.',
-    skills: ['Stealth', 'Survival'],
-    toolProficiency: 'Cartographer\'s Tools'
-  },
-  'Hermit': {
-    description: 'You lived in seclusion, either in a sheltered community or alone.',
-    skills: ['Medicine', 'Religion'],
-    toolProficiency: 'Herbalism Kit'
-  },
-  'Merchant': {
-    description: 'You earned coin by buying and selling goods across trade routes.',
-    skills: ['Insight', 'Persuasion'],
-    toolProficiency: 'Navigator\'s Tools'
-  },
-  'Noble': {
-    description: 'You were born into wealth and privilege, accustomed to a life of luxury.',
-    skills: ['History', 'Persuasion'],
-    toolProficiency: 'Gaming Set (one of your choice)'
-  },
-  'Sage': {
-    description: 'You spent years learning the lore of the multiverse through study.',
-    skills: ['Arcana', 'History'],
-    toolProficiency: 'Calligrapher\'s Supplies'
-  },
-  'Sailor': {
-    description: 'You sailed the seas, learning to navigate and survive on the water.',
-    skills: ['Acrobatics', 'Perception'],
-    toolProficiency: 'Navigator\'s Tools'
-  },
-  'Scribe': {
-    description: 'You recorded knowledge and served as a keeper of important documents.',
-    skills: ['Investigation', 'Perception'],
-    toolProficiency: 'Calligrapher\'s Supplies'
-  },
-  'Soldier': {
-    description: 'You fought battles as part of an organized military force.',
-    skills: ['Athletics', 'Intimidation'],
-    toolProficiency: 'Gaming Set (one of your choice)'
-  },
-  'Wayfarer': {
-    description: 'You have traveled far and wide, never settling in one place for long.',
-    skills: ['Insight', 'Stealth'],
-    toolProficiency: 'Thieves\' Tools'
+const ErrorMessage = styled.div`
+  text-align: center;
+  color: #ff6b6b;
+  padding: 2rem;
+  font-size: 1rem;
+`;
+
+// Background details display
+const BackgroundDetails = styled.div`
+  margin-top: 1rem;
+
+  .skill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+
+    .skill-item {
+      background: rgba(212, 175, 55, 0.2);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+      color: #d4af37;
+    }
   }
-};
+
+  .tool-proficiency {
+    background: rgba(26, 26, 26, 0.6);
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #ccc;
+
+    .label {
+      color: #d4af37;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+  }
+`;
 
 // Props interface
 interface BackgroundSelectionModalProps {
   isOpen: boolean;
-  selectedBackground: string;
-  onBackgroundSelect: (background: string) => void;
-  onConfirm: () => void;
+  onBackgroundSelect: (background: ApiBackground) => void;
   onCancel: () => void;
 }
 
 const BackgroundSelectionModal: React.FC<BackgroundSelectionModalProps> = ({
   isOpen,
-  selectedBackground,
-  onBackgroundSelect: _onBackgroundSelect,
-  onConfirm,
+  onBackgroundSelect,
   onCancel
 }) => {
-  if (!isOpen || !selectedBackground) return null;
+  const [backgrounds, setBackgrounds] = useState<ApiBackground[]>([]);
+  const [selectedBackground, setSelectedBackground] = useState<ApiBackground | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const backgroundData = backgroundsData[selectedBackground];
-  if (!backgroundData) return null;
+  useEffect(() => {
+    if (isOpen) {
+      fetchBackgrounds();
+    }
+  }, [isOpen]);
+
+  const fetchBackgrounds = async () => {
+    try {
+      setIsLoading(true);
+      const response = await backgroundService.getAll();
+      if (response.data) {
+        setBackgrounds(response.data);
+      } else {
+        setError(response.error || 'Failed to load backgrounds');
+      }
+    } catch (err) {
+      console.error('Error fetching backgrounds:', err);
+      setError('Failed to load backgrounds');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackgroundClick = (background: ApiBackground) => {
+    setSelectedBackground(background);
+  };
+
+  const handleConfirm = () => {
+    if (selectedBackground) {
+      onBackgroundSelect(selectedBackground);
+      handleCancel();
+    }
+  };
+
+  const handleCancel = () => {
+    setSelectedBackground(null);
+    onCancel();
+  };
+
+  const formatSkillProficiencies = (skillProficiencies: any): string[] => {
+    if (!skillProficiencies) return [];
+
+    if (Array.isArray(skillProficiencies)) {
+      return skillProficiencies.map(skill =>
+        typeof skill === 'string' ? skill :
+        skill.name || JSON.stringify(skill)
+      );
+    }
+
+    if (typeof skillProficiencies === 'object' && skillProficiencies.choose) {
+      return skillProficiencies.choose.from || [];
+    }
+
+    return [skillProficiencies.toString()];
+  };
+
+  const formatToolProficiencies = (toolProficiencies: any): string => {
+    if (!toolProficiencies) return 'None';
+
+    if (Array.isArray(toolProficiencies)) {
+      return toolProficiencies.map(tool =>
+        typeof tool === 'string' ? tool :
+        tool.name || JSON.stringify(tool)
+      ).join(', ');
+    }
+
+    if (typeof toolProficiencies === 'string') {
+      return toolProficiencies;
+    }
+
+    return JSON.stringify(toolProficiencies);
+  };
+
+  if (!isOpen) return null;
+
+  if (isLoading) {
+    return (
+      <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
+        <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>
+          <LoadingSpinner>Loading backgrounds...</LoadingSpinner>
+        </BackgroundPopupModal>
+      </ModalOverlay>
+    );
+  }
+
+  if (error) {
+    return (
+      <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
+        <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>
+          <ErrorMessage>Error: {error}</ErrorMessage>
+          <BackgroundButtonsContainer>
+            <CancelButton onClick={handleCancel}>Close</CancelButton>
+          </BackgroundButtonsContainer>
+        </BackgroundPopupModal>
+      </ModalOverlay>
+    );
+  }
+
+  if (selectedBackground) {
+    const skills = formatSkillProficiencies(selectedBackground.skillProficiencies);
+    const tools = formatToolProficiencies(selectedBackground.equipment);
+
+    return (
+      <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
+        <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>
+          <BackgroundPopupTitle>
+            {selectedBackground.name} Background
+          </BackgroundPopupTitle>
+
+          <BackgroundDescription
+            dangerouslySetInnerHTML={{
+              __html: processTraitDescription(selectedBackground.description)
+            }}
+          />
+
+          <BackgroundDetails>
+            <BackgroundChoicesTitle>Skills:</BackgroundChoicesTitle>
+            <div className="skill-list">
+              {skills.map((skill, index) => (
+                <div key={index} className="skill-item">{skill}</div>
+              ))}
+            </div>
+
+            <div className="tool-proficiency">
+              <span className="label">Tool Proficiency:</span>
+              {tools}
+            </div>
+          </BackgroundDetails>
+
+          <BackgroundButtonsContainer>
+            <CancelButton onClick={() => setSelectedBackground(null)}>
+              Back
+            </CancelButton>
+            <ConfirmButton onClick={handleConfirm}>
+              Select {selectedBackground.name}
+            </ConfirmButton>
+          </BackgroundButtonsContainer>
+        </BackgroundPopupModal>
+      </ModalOverlay>
+    );
+  }
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={(e) => {
-      if (e.target === e.currentTarget) {
-        onCancel();
-      }
-    }}>
-      <BackgroundPopupModal>
+    <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
+      <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>
         <BackgroundPopupTitle>
-          {selectedBackground} Background
+          Choose Your Background
         </BackgroundPopupTitle>
 
         <BackgroundDescription>
-          {backgroundData.description}
+          Select your character's background from the available options below.
         </BackgroundDescription>
 
-        {/* Skills Granted */}
-        <BackgroundChoicesContainer>
-          <BackgroundChoicesTitle>
-            Skill Proficiencies Granted
-          </BackgroundChoicesTitle>
-          <BackgroundChoicesGrid>
-            {backgroundData.skills.map((skill) => (
-              <BackgroundChoice key={skill} selected>
-                {skill}
-              </BackgroundChoice>
-            ))}
-          </BackgroundChoicesGrid>
-        </BackgroundChoicesContainer>
-
-        {/* Tool Proficiency */}
-        <BackgroundChoicesContainer>
-          <BackgroundChoicesTitle>
-            Tool Proficiency
-          </BackgroundChoicesTitle>
-          <BackgroundChoicesGrid>
-            <BackgroundChoice selected>
-              {backgroundData.toolProficiency}
+        <BackgroundChoicesGrid>
+          {backgrounds.map((background) => (
+            <BackgroundChoice
+              key={background.id}
+              onClick={() => handleBackgroundClick(background)}
+            >
+              {background.name}
             </BackgroundChoice>
-          </BackgroundChoicesGrid>
-        </BackgroundChoicesContainer>
+          ))}
+        </BackgroundChoicesGrid>
 
         <BackgroundButtonsContainer>
-          <CancelButton onClick={onCancel}>
+          <CancelButton onClick={handleCancel}>
             Cancel
           </CancelButton>
-          <ConfirmButton onClick={onConfirm}>
-            Confirm Selection
-          </ConfirmButton>
         </BackgroundButtonsContainer>
       </BackgroundPopupModal>
     </ModalOverlay>
@@ -298,5 +371,3 @@ const BackgroundSelectionModal: React.FC<BackgroundSelectionModalProps> = ({
 };
 
 export default BackgroundSelectionModal;
-export { backgroundsData };
-export type { BackgroundData };

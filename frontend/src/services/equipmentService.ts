@@ -49,8 +49,8 @@ export interface Equipment {
 
 export const equipmentService = {
   // Get all equipment
-  getAll: async (): Promise<ApiResponse<Equipment[]>> => {
-    return apiClient.get<Equipment[]>('/items');
+  getAll: async (): Promise<ApiResponse<{ items: Equipment[], pagination?: any }>> => {
+    return apiClient.get<{ items: Equipment[], pagination?: any }>('/items');
   },
 
   // Get equipment by ID

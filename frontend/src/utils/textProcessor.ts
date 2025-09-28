@@ -9,54 +9,66 @@ export interface TextProcessorOptions {
 }
 
 /**
- * Process D&D Beyond markup tokens and convert them to readable text
+ * Process D&D Beyond markup tokens and convert them to styled HTML
  */
 export function processDbMarkup(text: string, _options?: TextProcessorOptions): string {
   if (!text || typeof text !== 'string') {
     return '';
   }
 
-  // Future use for options
-  // const { removeSourceLinks = true } = options;
-
-  // Process different markup token types
+  // Process different markup token types with enhanced styling
   let processedText = text;
 
-  // {@variantrule Name|Source} -> Name
-  processedText = processedText.replace(/{@variantrule ([^|]+)\|[^}]+}/g, '$1');
+  // {@variantrule Name|Source} -> <strong>Name</strong>
+  processedText = processedText.replace(/{@variantrule ([^|]+)\|[^}]+}/g, '<strong>$1</strong>');
 
-  // {@sense Name|Source} -> Name
-  processedText = processedText.replace(/{@sense ([^|]+)\|[^}]+}/g, '$1');
+  // {@sense Name|Source} -> <strong>Name</strong>
+  processedText = processedText.replace(/{@sense ([^|]+)\|[^}]+}/g, '<strong>$1</strong>');
 
-  // {@condition Name|Source} -> Name
-  processedText = processedText.replace(/{@condition ([^|]+)\|[^}]+}/g, '$1');
+  // {@condition Name|Source} -> <em style="color: #ff6b6b;">Name</em>
+  processedText = processedText.replace(/{@condition ([^|]+)\|[^}]+}/g, '<em style="color: #ff6b6b;">$1</em>');
 
-  // {@spell Name|Source} -> Name
-  processedText = processedText.replace(/{@spell ([^|]+)\|[^}]+}/g, '$1');
+  // {@spell Name|Source} -> <em style="color: #a855f7;">Name</em> (purple for spells)
+  processedText = processedText.replace(/{@spell ([^|]+)\|[^}]+}/g, '<em style="color: #a855f7;">$1</em>');
 
-  // {@action Name|Source} -> Name
-  processedText = processedText.replace(/{@action ([^|]+)\|[^}]+}/g, '$1');
+  // {@action Name|Source} -> <strong style="color: #d4af37;">Name</strong> (gold for actions)
+  processedText = processedText.replace(/{@action ([^|]+)\|[^}]+}/g, '<strong style="color: #d4af37;">$1</strong>');
 
-  // {@skill Name|Source} -> Name
-  processedText = processedText.replace(/{@skill ([^|]+)\|[^}]+}/g, '$1');
+  // {@skill Name|Source} -> <strong>Name</strong>
+  processedText = processedText.replace(/{@skill ([^|]+)\|[^}]+}/g, '<strong>$1</strong>');
 
-  // {@item Name|Source} -> Name
-  processedText = processedText.replace(/{@item ([^|]+)\|[^}]+}/g, '$1');
+  // {@item Name|Source} -> <em style="color: #3b82f6;">Name</em> (blue for items)
+  processedText = processedText.replace(/{@item ([^|]+)\|[^}]+}/g, '<em style="color: #3b82f6;">$1</em>');
 
-  // {@damage dice} -> dice (e.g., {@damage 1d10} -> 1d10)
-  processedText = processedText.replace(/{@damage ([^}]+)}/g, '$1');
+  // {@damage dice} -> <strong style="color: #ef4444;">dice</strong> (red for damage)
+  processedText = processedText.replace(/{@damage ([^}]+)}/g, '<strong style="color: #ef4444;">$1</strong>');
 
-  // {@dice expression} -> expression (e.g., {@dice 1d12} -> 1d12)
-  processedText = processedText.replace(/{@dice ([^}]+)}/g, '$1');
+  // {@dice expression} -> <strong style="color: #10b981;">expression</strong> (green for dice)
+  processedText = processedText.replace(/{@dice ([^}]+)}/g, '<strong style="color: #10b981;">$1</strong>');
 
-  // {@dc value} -> DC value (e.g., {@dc 8} -> DC 8)
-  processedText = processedText.replace(/{@dc ([^}]+)}/g, 'DC $1');
+  // {@dc value} -> <strong style="color: #d4af37;">DC value</strong> (gold for DCs)
+  processedText = processedText.replace(/{@dc ([^}]+)}/g, '<strong style="color: #d4af37;">DC $1</strong>');
+
+  // {@hit bonus} -> <strong style="color: #ef4444;">+bonus</strong> (red for attack bonuses)
+  processedText = processedText.replace(/{@hit ([^}]+)}/g, '<strong style="color: #ef4444;">+$1</strong>');
+
+  // {@recharge dice} -> <strong style="color: #8b5cf6;">(Recharge dice)</strong> (purple for recharge)
+  processedText = processedText.replace(/{@recharge ([^}]+)}/g, '<strong style="color: #8b5cf6;">(Recharge $1)</strong>');
 
   // {@filter text|conditions} -> text (remove filter markup)
   processedText = processedText.replace(/{@filter ([^|]+)\|[^}]+}/g, '$1');
 
-  // Handle any remaining {@...} tokens by extracting just the first part
-  processedText = processedText.replace(/{@\w+ ([^|]+)(?:\|[^}]+)?}/g, '$1');
+  // Handle any remaining {@...} tokens by extracting just the first part and making it bold
+  processedText = processedText.replace(/{@\w+ ([^|]+)(?:\|[^}]+)?}/g, '<strong>$1</strong>');
+
+  // Style common game terms even without markup
+  processedText = processedText.replace(/\b(charges?|action|bonus action|reaction|long rest|short rest|saving throw)\b/gi, '<strong>$1</strong>');
+
+  // Style currency
+  processedText = processedText.replace(/\b(\d+)\s*(gp|sp|cp|pp)\b/g, '<span style="color: #d4af37; font-weight: 600;">$1 $2</span>');
+
+  // Style dice notation that wasn't caught by markup
+  processedText = processedText.replace(/\b(\d+d\d+(?:\s*[+\-]\s*\d+)?)\b/g, '<strong style="color: #10b981;">$1</strong>');
 
   return processedText;
 }
@@ -73,6 +85,11 @@ export function processDescriptionArray(description: any[]): string {
     .map(entry => {
       if (typeof entry === 'string') {
         return processDbMarkup(entry);
+      } else if (typeof entry === 'object' && entry.name && entry.entries) {
+        // Handle D&D-style named sections with bold headers (like "Components")
+        const headerText = `<strong style="color: #d4af37; font-size: 1.1em; display: block; margin-top: 0.75em; margin-bottom: 0.5em;">${entry.name}</strong>`;
+        const contentText = processDescriptionArray(entry.entries);
+        return `${headerText}${contentText}`;
       } else if (typeof entry === 'object' && entry.entries) {
         // Handle nested entries
         return processDescriptionArray(entry.entries);
@@ -143,6 +160,13 @@ export function processTraitDescriptionWithTables(description: any): { text: str
     } else if (typeof entry === 'object' && entry.type === 'list') {
       // Extract list directly for better formatting
       lists.push(entry);
+    } else if (typeof entry === 'object' && entry.name && entry.entries) {
+      // Handle D&D-style named sections with bold headers
+      const headerText = `<strong style="color: #d4af37; font-size: 1.1em; display: block; margin-top: 0.75em; margin-bottom: 0.5em;">${entry.name}</strong>`;
+      textParts.push(headerText);
+      if (Array.isArray(entry.entries)) {
+        entry.entries.forEach(processEntry);
+      }
     } else if (typeof entry === 'object' && entry.entries) {
       // Handle nested entries recursively
       if (Array.isArray(entry.entries)) {

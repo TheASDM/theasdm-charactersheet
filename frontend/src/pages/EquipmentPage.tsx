@@ -1,467 +1,663 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
 import styled from 'styled-components';
-import equipmentService, { Equipment, EQUIPMENT_TYPE_MAP } from '../services/equipmentService';
-import { processDbMarkup } from '../utils/textProcessor';
+import equipmentService, { Equipment } from '../services/equipmentService';
+import { EquipmentItemModal } from '../components/EquipmentItemModal';
 
-const PageContainer = styled.div`
+const EquipmentPageContainer = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   min-height: 100vh;
-  padding: 2rem;
-  color: #ffffff;
-`;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 2rem;
+  color: #fff;
 
   h1 {
+    color: #d4af37;
     font-family: 'Cinzel', serif;
     font-size: 2.5rem;
-    color: #d4af37;
-    margin-bottom: 0.5rem;
+    text-align: center;
+    margin-bottom: 1rem;
   }
 
   .subtitle {
+    text-align: center;
     color: #ccc;
     font-size: 1.1rem;
+    margin-bottom: 2rem;
   }
 `;
 
-const FiltersContainer = styled.div`
-  background: rgba(26, 26, 26, 0.8);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+const FilterBar = styled.div`
   display: flex;
-  flex-wrap: wrap;
   gap: 1rem;
-  align-items: center;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+  background: rgba(26, 26, 26, 0.8);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #444;
 
-  .filter-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    label {
-      color: #d4af37;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    select, input {
-      background: rgba(40, 40, 40, 0.8);
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 0.5rem;
-      color: #fff;
-      font-size: 0.9rem;
-      min-width: 150px;
-
-      &:focus {
-        outline: none;
-        border-color: #d4af37;
-        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
-      }
-    }
-  }
-
-  .search-section {
+  input {
     flex: 1;
     min-width: 250px;
+    padding: 0.75rem;
+    background: rgba(40, 40, 40, 0.8);
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1rem;
 
-    input {
-      width: 100%;
-      min-width: unset;
+    &:focus {
+      outline: none;
+      border-color: #d4af37;
+      background: rgba(50, 50, 50, 0.9);
+    }
+
+    &::placeholder {
+      color: #888;
+    }
+  }
+
+  select {
+    padding: 0.75rem;
+    background: rgba(40, 40, 40, 0.8);
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    min-width: 150px;
+
+    &:focus {
+      outline: none;
+      border-color: #d4af37;
+    }
+
+    option {
+      background: #2d2d2d;
+      color: #fff;
     }
   }
 `;
 
-const StatsContainer = styled.div`
+const StatsBar = styled.div`
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+  color: #aaa;
+  font-size: 0.95rem;
 
-  .stat-card {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid rgba(212, 175, 55, 0.3);
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: center;
-    flex: 1;
-    min-width: 120px;
-
-    .stat-number {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #d4af37;
-    }
-
-    .stat-label {
-      font-size: 0.8rem;
-      color: #ccc;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+  .count {
+    color: #d4af37;
+    font-weight: 600;
   }
 `;
 
-const EquipmentGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const EquipmentCard = styled.div`
-  background: rgba(26, 26, 26, 0.8);
+const TableContainer = styled.div`
+  background: rgba(26, 26, 26, 0.9);
   border: 2px solid #444;
   border-radius: 12px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+`;
 
-  &:hover {
-    border-color: #d4af37;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.3);
+const ItemTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
-  .equipment-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
+  th {
+    text-align: left;
+    padding: 1rem;
+    color: #d4af37;
+    font-weight: 700;
+    font-size: 1rem;
+    border-bottom: 3px solid #d4af37;
+    font-family: 'Cinzel', serif;
+  }
 
-    .equipment-name {
-      font-family: 'Cinzel', serif;
-      font-size: 1.1rem;
-      color: #d4af37;
-      font-weight: 600;
-      flex: 1;
-      margin-right: 0.5rem;
+  tbody tr {
+    border-bottom: 1px solid #333;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(212, 175, 55, 0.08);
+      transform: translateX(2px);
     }
 
-    .equipment-rarity {
-      background: rgba(212, 175, 55, 0.2);
-      color: #d4af37;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
+    &:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
     }
   }
 
-  .equipment-type {
-    color: #888;
-    font-size: 0.8rem;
-    margin-bottom: 0.5rem;
-    text-transform: capitalize;
-  }
-
-  .equipment-description {
+  td {
+    padding: 0.75rem 1rem;
     color: #ccc;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    flex: 1;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
+    font-size: 0.95rem;
+    vertical-align: top;
   }
 
-  .equipment-stats {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #444;
+  .item-name {
+    color: #fff;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .item-type {
+    color: #888;
+    font-size: 0.9rem;
+    font-style: italic;
+  }
+
+  .item-stats {
+    color: #d4af37;
+    font-weight: 500;
+  }
+
+  .item-weight {
+    text-align: right;
+    font-family: 'Monaco', monospace;
+  }
+
+  .item-rarity {
+    text-transform: capitalize;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+
+    &.none {
+      background: rgba(128, 128, 128, 0.2);
+      color: #ccc;
+    }
+    &.common {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    &.uncommon {
+      background: rgba(30, 255, 0, 0.2);
+      color: #1eff00;
+    }
+    &.rare {
+      background: rgba(0, 153, 255, 0.2);
+      color: #0099ff;
+    }
+    &.very.rare {
+      background: rgba(163, 53, 238, 0.2);
+      color: #a335ee;
+    }
+    &.legendary {
+      background: rgba(255, 128, 0, 0.2);
+      color: #ff8000;
+    }
+    &.artifact {
+      background: rgba(230, 204, 128, 0.2);
+      color: #e6cc80;
+    }
+  }
+
+  .item-source {
+    font-family: 'Monaco', monospace;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 0.25rem 0.5rem;
+    background: rgba(40, 40, 40, 0.6);
+    border-radius: 4px;
+  }
+
+  .checkbox-cell {
+    width: 40px;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .item-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: #d4af37;
+    cursor: pointer;
+    margin: 0;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+`;
+
+const ScrollableTable = styled.div`
+  max-height: 70vh;
+  overflow-y: auto;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(40, 40, 40, 0.5);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d4af37;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #e6b52a;
+  }
+`;
+
+const PaginationBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(26, 26, 26, 0.8);
+  border-radius: 8px;
+  border: 1px solid #444;
+
+  .pagination-controls {
     display: flex;
-    flex-wrap: wrap;
     gap: 0.5rem;
+    align-items: center;
 
-    .stat {
-      background: rgba(40, 40, 40, 0.6);
-      padding: 0.25rem 0.5rem;
+    button {
+      padding: 0.5rem 1rem;
+      background: rgba(40, 40, 40, 0.8);
+      border: 1px solid #555;
       border-radius: 4px;
-      font-size: 0.75rem;
-      color: #aaa;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
 
-      .label {
-        color: #d4af37;
-        font-weight: 600;
+      &:hover:not(:disabled) {
+        background: #d4af37;
+        border-color: #d4af37;
+        color: #1a1a1a;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.active {
+        background: #d4af37;
+        border-color: #d4af37;
+        color: #1a1a1a;
       }
     }
+
+    .page-info {
+      color: #ccc;
+      margin: 0 1rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  .load-all-btn {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #d4af37, #e6b52a);
+    border: none;
+    border-radius: 6px;
+    color: #1a1a1a;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
   }
 `;
 
-const LoadingSpinner = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-  font-size: 1.1rem;
-  color: #d4af37;
-`;
+// Type mappings for display
+const TYPE_LABELS: { [key: string]: string } = {
+  'M|XPHB': 'Melee Weapon',
+  'R|XPHB': 'Ranged Weapon',
+  'A|XPHB': 'Ammunition',
+  'LA|XPHB': 'Light Armor',
+  'MA|XPHB': 'Medium Armor',
+  'HA|XPHB': 'Heavy Armor',
+  'S|XPHB': 'Shield',
+  'G|XPHB': 'Adventuring Gear',
+  'SCF|XPHB': 'Spellcasting Focus',
+  'INS|XPHB': 'Musical Instrument',
+  'AT|XPHB': 'Artisan Tools',
+  'FD|XPHB': 'Food & Drink',
+  'RD|XDMG': 'Rod',
+  'WD|XDMG': 'Wand',
+  '$G|XDMG': 'Gemstone',
+  'AF|XDMG': 'Futuristic',
+  'adventuring gear': 'Adventuring Gear'
+};
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem;
-  color: #888;
-
-  .icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-  }
-
-  .message {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .suggestion {
-    font-size: 0.9rem;
-    color: #666;
-  }
-`;
-
-export default function EquipmentPage() {
+const EquipmentPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedRarity, setSelectedRarity] = useState('all');
-  const [selectedWeaponCategory, setSelectedWeaponCategory] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [rarityFilter, setRarityFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadAll, setLoadAll] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Equipment | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
 
-  // Fetch equipment data
+  // Load checked items from localStorage on component mount
+  useEffect(() => {
+    const savedCheckedItems = localStorage.getItem('equipmentCheckedItems');
+    if (savedCheckedItems) {
+      try {
+        const itemIds = JSON.parse(savedCheckedItems);
+        setCheckedItems(new Set(itemIds));
+      } catch (error) {
+        console.error('Error loading checked items:', error);
+      }
+    }
+  }, []);
+
+  // Auto-save checked items to localStorage
+  useEffect(() => {
+    const itemIds = Array.from(checkedItems);
+    localStorage.setItem('equipmentCheckedItems', JSON.stringify(itemIds));
+  }, [checkedItems]);
+
+  // Fetch equipment data with pagination
   const { data: equipmentResponse, isLoading, error } = useQuery(
-    'equipment',
-    equipmentService.getAll,
+    ['equipment', currentPage, loadAll],
+    async () => {
+      if (loadAll) {
+        // Fetch all pages
+        const allItems = [];
+        const firstPage = await equipmentService.getAll();
+        const totalPages = firstPage.data?.pagination?.pages || 1;
+
+        for (let page = 1; page <= totalPages; page++) {
+          const response = await fetch(`http://localhost:3001/api/items?page=${page}&limit=50`);
+          const data = await response.json();
+          allItems.push(...data.items);
+        }
+
+        return { data: { items: allItems, pagination: firstPage.data?.pagination } };
+      } else {
+        return equipmentService.getAll();
+      }
+    },
     {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
+      keepPreviousData: true,
     }
   );
 
-  const equipment = equipmentResponse?.data || [];
+  const equipment = equipmentResponse?.data?.items || [];
+  const pagination = equipmentResponse?.data?.pagination;
 
-  // Filter equipment based on selected filters
+  // Filter equipment based on search and filters
   const filteredEquipment = equipment.filter((item: Equipment) => {
-    // Search term filter
-    if (searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !item.type.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (!item) return false;
+
+    // Search filter
+    if (searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
 
-    // Category filter
-    if (selectedCategory !== 'all') {
-      switch (selectedCategory) {
-        case 'weapons':
-          if (!item.weaponCategory) return false;
-          break;
-        case 'armor':
-          if (!item.ac && item.type !== 'S|XPHB') return false;
-          break;
-        case 'magic-items':
-          if (item.rarity === 'none' || !item.rarity) return false;
-          break;
-        case 'adventuring-gear':
-          if (item.weaponCategory || item.ac || (item.rarity !== 'none' && item.rarity)) return false;
-          break;
-      }
+    // Type filter
+    if (typeFilter !== 'all' && item.type !== typeFilter) {
+      return false;
     }
 
     // Rarity filter
-    if (selectedRarity !== 'all' && item.rarity !== selectedRarity) {
-      return false;
-    }
-
-    // Weapon category filter
-    if (selectedWeaponCategory !== 'all' && item.weaponCategory !== selectedWeaponCategory) {
+    if (rarityFilter !== 'all' && item.rarity !== rarityFilter) {
       return false;
     }
 
     return true;
   });
 
-  // Get unique rarities and weapon categories for filters
-  const rarities = Array.from(new Set(equipment.map((item: Equipment) => item.rarity))).filter(Boolean);
-  const weaponCategories = Array.from(new Set(equipment.filter((item: Equipment) => item.weaponCategory).map((item: Equipment) => item.weaponCategory))).filter(Boolean);
+  // Get unique types and rarities for filters
+  const uniqueTypes = [...new Set(equipment.map((item: Equipment) => item.type))].filter(Boolean).sort();
+  const uniqueRarities = [...new Set(equipment.map((item: Equipment) => item.rarity))].filter(Boolean).sort();
 
-  const formatEquipmentDescription = (entries: any): string => {
-    if (!entries) return '';
-
-    if (Array.isArray(entries)) {
-      return processDbMarkup(entries.join(' '));
+  const formatDamage = (item: Equipment) => {
+    if (item.dmg1) {
+      return `${item.dmg1}${item.dmgType ? ` ${item.dmgType}` : ''}`;
     }
-
-    if (typeof entries === 'string') {
-      return processDbMarkup(entries);
-    }
-
     return '';
   };
 
-  const getEquipmentStats = (item: Equipment) => {
-    const stats = [];
+  const formatAC = (item: Equipment) => {
+    if (item.ac) {
+      return `AC ${item.ac}`;
+    }
+    return '';
+  };
 
-    if (item.ac) stats.push({ label: 'AC', value: item.ac });
-    if (item.dmg1) stats.push({ label: 'Damage', value: `${item.dmg1} ${item.dmgType || ''}` });
-    if (item.range) stats.push({ label: 'Range', value: item.range });
-    if (item.weight) stats.push({ label: 'Weight', value: `${item.weight} lb` });
-    if (item.value) stats.push({ label: 'Cost', value: `${item.value} ${item.valueCurrency || 'gp'}` });
-    if (item.reqAttune) stats.push({ label: 'Attunement', value: typeof item.reqAttune === 'string' ? item.reqAttune : 'Required' });
+  const handleItemClick = (item: Equipment, event: React.MouseEvent) => {
+    // Don't open modal if checkbox was clicked
+    if ((event.target as HTMLElement).closest('.checkbox-cell')) {
+      return;
+    }
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
 
-    return stats;
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleAddToInventory = (item: Equipment) => {
+    // Add to checked items when adding to inventory
+    setCheckedItems(prev => new Set([...prev, item.id]));
+    // TODO: Implement actual inventory addition to character sheet
+    console.log('Added to inventory:', item.name);
+  };
+
+  const handleCheckboxChange = (itemId: number, checked: boolean) => {
+    setCheckedItems(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(itemId);
+      } else {
+        newSet.delete(itemId);
+      }
+      return newSet;
+    });
   };
 
   if (isLoading) {
     return (
-      <PageContainer>
-        <LoadingSpinner>Loading equipment...</LoadingSpinner>
-      </PageContainer>
+      <EquipmentPageContainer>
+        <h1>🏹 Equipment Database</h1>
+        <div style={{ textAlign: 'center', color: '#d4af37', padding: '4rem', fontSize: '1.2rem' }}>
+          Loading equipment database...
+        </div>
+      </EquipmentPageContainer>
     );
   }
 
   if (error) {
     return (
-      <PageContainer>
-        <div style={{ textAlign: 'center', color: '#ff6b6b', padding: '2rem' }}>
-          Failed to load equipment data. Please try again later.
+      <EquipmentPageContainer>
+        <h1>🏹 Equipment Database</h1>
+        <div style={{ textAlign: 'center', color: '#ff6b6b', padding: '4rem', fontSize: '1.2rem' }}>
+          Error loading equipment: {error instanceof Error ? error.message : 'Unknown error'}
         </div>
-      </PageContainer>
+      </EquipmentPageContainer>
     );
   }
 
   return (
-    <PageContainer>
-      <Header>
-        <h1>⚔️ Equipment Compendium</h1>
-        <div className="subtitle">Discover weapons, armor, and magical items from the D&D 2024 Player's Handbook</div>
-      </Header>
+    <EquipmentPageContainer>
+      <h1>🏹 Equipment Database</h1>
+      <div className="subtitle">
+        Complete D&D 2024 equipment collection from XPHB and XDMG
+      </div>
 
-      <FiltersContainer>
-        <div className="filter-section">
-          <label>Category</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            <option value="weapons">Weapons</option>
-            <option value="armor">Armor</option>
-            <option value="adventuring-gear">Adventuring Gear</option>
-            <option value="magic-items">Magic Items</option>
-          </select>
-        </div>
-
-        <div className="filter-section">
-          <label>Rarity</label>
-          <select
-            value={selectedRarity}
-            onChange={(e) => setSelectedRarity(e.target.value)}
-          >
-            <option value="all">All Rarities</option>
-            {rarities.map(rarity => (
-              <option key={rarity} value={rarity}>
-                {rarity?.charAt(0).toUpperCase() + rarity?.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {selectedCategory === 'weapons' && (
-          <div className="filter-section">
-            <label>Weapon Type</label>
-            <select
-              value={selectedWeaponCategory}
-              onChange={(e) => setSelectedWeaponCategory(e.target.value)}
-            >
-              <option value="all">All Types</option>
-              {weaponCategories.map(category => (
-                <option key={category} value={category}>
-                  {category ? category.charAt(0).toUpperCase() + category.slice(1) : category}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="filter-section search-section">
-          <label>Search Equipment</label>
-          <input
-            type="text"
-            placeholder="Search by name or type..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </FiltersContainer>
-
-      <StatsContainer>
-        <div className="stat-card">
-          <div className="stat-number">{equipment.length}</div>
-          <div className="stat-label">Total Items</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{filteredEquipment.length}</div>
-          <div className="stat-label">Filtered</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{equipment.filter((item: Equipment) => item.weaponCategory).length}</div>
-          <div className="stat-label">Weapons</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{equipment.filter((item: Equipment) => item.ac || item.type === 'S|XPHB').length}</div>
-          <div className="stat-label">Armor</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{equipment.filter((item: Equipment) => item.rarity !== 'none' && item.rarity).length}</div>
-          <div className="stat-label">Magic Items</div>
-        </div>
-      </StatsContainer>
-
-      {filteredEquipment.length === 0 ? (
-        <EmptyState>
-          <div className="icon">🔍</div>
-          <div className="message">No equipment found</div>
-          <div className="suggestion">Try adjusting your search filters</div>
-        </EmptyState>
-      ) : (
-        <EquipmentGrid>
-          {filteredEquipment.map((item: Equipment) => (
-            <EquipmentCard key={item.id}>
-              <div className="equipment-header">
-                <div className="equipment-name">{item.name}</div>
-                <div className="equipment-rarity">{item.rarity}</div>
-              </div>
-
-              <div className="equipment-type">
-                {EQUIPMENT_TYPE_MAP[item.type as keyof typeof EQUIPMENT_TYPE_MAP] || item.type}
-              </div>
-
-              <div className="equipment-description">
-                {formatEquipmentDescription(item.entries)}
-              </div>
-
-              {getEquipmentStats(item).length > 0 && (
-                <div className="equipment-stats">
-                  {getEquipmentStats(item).map((stat, index) => (
-                    <div key={index} className="stat">
-                      <span className="label">{stat.label}:</span> {stat.value}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </EquipmentCard>
+      <FilterBar>
+        <input
+          type="text"
+          placeholder="🔍 Search equipment by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="all">All Types</option>
+          {uniqueTypes.map(type => (
+            <option key={type} value={type}>
+              {TYPE_LABELS[type] || type}
+            </option>
           ))}
-        </EquipmentGrid>
+        </select>
+        <select value={rarityFilter} onChange={(e) => setRarityFilter(e.target.value)}>
+          <option value="all">All Rarities</option>
+          {uniqueRarities.map(rarity => (
+            <option key={rarity} value={rarity}>
+              {rarity}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
+
+      <StatsBar>
+        <div>
+          Showing <span className="count">{filteredEquipment.length}</span> of{' '}
+          <span className="count">{equipment.length}</span> items
+        </div>
+        <div>
+          Sources: XPHB (Player's Handbook), XDMG (Dungeon Master's Guide)
+        </div>
+      </StatsBar>
+
+      <TableContainer>
+        <ScrollableTable>
+          <ItemTable>
+            <thead>
+              <tr>
+                <th style={{ width: '40px' }}></th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Stats</th>
+                <th>Weight</th>
+                <th>Rarity</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEquipment.map((item: Equipment) => (
+                <tr key={item.id} onClick={(e) => handleItemClick(item, e)}>
+                  <td className="checkbox-cell">
+                    <input
+                      type="checkbox"
+                      className="item-checkbox"
+                      checked={checkedItems.has(item.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleCheckboxChange(item.id, e.target.checked);
+                      }}
+                    />
+                  </td>
+                  <td className="item-name">{item.name}</td>
+                  <td className="item-type">{TYPE_LABELS[item.type] || item.type}</td>
+                  <td className="item-stats">
+                    {formatDamage(item) || formatAC(item) || '-'}
+                  </td>
+                  <td className="item-weight">
+                    {item.weight ? `${item.weight} lb` : '-'}
+                  </td>
+                  <td className={`item-rarity ${item.rarity?.replace(' ', '.')}`}>
+                    {item.rarity || '-'}
+                  </td>
+                  <td className="item-source">{item.source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </ItemTable>
+        </ScrollableTable>
+      </TableContainer>
+
+      {!loadAll && pagination && pagination.pages > 1 && (
+        <PaginationBar>
+          <div className="pagination-controls">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(1)}
+            >
+              First
+            </button>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+            >
+              Previous
+            </button>
+            <div className="page-info">
+              Page {currentPage} of {pagination.pages}
+            </div>
+            <button
+              disabled={currentPage === pagination.pages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+            >
+              Next
+            </button>
+            <button
+              disabled={currentPage === pagination.pages}
+              onClick={() => setCurrentPage(pagination.pages)}
+            >
+              Last
+            </button>
+          </div>
+          <button
+            className="load-all-btn"
+            onClick={() => setLoadAll(true)}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Loading...' : 'Load All Items'}
+          </button>
+        </PaginationBar>
       )}
-    </PageContainer>
+
+      {loadAll && (
+        <PaginationBar>
+          <div style={{ color: '#d4af37', fontWeight: 600 }}>
+            All {equipment.length} items loaded
+          </div>
+          <button
+            className="load-all-btn"
+            onClick={() => {
+              setLoadAll(false);
+              setCurrentPage(1);
+            }}
+          >
+            Enable Pagination
+          </button>
+        </PaginationBar>
+      )}
+
+      <EquipmentItemModal
+        item={selectedItem}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onAddToInventory={handleAddToInventory}
+      />
+    </EquipmentPageContainer>
   );
-}
+};
+
+export default EquipmentPage;

@@ -508,10 +508,13 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
                 )}
 
                 <FeatDescription>
-                  <div className="feat-text">
-                    {formatFeatDescription(feat.entries).substring(0, 200)}
-                    {formatFeatDescription(feat.entries).length > 200 && '...'}
-                  </div>
+                  <div
+                    className="feat-text"
+                    dangerouslySetInnerHTML={{
+                      __html: formatFeatDescription(feat.entries).substring(0, 200) +
+                              (formatFeatDescription(feat.entries).length > 200 ? '...' : '')
+                    }}
+                  />
 
                   {feat.abilityScoreIncrease && (
                     <div className="feat-benefits">
@@ -585,9 +588,10 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
               </FeatPrerequisite>
             )}
 
-            <div className="feat-details">
-              {renderFeatDetails(selectedFeatForModal)}
-            </div>
+            <div
+              className="feat-details"
+              dangerouslySetInnerHTML={{ __html: renderFeatDetails(selectedFeatForModal) }}
+            />
 
             <div style={{
               textAlign: 'center',

@@ -1,7 +1,7 @@
 import { CharacterSheetData } from '../types/characterSheet';
 import { calculateDerivedValues } from '../services/characterCalculations';
 import { speciesOptions, classOptions } from '../constants/characterOptions';
-import { backgroundsData } from './BackgroundSelectionModal';
+// import { backgroundsData } from './BackgroundSelectionModal'; // Removed - now uses API
 import {
   CharacterNameSection,
   CharacterHeaderRow,
@@ -39,7 +39,8 @@ export default function CharacterHeader({
   selection,
 }: CharacterHeaderProps) {
   const derivedValues = calculateDerivedValues(character);
-  const backgroundOptions = Object.keys(backgroundsData);
+  // TODO: Replace with API call for background options
+  const backgroundOptions: string[] = []; // Temporary placeholder until API integration
 
   return (
     <CharacterNameSection>

@@ -37,10 +37,11 @@ export const CHARACTER_CLASSES = [
   'Wizard',
 ] as const;
 
-// Class skill mappings for quick reference
-export const CLASS_SKILLS = {
+// Class skills and skill choice counts for character generator wizard
+// These are essential for the wizard workflow and provide immediate feedback
+export const CLASS_SKILLS: Record<string, string[]> = {
   Barbarian: ['Animal Handling', 'Athletics', 'Intimidation', 'Nature', 'Perception', 'Survival'],
-  Bard: ['any'], // Bards can choose any 3 skills
+  Bard: ['any'], // Special case - bards can choose any skills
   Cleric: ['History', 'Insight', 'Medicine', 'Persuasion', 'Religion'],
   Druid: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'],
   Fighter: ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Perception', 'Survival'],
@@ -50,11 +51,10 @@ export const CLASS_SKILLS = {
   Rogue: ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'],
   Sorcerer: ['Arcana', 'Deception', 'Insight', 'Intimidation', 'Persuasion', 'Religion'],
   Warlock: ['Arcana', 'Deception', 'History', 'Intimidation', 'Investigation', 'Nature', 'Religion'],
-  Wizard: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion'],
-} as const;
+  Wizard: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion']
+};
 
-// Number of skill choices per class
-export const CLASS_SKILL_CHOICES = {
+export const CLASS_SKILL_CHOICES: Record<string, number> = {
   Barbarian: 2,
   Bard: 3,
   Cleric: 2,
@@ -66,7 +66,7 @@ export const CLASS_SKILL_CHOICES = {
   Rogue: 4,
   Sorcerer: 2,
   Warlock: 2,
-  Wizard: 2,
-} as const;
+  Wizard: 2
+};
 
 export default classService;

@@ -138,6 +138,16 @@ export const WizardProgress = styled.div`
 
     &:hover:not(.current) {
       transform: translateY(-2px);
+
+      .step-number {
+        background: linear-gradient(145deg, #5a5a5a, #4a4a4a);
+        color: #f0f0f0;
+        box-shadow: 0 4px 12px rgba(90, 90, 90, 0.3);
+      }
+
+      .step-label {
+        color: #f0f0f0;
+      }
     }
   }
 `;

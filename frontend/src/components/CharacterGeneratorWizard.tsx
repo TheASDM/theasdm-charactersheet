@@ -17,7 +17,6 @@ import { Step3BSpeciesSelection } from './wizard-steps/Step3B_SpeciesSelection';
 import { Step3CSpeciesChoices } from './wizard-steps/Step3C_SpeciesChoices';
 import { Step3DOriginFeats } from './wizard-steps/Step3D_OriginFeats';
 import { Step4EquipmentSelection } from './wizard-steps/Step4_EquipmentSelection';
-import { CLASS_SKILL_CHOICES } from '../services/classService';
 
 // Wizard step types
 export type WizardStep =
@@ -119,18 +118,20 @@ export default function CharacterGeneratorWizard() {
     canProceed: false
   });
 
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
   // Character builder data
   const [builderData, setBuilderData] = useState<CharacterBuilderData>({
     characterName: '',
     playerName: '',
     abilityScoreMethod: 'standard-array',
     abilityScores: {
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10
+      strength: 0,
+      dexterity: 0,
+      constitution: 0,
+      intelligence: 0,
+      wisdom: 0,
+      charisma: 0
     },
     selectedClass: '',
     selectedClassSkills: [],
@@ -167,77 +168,10 @@ export default function CharacterGeneratorWizard() {
     });
   }, []);
 
-  // Validate current step
+  // Validate current step - all fields are optional now
   const validateCurrentStep = useCallback((): boolean => {
-    switch (wizardState.currentStep) {
-      case 'character-info':
-        return builderData.characterName.trim() !== '' &&
-               builderData.playerName.trim() !== '';
-
-      case 'ability-scores':
-        return Object.values(builderData.abilityScores).every(score => score >= 8 && score <= 15);
-
-      case 'class-selection':
-        // Must have class selected and completed all class steps
-        if (!builderData.selectedClass) return false;
-
-        // Check if we need to complete skill selection
-        const requiredSkillCount = CLASS_SKILL_CHOICES[builderData.selectedClass as keyof typeof CLASS_SKILL_CHOICES] || 0;
-        if (requiredSkillCount > 0 && builderData.selectedClassSkills.length !== requiredSkillCount) {
-          return false;
-        }
-
-        // Must be on step 3 (features completed) or higher
-        if (builderData.classStep < 3) return false;
-
-        // Check if any class choices are required but not completed
-        // This will be validated by the Step2ClassSelection component
-        // For now, just check that we've completed step 3
-        return builderData.classStep >= 3;
-
-      case 'background-selection':
-        return builderData.selectedBackground !== '';
-
-      case 'species-selection':
-        return builderData.selectedSpecies !== '';
-
-      case 'species-choices':
-        // Check if species requires choices and if they're made
-        const speciesNeedingChoices = ['dragonborn', 'elf', 'gnome', 'goliath', 'tiefling'];
-        const needsChoices = speciesNeedingChoices.includes(builderData.selectedSpecies?.toLowerCase() || '');
-
-        if (!needsChoices) return true; // No choices needed
-
-        // Check specific requirements
-        const choices = builderData.speciesChoices || {};
-        switch (builderData.selectedSpecies?.toLowerCase()) {
-          case 'dragonborn':
-            return !!choices.draconicAncestry;
-          case 'elf':
-            return !!choices.elfLineage;
-          case 'gnome':
-            return !!choices.gnomeLineage;
-          case 'goliath':
-            return !!choices.giantAncestry;
-          case 'tiefling':
-            return !!choices.fiendishLegacy;
-          default:
-            return true;
-        }
-
-      case 'origin-feats':
-        return builderData.selectedOriginFeats.length === builderData.requiredFeatCount;
-
-      case 'equipment-selection':
-        // Equipment is optional for character creation, but we could require at least one weapon
-        return true; // For now, equipment selection is always optional
-
-      case 'review-create':
-        return true; // Always valid if we reached this step
-
-      default:
-        return false;
-    }
+    // All steps are now optional - user can navigate freely
+    return true;
   }, [wizardState.currentStep, builderData]);
 
   // Update validation when data changes
@@ -269,11 +203,25 @@ export default function CharacterGeneratorWizard() {
     const currentIndex = getCurrentStepIndex();
     const nextStep = WIZARD_STEPS[currentIndex + 1];
 
-    setWizardState(prev => ({
-      ...prev,
-      currentStep: nextStep,
-      completedSteps: new Set([...prev.completedSteps, prev.currentStep])
-    }));
+    // Start transition
+    setIsTransitioning(true);
+
+    // Small delay for transition effect
+    setTimeout(() => {
+      setWizardState(prev => ({
+        ...prev,
+        currentStep: nextStep,
+        completedSteps: new Set([...prev.completedSteps, prev.currentStep])
+      }));
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // End transition
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 500);
+    }, 300);
   }, [wizardState.currentStep, wizardState.canProceed]);
 
   const goBack = useCallback(() => {
@@ -366,6 +314,99 @@ export default function CharacterGeneratorWizard() {
     }
   }, [builderData, navigate]);
 
+  // Check if ability scores are complete
+  const isAbilityScoresComplete = (): boolean => {
+    if (builderData.abilityScoreMethod === 'standard-array') {
+      const usedScores = Object.values(builderData.abilityScores).filter(s => s > 0).sort();
+      const standardArray = [15, 14, 13, 12, 10, 8].sort();
+      return usedScores.length === 6 && JSON.stringify(usedScores) === JSON.stringify(standardArray);
+    } else {
+      return Object.values(builderData.abilityScores).every(score => score >= 3 && score <= 20);
+    }
+  };
+
+  // Check if class selection is complete
+  const isClassSelectionComplete = (): boolean => {
+    if (!builderData.selectedClass) return false;
+
+    // Import the CLASS_SKILL_CHOICES to get accurate requirements
+    const CLASS_SKILL_CHOICES: { [key: string]: number } = {
+      'Artificer': 2,
+      'Barbarian': 2,
+      'Bard': 3,
+      'Cleric': 2,
+      'Druid': 2,
+      'Fighter': 2,
+      'Monk': 2,
+      'Paladin': 2,
+      'Ranger': 3,
+      'Rogue': 4,
+      'Sorcerer': 2,
+      'Warlock': 2,
+      'Wizard': 2
+    };
+
+    const requiredSkillCount = CLASS_SKILL_CHOICES[builderData.selectedClass] || 0;
+    const isSkillComplete = requiredSkillCount === 0 || builderData.selectedClassSkills.length === requiredSkillCount;
+
+    // For now, we'll consider class features complete if a class is selected
+    // This can be enhanced later with specific class feature validation
+    const isClassFeatureComplete = true;
+
+    return isSkillComplete && isClassFeatureComplete;
+  };
+
+  // Check if background selection is complete
+  const isBackgroundSelectionComplete = (): boolean => {
+    return !!(builderData.selectedBackground &&
+              builderData.backgroundAbilityScoreAllocations &&
+              builderData.selectedLanguages);
+  };
+
+  // Check if species selection is complete
+  const isSpeciesSelectionComplete = (): boolean => {
+    return !!builderData.selectedSpecies;
+  };
+
+  // Check if origin feats selection is complete
+  const isOriginFeatsComplete = (): boolean => {
+    return builderData.selectedOriginFeats.length >= builderData.requiredFeatCount;
+  };
+
+  // Check if equipment selection is complete
+  const isEquipmentSelectionComplete = (): boolean => {
+    return !!(builderData.selectedEquipment.armor ||
+              (builderData.selectedEquipment.weapons && builderData.selectedEquipment.weapons.length > 0) ||
+              (builderData.selectedEquipment.equipment && builderData.selectedEquipment.equipment.length > 0));
+  };
+
+  // Check if character info is complete
+  const isCharacterInfoComplete = (): boolean => {
+    return !!(builderData.characterName && builderData.playerName);
+  };
+
+  // Check if current step is complete
+  const isCurrentStepComplete = (): boolean => {
+    switch (wizardState.currentStep) {
+      case 'character-info':
+        return isCharacterInfoComplete();
+      case 'ability-scores':
+        return isAbilityScoresComplete();
+      case 'class-selection':
+        return isClassSelectionComplete();
+      case 'background-selection':
+        return isBackgroundSelectionComplete();
+      case 'species-selection':
+        return isSpeciesSelectionComplete();
+      case 'origin-feats':
+        return isOriginFeatsComplete();
+      case 'equipment-selection':
+        return isEquipmentSelectionComplete();
+      default:
+        return false;
+    }
+  };
+
   return (
     <WizardContainer>
       <div className="character-generator-wizard">
@@ -375,7 +416,44 @@ export default function CharacterGeneratorWizard() {
         </WizardHeader>
 
         {/* Step Content */}
-        <WizardContent>
+        <WizardContent style={{
+          opacity: isTransitioning ? 0.3 : 1,
+          transition: 'opacity 0.3s ease',
+          position: 'relative'
+        }}>
+          {/* Transition Screen */}
+          {isTransitioning && (
+            <div style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 999,
+              background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%)',
+              border: '3px solid #d4af37',
+              borderRadius: '12px',
+              padding: '2rem 3rem',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8)',
+              animation: 'fadeInScale 0.3s ease',
+            }}>
+              <h2 style={{
+                color: '#d4af37',
+                fontFamily: 'Cinzel, serif',
+                fontSize: '1.8rem',
+                margin: 0,
+                textAlign: 'center',
+              }}>
+                Loading Next Step...
+              </h2>
+              <p style={{
+                color: '#ccc',
+                marginTop: '0.5rem',
+                textAlign: 'center',
+              }}>
+                Preparing your character configuration
+              </p>
+            </div>
+          )}
           {wizardState.currentStep === 'character-info' && (
             <Step0CharacterInfo
               data={builderData}
@@ -442,10 +520,22 @@ export default function CharacterGeneratorWizard() {
                 } ${
                   wizardState.completedSteps.has(step) ? 'completed' : ''
                 }`}
-                onClick={() => wizardState.completedSteps.has(step) && goToStep(step)}
+                onClick={() => goToStep(step)}
               >
                 <span className="step-number">{index + 1}</span>
-                <span className="step-label">{STEP_LABELS[step]}</span>
+                <span className="step-label" style={{
+                  color: (
+                    (step === 'character-info' && isCharacterInfoComplete()) ||
+                    (step === 'ability-scores' && isAbilityScoresComplete()) ||
+                    (step === 'class-selection' && isClassSelectionComplete()) ||
+                    (step === 'background-selection' && isBackgroundSelectionComplete()) ||
+                    (step === 'species-selection' && isSpeciesSelectionComplete()) ||
+                    (step === 'origin-feats' && isOriginFeatsComplete()) ||
+                    (step === 'equipment-selection' && isEquipmentSelectionComplete())
+                  ) ? '#4caf50' : undefined
+                }}>
+                  {STEP_LABELS[step]}
+                </span>
               </div>
             ))}
           </WizardProgress>
@@ -473,6 +563,10 @@ export default function CharacterGeneratorWizard() {
                   onClick={goNext}
                   disabled={!canGoNext()}
                   className="wizard-btn wizard-btn-primary"
+                  style={{
+                    background: isCurrentStepComplete() ? 'linear-gradient(145deg, #4caf50, #45a049)' : undefined,
+                    borderColor: isCurrentStepComplete() ? '#4caf50' : undefined
+                  }}
                 >
                   Next
                 </button>

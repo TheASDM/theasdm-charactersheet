@@ -638,25 +638,17 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
           ))}
         </BackgroundGrid>
 
-        {data.selectedBackground && (
+
+        {!data.selectedBackground && (
           <div style={{
-            marginTop: '1rem',
+            marginTop: '1.5rem',
             textAlign: 'center',
-            color: '#4caf50',
-            fontWeight: 600
+            color: '#888',
+            fontSize: '0.9rem'
           }}>
-            ✓ {data.selectedBackground} background selected!
+            💡 Tip: Consider how your background's skills complement your class abilities.
           </div>
         )}
-
-        <div style={{
-          marginTop: '1.5rem',
-          textAlign: 'center',
-          color: '#888',
-          fontSize: '0.9rem'
-        }}>
-          💡 Tip: Consider how your background's skills complement your class abilities.
-        </div>
       </div>
 
       {/* Background Selection Modal */}
