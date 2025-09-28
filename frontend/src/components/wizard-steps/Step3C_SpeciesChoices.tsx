@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
+import { AbilityScoresHeader } from './AbilityScoresHeader';
 
 interface Step3CSpeciesChoicesProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
 }
+
+// Skills list from D&D 2024
+const ALL_SKILLS = [
+  'Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception',
+  'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine',
+  'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion',
+  'Sleight of Hand', 'Stealth', 'Survival'
+];
 
 // Species choice data
 const DRAGONBORN_ANCESTRY = [
@@ -359,6 +368,44 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
     </div>
   );
 
+  const renderHumanChoices = () => (
+    <>
+      <div className="choice-section">
+        <div className="section-title">Choose Your Skill Proficiency</div>
+        <div className="section-description">
+          As a Human, you gain proficiency in one skill of your choice from any skill list.
+        </div>
+        <ChoiceGrid>
+          {ALL_SKILLS.map((skill) => (
+            <ChoiceCard
+              key={skill}
+              selected={selectedChoices.humanSkill === skill}
+              onClick={() => handleChoiceSelect('humanSkill', skill)}
+            >
+              <ChoiceName>{skill}</ChoiceName>
+              <ChoiceDescription>
+                Gain proficiency in {skill}, adding your proficiency bonus to all {skill} checks.
+              </ChoiceDescription>
+            </ChoiceCard>
+          ))}
+        </ChoiceGrid>
+      </div>
+
+      <div className="choice-section">
+        <div className="section-title">Choose Your Second Origin Feat</div>
+        <div className="section-description">
+          Humans receive an additional Origin Feat. This will be selected in the Origin Feats step.
+        </div>
+        <SelectionSummary>
+          <div className="summary-title">Extra Origin Feat</div>
+          <div className="summary-text">
+            You will select 2 Origin Feats instead of 1 in the next step. This gives Humans additional versatility and customization options.
+          </div>
+        </SelectionSummary>
+      </div>
+    </>
+  );
+
   const getSelectedChoiceSummary = () => {
     const choices = [];
     if (selectedChoices.draconicAncestry) {
@@ -377,6 +424,9 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
     if (selectedChoices.fiendishLegacy) {
       choices.push(`${selectedChoices.fiendishLegacy} Legacy`);
     }
+    if (selectedChoices.humanSkill) {
+      choices.push(`${selectedChoices.humanSkill} Skill Proficiency`);
+    }
     return choices;
   };
 
@@ -392,12 +442,14 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
         return !!selectedChoices.giantAncestry;
       case 'tiefling':
         return !!selectedChoices.fiendishLegacy;
+      case 'human':
+        return !!selectedChoices.humanSkill;
       default:
         return true; // Species without choices
     }
   };
 
-  const needsChoices = ['dragonborn', 'elf', 'gnome', 'goliath', 'tiefling'].includes(
+  const needsChoices = ['dragonborn', 'elf', 'gnome', 'goliath', 'tiefling', 'human'].includes(
     data.selectedSpecies?.toLowerCase() || ''
   );
 
@@ -408,6 +460,9 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
         <div className="step-description">
           Your selected species ({data.selectedSpecies}) doesn't require additional choices.
         </div>
+
+        <AbilityScoresHeader data={data} />
+
         <div className="step-content">
           <SelectionSummary>
             <div className="summary-title">No Additional Choices Required</div>
@@ -427,6 +482,8 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
         Make choices specific to your selected species to customize your character's abilities.
       </div>
 
+      <AbilityScoresHeader data={data} />
+
       <div className="step-content">
         <ChoicesContainer>
           {data.selectedSpecies?.toLowerCase() === 'dragonborn' && renderDragonbornAncestry()}
@@ -434,6 +491,7 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
           {data.selectedSpecies?.toLowerCase() === 'gnome' && renderGnomeLineage()}
           {data.selectedSpecies?.toLowerCase() === 'goliath' && renderGoliathAncestry()}
           {data.selectedSpecies?.toLowerCase() === 'tiefling' && renderTieflingLegacy()}
+          {data.selectedSpecies?.toLowerCase() === 'human' && renderHumanChoices()}
 
           {getSelectedChoiceSummary().length > 0 && (
             <SelectionSummary>

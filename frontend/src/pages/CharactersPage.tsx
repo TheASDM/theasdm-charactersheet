@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { CharacterList, Hero, CharacterSheetModal } from '../components';
 import { Character } from '../types/api';
+import { CharacterSheetData } from '../types/characterSheet';
 
 // Import medieval fonts
 const FontImport = styled.div`
@@ -130,9 +131,59 @@ const CharactersPage: React.FC = () => {
   );
   const [isSheetModalOpen, setIsSheetModalOpen] = useState(false);
 
+  // State to hold newly created character data persistently
+  const [newCharacterData, setNewCharacterData] = useState<CharacterSheetData | null>(null);
+
+  // Check for newly created character from generator
+  useEffect(() => {
+    const lastCreatedCharacterData = localStorage.getItem('lastCreatedCharacter');
+    if (lastCreatedCharacterData) {
+      try {
+        const characterSheetData: CharacterSheetData = JSON.parse(lastCreatedCharacterData);
+
+        // Store the character data in component state (persistent across modal opens/closes)
+        setNewCharacterData(characterSheetData);
+
+        // Convert CharacterSheetData to Character format for display
+        const character: Character = {
+          id: -1, // Use -1 to indicate this is a newly created character from generator
+          userId: 1, // TODO: Get from auth context
+          name: characterSheetData.name,
+          level: characterSheetData.level,
+          characterData: characterSheetData,
+          isPublic: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        setSelectedCharacter(character);
+        setIsSheetModalOpen(true);
+
+        // Clear localStorage now that we have the data in component state
+        localStorage.removeItem('lastCreatedCharacter');
+        console.log('📦 CharactersPage: Moved character data from localStorage to component state');
+      } catch (error) {
+        console.error('Error parsing created character data:', error);
+        localStorage.removeItem('lastCreatedCharacter');
+      }
+    }
+  }, []);
+
   const handleCharacterClick = (character: Character) => {
     console.log('Character clicked:', character);
-    setSelectedCharacter(character);
+
+    // For newly created characters, ensure we use the persistent data from component state
+    if (character.id === -1 && newCharacterData) {
+      const updatedCharacter = {
+        ...character,
+        characterData: newCharacterData
+      };
+      setSelectedCharacter(updatedCharacter);
+      console.log('📦 CharactersPage: Using persistent character data for ID -1');
+    } else {
+      setSelectedCharacter(character);
+    }
+
     setIsSheetModalOpen(true);
   };
 
@@ -159,6 +210,13 @@ const CharactersPage: React.FC = () => {
 
   const handleSheetSave = (updatedCharacter: Character) => {
     console.log('Character sheet updated:', updatedCharacter);
+
+    // If a character with id === -1 was saved and now has a real ID, clear the persistent data
+    if (selectedCharacter?.id === -1 && updatedCharacter.id > 0) {
+      setNewCharacterData(null);
+      console.log('📦 CharactersPage: Cleared persistent character data after successful save');
+    }
+
     // The character list will refresh automatically
   };
 

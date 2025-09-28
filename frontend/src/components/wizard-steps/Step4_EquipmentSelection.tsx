@@ -5,6 +5,7 @@ import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import equipmentService, { Equipment } from '../../services/equipmentService';
 import { EquipmentItemModal } from '../EquipmentItemModal';
+import { AbilityScoresHeader } from './AbilityScoresHeader';
 
 interface Step4EquipmentSelectionProps {
   data: CharacterBuilderData;
@@ -410,6 +411,8 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
       <div className="step-description">
         Complete equipment list from the database. Click items to select them for your character.
       </div>
+
+      <AbilityScoresHeader data={data} />
 
       <FilterBar>
         <input

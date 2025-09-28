@@ -31,6 +31,9 @@ export default function CharacterActionsSection({
   cancelSectionEdit,
   actions,
 }: CharacterActionsSectionProps) {
+  console.log('🎭 CharacterActionsSection received actions:', character.actions);
+  console.log('🎭 Actions content:', character.actions.map((action, i) => `${i}: ${action.name} | ${action.atkBonus} | ${action.damage}`));
+
   return (
     <ActionsSection style={{ flex: '2', marginTop: '0' }}>
       <ActionsTitle>Actions & Combat Options</ActionsTitle>

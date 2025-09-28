@@ -16,7 +16,10 @@ import { Step3ABackgroundSelection } from './wizard-steps/Step3A_BackgroundSelec
 import { Step3BSpeciesSelection } from './wizard-steps/Step3B_SpeciesSelection';
 import { Step3CSpeciesChoices } from './wizard-steps/Step3C_SpeciesChoices';
 import { Step3DOriginFeats } from './wizard-steps/Step3D_OriginFeats';
+import { Step3EFeatChoices } from './wizard-steps/Step3E_FeatChoices';
 import { Step4EquipmentSelection } from './wizard-steps/Step4_EquipmentSelection';
+import { Step5ReviewCreate } from './wizard-steps/Step5_ReviewCreate';
+import { AbilityScoresHeader } from './wizard-steps/AbilityScoresHeader';
 
 // Wizard step types
 export type WizardStep =
@@ -27,6 +30,7 @@ export type WizardStep =
   | 'species-selection'
   | 'species-choices'
   | 'origin-feats'
+  | 'feat-choices'
   | 'equipment-selection'
   | 'review-create';
 
@@ -59,14 +63,47 @@ export interface CharacterBuilderData {
   classStep: number; // 1 = class selection, 2 = skills, 3 = features
   classFeatureData: any; // Store full class data for feature display
 
+  // Class-derived data
+  classProficiencies?: {
+    armor: string[];
+    weapons: string[];
+    tools: string[];
+    savingThrows: string[];
+  };
+  classStartingEquipment?: string[];
+  classFeatures?: any[];
+  hitDice?: string;
+  primaryAbility?: string[];
+  spellcaster?: boolean;
+  spellcastingAbility?: string;
+
   // Step 3A: Background
   selectedBackground: string;
   backgroundAbilityScoreAllocations?: { [ability: string]: number };
   selectedLanguages?: string[];
 
+  // Background-derived data
+  backgroundSkillProficiencies?: string[];
+  backgroundStartingEquipment?: string[];
+  backgroundFeatures?: any[];
+
   // Step 3B: Species
   selectedSpecies: string;
   isHuman: boolean; // Determines feat count
+
+  // Species-derived data
+  speciesTraits?: any[];
+  speciesSpells?: {
+    cantrips?: string[];
+    level1?: string[];
+    level3?: string[];
+    level5?: string[];
+  };
+  speciesSize?: string;
+  speciesSpeed?: number;
+  speciesDarkvision?: number;
+  speciesResistances?: string[];
+  speciesImmunities?: string[];
 
   // Step 3C: Species Choices
   speciesChoices?: { [key: string]: string };
@@ -74,6 +111,13 @@ export interface CharacterBuilderData {
   // Step 3D: Origin Feats
   selectedOriginFeats: string[];
   requiredFeatCount: number;
+
+  // Feat-derived data
+  featFeatures?: { [featName: string]: any[] };
+  featSpells?: { [featName: string]: string[] };
+
+  // Step 3E: Feat Choices
+  featChoices?: { [featName: string]: any };
 
   // Step 4: Equipment
   selectedEquipment: {
@@ -92,6 +136,7 @@ const WIZARD_STEPS: WizardStep[] = [
   'species-selection',
   'species-choices',
   'origin-feats',
+  'feat-choices',
   'equipment-selection',
   'review-create'
 ];
@@ -104,8 +149,38 @@ const STEP_LABELS = {
   'species-selection': 'Species',
   'species-choices': 'Species Choices',
   'origin-feats': 'Origin Feats',
+  'feat-choices': 'Feat Choices',
   'equipment-selection': 'Equipment',
   'review-create': 'Review & Create'
+};
+
+// Initial character builder data
+const INITIAL_BUILDER_DATA: CharacterBuilderData = {
+  characterName: '',
+  playerName: '',
+  abilityScoreMethod: 'standard-array',
+  abilityScores: {
+    strength: 0,
+    dexterity: 0,
+    constitution: 0,
+    intelligence: 0,
+    wisdom: 0,
+    charisma: 0
+  },
+  selectedClass: '',
+  selectedClassSkills: [],
+  selectedClassChoices: {},
+  classStep: 1,
+  classFeatureData: null,
+  selectedBackground: '',
+  selectedSpecies: '',
+  isHuman: false,
+  selectedOriginFeats: [],
+  requiredFeatCount: 1,
+  selectedEquipment: {
+    weapons: [],
+    equipment: []
+  }
 };
 
 export default function CharacterGeneratorWizard() {
@@ -119,35 +194,10 @@ export default function CharacterGeneratorWizard() {
   });
 
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showStartOverModal, setShowStartOverModal] = useState(false);
 
   // Character builder data
-  const [builderData, setBuilderData] = useState<CharacterBuilderData>({
-    characterName: '',
-    playerName: '',
-    abilityScoreMethod: 'standard-array',
-    abilityScores: {
-      strength: 0,
-      dexterity: 0,
-      constitution: 0,
-      intelligence: 0,
-      wisdom: 0,
-      charisma: 0
-    },
-    selectedClass: '',
-    selectedClassSkills: [],
-    selectedClassChoices: {},
-    classStep: 1,
-    classFeatureData: null,
-    selectedBackground: '',
-    selectedSpecies: '',
-    isHuman: false,
-    selectedOriginFeats: [],
-    requiredFeatCount: 1,
-    selectedEquipment: {
-      weapons: [],
-      equipment: []
-    }
-  });
+  const [builderData, setBuilderData] = useState<CharacterBuilderData>(INITIAL_BUILDER_DATA);
 
   // Update builder data and validate current step
   const updateBuilderData = useCallback((updates: Partial<CharacterBuilderData>) => {
@@ -166,6 +216,92 @@ export default function CharacterGeneratorWizard() {
 
       return newData;
     });
+  }, []);
+
+  // Start Over functionality
+  const handleStartOver = useCallback(() => {
+    setShowStartOverModal(true);
+  }, []);
+
+  // Dev mode - quick jump to review with sample data
+  const handleQuickTest = useCallback(() => {
+    const sampleData: CharacterBuilderData = {
+      characterName: 'Test Character',
+      playerName: 'Test Player',
+      abilityScoreMethod: 'standard-array',
+      abilityScores: {
+        strength: 15,
+        dexterity: 14,
+        constitution: 13,
+        intelligence: 12,
+        wisdom: 10,
+        charisma: 8
+      },
+      selectedClass: 'Fighter',
+      selectedClassSkills: ['Athletics', 'Intimidation'],
+      selectedClassChoices: {},
+      classStep: 3,
+      classFeatureData: null,
+      classProficiencies: {
+        armor: ['Light armor', 'medium armor', 'heavy armor', 'shields'],
+        weapons: ['Simple weapons', 'martial weapons'],
+        tools: [],
+        savingThrows: ['Strength', 'Constitution']
+      },
+      classFeatures: [
+        { name: 'Fighting Style', description: 'You adopt a fighting style that reflects your combat training.' },
+        { name: 'Second Wind', description: 'You can use a bonus action to regain hit points.' }
+      ],
+      hitDice: 'd10',
+      primaryAbility: ['Strength'],
+      spellcaster: false,
+      selectedBackground: 'Soldier',
+      backgroundAbilityScoreAllocations: { str: 2, con: 1 },
+      selectedLanguages: ['Common', 'Orc'],
+      backgroundSkillProficiencies: ['Athletics', 'Intimidation'],
+      backgroundStartingEquipment: ['Insignia of rank', 'Trophy from fallen enemy', 'Deck of cards', 'Common clothes', 'Belt pouch with 10 gp'],
+      selectedSpecies: 'Human',
+      isHuman: true,
+      speciesTraits: [
+        { name: 'Extra Language', description: 'You know one additional language of your choice.' },
+        { name: 'Extra Skill', description: 'You gain proficiency in one skill of your choice.' }
+      ],
+      speciesSize: 'Medium',
+      speciesSpeed: 30,
+      selectedOriginFeats: ['Alert', 'Lucky'],
+      requiredFeatCount: 2,
+      featFeatures: {
+        'Alert': [{ description: 'You gain a +5 bonus to initiative and cannot be surprised.' }],
+        'Lucky': [{ description: 'You have 3 luck points that you can spend to reroll dice.' }]
+      },
+      selectedEquipment: {
+        weapons: ['Longsword', 'Shield'],
+        equipment: ['Chain mail', 'Explorer\'s pack']
+      }
+    };
+
+    setBuilderData(sampleData);
+    setWizardState({
+      currentStep: 'review-create',
+      completedSteps: new Set(['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'species-choices', 'origin-feats', 'feat-choices', 'equipment-selection']),
+      canProceed: true
+    });
+  }, []);
+
+  const confirmStartOver = useCallback(() => {
+    // Reset all data to initial state
+    setBuilderData(INITIAL_BUILDER_DATA);
+    setWizardState({
+      currentStep: 'character-info',
+      completedSteps: new Set(),
+      canProceed: false
+    });
+    setShowStartOverModal(false);
+    setIsTransitioning(false);
+  }, []);
+
+  const cancelStartOver = useCallback(() => {
+    setShowStartOverModal(false);
   }, []);
 
   // Validate current step - all fields are optional now
@@ -368,9 +504,69 @@ export default function CharacterGeneratorWizard() {
     return !!builderData.selectedSpecies;
   };
 
+  // Check if species choices are complete
+  const isSpeciesChoicesComplete = (): boolean => {
+    // First check if species selection is complete
+    if (!isSpeciesSelectionComplete()) return false;
+
+    const needsChoices = ['dragonborn', 'elf', 'gnome', 'goliath', 'tiefling', 'human'].includes(
+      builderData.selectedSpecies?.toLowerCase() || ''
+    );
+
+    if (!needsChoices) return true; // Species doesn't need choices
+
+    const choices = builderData.speciesChoices || {};
+    switch (builderData.selectedSpecies?.toLowerCase()) {
+      case 'dragonborn':
+        return !!choices.draconicAncestry;
+      case 'elf':
+        return !!choices.elfLineage;
+      case 'gnome':
+        return !!choices.gnomeLineage;
+      case 'goliath':
+        return !!choices.giantAncestry;
+      case 'tiefling':
+        return !!choices.fiendishLegacy;
+      case 'human':
+        return !!choices.humanSkill;
+      default:
+        return true;
+    }
+  };
+
   // Check if origin feats selection is complete
   const isOriginFeatsComplete = (): boolean => {
     return builderData.selectedOriginFeats.length >= builderData.requiredFeatCount;
+  };
+
+  // Check if feat choices are complete
+  const isFeatChoicesComplete = (): boolean => {
+    // First check if origin feats selection is complete
+    if (!isOriginFeatsComplete()) return false;
+
+    const featsWithChoices = builderData.selectedOriginFeats?.filter(featName =>
+      ['Magic Initiate', 'Skilled', 'Crafter', 'Musician'].includes(featName)
+    ) || [];
+
+    if (featsWithChoices.length === 0) return true; // No feats require choices
+
+    return featsWithChoices.every(featName => {
+      const choices = builderData.featChoices?.[featName];
+      if (!choices) return false;
+
+      switch (featName) {
+        case 'Magic Initiate':
+          return !!choices.spellClass;
+        case 'Skilled':
+          return choices.skills?.length === 3;
+        case 'Crafter':
+          return choices.tools?.length === 3;
+        case 'Musician':
+          return choices.instruments?.length === 3;
+        default:
+          return true;
+      }
+    });
   };
 
   // Check if equipment selection is complete
@@ -398,10 +594,16 @@ export default function CharacterGeneratorWizard() {
         return isBackgroundSelectionComplete();
       case 'species-selection':
         return isSpeciesSelectionComplete();
+      case 'species-choices':
+        return isSpeciesChoicesComplete();
       case 'origin-feats':
         return isOriginFeatsComplete();
+      case 'feat-choices':
+        return isFeatChoicesComplete();
       case 'equipment-selection':
         return isEquipmentSelectionComplete();
+      case 'review-create':
+        return true; // Review step is always complete for navigation
       default:
         return false;
     }
@@ -467,21 +669,28 @@ export default function CharacterGeneratorWizard() {
             />
           )}
           {wizardState.currentStep === 'class-selection' && (
-            <Step2ClassSelection
-              data={builderData}
-              onUpdate={updateBuilderData}
-            />
+            <>
+              <AbilityScoresHeader data={builderData} />
+              <Step2ClassSelection
+                data={builderData}
+                onUpdate={updateBuilderData}
+              />
+            </>
           )}
           {wizardState.currentStep === 'background-selection' && (
-            <Step3ABackgroundSelection
-              data={builderData}
-              onUpdate={updateBuilderData}
-            />
+            <>
+              <AbilityScoresHeader data={builderData} />
+              <Step3ABackgroundSelection
+                data={builderData}
+                onUpdate={updateBuilderData}
+              />
+            </>
           )}
           {wizardState.currentStep === 'species-selection' && (
             <Step3BSpeciesSelection
               data={builderData}
               onUpdate={updateBuilderData}
+              onAdvance={goNext}
             />
           )}
           {wizardState.currentStep === 'species-choices' && (
@@ -496,13 +705,29 @@ export default function CharacterGeneratorWizard() {
               onUpdate={updateBuilderData}
             />
           )}
+          {wizardState.currentStep === 'feat-choices' && (
+            <Step3EFeatChoices
+              data={builderData}
+              onUpdate={updateBuilderData}
+            />
+          )}
           {wizardState.currentStep === 'equipment-selection' && (
             <Step4EquipmentSelection
               data={builderData}
               onUpdate={updateBuilderData}
             />
           )}
-          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'species-choices', 'origin-feats', 'equipment-selection'].includes(wizardState.currentStep) && (
+          {wizardState.currentStep === 'review-create' && (
+            <Step5ReviewCreate
+              data={builderData}
+              onComplete={() => {
+                console.log('Character created successfully!');
+                alert('Character created successfully! Redirecting to characters page...');
+                navigate('/characters');
+              }}
+            />
+          )}
+          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'species-choices', 'origin-feats', 'feat-choices', 'equipment-selection', 'review-create'].includes(wizardState.currentStep) && (
             <div className="step-placeholder">
               <h2>{STEP_LABELS[wizardState.currentStep]}</h2>
               <p>Step content coming soon...</p>
@@ -530,7 +755,9 @@ export default function CharacterGeneratorWizard() {
                     (step === 'class-selection' && isClassSelectionComplete()) ||
                     (step === 'background-selection' && isBackgroundSelectionComplete()) ||
                     (step === 'species-selection' && isSpeciesSelectionComplete()) ||
+                    (step === 'species-choices' && isSpeciesChoicesComplete()) ||
                     (step === 'origin-feats' && isOriginFeatsComplete()) ||
+                    (step === 'feat-choices' && isFeatChoicesComplete()) ||
                     (step === 'equipment-selection' && isEquipmentSelectionComplete())
                   ) ? '#4caf50' : undefined
                 }}>
@@ -542,13 +769,39 @@ export default function CharacterGeneratorWizard() {
 
           {/* Navigation Controls */}
           <WizardControls>
-            <button
-              onClick={goBack}
-              disabled={!canGoBack()}
-              className="wizard-btn wizard-btn-secondary"
-            >
-              Back
-            </button>
+            <div className="wizard-controls-left">
+              <button
+                onClick={goBack}
+                disabled={!canGoBack()}
+                className="wizard-btn wizard-btn-secondary"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleStartOver}
+                className="wizard-btn wizard-btn-danger"
+                style={{
+                  background: 'linear-gradient(145deg, #dc3545, #c82333)',
+                  borderColor: '#dc3545',
+                  color: '#fff',
+                  marginLeft: '0.5rem'
+                }}
+              >
+                Start Over
+              </button>
+              <button
+                onClick={handleQuickTest}
+                className="wizard-btn wizard-btn-warning"
+                style={{
+                  background: 'linear-gradient(145deg, #ffc107, #e0a800)',
+                  borderColor: '#ffc107',
+                  color: '#000',
+                  marginLeft: '0.5rem'
+                }}
+              >
+                Quick Test
+              </button>
+            </div>
 
             <div className="wizard-controls-right">
               {wizardState.currentStep === 'review-create' ? (
@@ -575,6 +828,88 @@ export default function CharacterGeneratorWizard() {
           </WizardControls>
         </WizardContent>
       </div>
+
+      {/* Start Over Confirmation Modal */}
+      {showStartOverModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+            border: '2px solid #dc3545',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '100%',
+            color: '#f0f0f0',
+            textAlign: 'center'
+          }}>
+            <h2 style={{
+              fontFamily: 'Cinzel, serif',
+              color: '#dc3545',
+              fontSize: '1.8rem',
+              margin: '0 0 1rem 0'
+            }}>
+              Start Over?
+            </h2>
+            <p style={{
+              color: '#ccc',
+              fontSize: '1rem',
+              lineHeight: '1.4',
+              margin: '0 0 1.5rem 0'
+            }}>
+              Are you sure you want to start over? This will clear all your character data and return you to the beginning. This action cannot be undone.
+            </p>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: '1rem'
+            }}>
+              <button
+                onClick={cancelStartOver}
+                className="wizard-btn wizard-btn-secondary"
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStartOver}
+                className="wizard-btn wizard-btn-danger"
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  background: 'linear-gradient(145deg, #dc3545, #c82333)',
+                  borderColor: '#dc3545',
+                  color: '#fff'
+                }}
+              >
+                Start Over
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </WizardContainer>
   );
 }

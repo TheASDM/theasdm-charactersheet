@@ -513,10 +513,45 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
 
   const confirmBackgroundSelection = () => {
     if (selectedBackgroundForModal && isAllocationValid() && selectedLanguages.length === 2) {
+      // Extract background skill proficiencies
+      const extractSkillProficiencies = (skillProfs?: any): string[] => {
+        if (!skillProfs) return [];
+        if (typeof skillProfs === 'object') {
+          return Object.keys(skillProfs).filter(skill => skillProfs[skill]);
+        }
+        return [];
+      };
+
+      // Extract background starting equipment
+      const extractStartingEquipment = (equipment?: any): string[] => {
+        if (!equipment) return [];
+        if (Array.isArray(equipment)) return equipment;
+        if (typeof equipment === 'object') {
+          // Handle different equipment formats
+          const items: string[] = [];
+          if (equipment.items) items.push(...equipment.items);
+          if (equipment.gold) items.push(`${equipment.gold} gp`);
+          return items;
+        }
+        return [];
+      };
+
+      // Extract background features
+      const extractBackgroundFeatures = (feature?: any): any[] => {
+        if (!feature) return [];
+        if (Array.isArray(feature)) return feature;
+        return [feature];
+      };
+
       onUpdate({
         selectedBackground: selectedBackgroundForModal.name,
         backgroundAbilityScoreAllocations: abilityScoreAllocations,
-        selectedLanguages: selectedLanguages
+        selectedLanguages: selectedLanguages,
+
+        // Extract and store all background data
+        backgroundSkillProficiencies: extractSkillProficiencies(selectedBackgroundForModal.skillProficiencies),
+        backgroundStartingEquipment: extractStartingEquipment(selectedBackgroundForModal.equipment),
+        backgroundFeatures: extractBackgroundFeatures(selectedBackgroundForModal.feature)
       });
       closeModal();
     }

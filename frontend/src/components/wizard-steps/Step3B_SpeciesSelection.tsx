@@ -5,10 +5,12 @@ import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import speciesService from '../../services/speciesService';
 import { Species as ApiSpecies } from '../../types/api';
 import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
+import { AbilityScoresHeader } from './AbilityScoresHeader';
 
 interface Step3BSpeciesSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
+  onAdvance?: () => void;
 }
 
 type Species = ApiSpecies;
@@ -338,12 +340,14 @@ const TraitList = styled.div`
 
 export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   data,
-  onUpdate
+  onUpdate,
+  onAdvance
 }) => {
   const [species, setSpecies] = useState<Species[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSpeciesForModal, setSelectedSpeciesForModal] = useState<Species | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     fetchSpecies();
@@ -370,21 +374,98 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     setSelectedSpeciesForModal(speciesData);
   };
 
-  const handleSpeciesSelect = (speciesName: string) => {
-    // Check if Human for Origin Feat calculation
-    const isHuman = speciesName.toLowerCase() === 'human';
+  const handleSpeciesSelect = (speciesData: Species) => {
+    try {
+      console.log('Selecting species:', speciesData.name);
+      console.log('Species data:', speciesData);
 
-    onUpdate({
-      selectedSpecies: speciesName,
-      isHuman: isHuman,
-      requiredFeatCount: isHuman ? 2 : 1 // Humans get an extra feat
-    });
+      // Check if Human for Origin Feat calculation
+      const isHuman = speciesData.name.toLowerCase() === 'human';
+
+      // Simplified data extraction with error handling
+      const safeExtractTraits = (traits?: any): any[] => {
+        try {
+          if (!traits) return [];
+          if (Array.isArray(traits)) return traits;
+          return [traits];
+        } catch (error) {
+          console.error('Error extracting traits:', error);
+          return [];
+        }
+      };
+
+      const safeGetSize = (size: string | string[]): string => {
+        try {
+          if (Array.isArray(size)) return size[0] || 'Medium';
+          return size || 'Medium';
+        } catch (error) {
+          console.error('Error getting size:', error);
+          return 'Medium';
+        }
+      };
+
+      const safeGetSpeed = (speed: any): number => {
+        try {
+          if (typeof speed === 'number') return speed;
+          if (typeof speed === 'object' && speed.walk) return speed.walk;
+          return 30; // Default speed
+        } catch (error) {
+          console.error('Error getting speed:', error);
+          return 30;
+        }
+      };
+
+      const updateData = {
+        selectedSpecies: speciesData.name,
+        isHuman: isHuman,
+        requiredFeatCount: isHuman ? 2 : 1, // Humans get an extra feat
+
+        // Extract and store basic species data
+        speciesTraits: safeExtractTraits(speciesData.traits),
+        speciesSize: safeGetSize(speciesData.size),
+        speciesSpeed: safeGetSpeed(speciesData.speed),
+
+        // Simplified placeholders for now
+        speciesSpells: { cantrips: [], level1: [], level3: [], level5: [] },
+        speciesDarkvision: 0, // TODO: Extract from traits
+        speciesResistances: [], // TODO: Extract from traits
+        speciesImmunities: [] // TODO: Extract immunities
+      };
+
+      console.log('Updating with data:', updateData);
+      onUpdate(updateData);
+      console.log('Species selection completed successfully');
+
+    } catch (error) {
+      console.error('Error in handleSpeciesSelect:', error);
+      // Fallback to basic update
+      onUpdate({
+        selectedSpecies: speciesData.name,
+        isHuman: speciesData.name.toLowerCase() === 'human',
+        requiredFeatCount: speciesData.name.toLowerCase() === 'human' ? 2 : 1
+      });
+    }
   };
 
   const confirmSpeciesSelection = () => {
-    if (selectedSpeciesForModal) {
-      handleSpeciesSelect(selectedSpeciesForModal.name);
+    if (selectedSpeciesForModal && onAdvance) {
+      // Start transition
+      setIsTransitioning(true);
       closeModal();
+
+      // Small delay for transition effect
+      setTimeout(() => {
+        handleSpeciesSelect(selectedSpeciesForModal);
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Trigger advance to next step
+        setTimeout(() => {
+          setIsTransitioning(false);
+          onAdvance();
+        }, 500);
+      }, 300);
     }
   };
 
@@ -507,11 +588,51 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   }
 
   return (
-    <StepContainer>
+    <StepContainer style={{
+      opacity: isTransitioning ? 0.3 : 1,
+      transition: 'opacity 0.3s ease',
+      position: 'relative'
+    }}>
+      {/* Transition Screen */}
+      {isTransitioning && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 999,
+          background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%)',
+          border: '3px solid #d4af37',
+          borderRadius: '12px',
+          padding: '2rem 3rem',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8)',
+          animation: 'fadeInScale 0.3s ease',
+        }}>
+          <h2 style={{
+            color: '#d4af37',
+            fontFamily: 'Cinzel, serif',
+            fontSize: '1.8rem',
+            margin: 0,
+            textAlign: 'center',
+          }}>
+            Configuring {selectedSpeciesForModal?.name}...
+          </h2>
+          <p style={{
+            color: '#ccc',
+            marginTop: '0.5rem',
+            textAlign: 'center',
+          }}>
+            Setting up species choices and traits
+          </p>
+        </div>
+      )}
+
       <div className="step-title">Species</div>
       <div className="step-description">
         Choose your character's species, which determines their physical traits and special abilities.
       </div>
+
+      <AbilityScoresHeader data={data} />
 
       <div className="step-content">
         <SpeciesSelectionInfo>
@@ -587,13 +708,12 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
                 <h3>Skill Proficiencies</h3>
                 <div className="section-content">
                   {Array.isArray(selectedSpeciesForModal.skillProficiencies)
-                    ? selectedSpeciesForModal.skillProficiencies.map((prof: any, idx: number) => (
-                        <div key={idx}>
-                          {typeof prof === 'string' ? prof :
-                           prof.choose ? `Choose ${prof.choose.count || 1} from: ${prof.choose.from?.join(', ') || 'various skills'}` :
-                           JSON.stringify(prof)}
-                        </div>
-                      ))
+                    ? selectedSpeciesForModal.skillProficiencies.map((prof: any, idx: number) => {
+                        if (typeof prof === 'string') return <div key={idx}>{prof}</div>;
+                        if (prof.choose) return <div key={idx}>Choose {prof.choose.count || 1} from: {prof.choose.from?.join(', ') || 'various skills'}</div>;
+                        if (prof.any) return <div key={idx}>Choose {prof.any} skill from any skill list</div>;
+                        return <div key={idx}>{JSON.stringify(prof)}</div>;
+                      })
                     : (
                       <div dangerouslySetInnerHTML={{
                         __html: processTraitDescription(selectedSpeciesForModal.skillProficiencies)

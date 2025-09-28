@@ -4,6 +4,7 @@ import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import featsService, { Feat } from '../../services/featsService';
 import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
+import { AbilityScoresHeader } from './AbilityScoresHeader';
 
 interface Step3DOriginFeatsProps {
   data: CharacterBuilderData;
@@ -365,16 +366,83 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
     const currentFeats = data.selectedOriginFeats || [];
     const isAlreadySelected = currentFeats.includes(featName);
 
+    // Find the full feat data
+    const featData = feats.find(feat => feat.name === featName);
+
     if (isAlreadySelected) {
       // Remove feat
       const updatedFeats = currentFeats.filter(name => name !== featName);
-      onUpdate({ selectedOriginFeats: updatedFeats });
+
+      // Remove feat data
+      const updatedFeatFeatures = { ...data.featFeatures };
+      const updatedFeatSpells = { ...data.featSpells };
+      delete updatedFeatFeatures[featName];
+      delete updatedFeatSpells[featName];
+
+      onUpdate({
+        selectedOriginFeats: updatedFeats,
+        featFeatures: updatedFeatFeatures,
+        featSpells: updatedFeatSpells
+      });
     } else {
-      // Add feat if under limit
+      // Extract feat features
+      const extractFeatFeatures = (entries: any): any[] => {
+        if (!entries) return [];
+        if (Array.isArray(entries)) return entries;
+        if (typeof entries === 'object') {
+          const features = [];
+          if (entries.description) features.push(...(Array.isArray(entries.description) ? entries.description : [entries.description]));
+          if (entries.benefits) features.push(...(Array.isArray(entries.benefits) ? entries.benefits : [entries.benefits]));
+          return features;
+        }
+        return [];
+      };
+
+      // Extract feat spells
+      const extractFeatSpells = (additionalSpells: any): string[] => {
+        if (!additionalSpells) return [];
+        const spells: string[] = [];
+
+        if (Array.isArray(additionalSpells)) {
+          additionalSpells.forEach(spell => {
+            if (typeof spell === 'string') {
+              spells.push(spell);
+            } else if (spell.spells) {
+              spells.push(...(Array.isArray(spell.spells) ? spell.spells : [spell.spells]));
+            }
+          });
+        }
+
+        return spells;
+      };
+
+      // Add feat - if at limit, replace the first selected feat
+      let updatedFeats: string[];
       if (currentFeats.length < data.requiredFeatCount) {
-        const updatedFeats = [...currentFeats, featName];
-        onUpdate({ selectedOriginFeats: updatedFeats });
+        // Under limit - just add the feat
+        updatedFeats = [...currentFeats, featName];
+      } else {
+        // At limit - replace the last selected feat with the new one
+        updatedFeats = [...currentFeats];
+        updatedFeats[updatedFeats.length - 1] = featName; // Replace the last feat
       }
+
+      // Store feat data
+      const updatedFeatFeatures = {
+        ...data.featFeatures,
+        [featName]: featData ? extractFeatFeatures(featData.entries) : []
+      };
+
+      const updatedFeatSpells = {
+        ...data.featSpells,
+        [featName]: featData ? extractFeatSpells(featData.additionalSpells) : []
+      };
+
+      onUpdate({
+        selectedOriginFeats: updatedFeats,
+        featFeatures: updatedFeatFeatures,
+        featSpells: updatedFeatSpells
+      });
     }
   };
 
@@ -391,7 +459,18 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
 
   const removeFeat = (featName: string) => {
     const updatedFeats = (data.selectedOriginFeats || []).filter(name => name !== featName);
-    onUpdate({ selectedOriginFeats: updatedFeats });
+
+    // Remove feat data
+    const updatedFeatFeatures = { ...data.featFeatures };
+    const updatedFeatSpells = { ...data.featSpells };
+    delete updatedFeatFeatures[featName];
+    delete updatedFeatSpells[featName];
+
+    onUpdate({
+      selectedOriginFeats: updatedFeats,
+      featFeatures: updatedFeatFeatures,
+      featSpells: updatedFeatSpells
+    });
   };
 
   const formatFeatDescription = (entries: any): string => {
@@ -463,6 +542,8 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
           </span>
         )}
       </div>
+
+      <AbilityScoresHeader data={data} />
 
       <div className="step-content">
         <FeatsContainer>

@@ -769,12 +769,61 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
     // Small delay to allow modal to close
     setTimeout(() => {
+      const classData = CLASS_DATA[className as keyof typeof CLASS_DATA];
+
+      // Extract class proficiencies
+      const extractProficiencies = (proficiencies: any) => {
+        return {
+          armor: proficiencies.armor ? proficiencies.armor.split(', ') : [],
+          weapons: proficiencies.weapons ? proficiencies.weapons.split(', ') : [],
+          tools: proficiencies.tools === 'None' ? [] : (proficiencies.tools?.split(', ') || []),
+          savingThrows: proficiencies.savingThrows ? proficiencies.savingThrows.split(', ') : []
+        };
+      };
+
+      // Extract class features as an array
+      const extractClassFeatures = (classFeatures: any) => {
+        return Object.entries(classFeatures || {}).map(([name, feature]: [string, any]) => ({
+          name,
+          description: feature.description || '',
+          details: feature.details || '',
+          ...feature
+        }));
+      };
+
+      // Determine if class is a spellcaster
+      const isSpellcaster = ['Bard', 'Cleric', 'Druid', 'Paladin', 'Ranger', 'Sorcerer', 'Warlock', 'Wizard'].includes(className);
+
+      // Get spellcasting ability based on class
+      const getSpellcastingAbility = (className: string) => {
+        const abilities: { [key: string]: string } = {
+          'Bard': 'Charisma',
+          'Cleric': 'Wisdom',
+          'Druid': 'Wisdom',
+          'Paladin': 'Charisma',
+          'Ranger': 'Wisdom',
+          'Sorcerer': 'Charisma',
+          'Warlock': 'Charisma',
+          'Wizard': 'Intelligence'
+        };
+        return abilities[className];
+      };
+
       onUpdate({
         selectedClass: className,
         selectedClassSkills: [], // Reset skills when changing class
         selectedClassChoices: {}, // Reset class choices when changing class
-        classFeatureData: CLASS_DATA[className as keyof typeof CLASS_DATA],
+        classFeatureData: classData,
         classStep: 2, // Move to combined skills/features view
+
+        // Extract and store all class data
+        classProficiencies: extractProficiencies(classData.proficiencies),
+        classFeatures: extractClassFeatures(classData.classFeatures),
+        hitDice: `d${classData.hitDie}`,
+        primaryAbility: [classData.primaryAbility],
+        spellcaster: isSpellcaster,
+        spellcastingAbility: getSpellcastingAbility(className),
+        classStartingEquipment: [] // TODO: Add starting equipment data
       });
 
       // Scroll to top

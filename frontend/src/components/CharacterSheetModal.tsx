@@ -127,12 +127,11 @@ export default function CharacterSheetModal({
   // Fetch fresh character data when modal opens for existing characters
   useEffect(() => {
     const fetchCharacterData = async () => {
-      if (!isOpen) return;
-
+      if (!isOpen || !character) return;
 
       let newData: CharacterSheetData;
 
-      if (character && character.id > 0) {
+      if (character.id > 0) {
         // For existing characters, fetch fresh data from server
         try {
           const response = await characterService.getById(character.id);
@@ -150,17 +149,19 @@ export default function CharacterSheetModal({
             ? { ...createDefaultCharacterSheet(), ...character.characterData }
             : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
         }
-      } else if (character?.characterData && typeof character.characterData === 'object') {
-        newData = { ...createDefaultCharacterSheet(), ...character.characterData };
-      } else if (character) {
-        const defaultSheet = createDefaultCharacterSheet();
-        newData = {
-          ...defaultSheet,
-          name: character.name || '',
-          level: character.level || 1,
-        };
+      } else if (character.id === -1) {
+        // For newly created characters from generator, always use the provided data
+        // This data should persist across modal opens/closes until the character is saved
+        newData = character.characterData && typeof character.characterData === 'object'
+          ? { ...createDefaultCharacterSheet(), ...character.characterData }
+          : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
+
+        console.log('🔄 Modal: Using generator data for new character (ID: -1)');
       } else {
-        newData = createDefaultCharacterSheet();
+        // Fallback for other cases
+        newData = character.characterData && typeof character.characterData === 'object'
+          ? { ...createDefaultCharacterSheet(), ...character.characterData }
+          : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
       }
 
       setCharacterSheetData(newData);
