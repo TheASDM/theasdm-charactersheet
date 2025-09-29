@@ -292,16 +292,7 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     { name: '', atkBonus: '', damage: '', notes: '' },
     { name: '', atkBonus: '', damage: '', notes: '' },
   ],
-  actions: [
-    { name: 'Dash', atkBonus: '—', damage: 'Move Speed × 2' },
-    { name: 'Dodge', atkBonus: '—', damage: '—' },
-    { name: 'Help', atkBonus: '—', damage: '—' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-  ],
+  actions: [],
   proficiencies: {
     armor: [],
     weapons: [],

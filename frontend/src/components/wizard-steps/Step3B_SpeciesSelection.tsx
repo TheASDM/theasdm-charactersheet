@@ -376,8 +376,6 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
 
   const handleSpeciesSelect = (speciesData: Species) => {
     try {
-      console.log('Selecting species:', speciesData.name);
-      console.log('Species data:', speciesData);
 
       // Check if Human for Origin Feat calculation
       const isHuman = speciesData.name.toLowerCase() === 'human';
@@ -467,9 +465,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
         speciesImmunities: [] // TODO: Extract immunities
       };
 
-      console.log('Updating with data:', updateData);
       onUpdate(updateData);
-      console.log('Species selection completed successfully');
 
     } catch (error) {
       console.error('Error in handleSpeciesSelect:', error);
@@ -525,10 +521,6 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
 
     // Debug logging
     if (trait.name === 'Celestial Revelation') {
-      console.log('Celestial Revelation trait:', trait);
-      console.log('Processed text:', text);
-      console.log('Extracted tables:', tables);
-      console.log('Extracted lists:', lists);
     }
 
     const renderListItem = (item: any, index: number) => {

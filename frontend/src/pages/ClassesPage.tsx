@@ -93,12 +93,10 @@ const ClassesPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSubclassesClick = (characterClass: CharacterClass) => {
-    console.log('Subclasses clicked for:', characterClass.name);
     navigate(`/classes/${characterClass.id}/details?tab=subclasses`);
   };
 
   const handleDetailsClick = (characterClass: CharacterClass) => {
-    console.log('Details clicked for:', characterClass.name);
     navigate(`/classes/${characterClass.id}/details`);
   };
 

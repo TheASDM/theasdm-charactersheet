@@ -1,3 +1,75 @@
+import { CharacterSheetData } from './characterSheet';
+
+// Common D&D data structures
+export interface DnDTime {
+  number: number;
+  unit: string;
+  condition?: string;
+}
+
+export interface DnDRange {
+  type: string;
+  distance?: {
+    type: string;
+    amount: number;
+  };
+}
+
+export interface DnDComponents {
+  v?: boolean; // verbal
+  s?: boolean; // somatic
+  m?: boolean | string; // material
+}
+
+export interface DnDDuration {
+  type: string;
+  duration?: {
+    type: string;
+    amount?: number;
+  };
+  concentration?: boolean;
+}
+
+export interface EquipmentEntry {
+  item?: string;
+  name?: string;
+  quantity?: number;
+  special?: string;
+}
+
+export interface ProficiencyEntry {
+  armor?: string[];
+  weapons?: string[];
+  tools?: string[];
+  skills?: string[];
+  skillsCount?: number;
+  anySkill?: boolean;
+}
+
+export interface FeatureEntry {
+  name: string;
+  description?: string;
+  entries?: (string | ComplexEntry)[];
+  type?: string;
+}
+
+export interface ComplexEntry {
+  type: string;
+  name?: string;
+  entries?: (string | ComplexEntry)[];
+  items?: string[];
+  style?: string;
+}
+
+export interface AbilityScoreIncrease {
+  choose?: {
+    from: string[];
+    amount: number;
+    count: number;
+  };
+  [ability: string]: number | unknown;
+}
+
 // API Response Types
 export interface ApiResponse<T> {
   data?: T;
@@ -33,7 +105,7 @@ export interface Character {
   userId: number;
   name: string;
   level: number;
-  characterData: any; // JSONB data - will be more specific later
+  characterData: Record<string, unknown>; // JSONB data - will be more specific later
   passwordHash?: string;
   isPublic: boolean;
   campaignId?: number;
@@ -53,7 +125,7 @@ export interface CreateCharacterRequest {
   userId: number;
   name: string;
   level?: number;
-  characterData: any;
+  characterData: CharacterSheetData | Record<string, unknown>;
   isPublic?: boolean;
   campaignId?: number;
 }
@@ -61,7 +133,7 @@ export interface CreateCharacterRequest {
 export interface UpdateCharacterRequest {
   name?: string;
   level?: number;
-  characterData?: any;
+  characterData?: CharacterSheetData | Record<string, unknown>;
   isPublic?: boolean;
   campaignId?: number;
 }
@@ -74,13 +146,13 @@ export interface Spell {
   page?: number;
   level: number;
   school?: string;
-  time?: any[]; // JSONB - complex time structure
-  range?: any; // JSONB - complex range structure
-  components?: any; // JSONB - component structure
-  duration?: any[]; // JSONB - duration array
-  entries?: any[]; // JSONB - description entries
-  entriesHigherLevel?: any[]; // JSONB - higher level effects
-  scalingLevelDice?: any; // JSONB - cantrip scaling
+  time?: DnDTime[]; // JSONB - complex time structure
+  range?: DnDRange; // JSONB - complex range structure
+  components?: DnDComponents; // JSONB - component structure
+  duration?: DnDDuration[]; // JSONB - duration array
+  entries?: any; // JSONB - description entries
+  entriesHigherLevel?: any; // JSONB - higher level effects
+  scalingLevelDice?: Record<string, string>; // JSONB - cantrip scaling
   damageInflict?: string[];
   conditionInflict?: string[];
   savingThrow?: string[];
@@ -106,20 +178,20 @@ export interface CharacterClass {
   hitDie: number;
   primaryAbility: string[];
   savingThrowProficiencies: string[];
-  armorProficiencies?: any; // JSONB
-  weaponProficiencies?: any; // JSONB
-  toolProficiencies?: any; // JSONB
-  skillProficiencies?: any; // JSONB
-  skillProficiencyOptions?: any; // JSONB
-  equipmentProficiencies?: any; // JSONB
-  startingEquipment?: any; // JSONB
-  classFeatures?: any; // JSONB
-  subclassFeatures?: any; // JSONB - Contains subclass data
+  armorProficiencies?: Record<string, unknown>; // JSONB
+  weaponProficiencies?: Record<string, unknown>; // JSONB
+  toolProficiencies?: Record<string, unknown>; // JSONB
+  skillProficiencies?: Record<string, unknown>; // JSONB
+  skillProficiencyOptions?: Record<string, unknown>; // JSONB
+  equipmentProficiencies?: Record<string, unknown>; // JSONB
+  startingEquipment?: Record<string, unknown>; // JSONB
+  classFeatures?: Record<string, unknown>; // JSONB
+  subclassFeatures?: Record<string, unknown>; // JSONB - Contains subclass data
   spellcastingAbility?: string;
   spellcastingFocus?: string;
-  spellsKnownProgression?: any; // JSONB
-  spellSlotProgression?: any; // JSONB
-  subclasses?: any; // JSONB (deprecated - use subclassFeatures)
+  spellsKnownProgression?: Record<string, unknown>; // JSONB
+  spellSlotProgression?: Record<string, unknown>; // JSONB
+  subclasses?: Record<string, unknown>; // JSONB (deprecated - use subclassFeatures)
   srd52?: boolean;
   basicRules2024?: boolean;
   contentVersion: string;
@@ -134,18 +206,18 @@ export interface Species {
   source?: string;
   page?: number;
   size: string[];
-  speed: any; // JSONB
-  additionalSpeeds?: any; // JSONB
+  speed: any; // JSONB - can be complex object or simple value
+  additionalSpeeds?: Record<string, unknown>; // JSONB
   creatureType: string;
   lifespan?: string;
-  traits?: any; // JSONB
-  abilityScoreIncrease?: any; // JSONB
+  traits?: any; // JSONB - can be object or array
+  abilityScoreIncrease?: Record<string, unknown>; // JSONB
   languages: string[];
-  languageOptions?: any; // JSONB
-  skillProficiencies?: any; // JSONB
-  toolProficiencies?: any; // JSONB
-  weaponProficiencies?: any; // JSONB
-  innateSpells?: any; // JSONB
+  languageOptions?: Record<string, unknown>; // JSONB
+  skillProficiencies?: Record<string, unknown>; // JSONB
+  toolProficiencies?: Record<string, unknown>; // JSONB
+  weaponProficiencies?: Record<string, unknown>; // JSONB
+  innateSpells?: Record<string, unknown>; // JSONB
   srd52?: boolean;
   basicRules2024?: boolean;
   sourceBook?: string;
@@ -163,9 +235,9 @@ export interface Background {
   skillProficiencies?: any; // JSONB
   languages: string[];
   equipment?: any; // JSONB
-  feature?: any; // JSONB
+  feature?: Record<string, unknown>; // JSONB
   originFeat?: string;
-  abilityScoreIncrease?: any; // JSONB
+  abilityScoreIncrease?: Record<string, unknown>; // JSONB
   contentVersion: string;
 }
 
@@ -196,12 +268,12 @@ export interface Item {
   reqAttune?: string;
   charges?: number;
   recharge?: string;
-  modifySpeed?: any; // JSONB
+  modifySpeed?: Record<string, unknown>; // JSONB
   bonusWeapon?: string;
   bonusAc?: number;
   bonusSpellAttack?: number;
   bonusSpellSaveDc?: number;
-  spells?: any; // JSONB
+  spells?: Record<string, unknown>; // JSONB
   srd52?: boolean;
   basicRules2024?: boolean;
   contentVersion: string;
@@ -218,11 +290,11 @@ export interface Feat {
   page?: number;
   category: string;
   level?: number;
-  prerequisites?: any; // JSONB for complex prerequisites
-  abilityScoreIncrease?: any; // JSONB
+  prerequisites?: Record<string, unknown>; // JSONB for complex prerequisites
+  abilityScoreIncrease?: Record<string, unknown>; // JSONB
   repeatable?: boolean;
   entries?: any; // JSONB for feat description and benefits
-  additionalSpells?: any; // JSONB for spells granted by feat
+  additionalSpells?: Record<string, unknown>; // JSONB for spells granted by feat
   contentVersion: string;
   isHomebrew: boolean;
   createdAt: string;

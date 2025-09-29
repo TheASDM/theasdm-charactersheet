@@ -3,28 +3,13 @@ import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import backgroundService from '../../services/backgroundService';
+import { Background } from '../../types/api';
 
 interface Step3ABackgroundSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
 }
 
-interface Background {
-  id: number;
-  name: string;
-  description?: string;
-  skillProficiencies?: { [key: string]: boolean };
-  languages: string[];
-  equipment?: any[];
-  feature?: any;
-  originFeat?: string;
-  abilityScoreIncrease?: {
-    type: string;
-    options: string[];
-    weights?: number[];
-  };
-  contentVersion: string;
-}
 
 const BackgroundGrid = styled.div`
   display: grid;
@@ -422,9 +407,9 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   const handleBackgroundClick = (background: Background) => {
     setSelectedBackgroundForModal(background);
     // Initialize ability score allocations to all 0
-    if (background.abilityScoreIncrease?.options) {
+    if (background.abilityScoreIncrease && 'options' in background.abilityScoreIncrease && Array.isArray(background.abilityScoreIncrease.options)) {
       const initialAllocations: { [ability: string]: number } = {};
-      background.abilityScoreIncrease.options.forEach((ability: string) => {
+      (background.abilityScoreIncrease.options as string[]).forEach((ability: string) => {
         initialAllocations[ability] = 0;
       });
       setAbilityScoreAllocations(initialAllocations);
@@ -510,6 +495,72 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
     return selectedLanguages.includes(language) || selectedLanguages.length < 2;
   };
 
+  const renderOriginFeat = (): React.ReactNode => {
+    const originFeat = selectedBackgroundForModal?.originFeat;
+    if (originFeat && typeof originFeat === 'string') {
+      return (
+        <ModalSection>
+          <h3>Origin Feat</h3>
+          <div className="section-content">
+            {originFeat}
+          </div>
+        </ModalSection>
+      );
+    }
+    return null;
+  };
+
+  const renderAbilityScoreAllocation = (): React.ReactNode => {
+    if (!selectedBackgroundForModal?.abilityScoreIncrease ||
+        !('options' in selectedBackgroundForModal.abilityScoreIncrease) ||
+        !Array.isArray(selectedBackgroundForModal.abilityScoreIncrease.options)) {
+      return null;
+    }
+
+    const options = selectedBackgroundForModal.abilityScoreIncrease.options as string[];
+
+    return (
+      <AbilityScoreAllocation>
+        <h3>Ability Score Increase</h3>
+        <div className="allocation-description">
+          Choose either: +2 to one ability and +1 to another, OR +1 to all three abilities
+        </div>
+
+        <div className="abilities-grid">
+          {options.map((ability: string) => {
+            const abilityName = ability === 'str' ? 'Strength' :
+                               ability === 'dex' ? 'Dexterity' :
+                               ability === 'con' ? 'Constitution' :
+                               ability === 'int' ? 'Intelligence' :
+                               ability === 'wis' ? 'Wisdom' :
+                               ability === 'cha' ? 'Charisma' : ability.toUpperCase();
+
+            return (
+              <div key={ability} className="ability-option">
+                <div className="ability-name">{abilityName}</div>
+                <div className="allocation-buttons">
+                  {[2, 1, 0].map((value) => (
+                    <button
+                      key={value}
+                      className={`allocation-btn ${
+                        abilityScoreAllocations[ability] === value ? 'selected' : ''
+                      } ${
+                        !canSelectValue(ability, value) ? 'disabled' : ''
+                      }`}
+                      onClick={() => handleAbilityScoreAllocation(ability, value)}
+                      disabled={!canSelectValue(ability, value)}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </AbilityScoreAllocation>
+    );
+  };
 
   const confirmBackgroundSelection = () => {
     if (selectedBackgroundForModal && isAllocationValid() && selectedLanguages.length === 2) {
@@ -725,58 +776,11 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
               </div>
             </LanguageSelection>
 
-            {selectedBackgroundForModal.originFeat && (
-              <ModalSection>
-                <h3>Origin Feat</h3>
-                <div className="section-content">
-                  {selectedBackgroundForModal.originFeat}
-                </div>
-              </ModalSection>
-            )}
+            {renderOriginFeat()}
 
 
             {/* Ability Score Allocation */}
-            {selectedBackgroundForModal.abilityScoreIncrease?.options && (
-              <AbilityScoreAllocation>
-                <h3>Ability Score Increase</h3>
-                <div className="allocation-description">
-                  Choose either: +2 to one ability and +1 to another, OR +1 to all three abilities
-                </div>
-
-                <div className="abilities-grid">
-                  {selectedBackgroundForModal.abilityScoreIncrease.options.map((ability: string) => {
-                    const abilityName = ability === 'str' ? 'Strength' :
-                                       ability === 'dex' ? 'Dexterity' :
-                                       ability === 'con' ? 'Constitution' :
-                                       ability === 'int' ? 'Intelligence' :
-                                       ability === 'wis' ? 'Wisdom' :
-                                       ability === 'cha' ? 'Charisma' : ability.toUpperCase();
-
-                    return (
-                      <div key={ability} className="ability-option">
-                        <div className="ability-name">{abilityName}</div>
-                        <div className="allocation-buttons">
-                          {[2, 1, 0].map((value) => (
-                            <button
-                              key={value}
-                              className={`allocation-btn ${
-                                abilityScoreAllocations[ability] === value ? 'selected' : ''
-                              } ${
-                                !canSelectValue(ability, value) ? 'disabled' : ''
-                              }`}
-                              onClick={() => handleAbilityScoreAllocation(ability, value)}
-                              disabled={!canSelectValue(ability, value)}
-                            >
-                              {value}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </AbilityScoreAllocation>
-            )}
+            {renderAbilityScoreAllocation()}
 
             {/* Small skill proficiencies at bottom */}
             <div style={{

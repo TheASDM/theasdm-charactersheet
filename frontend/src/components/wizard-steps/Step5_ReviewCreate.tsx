@@ -6,6 +6,7 @@ import { AbilityScoresHeader } from './AbilityScoresHeader';
 import { mapGeneratorDataToCharacterSheet } from '../../utils/characterDataMapper';
 import { characterService } from '../../services/characterService';
 import { StructuredFeaturesDisplay } from '../StructuredFeaturesDisplay';
+import { useUser } from '../../contexts/UserContext';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
@@ -191,6 +192,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   data,
   onComplete
 }) => {
+  const { user } = useUser();
   const [isCreating, setIsCreating] = useState(false);
   const [createStatus, setCreateStatus] = useState<'success' | 'error' | null>(null);
 
@@ -232,14 +234,12 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
       // Safely log features
       try {
-        console.log('Structured Features:', JSON.stringify(characterSheetData.features, null, 2));
       } catch (featuresError) {
-        console.log('Features contain non-serializable objects:', characterSheetData.features);
       }
 
       // Create character using the API
       const response = await characterService.create({
-        userId: 1, // TODO: Get actual user ID from auth context
+        userId: user?.id || 1, // Use actual user ID from auth context, fallback to 1
         name: characterSheetData.name,
         level: characterSheetData.level,
         characterData: characterSheetData,
@@ -258,7 +258,6 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         return;
       }
 
-      console.log('✅ Character created successfully:', response.data);
       setCreateStatus('success');
 
       // Wait a moment to show success message, then complete

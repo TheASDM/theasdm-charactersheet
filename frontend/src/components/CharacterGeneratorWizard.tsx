@@ -752,7 +752,6 @@ export default function CharacterGeneratorWizard() {
             <Step5ReviewCreate
               data={builderData}
               onComplete={() => {
-                console.log('Character created successfully!');
                 alert('Character created successfully! Redirecting to characters page...');
                 navigate('/characters');
               }}

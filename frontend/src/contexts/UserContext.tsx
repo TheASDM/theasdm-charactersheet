@@ -48,7 +48,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         const data = await response.json();
         setUser(data.user);
 
-        console.log('👤 User initialized:', data.user.username);
 
       } catch (err) {
         console.error('Failed to initialize user:', err);

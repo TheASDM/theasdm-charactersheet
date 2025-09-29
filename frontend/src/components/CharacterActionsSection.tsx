@@ -30,8 +30,6 @@ export default function CharacterActionsSection({
   cancelSectionEdit,
   actions,
 }: CharacterActionsSectionProps) {
-  console.log('🎭 CharacterActionsSection received actions:', character.actions);
-  console.log('🎭 Actions content:', character.actions.map((action, i) => `${i}: ${action.name} | ${action.atkBonus} | ${action.damage}`));
 
   return (
     <ActionsSection style={{ flex: '2', marginTop: '0' }}>
@@ -44,74 +42,136 @@ export default function CharacterActionsSection({
           <div className="header-cell">Damage & Type</div>
         </ActionsTableHeader>
 
-        {/* Table Rows */}
-        {character.actions.map((action, index) => (
-          <ActionsTableCell key={index} $column={1}>
-            <div className="action-name">
-              {editingSections.actions ? (
-                <input
-                  type="text"
-                  value={action.name}
-                  onChange={(e) =>
-                    actions.handleActionUpdate(
-                      index,
-                      'name',
-                      e.target.value
-                    )
-                  }
-                  placeholder="Action name"
-                />
-              ) : (
-                action.name || '—'
-              )}
-              {editingSections.actions && (
-                <RemoveActionButton
-                  onClick={() => actions.handleRemoveAction(index)}
-                  title="Remove action"
-                  style={{ marginLeft: '0.3rem', fontSize: '0.6rem', padding: '0.1rem 0.2rem' }}
-                >
-                  ×
-                </RemoveActionButton>
-              )}
-            </div>
-            <div className="action-bonus">
-              {editingSections.actions ? (
-                <input
-                  type="text"
-                  value={action.atkBonus}
-                  onChange={(e) =>
-                    actions.handleActionUpdate(
-                      index,
-                      'atkBonus',
-                      e.target.value
-                    )
-                  }
-                  placeholder="—"
-                />
-              ) : (
-                action.atkBonus || '—'
-              )}
-            </div>
-            <div className="action-damage">
-              {editingSections.actions ? (
-                <input
-                  type="text"
-                  value={action.damage}
-                  onChange={(e) =>
-                    actions.handleActionUpdate(
-                      index,
-                      'damage',
-                      e.target.value
-                    )
-                  }
-                  placeholder="—"
-                />
-              ) : (
-                action.damage || '—'
-              )}
-            </div>
-          </ActionsTableCell>
-        ))}
+        {/* Dynamic Action Rows */}
+        {Array.from({ length: 8 }, (_, index) => {
+          const action = character.actions[index];
+          const hasAction = action && action.name && action.name.trim();
+
+          return (
+            <ActionsTableCell key={index} $column={1}>
+              <div className="action-name">
+                {hasAction ? (
+                  editingSections.actions ? (
+                    <input
+                      type="text"
+                      value={action.name}
+                      onChange={(e) =>
+                        actions.handleActionUpdate(
+                          index,
+                          'name',
+                          e.target.value
+                        )
+                      }
+                      placeholder="Action name"
+                    />
+                  ) : (
+                    action.name
+                  )
+                ) : (
+                  editingSections.actions ? (
+                    <input
+                      type="text"
+                      value={action?.name || ''}
+                      onChange={(e) =>
+                        actions.handleActionUpdate(
+                          index,
+                          'name',
+                          e.target.value
+                        )
+                      }
+                      placeholder="Action name"
+                    />
+                  ) : (
+                    ''
+                  )
+                )}
+                {editingSections.actions && hasAction && (
+                  <RemoveActionButton
+                    onClick={() => actions.handleRemoveAction(index)}
+                    title="Remove action"
+                    style={{ marginLeft: '0.3rem', fontSize: '0.6rem', padding: '0.1rem 0.2rem' }}
+                  >
+                    ×
+                  </RemoveActionButton>
+                )}
+              </div>
+              <div className="action-bonus">
+                {hasAction ? (
+                  editingSections.actions ? (
+                    <input
+                      type="text"
+                      value={action.atkBonus}
+                      onChange={(e) =>
+                        actions.handleActionUpdate(
+                          index,
+                          'atkBonus',
+                          e.target.value
+                        )
+                      }
+                      placeholder="—"
+                    />
+                  ) : (
+                    action.atkBonus || '—'
+                  )
+                ) : (
+                  editingSections.actions ? (
+                    <input
+                      type="text"
+                      value={action?.atkBonus || ''}
+                      onChange={(e) =>
+                        actions.handleActionUpdate(
+                          index,
+                          'atkBonus',
+                          e.target.value
+                        )
+                      }
+                      placeholder="—"
+                    />
+                  ) : (
+                    ''
+                  )
+                )}
+              </div>
+              <div className="action-damage">
+                {hasAction ? (
+                  editingSections.actions ? (
+                    <input
+                      type="text"
+                      value={action.damage}
+                      onChange={(e) =>
+                        actions.handleActionUpdate(
+                          index,
+                          'damage',
+                          e.target.value
+                        )
+                      }
+                      placeholder="—"
+                    />
+                  ) : (
+                    action.damage || '—'
+                  )
+                ) : (
+                  editingSections.actions ? (
+                    <input
+                      type="text"
+                      value={action?.damage || ''}
+                      onChange={(e) =>
+                        actions.handleActionUpdate(
+                          index,
+                          'damage',
+                          e.target.value
+                        )
+                      }
+                      placeholder="—"
+                    />
+                  ) : (
+                    ''
+                  )
+                )}
+              </div>
+            </ActionsTableCell>
+          );
+        })}
       </ActionsTable>
 
       {editingSections.actions && (

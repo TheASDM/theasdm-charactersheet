@@ -226,7 +226,6 @@ const CharacterViewPage: React.FC = () => {
       if (response.error) {
         alert(`Failed to save character: ${response.error}`);
       } else {
-        console.log('Character saved successfully');
       }
     } catch (err) {
       alert('Failed to save character');

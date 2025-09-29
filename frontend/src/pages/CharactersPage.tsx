@@ -142,19 +142,16 @@ const CharactersPage: React.FC = () => {
 
 
   const handleCharacterClick = (character: Character) => {
-    console.log('Character clicked:', character);
     setSelectedCharacter(character);
     setIsSheetModalOpen(true);
   };
 
   const handleCharacterEdit = (character: Character) => {
-    console.log('Edit character:', character);
     setSelectedCharacter(character);
     setIsSheetModalOpen(true);
   };
 
-  const handleCharacterDelete = (character: Character) => {
-    console.log('Character deleted:', character);
+  const handleCharacterDelete = (_character: Character) => {
     // Character is already deleted by CharacterList component
   };
 
@@ -168,8 +165,7 @@ const CharactersPage: React.FC = () => {
     setSelectedCharacter(null);
   };
 
-  const handleSheetSave = (updatedCharacter: Character) => {
-    console.log('Character sheet updated:', updatedCharacter);
+  const handleSheetSave = (_updatedCharacter: Character) => {
     // The character list will refresh automatically
   };
 

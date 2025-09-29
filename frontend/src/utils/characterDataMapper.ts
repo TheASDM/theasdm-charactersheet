@@ -52,10 +52,6 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   const weapons = mapEquipmentToWeapons(equipment, finalAbilityScores, proficiencyBonus, builderData);
   const weaponActions = mapWeaponsToActions(weapons);
 
-  // Debug logging
-  console.log('🔍 Equipment list:', equipment);
-  console.log('⚔️ Mapped weapons:', weapons);
-  console.log('🎯 Weapon actions:', weaponActions);
 
   // Extract and parse structured features
   const structuredFeatures = extractStructuredFeatures(builderData);
@@ -65,12 +61,6 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   const legacySpeciesTraits = extractSpeciesTraits(builderData);
   const legacyFeats = builderData.selectedOriginFeats || [];
 
-  // Debug logging
-  console.log('🔍 Raw builderData.classFeatures:', builderData.classFeatures);
-  console.log('🔍 Raw builderData.speciesTraits:', builderData.speciesTraits);
-  console.log('🔍 Structured features:', structuredFeatures);
-  console.log('🔍 Legacy classFeatures:', legacyClassFeatures);
-  console.log('🔍 Legacy speciesTraits:', legacySpeciesTraits);
 
   // Map all proficiencies
   const proficiencies = {
@@ -165,25 +155,7 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     feats: legacyFeats,
 
     weapons,
-    actions: (() => {
-      const actions = [
-        { name: 'Dash', atkBonus: '—', damage: 'Move Speed × 2' },
-        { name: 'Dodge', atkBonus: '—', damage: '—' },
-        { name: 'Help', atkBonus: '—', damage: '—' },
-        ...weaponActions,
-        ...Array(Math.max(0, 5 - weaponActions.length)).fill({ name: '', atkBonus: '', damage: '' }),
-      ];
-      console.log('🎬 Final actions array:', actions);
-      actions.forEach((action, index) => {
-        console.log(`🎬 Action ${index}:`, action);
-        Object.entries(action).forEach(([key, value]) => {
-          if (typeof value === 'object' && value !== null) {
-            console.warn(`🚨 Action ${index} has object property ${key}:`, value);
-          }
-        });
-      });
-      return actions;
-    })(),
+    actions: weaponActions,
     proficiencies,
   };
 }
@@ -216,14 +188,12 @@ function extractStructuredFeatures(builderData: CharacterBuilderData): Character
     const speciesFeatureVariants = getAllQualifiedFeatureVariants(builderData, 'species');
     if (speciesFeatureVariants.length > 0) {
       features.speciesTraits = speciesFeatureVariants;
-      console.log('🎯 Using feature variants for species traits:', speciesFeatureVariants);
     } else if (builderData.speciesTraits && builderData.selectedSpecies) {
       // Fallback to traditional parsing for species without variants
       features.speciesTraits = parseSpeciesTraits(
         { traits: builderData.speciesTraits },
         builderData.selectedSpecies
       );
-      console.log('🎯 Using traditional parsing for species traits (no variants found)');
     }
 
     // Parse background features
@@ -247,7 +217,6 @@ function extractStructuredFeatures(builderData: CharacterBuilderData): Character
       });
     }
 
-    console.log('✅ Successfully parsed structured features:', features);
   } catch (error) {
     console.error('❌ Error extracting structured features:', error);
   }
@@ -518,7 +487,6 @@ function mapEquipmentToWeapons(equipment: (string | any)[], abilityScores: any, 
   const weapons = [];
   const weaponProficiencies = builderData.classProficiencies?.weapons || [];
 
-  console.log('🔧 Weapon proficiencies:', weaponProficiencies);
 
   // Common weapon data - simplified mapping
   const weaponData: { [key: string]: { damage: string; properties: string[]; ability: 'strength' | 'dexterity' } } = {
@@ -542,7 +510,6 @@ function mapEquipmentToWeapons(equipment: (string | any)[], abilityScores: any, 
   };
 
   equipment.forEach(item => {
-    console.log('🔍 Checking equipment item:', item);
 
     // Handle both string and object equipment items
     let itemName: string;
@@ -555,11 +522,9 @@ function mapEquipmentToWeapons(equipment: (string | any)[], abilityScores: any, 
       } else if ('name' in item && typeof item.name === 'string') {
         itemName = item.name;
       } else {
-        console.warn('⚠️ Could not extract item name from object:', item);
         return; // Skip this item
       }
     } else {
-      console.warn('⚠️ Unexpected equipment item format:', item);
       return; // Skip this item
     }
 
@@ -567,7 +532,6 @@ function mapEquipmentToWeapons(equipment: (string | any)[], abilityScores: any, 
       itemName.toLowerCase().includes(weapon.toLowerCase())
     );
 
-    console.log('🗡️ Found weapon match:', weaponName, 'for item:', itemName);
 
     if (weaponName) {
       const weapon = weaponData[weaponName];

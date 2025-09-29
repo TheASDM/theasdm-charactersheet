@@ -1,16 +1,7 @@
 // Parse complex D&D data structures (tables, lists, etc.)
 export const parseComplexDnDEntry = (entry: any): string => {
-  console.log('🔧 Processing complex entry:', {
-    type: typeof entry,
-    isArray: Array.isArray(entry),
-    hasType: entry?.type,
-    entryType: entry?.type,
-  });
-
   if (typeof entry === 'string') {
-    const result = parseDnDTemplateTag(entry);
-    console.log('🔧 String entry processed:', { original: entry, result });
-    return result;
+    return parseDnDTemplateTag(entry);
   }
 
   if (typeof entry !== 'object' || entry === null) {
@@ -38,7 +29,6 @@ export const parseComplexDnDEntry = (entry: any): string => {
       });
     }
 
-    console.log('🔧 Table processed:', { result });
     return result;
   }
 
@@ -65,7 +55,6 @@ export const parseComplexDnDEntry = (entry: any): string => {
       });
     }
 
-    console.log('🔧 List processed:', { result });
     return result;
   }
 
@@ -74,12 +63,10 @@ export const parseComplexDnDEntry = (entry: any): string => {
     const result = entry.entries
       .map((subEntry: any) => parseComplexDnDEntry(subEntry))
       .join(' ');
-    console.log('🔧 Nested entries processed:', { result });
     return result;
   }
 
   // Fallback for unknown object types
-  console.log('🔧 Unknown object type, using fallback:', entry);
 
   // Check if it's a simple object with specific properties we can extract
   if (entry.text) {
@@ -109,23 +96,13 @@ export const parseDnDTemplateTag = (text: string): string => {
   if (!text) return '';
 
   // Enhanced debug logging
-  const originalText = text;
-  const hasTemplates = text.includes('{@') || text.includes('(@');
+  // const originalText = text;
+  // const hasTemplates = text.includes('{@') || text.includes('(@');
 
-  if (hasTemplates) {
-    console.log('🔍 PARSING INPUT:', {
-      text: originalText,
-      length: text.length,
-      hasAtSense: text.includes('@sense'),
-      hasCurlyBraces: text.includes('{@'),
-      hasParentheses: text.includes('(@'),
-    });
-  }
 
   const result = text
     // Handle parenthetical references like (@sense Darkvision|XPHB)
-    .replace(/\(@([^)]+)\)/g, (fullMatch, content) => {
-      console.log('📝 Processing parenthetical:', { fullMatch, content });
+    .replace(/\(@([^)]+)\)/g, (_fullMatch, content) => {
 
       const parts = content.split(' ');
       const tagType = parts[0];
@@ -136,7 +113,6 @@ export const parseDnDTemplateTag = (text: string): string => {
         ? tagContent.split('|')
         : [tagContent, null];
 
-      console.log('📝 Parenthetical result:', { tagType, tagContent, name });
 
       // Handle common parenthetical tags
       switch (tagType) {
@@ -150,8 +126,7 @@ export const parseDnDTemplateTag = (text: string): string => {
           return name || '';
       }
     })
-    .replace(/\{@([^}]+)\}/g, (fullMatch, content) => {
-      console.log('📝 Processing curly brace:', { fullMatch, content });
+    .replace(/\{@([^}]+)\}/g, (_fullMatch, content) => {
 
       // Split on first space to get tag type and content
       const parts = content.split(' ');
@@ -163,7 +138,6 @@ export const parseDnDTemplateTag = (text: string): string => {
         ? tagContent.split('|')
         : [tagContent, null];
 
-      console.log('📝 Curly brace result:', { tagType, tagContent, name });
 
       switch (tagType) {
         // Formatting
@@ -214,7 +188,6 @@ export const parseDnDTemplateTag = (text: string): string => {
         case 'variantrule':
           return name;
         case 'sense':
-          console.log('✅ SENSE TAG PROCESSED:', { name });
           return name;
 
         // Time and rest
@@ -237,14 +210,6 @@ export const parseDnDTemplateTag = (text: string): string => {
     });
 
   // Enhanced debug logging for results
-  if (hasTemplates) {
-    console.log('✅ PARSING RESULT:', {
-      original: originalText,
-      result: result,
-      changed: result !== originalText,
-      removedTemplates: !result.includes('{@') && !result.includes('(@'),
-    });
-  }
 
   return result.replace(/\s+/g, ' ').trim();
 };

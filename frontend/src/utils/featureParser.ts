@@ -160,8 +160,7 @@ export function parseBackgroundFeatures(
     });
 
     if (Array.isArray(featuresData)) {
-      featuresData.forEach((feature: any, index: number) => {
-        console.log(`🎯 Processing background feature ${index}:`, feature);
+      featuresData.forEach((feature: any, _index: number) => {
         const parsed = parseFeatureFromData(feature, 'background', backgroundName);
         if (parsed) features.push(parsed);
       });
@@ -285,15 +284,12 @@ function createBasicFeature(
   // Add optional properties only if they exist
   if (level !== undefined) feature.level = level;
   if (action) {
-    console.log('🎯 Adding action to feature:', { name, action });
     feature.action = action;
   }
   if (resource) {
-    console.log('🎯 Adding resource to feature:', { name, resource });
     feature.resource = resource;
   }
   if (effects && effects.length > 0) {
-    console.log('🎯 Adding effects to feature:', { name, effects });
     feature.effects = effects;
   }
 

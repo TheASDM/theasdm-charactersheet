@@ -303,7 +303,9 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
       <CharacterContent>
         <CharacterInfo>
           <InfoRow>
-            <strong>Level {character.level}</strong> {species} {characterClass}
+            <>
+              <strong>Level {character.level}</strong> {species} {characterClass}
+            </>
           </InfoRow>
           {character.campaign && (
             <InfoRow>

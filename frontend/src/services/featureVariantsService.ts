@@ -411,7 +411,6 @@ export function meetsPrerequisites(
   prerequisites: string[],
   characterData: CharacterBuilderData
 ): boolean {
-  console.log('🔍 Checking prerequisites:', prerequisites);
   console.log('🔍 Character data:', {
     selectedSpecies: characterData.selectedSpecies,
     selectedClass: characterData.selectedClass,
@@ -433,7 +432,6 @@ export function meetsPrerequisites(
         const values = value.split('|'); // Support multiple values like "Black Dragon|Copper Dragon"
         const draconicChoice = characterData.speciesChoices?.draconicAncestry || '';
         result = values.includes(draconicChoice);
-        console.log(`🔍 Checking draconicAncestry: ${draconicChoice} in [${values.join(', ')}] = ${result}`);
         break;
       case 'elfLineage':
         result = characterData.speciesChoices?.elfLineage === value;
@@ -455,7 +453,6 @@ export function meetsPrerequisites(
         result = false;
     }
 
-    console.log(`🔍 Prerequisite ${prerequisite}: ${result}`);
     return result;
   });
 }
@@ -582,7 +579,6 @@ export function getFeatureVariantsForCharacter(character: CharacterSheetData): C
     speciesChoices: inferredChoices
   };
 
-  console.log('🎯 Inferred choices for existing character:', inferredChoices);
 
   return getAllQualifiedFeatureVariants(builderData as CharacterBuilderData, 'species');
 }
@@ -613,7 +609,6 @@ export function updateCharacterWithFeatureVariants(character: CharacterSheetData
     // Replace species traits with variants
     updatedCharacter.features.speciesTraits = featureVariants;
 
-    console.log('🎯 Updated character with feature variants:', featureVariants);
   }
 
   return updatedCharacter;

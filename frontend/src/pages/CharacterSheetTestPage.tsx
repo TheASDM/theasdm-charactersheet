@@ -199,8 +199,7 @@ const CharacterSheetTestPage: React.FC = () => {
     setCharacterData(updatedData);
   };
 
-  const handleSave = (data: CharacterSheetData) => {
-    console.log('Character sheet saved:', data);
+  const handleSave = (_data: CharacterSheetData) => {
     alert('Character sheet would be saved to the server here!');
   };
 

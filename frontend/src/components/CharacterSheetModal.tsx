@@ -156,7 +156,6 @@ export default function CharacterSheetModal({
           ? { ...createDefaultCharacterSheet(), ...character.characterData }
           : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
 
-        console.log('🔄 Modal: Using generator data for new character (ID: -1)');
       } else {
         // Fallback for other cases
         newData = character.characterData && typeof character.characterData === 'object'

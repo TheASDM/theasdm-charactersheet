@@ -466,7 +466,6 @@ const EquipmentPage: React.FC = () => {
     // Add to checked items when adding to inventory
     setCheckedItems(prev => new Set([...prev, item.id]));
     // TODO: Implement actual inventory addition to character sheet
-    console.log('Added to inventory:', item.name);
   };
 
   const handleCheckboxChange = (itemId: number, checked: boolean) => {

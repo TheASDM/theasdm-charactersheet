@@ -315,14 +315,14 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
 
         <SpellDescription>
           <h3>Description</h3>
-          {spell.entries?.map((entry, index) => (
+          {spell.entries?.map((entry: any, index: number) => (
             <p key={index}>{parseSpellText(entry)}</p>
           ))}
 
           {spell.entriesHigherLevel && spell.entriesHigherLevel.length > 0 && (
             <HigherLevelSection>
               <h4>At Higher Levels</h4>
-              {spell.entriesHigherLevel.map((entry, index) => (
+              {spell.entriesHigherLevel.map((entry: any, index: number) => (
                 <div key={index}>
                   {entry.entries?.map((subEntry: string, subIndex: number) => (
                     <p key={subIndex}>{parseSpellText(subEntry)}</p>
