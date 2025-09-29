@@ -224,9 +224,18 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
       // Convert generator data to character sheet format
       const characterSheetData = mapGeneratorDataToCharacterSheet(data);
 
-      // Log the converted data for debugging
-      console.log('Generated Character Sheet Data:', characterSheetData);
-      console.log('Structured Features:', characterSheetData.features);
+      // Log the converted data for debugging (safely)
+      console.log('Generated Character Sheet Data:', {
+        ...characterSheetData,
+        features: 'Features object (see next log)'
+      });
+
+      // Safely log features
+      try {
+        console.log('Structured Features:', JSON.stringify(characterSheetData.features, null, 2));
+      } catch (featuresError) {
+        console.log('Features contain non-serializable objects:', characterSheetData.features);
+      }
 
       // Create character using the API
       const response = await characterService.create({
@@ -269,6 +278,26 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     return items.join(', ');
   };
 
+  // Safe rendering function for any value that might be an object
+  const safeRender = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'boolean') return String(value);
+    if (typeof value === 'object') {
+      console.warn('🚨 FOUND OBJECT IN SAFE RENDER:', { value, keys: Object.keys(value) });
+      // Check if this is the {A, B} object we're looking for
+      const keys = Object.keys(value);
+      if (keys.length === 2 && keys.includes('A') && keys.includes('B')) {
+        console.error('🔥 FOUND THE {A, B} OBJECT:', value);
+        console.error('🔥 A array contents:', value.A);
+        console.error('🔥 B array contents:', value.B);
+      }
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   const getAllSkillProficiencies = (): string[] => {
     const skills: string[] = [];
     if (data.selectedClassSkills) skills.push(...data.selectedClassSkills);
@@ -284,6 +313,16 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
       if (typeof item === 'string') return item;
       if (typeof item === 'object' && item?.item) return item.item;
       if (typeof item === 'object' && item?.name) return item.name;
+
+      // Handle the {A, B} object structure
+      if (typeof item === 'object' && item?.A && item?.B) {
+        console.warn('🎯 Found {A, B} equipment object:', item);
+        // Try to extract meaningful text from A and B arrays
+        const aItems = Array.isArray(item.A) ? item.A.join(', ') : String(item.A);
+        const bItems = Array.isArray(item.B) ? item.B.join(', ') : String(item.B);
+        return `${aItems} | ${bItems}`;
+      }
+
       return String(item || '');
     };
 
@@ -346,40 +385,40 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
           <CharacterInfo>
             <div className="info-row">
               <span className="label">Character Name:</span>
-              <span className="value">{data.characterName || 'Unnamed Character'}</span>
+              <span className="value">{safeRender(data.characterName) || 'Unnamed Character'}</span>
             </div>
             <div className="info-row">
               <span className="label">Player Name:</span>
-              <span className="value">{data.playerName || 'Unknown Player'}</span>
+              <span className="value">{safeRender(data.playerName) || 'Unknown Player'}</span>
             </div>
             <div className="info-row">
               <span className="label">Class:</span>
-              <span className="value">{data.selectedClass}</span>
+              <span className="value">{safeRender(data.selectedClass)}</span>
             </div>
             <div className="info-row">
               <span className="label">Background:</span>
-              <span className="value">{data.selectedBackground}</span>
+              <span className="value">{safeRender(data.selectedBackground)}</span>
             </div>
             <div className="info-row">
               <span className="label">Species:</span>
-              <span className="value">{data.selectedSpecies}</span>
+              <span className="value">{safeRender(data.selectedSpecies)}</span>
             </div>
             <div className="info-row">
               <span className="label">Size:</span>
-              <span className="value">{data.speciesSize || 'Medium'}</span>
+              <span className="value">{safeRender(data.speciesSize) || 'Medium'}</span>
             </div>
             <div className="info-row">
               <span className="label">Speed:</span>
-              <span className="value">{data.speciesSpeed || 30} ft</span>
+              <span className="value">{safeRender(data.speciesSpeed) || '30'} ft</span>
             </div>
             <div className="info-row">
               <span className="label">Hit Dice:</span>
-              <span className="value">{data.hitDice}</span>
+              <span className="value">{safeRender(data.hitDice)}</span>
             </div>
             {data.spellcaster && (
               <div className="info-row">
                 <span className="label">Spellcasting:</span>
-                <span className="value">{data.spellcastingAbility}</span>
+                <span className="value">{safeRender(data.spellcastingAbility)}</span>
               </div>
             )}
           </CharacterInfo>
@@ -426,11 +465,25 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
       <ReviewContainer>
         <CharacterCard style={{ gridColumn: '1 / -1' }}>
           <h3>Features & Abilities</h3>
-          <StructuredFeaturesDisplay
-            features={mapGeneratorDataToCharacterSheet(data).features}
-            compactMode={true}
-            showFilters={false}
-          />
+          {(() => {
+            try {
+              const characterSheet = mapGeneratorDataToCharacterSheet(data);
+              return (
+                <StructuredFeaturesDisplay
+                  features={characterSheet.features}
+                  compactMode={true}
+                  showFilters={false}
+                />
+              );
+            } catch (error) {
+              console.error('Error rendering features:', error);
+              return (
+                <div style={{ color: '#ff6b6b', padding: '1rem', textAlign: 'center' }}>
+                  Error loading features. Check console for details.
+                </div>
+              );
+            }
+          })()}
         </CharacterCard>
 
         <CharacterCard>
@@ -441,7 +494,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
             <div className="section-content">
               {getAllEquipment().length > 0 ? (
                 getAllEquipment().map((item, index) => (
-                  <div key={index} className="list-item">{item}</div>
+                  <div key={index} className="list-item">{safeRender(item)}</div>
                 ))
               ) : (
                 <div>No equipment recorded</div>
@@ -456,7 +509,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
                 <div className="section-content">
                   {getAllSpells().cantrips.length > 0 ? (
                     getAllSpells().cantrips.map((cantrip, index) => (
-                      <div key={index} className="list-item">{cantrip}</div>
+                      <div key={index} className="list-item">{safeRender(cantrip)}</div>
                     ))
                   ) : (
                     <div>No cantrips known</div>
@@ -469,7 +522,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
                 <div className="section-content">
                   {getAllSpells().spells.length > 0 ? (
                     getAllSpells().spells.map((spell, index) => (
-                      <div key={index} className="list-item">{spell}</div>
+                      <div key={index} className="list-item">{safeRender(spell)}</div>
                     ))
                   ) : (
                     <div>No spells known</div>
@@ -493,7 +546,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
               <div className="section-title">Damage Resistances</div>
               <div className="section-content">
                 {data.speciesResistances.map((resistance, index) => (
-                  <div key={index} className="list-item">{resistance}</div>
+                  <div key={index} className="list-item">{safeRender(resistance)}</div>
                 ))}
               </div>
             </Section>

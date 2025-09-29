@@ -152,8 +152,16 @@ export function parseBackgroundFeatures(
   try {
     const featuresData = backgroundData.features || backgroundData.backgroundFeatures || [];
 
+    console.log('🎯 BACKGROUND PROCESSING:', {
+      backgroundName,
+      featuresDataType: typeof featuresData,
+      isArray: Array.isArray(featuresData),
+      featuresData: featuresData
+    });
+
     if (Array.isArray(featuresData)) {
-      featuresData.forEach((feature: any) => {
+      featuresData.forEach((feature: any, index: number) => {
+        console.log(`🎯 Processing background feature ${index}:`, feature);
         const parsed = parseFeatureFromData(feature, 'background', backgroundName);
         if (parsed) features.push(parsed);
       });
@@ -276,9 +284,18 @@ function createBasicFeature(
 
   // Add optional properties only if they exist
   if (level !== undefined) feature.level = level;
-  if (action) feature.action = action;
-  if (resource) feature.resource = resource;
-  if (effects && effects.length > 0) feature.effects = effects;
+  if (action) {
+    console.log('🎯 Adding action to feature:', { name, action });
+    feature.action = action;
+  }
+  if (resource) {
+    console.log('🎯 Adding resource to feature:', { name, resource });
+    feature.resource = resource;
+  }
+  if (effects && effects.length > 0) {
+    console.log('🎯 Adding effects to feature:', { name, effects });
+    feature.effects = effects;
+  }
 
   return feature;
 }
@@ -412,7 +429,10 @@ function detectActionType(description: string): FeatureAction | undefined {
 
   if (actionType === 'passive') return undefined;
 
-  return { type: actionType };
+  // Defensive check: ensure actionType is a string
+  const safeActionType = typeof actionType === 'string' ? actionType : 'action';
+
+  return { type: safeActionType as ActionType };
 }
 
 /**

@@ -173,6 +173,14 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
         ...Array(Math.max(0, 5 - weaponActions.length)).fill({ name: '', atkBonus: '', damage: '' }),
       ];
       console.log('🎬 Final actions array:', actions);
+      actions.forEach((action, index) => {
+        console.log(`🎬 Action ${index}:`, action);
+        Object.entries(action).forEach(([key, value]) => {
+          if (typeof value === 'object' && value !== null) {
+            console.warn(`🚨 Action ${index} has object property ${key}:`, value);
+          }
+        });
+      });
       return actions;
     })(),
     proficiencies,

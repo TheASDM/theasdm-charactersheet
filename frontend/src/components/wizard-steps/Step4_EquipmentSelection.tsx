@@ -549,7 +549,7 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
     onUpdate({
       selectedEquipment: categorizedEquipment
     });
-  }, [checkedItems, equipment, onUpdate]);
+  }, [checkedItems, equipment]);
 
   const handleItemClick = (item: Equipment, event: React.MouseEvent) => {
     // Don't open modal if checkbox was clicked
@@ -601,14 +601,17 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
 
   const formatDamage = (item: Equipment) => {
     if (item.dmg1) {
-      return `${item.dmg1}${item.dmgType ? ` ${item.dmgType}` : ''}`;
+      const dmg = typeof item.dmg1 === 'object' ? JSON.stringify(item.dmg1) : item.dmg1;
+      const dmgType = typeof item.dmgType === 'object' ? JSON.stringify(item.dmgType) : item.dmgType;
+      return `${dmg}${dmgType ? ` ${dmgType}` : ''}`;
     }
     return '';
   };
 
   const formatAC = (item: Equipment) => {
     if (item.ac) {
-      return `AC ${item.ac}`;
+      const ac = typeof item.ac === 'object' ? JSON.stringify(item.ac) : item.ac;
+      return `AC ${ac}`;
     }
     return '';
   };

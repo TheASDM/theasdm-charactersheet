@@ -302,7 +302,11 @@ export const StructuredFeaturesDisplay: React.FC<
             {feature.action && (
               <div className="mechanic-row">
                 <span className="mechanic-label">Action Type:</span>
-                <span className="mechanic-value">{feature.action.type}</span>
+                <span className="mechanic-value">
+                  {typeof feature.action.type === 'object'
+                    ? JSON.stringify(feature.action.type)
+                    : feature.action.type}
+                </span>
               </div>
             )}
             {feature.resource && (
@@ -317,7 +321,11 @@ export const StructuredFeaturesDisplay: React.FC<
               <div className="mechanic-row">
                 <span className="mechanic-label">Effects:</span>
                 <span className="mechanic-value">
-                  {feature.effects.map((effect) => effect.type).join(', ')}
+                  {feature.effects.map((effect) =>
+                    typeof effect.type === 'object'
+                      ? JSON.stringify(effect.type)
+                      : effect.type
+                  ).join(', ')}
                 </span>
               </div>
             )}
