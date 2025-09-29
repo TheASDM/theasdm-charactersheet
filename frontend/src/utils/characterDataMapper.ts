@@ -9,6 +9,7 @@ import {
 } from './featureParser';
 import { parseDnDTemplateTag } from './dndTemplateParser';
 import { EquipmentValidator } from './equipmentValidator';
+import { getAllQualifiedFeatureVariants } from '../services/featureVariantsService';
 
 /**
  * Maps CharacterBuilderData from the generator to CharacterSheetData for the character sheet
@@ -211,12 +212,18 @@ function extractStructuredFeatures(builderData: CharacterBuilderData): Character
       );
     }
 
-    // Parse species traits
-    if (builderData.speciesTraits && builderData.selectedSpecies) {
+    // Get feature variants for species traits (replaces generic parsing)
+    const speciesFeatureVariants = getAllQualifiedFeatureVariants(builderData, 'species');
+    if (speciesFeatureVariants.length > 0) {
+      features.speciesTraits = speciesFeatureVariants;
+      console.log('🎯 Using feature variants for species traits:', speciesFeatureVariants);
+    } else if (builderData.speciesTraits && builderData.selectedSpecies) {
+      // Fallback to traditional parsing for species without variants
       features.speciesTraits = parseSpeciesTraits(
         { traits: builderData.speciesTraits },
         builderData.selectedSpecies
       );
+      console.log('🎯 Using traditional parsing for species traits (no variants found)');
     }
 
     // Parse background features

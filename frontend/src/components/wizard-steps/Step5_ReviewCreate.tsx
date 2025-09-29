@@ -471,7 +471,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
               return (
                 <StructuredFeaturesDisplay
                   features={characterSheet.features}
-                  compactMode={true}
+                  compactMode={false}
                   showFilters={false}
                 />
               );

@@ -89,6 +89,10 @@ export interface CharacterFeature {
   type: FeatureType;
   level?: number;         // Level when gained
 
+  // Variant system support
+  baseFeatureId?: string; // Links variants to their base feature
+  variant?: string;       // "Acid", "Fire", "Defense", etc.
+
   // Core description and rules
   description: string;
   shortDescription?: string; // One-line summary for compact display

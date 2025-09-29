@@ -781,8 +781,20 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         };
       };
 
-      // Extract level 1 class features from API data
+      // Extract level 1 class features from CLASS_DATA structure
       const extractClassFeatures = (classData: any) => {
+        // Handle the CLASS_DATA format where classFeatures is an object with feature names as keys
+        if (classData.classFeatures && typeof classData.classFeatures === 'object') {
+          return Object.entries(classData.classFeatures).map(([featureName, featureData]: [string, any]) => ({
+            name: featureName,
+            description: featureData.description || '',
+            details: featureData.details || featureData.description || '',
+            level: 1, // Level 1 features for character creation
+            source: 'Class Feature'
+          }));
+        }
+
+        // Fallback to API format if it exists
         const level1Features = classData.classFeatures?.["1"] || [];
         return level1Features.map((feature: any) => ({
           name: feature.name,

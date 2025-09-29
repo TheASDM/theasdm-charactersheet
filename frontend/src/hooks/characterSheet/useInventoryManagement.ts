@@ -27,15 +27,6 @@ const isArmorByName = (name: string): boolean => {
   return genericArmors.some(type => lowerName.includes(type));
 };
 
-// Helper function to check if an item name indicates a weapon
-const isWeaponByName = (name: string): boolean => {
-  const weaponTypes = [
-    'sword', 'axe', 'mace', 'dagger', 'spear', 'bow', 'crossbow', 'javelin', 'club',
-    'rapier', 'scimitar', 'hammer', 'maul', 'pike', 'glaive', 'halberd', 'trident',
-    'whip', 'sling', 'dart', 'blowgun', 'net', 'lance', 'flail', 'morningstar'
-  ];
-  return weaponTypes.some(type => name.toLowerCase().includes(type));
-};
 
 // Helper function to migrate old inventory format to new format
 const migrateInventory = (inventory: string[] | InventoryItem[] | any[]): InventoryItem[] => {
@@ -228,30 +219,8 @@ export const useInventoryManagement = (
 
       updatedCharacter.inventory = result.updatedInventory;
 
-      // Auto-populate weapons to Actions section
-      if (EquipmentValidator.isWeapon(item)) {
-        const weaponStats = calculateWeaponStats(item, character);
-
-        // Find an empty action slot or add a new one
-        const updatedActions = [...character.actions];
-        const emptyActionIndex = updatedActions.findIndex(action => !action.name || action.name.trim() === '');
-
-        const newAction = {
-          name: item.name,
-          atkBonus: weaponStats.attackBonus,
-          damage: weaponStats.damage,
-        };
-
-        if (emptyActionIndex !== -1) {
-          // Use existing empty slot
-          updatedActions[emptyActionIndex] = newAction;
-        } else {
-          // Add new action
-          updatedActions.push(newAction);
-        }
-
-        updatedCharacter.actions = updatedActions;
-      }
+      // Note: Weapons are no longer auto-added to Actions section when added to inventory
+      // They will be added to Actions section only when equipped via handleToggleEquip
 
       onUpdate(updatedCharacter);
 
@@ -317,30 +286,8 @@ export const useInventoryManagement = (
         inventory: result.updatedInventory
       };
 
-      // Auto-populate custom weapons to Actions section
-      if (isWeaponByName(itemName)) {
-        const weaponStats = calculateWeaponStats(newItem, character);
-
-        // Find an empty action slot or add a new one
-        const updatedActions = [...character.actions];
-        const emptyActionIndex = updatedActions.findIndex(action => !action.name || action.name.trim() === '');
-
-        const newAction = {
-          name: itemName,
-          atkBonus: weaponStats.attackBonus,
-          damage: weaponStats.damage,
-        };
-
-        if (emptyActionIndex !== -1) {
-          // Use existing empty slot
-          updatedActions[emptyActionIndex] = newAction;
-        } else {
-          // Add new action
-          updatedActions.push(newAction);
-        }
-
-        updatedCharacter.actions = updatedActions;
-      }
+      // Note: Custom weapons are no longer auto-added to Actions section when added to inventory
+      // They will be added to Actions section only when equipped via handleToggleEquip
 
       onUpdate(updatedCharacter);
 
@@ -497,15 +444,45 @@ export const useInventoryManagement = (
           }
           updatedCharacter.equippedArmor = { ...item, equipped: true };
         } else if (EquipmentValidator.isWeapon({ name: item.name } as Item)) {
+          // Add weapon to equipped weapons
           updatedCharacter.equippedWeapons = [...character.equippedWeapons, { ...item, equipped: true }];
+
+          // Add weapon to Actions section
+          const weaponStats = calculateWeaponStats(item, character);
+          const updatedActions = [...character.actions];
+          const emptyActionIndex = updatedActions.findIndex(action => !action.name || action.name.trim() === '');
+
+          const newAction = {
+            name: item.name,
+            atkBonus: weaponStats.attackBonus,
+            damage: weaponStats.damage,
+          };
+
+          if (emptyActionIndex !== -1) {
+            // Use existing empty slot
+            updatedActions[emptyActionIndex] = newAction;
+          } else {
+            // Add new action (infinite equipped weapons allowed)
+            updatedActions.push(newAction);
+          }
+
+          updatedCharacter.actions = updatedActions;
         }
       } else {
         if (item.name.toLowerCase().includes('shield')) {
           delete updatedCharacter.equippedShield;
         } else if (isArmorByName(item.name)) {
           delete updatedCharacter.equippedArmor;
-        } else {
+        } else if (EquipmentValidator.isWeapon({ name: item.name } as Item)) {
+          // Remove weapon from equipped weapons
           updatedCharacter.equippedWeapons = character.equippedWeapons.filter(w => w.id !== item.id);
+
+          // Remove weapon from Actions section
+          updatedCharacter.actions = character.actions.map(action =>
+            action.name === item.name
+              ? { name: '', atkBonus: '', damage: '' }
+              : action
+          );
         }
       }
 
