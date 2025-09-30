@@ -1,6 +1,6 @@
 import { CharacterBuilderData } from '../components/CharacterGeneratorWizard';
 import { CharacterSheetData, calculateProficiencyBonus, calculateModifier, InventoryItem } from '../types/characterSheet';
-import { CharacterFeatures } from '../types/features';
+import { CharacterFeatures, CharacterFeature } from '../types/features';
 import {
   parseClassFeatures,
   parseSpeciesTraits,
@@ -10,6 +10,7 @@ import {
 import { parseDnDTemplateTag } from './dndTemplateParser';
 import { EquipmentValidator } from './equipmentValidator';
 import { getAllQualifiedFeatureVariants } from '../services/featureVariantsService';
+import { renderFeature, createCharacterContext } from './featureTemplateRenderer';
 
 /**
  * Maps CharacterBuilderData from the generator to CharacterSheetData for the character sheet
@@ -56,6 +57,33 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   // Extract and parse structured features
   const structuredFeatures = extractStructuredFeatures(builderData);
 
+  // Create character context for template resolution during character creation
+  const characterContext = createCharacterContext({
+    ...builderData,
+    level: 1,
+    abilityScores: finalAbilityScores,
+    species: builderData.selectedSpecies,
+    class: builderData.selectedClass,
+    background: builderData.selectedBackground
+  });
+
+  // Resolve all template features before saving to character sheet
+  if (structuredFeatures.speciesTraits) {
+    structuredFeatures.speciesTraits = structuredFeatures.speciesTraits.map(feature => {
+      if (feature.variables) {
+        const resolved = renderFeature(feature, characterContext);
+        // Save resolved values back to the feature
+        return {
+          ...feature,
+          name: resolved.resolvedName || feature.name,
+          description: resolved.resolvedDescription || feature.description,
+          shortDescription: resolved.resolvedShortDescription || feature.shortDescription || undefined
+        } as CharacterFeature;
+      }
+      return feature;
+    });
+  }
+
   // Legacy features for backward compatibility
   const legacyClassFeatures = extractClassFeatures(builderData);
   const legacySpeciesTraits = extractSpeciesTraits(builderData);
@@ -97,6 +125,25 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     background: builderData.selectedBackground || '',
     class: builderData.selectedClass || '',
     species: builderData.selectedSpecies || '',
+    speciesChoices: builderData.speciesChoices || {},
+
+    // Background data from wizard
+    backgroundFeatures: builderData.backgroundFeatures || [],
+    backgroundEquipment: builderData.backgroundStartingEquipment || [],
+    selectedLanguages: builderData.selectedLanguages || [],
+
+    // Feat data from wizard
+    selectedOriginFeats: builderData.selectedOriginFeats || [],
+    featFeatures: builderData.featFeatures || {},
+    featSpells: builderData.featSpells || {},
+    featChoices: builderData.featChoices || {},
+
+    // Class choices from wizard
+    classChoices: {
+      fightingStyle: builderData.selectedClassChoices?.['Fighting Style']?.[0] || undefined,
+      ...builderData.selectedClassChoices
+    },
+
     subclass: '', // Subclass comes at level 3
     level: 1,
     xp: 0,

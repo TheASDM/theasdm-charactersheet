@@ -472,6 +472,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
                   features={characterSheet.features}
                   compactMode={false}
                   showFilters={false}
+                  characterData={data}
                 />
               );
             } catch (error) {

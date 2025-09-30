@@ -234,3 +234,57 @@ export const EmptyTraitsMessage = styled.div`
   padding: 2rem;
   font-size: 1.1rem;
 `;
+
+// Proficiencies Card Styles with flexible sizing
+export const ProficienciesCard = styled.div<{ $isLastCard?: boolean; $totalCards?: number }>`
+  background: rgba(76, 100, 139, 0.15); /* Different blue-tinted background */
+  border: 1px solid rgba(76, 100, 139, 0.4); /* Blue border to match */
+  border-radius: 4px;
+  padding: 0.5rem;
+  transition: all 0.2s ease;
+
+  /* Flexible sizing logic */
+  grid-column: ${props => {
+    if (!props.$isLastCard || !props.$totalCards) return 'span 1';
+
+    // If total cards is odd and this is the last card, span 2 columns
+    const isOddTotal = props.$totalCards % 2 === 1;
+    return isOddTotal ? 'span 2' : 'span 1';
+  }};
+
+  &:hover {
+    background: rgba(76, 100, 139, 0.2);
+    border-color: rgba(76, 100, 139, 0.6);
+  }
+`;
+
+export const ProficienciesTitle = styled.h3`
+  color: #6fa8dc; /* Light blue color to distinguish from other features */
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem 0;
+  text-transform: capitalize;
+  line-height: 1.2;
+  text-align: center;
+  border-bottom: 1px solid rgba(76, 100, 139, 0.3);
+  padding-bottom: 0.2rem;
+`;
+
+export const ProficienciesContent = styled.div`
+  color: #f4e7d1;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  margin: 0;
+
+  /* Handle bold markdown formatting */
+  strong {
+    color: #6fa8dc;
+    font-weight: 600;
+  }
+
+  /* Add spacing between proficiency sections */
+  p {
+    margin: 0.3rem 0;
+  }
+`;

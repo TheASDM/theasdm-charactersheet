@@ -154,27 +154,40 @@ export const FEATURE_VARIANTS: { [key: string]: CharacterFeature[] } = {
 
   'dragonborn-breath-weapon': [
     {
-      id: 'dragonborn-breath-weapon-acid',
-      name: 'Breath Weapon',
-      variant: 'Acid',
+      id: 'dragonborn-breath-weapon-universal',
+      name: 'Breath Weapon (${draconicAncestry.damageType})',
       baseFeatureId: 'dragonborn-breath-weapon',
       source: 'species',
       sourceDetail: 'Dragonborn',
       type: 'active',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Black Dragon|Copper Dragon'],
-      description: 'Make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency). On a failed save, a creature takes 1d10 Acid damage. This damage increases by 1d10 damage when you reach character levels 5 (2d10 damage), 11 (3d10 damage), and 17 (4d10 damage). You can use this Breath Weapon a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest.',
-      shortDescription: 'Deal 1d10 acid damage in a 15-foot cone',
+      prerequisites: ['species=Dragonborn'],
+      variables: {
+        damageType: '${draconicAncestry.damageType}',
+        saveType: 'dexterity', // Will be resolved by template renderer
+        saveDC: '8 + proficiencyBonus + constitutionModifier',
+        areaType: '${draconicAncestry.areaType}',
+        damageByLevel: {
+          '1': '1d10',
+          '5': '2d10',
+          '11': '3d10',
+          '17': '4d10'
+        },
+        uses: 'proficiency',
+        recharge: 'long rest'
+      },
+      description: 'You exhale destructive energy in a ${areaType}. Each creature in that area must make a ${saveType} saving throw (DC ${saveDC}). On a failed save, a creature takes ${currentDamage} ${damageType} damage. On a successful save, it takes half as much damage. This damage increases as you gain levels: 2d10 at 5th level, 3d10 at 11th level, and 4d10 at 17th level. You can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.',
+      shortDescription: 'Deal ${currentDamage} ${damageType} damage in a ${areaType}',
       action: {
         type: 'action',
-        range: '15-foot cone',
+        range: '${areaType}',
         duration: 'Instantaneous',
         savingThrow: {
-          ability: 'dexterity',
-          dc: 'ability-based'
+          ability: 'dexterity' as any, // Will be resolved by template renderer
+          dc: '8 + proficiencyBonus + constitutionModifier'
         },
         damage: {
-          dice: '1d10',
-          type: 'acid'
+          dice: '${currentDamage}',
+          type: '${damageType}'
         }
       },
       resource: {
@@ -182,224 +195,30 @@ export const FEATURE_VARIANTS: { [key: string]: CharacterFeature[] } = {
         maxUses: 'proficiency'
       },
       category: 'Species Trait',
-      tags: ['attack', 'acid', 'save']
-    },
-    {
-      id: 'dragonborn-breath-weapon-lightning',
-      name: 'Breath Weapon',
-      variant: 'Lightning',
-      baseFeatureId: 'dragonborn-breath-weapon',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'active',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Blue Dragon|Bronze Dragon'],
-      description: 'Make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency). On a failed save, a creature takes 1d10 Lightning damage. This damage increases by 1d10 damage when you reach character levels 5 (2d10 damage), 11 (3d10 damage), and 17 (4d10 damage). You can use this Breath Weapon a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest.',
-      shortDescription: 'Deal 1d10 lightning damage in a 15-foot cone',
-      action: {
-        type: 'action',
-        range: '15-foot cone',
-        duration: 'Instantaneous',
-        savingThrow: {
-          ability: 'dexterity',
-          dc: 'ability-based'
-        },
-        damage: {
-          dice: '1d10',
-          type: 'lightning'
-        }
-      },
-      resource: {
-        type: 'per-long-rest',
-        maxUses: 'proficiency'
-      },
-      category: 'Species Trait',
-      tags: ['attack', 'lightning', 'save']
-    },
-    {
-      id: 'dragonborn-breath-weapon-fire',
-      name: 'Breath Weapon',
-      variant: 'Fire',
-      baseFeatureId: 'dragonborn-breath-weapon',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'active',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Brass Dragon|Gold Dragon|Red Dragon'],
-      description: 'Make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency). On a failed save, a creature takes 1d10 Fire damage. This damage increases by 1d10 damage when you reach character levels 5 (2d10 damage), 11 (3d10 damage), and 17 (4d10 damage). You can use this Breath Weapon a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest.',
-      shortDescription: 'Deal 1d10 fire damage in a 15-foot cone',
-      action: {
-        type: 'action',
-        range: '15-foot cone',
-        duration: 'Instantaneous',
-        savingThrow: {
-          ability: 'dexterity',
-          dc: 'ability-based'
-        },
-        damage: {
-          dice: '1d10',
-          type: 'fire'
-        }
-      },
-      resource: {
-        type: 'per-long-rest',
-        maxUses: 'proficiency'
-      },
-      category: 'Species Trait',
-      tags: ['attack', 'fire', 'save']
-    },
-    {
-      id: 'dragonborn-breath-weapon-poison',
-      name: 'Breath Weapon',
-      variant: 'Poison',
-      baseFeatureId: 'dragonborn-breath-weapon',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'active',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Green Dragon'],
-      description: 'Make a Constitution saving throw (DC 8 plus your Constitution modifier and Proficiency). On a failed save, a creature takes 1d10 Poison damage. This damage increases by 1d10 damage when you reach character levels 5 (2d10 damage), 11 (3d10 damage), and 17 (4d10 damage). You can use this Breath Weapon a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest.',
-      shortDescription: 'Deal 1d10 poison damage in a 15-foot cone',
-      action: {
-        type: 'action',
-        range: '15-foot cone',
-        duration: 'Instantaneous',
-        savingThrow: {
-          ability: 'constitution',
-          dc: 'ability-based'
-        },
-        damage: {
-          dice: '1d10',
-          type: 'poison'
-        }
-      },
-      resource: {
-        type: 'per-long-rest',
-        maxUses: 'proficiency'
-      },
-      category: 'Species Trait',
-      tags: ['attack', 'poison', 'save']
-    },
-    {
-      id: 'dragonborn-breath-weapon-cold',
-      name: 'Breath Weapon',
-      variant: 'Cold',
-      baseFeatureId: 'dragonborn-breath-weapon',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'active',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Silver Dragon|White Dragon'],
-      description: 'Make a Constitution saving throw (DC 8 plus your Constitution modifier and Proficiency). On a failed save, a creature takes 1d10 Cold damage. This damage increases by 1d10 damage when you reach character levels 5 (2d10 damage), 11 (3d10 damage), and 17 (4d10 damage). You can use this Breath Weapon a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest.',
-      shortDescription: 'Deal 1d10 cold damage in a 15-foot cone',
-      action: {
-        type: 'action',
-        range: '15-foot cone',
-        duration: 'Instantaneous',
-        savingThrow: {
-          ability: 'constitution',
-          dc: 'ability-based'
-        },
-        damage: {
-          dice: '1d10',
-          type: 'cold'
-        }
-      },
-      resource: {
-        type: 'per-long-rest',
-        maxUses: 'proficiency'
-      },
-      category: 'Species Trait',
-      tags: ['attack', 'cold', 'save']
+      tags: ['attack', '${damageType}', 'save']
     }
   ],
 
   'dragonborn-damage-resistance': [
     {
-      id: 'dragonborn-damage-resistance-acid',
-      name: 'Damage Resistance',
-      variant: 'Acid',
+      id: 'dragonborn-damage-resistance-universal',
+      name: 'Damage Resistance (${draconicAncestry.damageType})',
       baseFeatureId: 'dragonborn-damage-resistance',
       source: 'species',
       sourceDetail: 'Dragonborn',
       type: 'passive',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Black Dragon|Copper Dragon'],
-      description: 'You have Resistance to Acid damage from your Black Dragon or Copper Dragon draconic ancestry.',
-      shortDescription: 'Resistance to acid damage',
+      prerequisites: ['species=Dragonborn'],
+      variables: {
+        damageType: '${draconicAncestry.damageType}'
+      },
+      description: 'You have Resistance to ${damageType} damage from your ${draconicAncestryName} draconic ancestry.',
+      shortDescription: 'Resistance to ${damageType} damage',
       effects: [{
         type: 'resistance',
-        target: 'Acid damage'
+        target: '${damageType} damage'
       }],
       category: 'Species Trait',
-      tags: ['resistance', 'acid']
-    },
-    {
-      id: 'dragonborn-damage-resistance-lightning',
-      name: 'Damage Resistance',
-      variant: 'Lightning',
-      baseFeatureId: 'dragonborn-damage-resistance',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'passive',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Blue Dragon|Bronze Dragon'],
-      description: 'You have Resistance to Lightning damage from your Blue Dragon or Bronze Dragon draconic ancestry.',
-      shortDescription: 'Resistance to lightning damage',
-      effects: [{
-        type: 'resistance',
-        target: 'Lightning damage'
-      }],
-      category: 'Species Trait',
-      tags: ['resistance', 'lightning']
-    },
-    {
-      id: 'dragonborn-damage-resistance-fire',
-      name: 'Damage Resistance',
-      variant: 'Fire',
-      baseFeatureId: 'dragonborn-damage-resistance',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'passive',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Brass Dragon|Gold Dragon|Red Dragon'],
-      description: 'You have Resistance to Fire damage from your Brass Dragon, Gold Dragon, or Red Dragon draconic ancestry.',
-      shortDescription: 'Resistance to fire damage',
-      effects: [{
-        type: 'resistance',
-        target: 'Fire damage'
-      }],
-      category: 'Species Trait',
-      tags: ['resistance', 'fire']
-    },
-    {
-      id: 'dragonborn-damage-resistance-poison',
-      name: 'Damage Resistance',
-      variant: 'Poison',
-      baseFeatureId: 'dragonborn-damage-resistance',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'passive',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Green Dragon'],
-      description: 'You have Resistance to Poison damage from your Green Dragon draconic ancestry.',
-      shortDescription: 'Resistance to poison damage',
-      effects: [{
-        type: 'resistance',
-        target: 'Poison damage'
-      }],
-      category: 'Species Trait',
-      tags: ['resistance', 'poison']
-    },
-    {
-      id: 'dragonborn-damage-resistance-cold',
-      name: 'Damage Resistance',
-      variant: 'Cold',
-      baseFeatureId: 'dragonborn-damage-resistance',
-      source: 'species',
-      sourceDetail: 'Dragonborn',
-      type: 'passive',
-      prerequisites: ['species=Dragonborn', 'draconicAncestry=Silver Dragon|White Dragon'],
-      description: 'You have Resistance to Cold damage from your Silver Dragon or White Dragon draconic ancestry.',
-      shortDescription: 'Resistance to cold damage',
-      effects: [{
-        type: 'resistance',
-        target: 'Cold damage'
-      }],
-      category: 'Species Trait',
-      tags: ['resistance', 'cold']
+      tags: ['resistance', '${damageType}']
     }
   ]
 };
@@ -414,7 +233,8 @@ export function meetsPrerequisites(
   console.log('🔍 Character data:', {
     selectedSpecies: characterData.selectedSpecies,
     selectedClass: characterData.selectedClass,
-    speciesChoices: characterData.speciesChoices
+    speciesChoices: characterData.speciesChoices,
+    draconicAncestry: characterData.speciesChoices?.draconicAncestry
   });
 
   return prerequisites.every(prerequisite => {
@@ -516,53 +336,80 @@ export function inferSpeciesChoicesFromCharacter(character: CharacterSheetData):
   const choices: { [key: string]: string } = {};
 
   // For Dragonborn, try to infer draconic ancestry from existing features
-  if (character.species?.toLowerCase() === 'dragonborn') {
+  if (character.species?.toLowerCase().includes('dragonborn')) {
+    console.log('🔍 Inferring draconic ancestry for dragonborn character');
+
     // Look through existing features for clues about dragon type
     const allFeatures = [
       ...(character.features?.speciesTraits || []),
       ...(character.speciesTraits || []).map(trait => ({ description: trait }))
     ];
 
-    for (const feature of allFeatures) {
-      const description = feature.description || '';
+    console.log('🔍 All features to check:', allFeatures);
 
-      // Check for dragon types mentioned in descriptions
-      if (description.toLowerCase().includes('black dragon') || description.toLowerCase().includes('acid')) {
+    for (const feature of allFeatures) {
+      const description = (feature.description || '').toLowerCase();
+      const name = ((feature as any).name || '').toLowerCase();
+
+      console.log('🔍 Checking feature:', { name: (feature as any).name, description });
+
+      // Check for dragon types mentioned in names or descriptions
+      if (description.includes('black dragon') || description.includes('acid') ||
+          name.includes('black') || name.includes('acid')) {
         choices.draconicAncestry = 'Black Dragon';
+        console.log('✅ Found Black Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('blue dragon') ||
-                 (description.toLowerCase().includes('lightning') && !description.toLowerCase().includes('bronze'))) {
+      } else if (description.includes('blue dragon') || description.includes('lightning') ||
+                 name.includes('blue') || name.includes('lightning')) {
         choices.draconicAncestry = 'Blue Dragon';
+        console.log('✅ Found Blue Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('brass dragon')) {
+      } else if (description.includes('brass dragon') || name.includes('brass')) {
         choices.draconicAncestry = 'Brass Dragon';
+        console.log('✅ Found Brass Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('bronze dragon')) {
+      } else if (description.includes('bronze dragon') || name.includes('bronze')) {
         choices.draconicAncestry = 'Bronze Dragon';
+        console.log('✅ Found Bronze Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('copper dragon')) {
+      } else if (description.includes('copper dragon') || name.includes('copper')) {
         choices.draconicAncestry = 'Copper Dragon';
+        console.log('✅ Found Copper Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('gold dragon')) {
+      } else if (description.includes('gold dragon') || name.includes('gold')) {
         choices.draconicAncestry = 'Gold Dragon';
+        console.log('✅ Found Gold Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('green dragon') || description.toLowerCase().includes('poison')) {
+      } else if (description.includes('green dragon') || description.includes('poison') ||
+                 name.includes('green') || name.includes('poison')) {
         choices.draconicAncestry = 'Green Dragon';
+        console.log('✅ Found Green Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('red dragon')) {
+      } else if (description.includes('red dragon') || description.includes('fire') ||
+                 name.includes('red') || name.includes('fire')) {
         choices.draconicAncestry = 'Red Dragon';
+        console.log('✅ Found Red Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('silver dragon')) {
+      } else if (description.includes('silver dragon') || name.includes('silver')) {
         choices.draconicAncestry = 'Silver Dragon';
+        console.log('✅ Found Silver Dragon ancestry');
         break;
-      } else if (description.toLowerCase().includes('white dragon') ||
-                 (description.toLowerCase().includes('cold') && !description.toLowerCase().includes('silver'))) {
+      } else if (description.includes('white dragon') || description.includes('cold') ||
+                 name.includes('white') || name.includes('cold')) {
         choices.draconicAncestry = 'White Dragon';
+        console.log('✅ Found White Dragon ancestry');
         break;
       }
     }
+
+    // If no ancestry found yet, try some fallback logic based on character name or just default to Red Dragon
+    if (!choices.draconicAncestry) {
+      console.log('🔄 No ancestry found in features, defaulting to Red Dragon');
+      choices.draconicAncestry = 'Red Dragon'; // Default fallback
+    }
   }
 
+  console.log('🔍 Final inferred choices:', choices);
   return choices;
 }
 
@@ -589,8 +436,15 @@ export function getFeatureVariantsForCharacter(character: CharacterSheetData): C
 export function updateCharacterWithFeatureVariants(character: CharacterSheetData): CharacterSheetData {
   const updatedCharacter = { ...character };
 
+  // Infer species choices and add them to the character data
+  const inferredChoices = inferSpeciesChoicesFromCharacter(character);
+  if (Object.keys(inferredChoices).length > 0) {
+    console.log('🐉 Inferred species choices:', inferredChoices);
+    updatedCharacter.speciesChoices = inferredChoices;
+  }
+
   // Get appropriate feature variants
-  const featureVariants = getFeatureVariantsForCharacter(character);
+  const featureVariants = getFeatureVariantsForCharacter(updatedCharacter); // Use updated character with inferred choices
 
   if (featureVariants.length > 0) {
     // Update the structured features
@@ -609,6 +463,12 @@ export function updateCharacterWithFeatureVariants(character: CharacterSheetData
     // Replace species traits with variants
     updatedCharacter.features.speciesTraits = featureVariants;
 
+    // Now resolve the template features with the inferred character context
+    if (updatedCharacter.speciesChoices?.draconicAncestry) {
+      console.log('🐉 Resolving templates with draconic ancestry:', updatedCharacter.speciesChoices.draconicAncestry);
+      // Import is handled at module level, we'll need to implement this differently
+      console.log('🔧 Template resolution will happen at display time');
+    }
   }
 
   return updatedCharacter;

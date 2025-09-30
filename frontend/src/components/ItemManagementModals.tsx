@@ -4,14 +4,14 @@ import { Item } from '../types/api';
 import { isWeapon, isArmor, isShield } from '../services/itemService';
 
 // Modal Overlay
-const ModalOverlay = styled.div<{ isOpen: boolean }>`
+const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
-  display: ${props => props.isOpen ? 'flex' : 'none'};
+  display: ${props => props.$isOpen ? 'flex' : 'none'};
   justify-content: center;
   align-items: center;
   z-index: 1000;
@@ -364,7 +364,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={(e) => {
+    <ModalOverlay $isOpen={isOpen} onClick={(e) => {
       if (e.target === e.currentTarget) {
         onClose();
       }
@@ -468,7 +468,7 @@ export const ItemDetailsModalComponent: React.FC<ItemDetailsModalProps> = ({
   const inInventory = isItemInInventory(item.name);
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={(e) => {
+    <ModalOverlay $isOpen={isOpen} onClick={(e) => {
       if (e.target === e.currentTarget) {
         onClose();
       }
@@ -656,7 +656,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={(e) => {
+    <ModalOverlay $isOpen={isOpen} onClick={(e) => {
       if (e.target === e.currentTarget) {
         onCancel();
       }

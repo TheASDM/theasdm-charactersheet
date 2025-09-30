@@ -379,7 +379,6 @@ export default function CharacterSheetPretty({
                 mode="scroll"
                 maxHeight="900px"
                 showEquipToggle={true}
-                showWeight={true}
               />
 
               {/* Traits and Abilities Section */}

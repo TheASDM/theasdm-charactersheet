@@ -568,7 +568,31 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
       const extractSkillProficiencies = (skillProfs?: any): string[] => {
         if (!skillProfs) return [];
         if (typeof skillProfs === 'object') {
-          return Object.keys(skillProfs).filter(skill => skillProfs[skill]);
+          // Properly capitalize skill names to match D&D conventions
+          const skillNameMap: { [key: string]: string } = {
+            'acrobatics': 'Acrobatics',
+            'animal handling': 'Animal Handling',
+            'arcana': 'Arcana',
+            'athletics': 'Athletics',
+            'deception': 'Deception',
+            'history': 'History',
+            'insight': 'Insight',
+            'intimidation': 'Intimidation',
+            'investigation': 'Investigation',
+            'medicine': 'Medicine',
+            'nature': 'Nature',
+            'perception': 'Perception',
+            'performance': 'Performance',
+            'persuasion': 'Persuasion',
+            'religion': 'Religion',
+            'sleight of hand': 'Sleight of Hand',
+            'stealth': 'Stealth',
+            'survival': 'Survival'
+          };
+
+          return Object.keys(skillProfs)
+            .filter(skill => skillProfs[skill])
+            .map(skill => skillNameMap[skill.toLowerCase()] || skill);
         }
         return [];
       };

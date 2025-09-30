@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 // Modal Overlay
-const ModalOverlay = styled.div<{ isOpen: boolean }>`
+const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
-  display: ${props => props.isOpen ? 'flex' : 'none'};
+  display: ${props => props.$isOpen ? 'flex' : 'none'};
   justify-content: center;
   align-items: center;
   z-index: 1000;
@@ -225,6 +225,21 @@ const SaveButton = styled(Button)`
   }
 `;
 
+const PopulateButton = styled(Button)`
+  background: linear-gradient(145deg, #6a5acd, #483d8b);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(145deg, #483d8b, #352a69);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(106, 90, 205, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
 const EmptyState = styled.div`
   text-align: center;
   color: #8b6914;
@@ -243,6 +258,8 @@ interface Action {
 interface ActionsManagementModalProps {
   isOpen: boolean;
   actions: Action[];
+  equippedItems?: any[]; // Will be passed from parent
+  characterData?: any; // For calculating attack bonuses
   onSave: (actions: Action[]) => void;
   onCancel: () => void;
 }
@@ -250,6 +267,8 @@ interface ActionsManagementModalProps {
 const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
   isOpen,
   actions,
+  equippedItems,
+  characterData,
   onSave,
   onCancel
 }) => {
@@ -289,6 +308,108 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
     setNewAction({ name: '', atkBonus: '', damage: '' });
   };
 
+  const handlePopulateFromEquipped = () => {
+    if (!equippedItems || !characterData) return;
+
+    // Calculate proficiency bonus
+    const profBonus = Math.floor((characterData.level - 1) / 4) + 2;
+
+    // Calculate ability modifiers
+    const strMod = Math.floor((characterData.abilityScores?.strength || 10) / 2) - 5;
+    const dexMod = Math.floor((characterData.abilityScores?.dexterity || 10) / 2) - 5;
+
+    const weaponActions: Action[] = [];
+
+    equippedItems.forEach(item => {
+      if (!item || !item.name) return;
+
+      const itemName = item.name.toLowerCase();
+
+      // Check if it's a weapon using comprehensive weapon list
+      const weaponTypes = [
+        // Melee weapons
+        'sword', 'axe', 'mace', 'dagger', 'spear', 'javelin', 'club', 'rapier', 'scimitar',
+        'hammer', 'flail', 'morningstar', 'pike', 'glaive', 'halberd', 'lance', 'trident',
+        'whip', 'quarterstaff', 'staff', 'maul', 'greataxe', 'greatsword', 'longsword',
+        'shortsword', 'sickle', 'handaxe', 'battleaxe', 'warhammer',
+        // Ranged weapons
+        'bow', 'crossbow', 'longbow', 'shortbow', 'blowgun', 'sling', 'dart', 'net'
+      ];
+
+      const isWeapon = weaponTypes.some(type => itemName.includes(type));
+
+      if (isWeapon) {
+        // Determine if it's finesse or ranged
+        const isFinesse = ['dagger', 'rapier', 'scimitar', 'shortsword', 'whip', 'dart'].some(w => itemName.includes(w));
+        const isRanged = ['bow', 'crossbow', 'longbow', 'shortbow', 'blowgun', 'sling', 'dart', 'net'].some(w => itemName.includes(w));
+
+        // Calculate attack bonus
+        let atkMod = isRanged || isFinesse ? Math.max(strMod, dexMod) : strMod;
+        const magicBonus = item.name.match(/^\+(\d+)/) ? parseInt(item.name.match(/^\+(\d+)/)[1]) : 0;
+        const attackBonus = profBonus + atkMod + magicBonus;
+
+        // Determine damage (this is simplified - ideally would look up actual weapon damage)
+        let damage = item.customProperties?.damage || '';
+        if (!damage) {
+          // Default damage dice based on weapon type
+          if (itemName.includes('dagger') || itemName.includes('dart')) damage = '1d4';
+          else if (itemName.includes('shortsword') || itemName.includes('scimitar')) damage = '1d6';
+          else if (itemName.includes('longsword') || itemName.includes('rapier')) damage = '1d8';
+          else if (itemName.includes('greatsword') || itemName.includes('maul')) damage = '2d6';
+          else if (itemName.includes('greataxe')) damage = '1d12';
+          else if (itemName.includes('handaxe')) damage = '1d6';
+          else if (itemName.includes('battleaxe') || itemName.includes('warhammer')) damage = '1d8';
+          else if (itemName.includes('club') || itemName.includes('sling')) damage = '1d4';
+          else if (itemName.includes('mace') || itemName.includes('quarterstaff')) damage = '1d6';
+          else if (itemName.includes('flail') || itemName.includes('morningstar') || itemName.includes('pike')) damage = '1d8';
+          else if (itemName.includes('glaive') || itemName.includes('halberd')) damage = '1d10';
+          else if (itemName.includes('lance')) damage = '1d12';
+          else if (itemName.includes('spear') || itemName.includes('trident') || itemName.includes('javelin')) damage = '1d6';
+          else if (itemName.includes('whip')) damage = '1d4';
+          else if (itemName.includes('shortbow')) damage = '1d6';
+          else if (itemName.includes('longbow') || itemName.includes('crossbow')) damage = '1d8';
+          else if (itemName.includes('blowgun')) damage = '1';
+          else if (itemName.includes('net')) damage = '—';
+          else damage = '1d6'; // Default
+        }
+
+        // Add damage modifier
+        if (damage && damage !== '—') {
+          const modifier = atkMod + magicBonus;
+          const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
+          damage = `${damage}${modifierStr}`;
+
+          // Add damage type
+          if (itemName.includes('bow') || itemName.includes('crossbow') || itemName.includes('sling') || itemName.includes('dart') || itemName.includes('blowgun')) {
+            damage += ' piercing';
+          } else if (itemName.includes('sword') || itemName.includes('dagger') || itemName.includes('rapier') || itemName.includes('scimitar') || itemName.includes('glaive') || itemName.includes('halberd') || itemName.includes('axe')) {
+            damage += ' slashing';
+          } else if (itemName.includes('spear') || itemName.includes('pike') || itemName.includes('javelin') || itemName.includes('trident') || itemName.includes('lance')) {
+            damage += ' piercing';
+          } else if (itemName.includes('net')) {
+            damage = 'Restrained';
+          } else {
+            damage += ' bludgeoning';
+          }
+        }
+
+        weaponActions.push({
+          name: item.name,
+          atkBonus: `+${attackBonus}`,
+          damage: damage
+        });
+      }
+    });
+
+    // Replace current actions with weapon actions, keeping any non-weapon actions
+    const nonWeaponActions = currentActions.filter(action => {
+      const actionName = action.name.toLowerCase();
+      return !equippedItems.some(item => item && item.name && item.name.toLowerCase() === actionName);
+    });
+
+    setCurrentActions([...weaponActions, ...nonWeaponActions]);
+  };
+
   const handleSave = () => {
     // Filter out empty actions
     const validActions = currentActions.filter(action =>
@@ -302,13 +423,22 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={(e) => {
+    <ModalOverlay $isOpen={isOpen} onClick={(e) => {
       if (e.target === e.currentTarget) {
         onCancel();
       }
     }}>
       <ActionsModal>
         <ModalTitle>⚔️ Manage Actions & Combat Options</ModalTitle>
+
+        {/* Populate from Equipped Button */}
+        {equippedItems && equippedItems.length > 0 && (
+          <ButtonContainer style={{ marginBottom: '20px' }}>
+            <PopulateButton onClick={handlePopulateFromEquipped}>
+              🗡️ Populate from Equipped Items
+            </PopulateButton>
+          </ButtonContainer>
+        )}
 
         <ActionsContainer>
           {currentActions.length === 0 ? (

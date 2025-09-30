@@ -197,7 +197,17 @@ export class EquipmentValidator {
   }
 
   private static isWeaponByName(name: string): boolean {
-    const weaponTypes = ['sword', 'axe', 'mace', 'dagger', 'spear', 'bow', 'crossbow', 'javelin', 'club', 'rapier', 'scimitar'];
+    const weaponTypes = [
+      // Melee weapons
+      'sword', 'axe', 'mace', 'dagger', 'spear', 'javelin', 'club', 'rapier', 'scimitar',
+      'hammer', 'flail', 'morningstar', 'pike', 'glaive', 'halberd', 'lance', 'trident',
+      'whip', 'quarterstaff', 'staff', 'maul', 'greataxe', 'greatsword', 'longsword',
+      'shortsword', 'sickle', 'handaxe', 'battleaxe', 'warhammer',
+      // Ranged weapons
+      'bow', 'crossbow', 'longbow', 'shortbow', 'blowgun', 'sling', 'dart', 'net',
+      // Natural/Improvised
+      'unarmed', 'fist'
+    ];
     return weaponTypes.some(type => name.toLowerCase().includes(type));
   }
 

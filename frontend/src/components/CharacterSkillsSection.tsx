@@ -33,8 +33,23 @@ export default function CharacterSkillsSection({
 
   // Convert skill modifiers to the expected format
   const skillsData: Record<string, { proficient: boolean; modifier: number }> = {};
-  Object.entries(skillModifiers).forEach(([skill, modifier]) => {
-    const isProficient = character.skills[skill]?.proficient || false;
+  Object.entries(skillModifiers).forEach(([skill, baseModifier]) => {
+    // Check both character.skills and character.proficiencies.skills for proficiency
+    const isManuallyProficient = character.skills[skill]?.proficient || false;
+    const isSystemProficient = character.proficiencies?.skills?.includes(skill) || false;
+    const isProficient = isManuallyProficient || isSystemProficient;
+
+    // Note: skillModifiers from getSkillModifiers already includes proficiency bonus
+    // based on character.proficiencies.skills, but we need to account for manual proficiency too
+    let modifier = baseModifier;
+
+    // If manually proficient but not system proficient, add proficiency bonus
+    if (isManuallyProficient && !isSystemProficient) {
+      modifier = baseModifier + derivedValues.proficiencyBonus;
+    }
+    // If not manually proficient but system proficient, the modifier is already correct from getSkillModifiers
+    // If both are proficient, the modifier is already correct from getSkillModifiers
+
     skillsData[skill] = {
       proficient: isProficient,
       modifier: modifier,

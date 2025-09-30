@@ -17,6 +17,7 @@ import {
 } from './pages';
 import SpellsPage from './pages/SpellsPage';
 import CharacterGeneratorPage from './pages/CharacterGeneratorPage';
+import { SpeciesFeaturesTestPage } from './pages/SpeciesFeaturesTestPage';
 
 // HomePage component with interactive features
 const HomePage: React.FC = () => {
@@ -202,6 +203,7 @@ const App: React.FC = () => {
             path="/character-sheet-test"
             element={<CharacterSheetTestPage />}
           />
+          <Route path="/species-features-test" element={<SpeciesFeaturesTestPage />} />
           <Route path="/spells" element={<SpellsPage />} />
           <Route path="/classes" element={<ClassesPage />} />
           <Route path="/backgrounds" element={<BackgroundsPage />} />

@@ -395,6 +395,10 @@ const CLASS_DATA = {
             description: '+2 bonus to attack rolls with ranged weapons.',
           },
           {
+            name: 'Blind Fighting',
+            description: 'You have Blindsight with a range of 10 feet.',
+          },
+          {
             name: 'Defense',
             description: '+1 bonus to AC while wearing armor.',
           },
@@ -409,14 +413,29 @@ const CLASS_DATA = {
               'Reroll 1s and 2s on damage dice with two-handed melee weapons.',
           },
           {
+            name: 'Interception',
+            description:
+              'Use your reaction to reduce damage to a nearby ally by 1d10 + your Proficiency Bonus (requires shield or weapon).',
+          },
+          {
             name: 'Protection',
             description:
               'Use your reaction to impose disadvantage on an attack against a nearby ally (requires shield).',
           },
           {
+            name: 'Thrown Weapon Fighting',
+            description:
+              'Draw thrown weapons as part of the attack and gain +2 damage to ranged attacks with thrown weapons.',
+          },
+          {
             name: 'Two-Weapon Fighting',
             description:
               'Add your ability modifier to damage of your second attack when fighting with two weapons.',
+          },
+          {
+            name: 'Unarmed Fighting',
+            description:
+              'Your unarmed strikes deal 1d6 + Str damage (1d8 with two free hands). Deal 1d4 damage when you start a grapple.',
           },
         ],
       },

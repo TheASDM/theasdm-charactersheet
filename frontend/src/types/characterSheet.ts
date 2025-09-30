@@ -48,6 +48,27 @@ export interface CharacterSheetData {
   species: string;
   subclass: string;
   level: number;
+
+  // Species choices from character generator
+  speciesChoices?: { [key: string]: string };
+
+  // Background data from character generator
+  backgroundFeatures?: any[];
+  backgroundEquipment?: string[];
+  selectedLanguages?: string[];
+
+  // Feat data from character generator
+  selectedOriginFeats?: string[];
+  featFeatures?: { [featName: string]: any[] };
+  featSpells?: { [featName: string]: string[] };
+  featChoices?: { [featName: string]: any };
+
+  // Class choices from character generator
+  classChoices?: {
+    fightingStyle?: string | undefined;
+    [key: string]: any;
+  };
+
   xp: number;
   abilityScores: {
     strength: number;

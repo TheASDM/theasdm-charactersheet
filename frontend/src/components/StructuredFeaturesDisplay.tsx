@@ -6,11 +6,13 @@ import {
   FeatureType,
   FeatureSource,
 } from '../types/features';
+import { renderFeature, RenderedFeature, createCharacterContext } from '../utils/featureTemplateRenderer';
 
 interface StructuredFeaturesDisplayProps {
   features: CharacterFeatures;
   compactMode?: boolean;
   showFilters?: boolean;
+  characterData?: any; // Character context for template resolution
 }
 
 const FeaturesContainer = styled.div`
@@ -209,11 +211,14 @@ function formatResourceDisplay(feature: CharacterFeature): string {
 
 export const StructuredFeaturesDisplay: React.FC<
   StructuredFeaturesDisplayProps
-> = ({ features, compactMode = false, showFilters = true }) => {
+> = ({ features, compactMode = false, showFilters = true, characterData }) => {
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [showSources] = useState<Set<FeatureSource>>(
     new Set(['class', 'species', 'feat'])
   );
+
+  // Create character context for template resolution
+  const characterContext = characterData ? createCharacterContext(characterData) : null;
 
   const allFeatures = [
     ...features.classFeatures,
@@ -254,17 +259,24 @@ export const StructuredFeaturesDisplay: React.FC<
   //   setShowSources(newSources);
   // };
 
-  const renderFeature = (feature: CharacterFeature) => {
+  const renderFeatureComponent = (feature: CharacterFeature) => {
+    // Render feature with template resolution if character context is available
+    const renderedFeature: RenderedFeature = characterContext
+      ? renderFeature(feature, characterContext)
+      : feature as RenderedFeature;
+
     if (compactMode) {
       return (
         <div key={feature.id} className="feature-item">
           <div>
-            <div className="feature-name">{feature.name}</div>
+            <div className="feature-name">{renderedFeature.resolvedName || renderedFeature.name}</div>
             <div className="feature-summary">
-              {feature.shortDescription ||
-                (typeof feature.description === 'string'
-                  ? feature.description.substring(0, 60) + '...'
-                  : JSON.stringify(feature.description).substring(0, 60) + '...')}
+              {renderedFeature.resolvedShortDescription || renderedFeature.shortDescription ||
+                (typeof renderedFeature.resolvedDescription === 'string'
+                  ? renderedFeature.resolvedDescription.substring(0, 60) + '...'
+                  : typeof renderedFeature.description === 'string'
+                  ? renderedFeature.description.substring(0, 60) + '...'
+                  : JSON.stringify(renderedFeature.description).substring(0, 60) + '...')}
             </div>
           </div>
           <FeatureBadge $variant="type">{feature.type}</FeatureBadge>
@@ -275,48 +287,75 @@ export const StructuredFeaturesDisplay: React.FC<
     return (
       <FeatureCard key={feature.id} $type={feature.type}>
         <div className="feature-header">
-          <h4 className="feature-name">{feature.name}</h4>
+          <h4 className="feature-name">{renderedFeature.resolvedName || renderedFeature.name}</h4>
           <div className="feature-badges">
             <FeatureBadge $variant="type">{feature.type}</FeatureBadge>
             <FeatureBadge $variant="source">{feature.source}</FeatureBadge>
-            {feature.action && (
+            {(renderedFeature.resolvedAction || feature.action) && (
               <FeatureBadge $variant="action">
-                {feature.action.type}
+                {(renderedFeature.resolvedAction || feature.action)?.type}
               </FeatureBadge>
             )}
-            {feature.resource && (
+            {(renderedFeature.resolvedResource || feature.resource) && (
               <FeatureBadge $variant="resource">Limited</FeatureBadge>
             )}
           </div>
         </div>
 
         <div className="feature-description">
-          {typeof feature.description === 'string'
+          {renderedFeature.resolvedDescription ||
+           (typeof feature.description === 'string'
             ? feature.description
-            : JSON.stringify(feature.description)
+            : JSON.stringify(feature.description))
           }
         </div>
 
-        {(feature.action || feature.resource || feature.effects?.length) && (
+        {/* Enhanced mechanics display with resolved values */}
+        {((renderedFeature.resolvedAction || feature.action) ||
+          (renderedFeature.resolvedResource || feature.resource) ||
+          feature.effects?.length ||
+          renderedFeature.resolvedCurrentDamage ||
+          renderedFeature.resolvedCurrentSaveDC ||
+          renderedFeature.resolvedCurrentUses) && (
           <div className="feature-mechanics">
-            {feature.action && (
+            {(renderedFeature.resolvedAction || feature.action) && (
               <div className="mechanic-row">
                 <span className="mechanic-label">Action Type:</span>
                 <span className="mechanic-value">
-                  {typeof feature.action.type === 'object'
-                    ? JSON.stringify(feature.action.type)
-                    : feature.action.type}
+                  {(renderedFeature.resolvedAction || feature.action)?.type}
                 </span>
               </div>
             )}
-            {feature.resource && (
+
+            {renderedFeature.resolvedCurrentDamage && (
+              <div className="mechanic-row">
+                <span className="mechanic-label">Damage:</span>
+                <span className="mechanic-value">
+                  {renderedFeature.resolvedCurrentDamage} {renderedFeature.resolvedAction?.damage?.type || ''}
+                </span>
+              </div>
+            )}
+
+            {renderedFeature.resolvedCurrentSaveDC && (
+              <div className="mechanic-row">
+                <span className="mechanic-label">Save DC:</span>
+                <span className="mechanic-value">
+                  {renderedFeature.resolvedCurrentSaveDC} ({renderedFeature.resolvedAction?.savingThrow?.ability})
+                </span>
+              </div>
+            )}
+
+            {(renderedFeature.resolvedCurrentUses || (renderedFeature.resolvedResource || feature.resource)) && (
               <div className="mechanic-row">
                 <span className="mechanic-label">Usage:</span>
                 <span className="mechanic-value">
-                  {formatResourceDisplay(feature)}
+                  {renderedFeature.resolvedCurrentUses
+                    ? `${renderedFeature.resolvedCurrentUses} uses per ${(renderedFeature.resolvedResource || feature.resource)?.type.replace('per-', '')}`
+                    : formatResourceDisplay(feature)}
                 </span>
               </div>
             )}
+
             {feature.effects && feature.effects.length > 0 && (
               <div className="mechanic-row">
                 <span className="mechanic-label">Effects:</span>
@@ -388,7 +427,7 @@ export const StructuredFeaturesDisplay: React.FC<
                       activeFilters.size === 0 ||
                       activeFilters.has(feature.type)
                   )
-                  .map(renderFeature)}
+                  .map(renderFeatureComponent)}
               </CompactFeatureList>
             ) : (
               section.features
@@ -396,7 +435,7 @@ export const StructuredFeaturesDisplay: React.FC<
                   (feature) =>
                     activeFilters.size === 0 || activeFilters.has(feature.type)
                 )
-                .map(renderFeature)
+                .map(renderFeatureComponent)
             )}
           </div>
         </FeatureSection>

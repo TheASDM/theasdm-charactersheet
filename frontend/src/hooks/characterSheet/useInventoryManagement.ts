@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { CharacterSheetData, InventoryItem } from '../../types/characterSheet';
 import { Item } from '../../types/api';
 import { itemService } from '../../services/itemService';
@@ -519,6 +519,19 @@ export const useInventoryManagement = (
   const clearOperationResult = useCallback(() => {
     setOperationResult(null);
   }, []);
+
+  // Auto-clear operation result after 3 seconds
+  useEffect(() => {
+    if (operationResult) {
+      const timer = setTimeout(() => {
+        setOperationResult(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+    // Return undefined explicitly when operationResult is falsy
+    return undefined;
+  }, [operationResult]);
 
   // Get inventory weight
   const getInventoryWeight = useCallback(() => {

@@ -22,7 +22,6 @@ export const classService = {
 
 // Character class constants for easy reference
 export const CHARACTER_CLASSES = [
-  'Artificer',
   'Barbarian',
   'Bard',
   'Cleric',

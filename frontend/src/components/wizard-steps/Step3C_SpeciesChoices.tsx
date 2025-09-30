@@ -269,32 +269,57 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
   );
 
   const renderElfLineage = () => (
-    <div className="choice-section">
-      <div className="section-title">Choose Your Elven Lineage</div>
-      <div className="section-description">
-        Your elven lineage grants you specific magical abilities and spell knowledge.
+    <>
+      <div className="choice-section">
+        <div className="section-title">Choose Your Elven Lineage</div>
+        <div className="section-description">
+          Your elven lineage grants you specific magical abilities and spell knowledge.
+        </div>
+        <ChoiceGrid>
+          {ELF_LINEAGES.map((lineage) => (
+            <ChoiceCard
+              key={lineage.name}
+              selected={selectedChoices.elfLineage === lineage.name}
+              onClick={() => handleChoiceSelect('elfLineage', lineage.name)}
+            >
+              <ChoiceName>{lineage.name}</ChoiceName>
+              <ChoiceDescription>{lineage.description}</ChoiceDescription>
+              <ChoiceDetails>
+                <div className="detail-item">
+                  <span className="label">Level 3 Spell:</span> {lineage.level3}
+                </div>
+                <div className="detail-item">
+                  <span className="label">Level 5 Spell:</span> {lineage.level5}
+                </div>
+              </ChoiceDetails>
+            </ChoiceCard>
+          ))}
+        </ChoiceGrid>
       </div>
-      <ChoiceGrid>
-        {ELF_LINEAGES.map((lineage) => (
-          <ChoiceCard
-            key={lineage.name}
-            selected={selectedChoices.elfLineage === lineage.name}
-            onClick={() => handleChoiceSelect('elfLineage', lineage.name)}
-          >
-            <ChoiceName>{lineage.name}</ChoiceName>
-            <ChoiceDescription>{lineage.description}</ChoiceDescription>
-            <ChoiceDetails>
-              <div className="detail-item">
-                <span className="label">Level 3 Spell:</span> {lineage.level3}
-              </div>
-              <div className="detail-item">
-                <span className="label">Level 5 Spell:</span> {lineage.level5}
-              </div>
-            </ChoiceDetails>
-          </ChoiceCard>
-        ))}
-      </ChoiceGrid>
-    </div>
+
+      <div className="choice-section">
+        <div className="section-title">Choose Your Keen Senses Skill</div>
+        <div className="section-description">
+          Your Keen Senses trait grants you proficiency in one of these skills.
+        </div>
+        <ChoiceGrid>
+          {['Insight', 'Perception', 'Survival'].map((skill) => (
+            <ChoiceCard
+              key={skill}
+              selected={selectedChoices.elfSkill === skill}
+              onClick={() => handleChoiceSelect('elfSkill', skill)}
+            >
+              <ChoiceName>{skill}</ChoiceName>
+              <ChoiceDescription>
+                {skill === 'Insight' && 'Ability to sense the true intentions of a creature.'}
+                {skill === 'Perception' && 'Ability to spot, hear, or otherwise detect the presence of something.'}
+                {skill === 'Survival' && 'Ability to follow tracks, hunt wild game, guide others through wilderness.'}
+              </ChoiceDescription>
+            </ChoiceCard>
+          ))}
+        </ChoiceGrid>
+      </div>
+    </>
   );
 
   const renderGnomeLineage = () => (
@@ -435,7 +460,7 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
       case 'dragonborn':
         return !!selectedChoices.draconicAncestry;
       case 'elf':
-        return !!selectedChoices.elfLineage;
+        return !!selectedChoices.elfLineage && !!selectedChoices.elfSkill;
       case 'gnome':
         return !!selectedChoices.gnomeLineage;
       case 'goliath':

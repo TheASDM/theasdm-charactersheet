@@ -549,7 +549,8 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
     onUpdate({
       selectedEquipment: categorizedEquipment
     });
-  }, [checkedItems, equipment]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkedItems]);
 
   const handleItemClick = (item: Equipment, event: React.MouseEvent) => {
     // Don't open modal if checkbox was clicked

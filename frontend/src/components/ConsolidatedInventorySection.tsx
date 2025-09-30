@@ -20,7 +20,6 @@ interface ConsolidatedInventoryProps {
   mode?: 'pagination' | 'scroll' | 'grid';
   itemsPerPage?: number;
   maxHeight?: string;
-  showWeight?: boolean;
   showEquipToggle?: boolean;
   allowReordering?: boolean;
 }
@@ -33,16 +32,31 @@ const InventoryContainer = styled.div<{ $mode: string; $maxHeight?: string }>`
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  ${props => props.$mode === 'scroll' && `max-height: ${props.$maxHeight || '400px'};`}
+  max-height: fit-content;
 `;
 
 const InventoryHeader = styled.div`
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-  padding: 0.5rem;
-  border-bottom: 2px solid #d4af37;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(139, 105, 20, 0.2) 100%);
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.6) 50%,
+      transparent 100%
+    );
+  }
 
   .title {
     color: #d4af37;
@@ -50,28 +64,44 @@ const InventoryHeader = styled.div`
     font-size: 0.9rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+    .icon {
+      font-size: 1rem;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    }
   }
 
   .stats {
     display: flex;
     gap: 0.5rem;
     font-size: 0.65rem;
-    color: #ccc;
 
     .stat {
       display: flex;
       align-items: center;
-      gap: 0.15rem;
+      gap: 0.2rem;
+      padding: 0.15rem 0.3rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+      border: 1px solid rgba(212, 175, 55, 0.2);
 
       .label {
-        color: #8b6914;
-        font-weight: 600;
+        color: #999;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        font-size: 0.55rem;
       }
 
       .value {
-        color: #d4af37;
-        font-weight: 600;
+        color: #f0f0f0;
+        font-weight: 700;
+        font-size: 0.7rem;
       }
     }
   }
@@ -79,7 +109,7 @@ const InventoryHeader = styled.div`
 
 const InventoryContent = styled.div<{ $mode: string; $maxHeight?: string }>`
   ${props => props.$mode === 'scroll' ? `
-    max-height: ${props.$maxHeight || '300px'};
+    max-height: fit-content;
     overflow-y: auto;
     overflow-x: hidden;
   ` : ''}
@@ -119,23 +149,20 @@ const InventoryItemStyled = styled.div<{ $equipped?: boolean; $mode: string }>`
   padding: 0.25rem 0.4rem;
   border-bottom: 1px solid rgba(139, 105, 20, 0.2);
   transition: all 0.2s ease;
-  background: ${props => props.$equipped ? 'rgba(212, 175, 55, 0.1)' : 'transparent'};
+  background: rgba(212, 175, 55, 0.1);
 
   ${props => props.$mode === 'grid' ? `
     flex-direction: column;
     align-items: stretch;
     border: 1px solid rgba(139, 105, 20, 0.2);
     border-radius: 8px;
-    background: rgba(40, 40, 40, 0.6);
+    background: rgba(212, 175, 55, 0.1);
     padding: 0.5rem;
     min-height: 80px;
   ` : ''}
 
   &:hover {
-    background: ${props => props.$equipped
-      ? 'rgba(212, 175, 55, 0.2)'
-      : 'rgba(212, 175, 55, 0.08)'
-    };
+    background: rgba(212, 175, 55, 0.2);
     transform: translateX(1px);
   }
 
@@ -211,7 +238,7 @@ const QuantityControl = styled.div`
   }
 `;
 
-const ActionButton = styled.button<{ $variant?: 'equip' | 'delete' | 'primary' }>`
+const ActionButton = styled.button<{ $variant?: 'equip' | 'delete' | 'primary'; $equipped?: boolean }>`
   padding: 0.2rem 0.4rem;
   border: none;
   border-radius: 3px;
@@ -225,12 +252,15 @@ const ActionButton = styled.button<{ $variant?: 'equip' | 'delete' | 'primary' }
     switch (props.$variant) {
       case 'equip':
         return `
-          background: rgba(76, 175, 80, 0.2);
-          color: #4caf50;
-          border: 1px solid rgba(76, 175, 80, 0.5);
+          width: 65px;
+          text-align: center;
+          background: ${props.$equipped ? 'rgba(46, 125, 50, 0.5)' : 'rgba(76, 175, 80, 0.2)'};
+          color: ${props.$equipped ? '#f0f0f0' : '#4caf50'};
+          border: 1px solid ${props.$equipped ? 'rgba(46, 125, 50, 0.8)' : 'rgba(76, 175, 80, 0.5)'};
+          font-weight: ${props.$equipped ? '700' : '600'};
 
           &:hover {
-            background: rgba(76, 175, 80, 0.3);
+            background: ${props.$equipped ? 'rgba(46, 125, 50, 0.6)' : 'rgba(76, 175, 80, 0.3)'};
             transform: translateY(-1px);
           }
         `;
@@ -263,29 +293,57 @@ const ActionButton = styled.button<{ $variant?: 'equip' | 'delete' | 'primary' }
 const InventoryActions = styled.div`
   display: flex;
   gap: 0.5rem;
-  padding: 1rem;
-  border-top: 1px solid rgba(139, 105, 20, 0.3);
-  background: rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(139, 105, 20, 0.15) 100%);
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.4) 50%,
+      transparent 100%
+    );
+  }
 `;
 
 const AddItemButton = styled.button`
   flex: 1;
-  padding: 0.75rem;
-  background: linear-gradient(145deg, #8b6914, #d4af37);
-  border: none;
-  border-radius: 6px;
-  color: #1a1a1a;
+  padding: 0.5rem 0.75rem;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 4px;
+  color: #d4af37;
   font-weight: 600;
-  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   text-transform: uppercase;
-  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+
+  .icon {
+    font-size: 0.9rem;
+  }
 
   &:hover {
-    background: linear-gradient(145deg, #d4af37, #e6b52a);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    background: rgba(212, 175, 55, 0.25);
+    border-color: rgba(212, 175, 55, 0.6);
+    transform: translateY(-1px);
+    color: #e6b52a;
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
@@ -340,6 +398,8 @@ const OperationFeedback = styled.div<{ $success: boolean }>`
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
+  cursor: pointer;
+  position: relative;
   background: ${props => props.$success
     ? 'rgba(76, 175, 80, 0.1)'
     : 'rgba(244, 67, 54, 0.1)'
@@ -349,6 +409,31 @@ const OperationFeedback = styled.div<{ $success: boolean }>`
     : 'rgba(244, 67, 54, 0.3)'
   };
   color: ${props => props.$success ? '#4caf50' : '#f44336'};
+  animation: fadeIn 0.3s ease-in;
+  transition: opacity 0.3s ease-out;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &::after {
+    content: '(Auto-dismisses in 3s • Click to close)';
+    display: block;
+    font-size: 0.65rem;
+    margin-top: 0.25rem;
+    opacity: 0.7;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 export const ConsolidatedInventorySection: React.FC<ConsolidatedInventoryProps> = ({
@@ -356,7 +441,6 @@ export const ConsolidatedInventorySection: React.FC<ConsolidatedInventoryProps> 
   mode = 'scroll',
   itemsPerPage = 10,
   maxHeight = '400px',
-  showWeight = true,
   showEquipToggle = true,
   allowReordering: _allowReordering = false
 }) => {
@@ -369,7 +453,6 @@ export const ConsolidatedInventorySection: React.FC<ConsolidatedInventoryProps> 
 
   // Calculate stats
   const totalItems = actualItems.length;
-  const totalWeight = showWeight ? inventory.getInventoryWeight() : 0;
   const equippedCount = actualItems.filter(item => item.equipped).length;
 
   // Pagination logic
@@ -454,6 +537,7 @@ export const ConsolidatedInventorySection: React.FC<ConsolidatedInventoryProps> 
           {showEquipToggle && (
             <ActionButton
               $variant="equip"
+              $equipped={item.equipped}
               onClick={() => inventory.handleToggleEquip(itemIndex)}
               title={item.equipped ? 'Unequip item' : 'Equip item'}
             >
@@ -476,22 +560,19 @@ export const ConsolidatedInventorySection: React.FC<ConsolidatedInventoryProps> 
   return (
     <InventoryContainer $mode={mode} $maxHeight={maxHeight}>
       <InventoryHeader>
-        <div className="title">Inventory</div>
+        <div className="title">
+          <span className="icon">🎒</span>
+          <span>Inventory</span>
+        </div>
         <div className="stats">
           <div className="stat">
-            <span className="label">Items:</span>
+            <span className="label">Items</span>
             <span className="value">{totalItems}</span>
           </div>
           {equippedCount > 0 && (
             <div className="stat">
-              <span className="label">Equipped:</span>
+              <span className="label">Equipped</span>
               <span className="value">{equippedCount}</span>
-            </div>
-          )}
-          {showWeight && (
-            <div className="stat">
-              <span className="label">Weight:</span>
-              <span className="value">{totalWeight} lbs</span>
             </div>
           )}
         </div>
@@ -545,10 +626,12 @@ export const ConsolidatedInventorySection: React.FC<ConsolidatedInventoryProps> 
 
       <InventoryActions>
         <AddItemButton onClick={inventory.handleAddOfficialItem}>
-          📦 Add Official Item
+          <span className="icon">⚔️</span>
+          <span>Add Official</span>
         </AddItemButton>
         <AddItemButton onClick={inventory.handleAddCustomItem}>
-          ✏️ Add Custom Item
+          <span className="icon">✨</span>
+          <span>Add Custom</span>
         </AddItemButton>
       </InventoryActions>
     </InventoryContainer>

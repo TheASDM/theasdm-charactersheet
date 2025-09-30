@@ -49,7 +49,7 @@ export interface FeatureAction {
   duration?: string;     // "Instantaneous", "1 minute", "8 hours", etc.
   savingThrow?: {
     ability: keyof CharacterAbilityScores;
-    dc: number | 'spell-save' | 'ability-based';
+    dc: number | 'spell-save' | 'ability-based' | string; // Support template strings like "8 + proficiencyBonus + constitutionModifier"
   };
   attack?: {
     type: 'melee' | 'ranged' | 'spell';
@@ -81,6 +81,20 @@ export interface FeatureChoice {
   prerequisites?: string[];
 }
 
+// Variable template system for dynamic features
+export interface FeatureVariable {
+  [key: string]: any;
+  damageType?: string;
+  saveType?: keyof CharacterAbilityScores;
+  saveDC?: string | number;
+  areaType?: string;
+  damageByLevel?: { [level: string]: string };
+  uses?: string | number;
+  recharge?: string;
+  range?: string;
+  duration?: string;
+}
+
 export interface CharacterFeature {
   id: string;
   name: string;
@@ -92,6 +106,9 @@ export interface CharacterFeature {
   // Variant system support
   baseFeatureId?: string; // Links variants to their base feature
   variant?: string;       // "Acid", "Fire", "Defense", etc.
+
+  // Variable template system
+  variables?: FeatureVariable; // Dynamic variables for template resolution
 
   // Core description and rules
   description: string;
