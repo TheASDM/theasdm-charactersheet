@@ -2,10 +2,11 @@ import styled from 'styled-components';
 
 // Mana Section
 export const ManaSection = styled.div`
-  border: 2px solid #6d4c8a;
+  border: 2px solid #333;
   border-radius: 6px;
   padding: 0.75rem;
-  background: rgba(109, 76, 138, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
   position: relative;
   width: 100%;
   margin-top: 1rem;
@@ -23,9 +24,10 @@ export const ManaDisplay = styled.div`
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
-  border: 2px solid #6d4c8a;
+  border: 2px solid #333;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
 
   .mana-current {
     font-size: 2rem;
@@ -55,14 +57,14 @@ export const ManaDisplay = styled.div`
   }
 
   .mana-separator {
-    color: #6d4c8a;
+    color: #888;
     font-size: 1.5rem;
     font-weight: 600;
   }
 
   .mana-max {
     font-size: 1.5rem;
-    color: #6d4c8a;
+    color: #888;
     font-weight: 600;
     min-width: 2rem;
     text-align: center;
@@ -82,8 +84,8 @@ export const ManaDisplay = styled.div`
 
     &:focus {
       outline: none;
-      border-bottom: 1px solid #6d4c8a;
-      background: rgba(109, 76, 138, 0.1);
+      border-bottom: 1px solid #888;
+      background: rgba(136, 136, 136, 0.1);
     }
   }
 
@@ -95,9 +97,9 @@ export const ManaDisplay = styled.div`
   }
 
   .mana-control-btn {
-    background: linear-gradient(145deg, #6d4c8a, #5a3f73);
-    color: white;
-    border: none;
+    background: rgba(177, 156, 217, 0.15);
+    border: 1px solid #b19cd9;
+    color: #b19cd9;
     width: 20px;
     height: 16px;
     border-radius: 3px;
@@ -111,7 +113,7 @@ export const ManaDisplay = styled.div`
     line-height: 1;
 
     &:hover {
-      background: linear-gradient(145deg, #5a3f73, #4a3560);
+      background: rgba(177, 156, 217, 0.25);
     }
 
     &:active {
@@ -129,15 +131,16 @@ export const ManaTitle = styled.div`
   text-align: center;
   margin-bottom: 0.5rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #6d4c8a;
+  border-bottom: 1px solid #333;
 `;
 
 // Resource Tracking Section
 export const ResourceSection = styled.div`
-  border: 2px solid #8b6914;
+  border: 2px solid #333;
   border-radius: 6px;
   padding: 0.75rem;
-  background: rgba(139, 105, 20, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
   position: relative;
   width: 100%;
   margin-top: 1rem;
@@ -160,7 +163,7 @@ export const ResourceTrackerWrapper = styled.div`
 
 export const ResourceName = styled.div`
   font-size: 0.7rem;
-  color: #8b6914;
+  color: #888;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   font-weight: 600;
@@ -181,13 +184,13 @@ export const ResourceBox = styled.div<{ filled?: boolean; isWounds?: boolean }>`
     height: ${props => props.isWounds ? '28px' : '20px'};
     cursor: pointer;
     appearance: none;
-    border: 2px solid #8b6914;
+    border: 2px solid #333;
     border-radius: ${props => props.isWounds ? '50%' : '3px'};
-    background: ${props => props.filled ? '#d4af37' : 'transparent'};
+    background: ${props => props.filled ? '#d4af37' : 'rgba(26, 26, 26, 0.8)'};
     transition: all 0.3s ease;
 
     &:hover {
-      background: ${props => props.filled ? '#b8941f' : 'rgba(212, 175, 55, 0.3)'};
+      background: ${props => props.filled ? '#b8941f' : 'rgba(212, 175, 55, 0.2)'};
     }
 
     &:checked {
@@ -212,9 +215,10 @@ export const PoolCounter = styled.div`
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.5rem;
-  border: 2px solid #8b6914;
+  border: 2px solid #333;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
 
   .current {
     font-size: 1rem;
@@ -225,13 +229,13 @@ export const PoolCounter = styled.div`
   }
 
   .separator {
-    color: #8b6914;
+    color: #888;
     font-weight: 600;
   }
 
   .max {
     font-size: 0.9rem;
-    color: #8b6914;
+    color: #888;
     font-weight: 600;
   }
 
@@ -243,9 +247,9 @@ export const PoolCounter = styled.div`
   }
 
   .control-btn {
-    background: linear-gradient(145deg, #8b6914, #6d5411);
-    color: white;
-    border: none;
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid #d4af37;
+    color: #d4af37;
     width: 16px;
     height: 12px;
     border-radius: 2px;
@@ -259,7 +263,7 @@ export const PoolCounter = styled.div`
     line-height: 1;
 
     &:hover {
-      background: linear-gradient(145deg, #6d5411, #5a430e);
+      background: rgba(212, 175, 55, 0.25);
     }
   }
 `;

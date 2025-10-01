@@ -10,17 +10,17 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.9);
   display: ${props => props.$isOpen ? 'flex' : 'none'};
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(4px);
 `;
 
 const ModalContent = styled.div`
-  background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border: 2px solid #333;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 600px;
@@ -34,7 +34,7 @@ const ModalHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 2px solid #8b6914;
+  border-bottom: 2px solid #333;
 `;
 
 const ModalTitle = styled.h2`
@@ -60,7 +60,7 @@ const CloseButton = styled.button`
   transition: all 0.3s ease;
 
   &:hover {
-    color: #f4e7d1;
+    color: #e0e0e0;
     transform: scale(1.1);
   }
 `;
@@ -73,10 +73,10 @@ const ModalBody = styled.div`
 const SearchInput = styled.input`
   width: 100%;
   padding: 10px;
-  background: rgba(139, 105, 20, 0.2);
-  border: 2px solid #8b6914;
+  background: rgba(26, 26, 26, 0.8);
+  border: 2px solid #333;
   border-radius: 6px;
-  color: #f4e7d1;
+  color: #e0e0e0;
   font-family: 'Crimson Text', serif;
   font-size: 1rem;
   margin-bottom: 15px;
@@ -88,7 +88,7 @@ const SearchInput = styled.input`
   }
 
   &::placeholder {
-    color: rgba(244, 231, 209, 0.5);
+    color: #888;
   }
 `;
 
@@ -97,9 +97,9 @@ const CustomItemInput = styled(SearchInput)``;
 const ItemList = styled.div`
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid rgba(139, 105, 20, 0.3);
+  border: 1px solid #333;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(26, 26, 26, 0.6);
 `;
 
 const ItemOptionContainer = styled.div`
@@ -107,7 +107,7 @@ const ItemOptionContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 10px 15px;
-  border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+  border-bottom: 1px solid #333;
   transition: all 0.3s ease;
 
   &:hover {
@@ -132,14 +132,14 @@ const ItemName = styled.div`
 `;
 
 const ItemDetails = styled.div`
-  color: #8b6914;
+  color: #b0b0b0;
   font-size: 0.85rem;
 `;
 
 const InfoButton = styled.button`
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  border: none;
-  color: #f4e7d1;
+  background: rgba(33, 150, 243, 0.15);
+  border: 1px solid #2196F3;
+  color: #2196F3;
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
@@ -148,7 +148,7 @@ const InfoButton = styled.button`
   transition: all 0.3s ease;
 
   &:hover {
-    background: linear-gradient(145deg, #a0801b, #8b6914);
+    background: rgba(33, 150, 243, 0.25);
     transform: translateY(-1px);
   }
 `;
@@ -157,9 +157,9 @@ const AddButton = styled.button`
   width: 100%;
   padding: 12px;
   margin-top: 15px;
-  background: linear-gradient(145deg, #d4af37, #b8941f);
-  border: none;
-  color: #2c1810;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid #d4af37;
+  color: #d4af37;
   border-radius: 6px;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -168,7 +168,7 @@ const AddButton = styled.button`
   text-transform: uppercase;
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: rgba(212, 175, 55, 0.25);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
   }
@@ -176,8 +176,8 @@ const AddButton = styled.button`
 
 // Item Details Modal Styles
 const ItemDetailsModal = styled.div`
-  background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border: 2px solid #333;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 500px;
@@ -195,7 +195,7 @@ const ItemProperty = styled.div`
   justify-content: space-between;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+  border-bottom: 1px solid #333;
 
   &:last-child {
     border-bottom: none;
@@ -203,21 +203,21 @@ const ItemProperty = styled.div`
 `;
 
 const PropertyLabel = styled.span`
-  color: #8b6914;
+  color: #b0b0b0;
   font-weight: 600;
   font-size: 0.9rem;
 `;
 
 const PropertyValue = styled.span`
-  color: #f4e7d1;
+  color: #e0e0e0;
   text-align: right;
 `;
 
 const ItemDescription = styled.div`
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 2px solid #8b6914;
-  color: #f4e7d1;
+  border-top: 2px solid #333;
+  color: #e0e0e0;
   line-height: 1.6;
 `;
 
@@ -226,11 +226,11 @@ const AddItemButton = styled.button<{ inInventory?: boolean }>`
   padding: 12px;
   margin-top: 20px;
   background: ${props => props.inInventory
-    ? 'rgba(139, 105, 20, 0.3)'
-    : 'linear-gradient(145deg, #d4af37, #b8941f)'
+    ? 'rgba(255, 255, 255, 0.05)'
+    : 'rgba(212, 175, 55, 0.15)'
   };
-  border: none;
-  color: ${props => props.inInventory ? '#8a8a8a' : '#2c1810'};
+  border: ${props => props.inInventory ? 'none' : '1px solid #d4af37'};
+  color: ${props => props.inInventory ? '#666' : '#d4af37'};
   border-radius: 6px;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -240,8 +240,8 @@ const AddItemButton = styled.button<{ inInventory?: boolean }>`
 
   &:hover:not(:disabled) {
     background: ${props => props.inInventory
-      ? 'rgba(139, 105, 20, 0.3)'
-      : 'linear-gradient(145deg, #b8941f, #a0801b)'
+      ? 'rgba(255, 255, 255, 0.05)'
+      : 'rgba(212, 175, 55, 0.25)'
     };
     transform: ${props => props.inInventory ? 'none' : 'translateY(-2px)'};
     box-shadow: ${props => props.inInventory ? 'none' : '0 6px 20px rgba(212, 175, 55, 0.4)'};
@@ -250,13 +250,13 @@ const AddItemButton = styled.button<{ inInventory?: boolean }>`
 
 // Confirmation Modal Styles
 const ConfirmationModal = styled.div`
-  background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #dc3545;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border: 2px solid #dc3545;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 400px;
   padding: 20px;
-  color: #f4e7d1;
+  color: #e0e0e0;
   font-family: 'Cinzel', serif;
   text-align: center;
 `;
@@ -269,7 +269,7 @@ const ConfirmationTitle = styled.h3`
 `;
 
 const ConfirmationText = styled.p`
-  color: #f4e7d1;
+  color: #e0e0e0;
   margin: 20px 0;
   line-height: 1.5;
 `;
@@ -283,9 +283,9 @@ const ConfirmationButtons = styled.div`
 
 const ConfirmButton = styled.button`
   padding: 10px 20px;
-  background: linear-gradient(145deg, #dc3545, #c82333);
-  border: none;
-  color: #fff;
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid #f44336;
+  color: #f44336;
   border-radius: 6px;
   font-family: 'Cinzel', serif;
   font-weight: 600;
@@ -294,16 +294,17 @@ const ConfirmButton = styled.button`
   text-transform: uppercase;
 
   &:hover {
-    background: linear-gradient(145deg, #c82333, #bd2130);
+    background: rgba(244, 67, 54, 0.25);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
   }
 `;
 
 const CancelButton = styled.button`
   padding: 10px 20px;
-  background: rgba(139, 105, 20, 0.5);
-  border: 1px solid #8b6914;
-  color: #f4e7d1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #333;
+  color: #b0b0b0;
   border-radius: 6px;
   font-family: 'Cinzel', serif;
   font-weight: 600;
@@ -312,7 +313,7 @@ const CancelButton = styled.button`
   text-transform: uppercase;
 
   &:hover {
-    background: rgba(139, 105, 20, 0.7);
+    background: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
   }
 `;
@@ -418,7 +419,7 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                 </ItemList>
               )}
               {searchTerm && !isSearching && searchResults.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#8b6914' }}>
+                <div style={{ textAlign: 'center', padding: '20px', color: '#888' }}>
                   No items found. Try a different search term.
                 </div>
               )}

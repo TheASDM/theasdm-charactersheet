@@ -31,7 +31,7 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: 'all',
+    allowedHosts: ['beta.vanyas.quest', 'localhost', '.localhost'],
     host: true, // Enable network access
     port: 3000,
     proxy: {

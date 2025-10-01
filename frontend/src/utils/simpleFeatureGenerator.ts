@@ -4,6 +4,73 @@
  */
 
 import { CharacterSheetData } from '../types/characterSheet';
+import { parseComplexDnDEntry } from './dndTemplateParser';
+
+/**
+ * Weapon Mastery property definitions
+ */
+export const WEAPON_MASTERY_PROPERTIES: { [key: string]: string } = {
+  'Cleave': 'Whenever you hit a creature with a Melee Weapon Attack, you can make another Melee Attack Roll to hit a second creature you can see within 5ft of the first. On a hit, your second target takes damage equal to the weapon without any additional Ability Modifier damage (unless your modifier is negative).',
+  'Graze': 'When your weapon misses an attack against a creature, you deal damage equal to the Ability Modifier used to make your Attack Roll.',
+  'Nick': 'When you wield a light weapon in both your main and off-hand, you can make an additional attack as part of your attack action (this does not allow a third attack as a bonus action).',
+  'Push': 'You can push a creature of large or smaller size up to 10 feet away in a straight line.',
+  'Sap': 'Landing an attack on an enemy inflicts disadvantage on their next Attack Roll before the start of your next turn.',
+  'Slow': 'You reduce a creature\'s Speed by 10 feet until the start of your next turn when you deal damage to that creature with your weapon.',
+  'Topple': 'With a successful weapon attack, you force a creature to make a Constitution saving throw (DC 8 + your proficiency bonus + your Strength modifier) or fall prone.',
+  'Vex': 'Whenever you hit a target with this weapon, you gain advantage on your next attack roll against that same target before the end of your next turn.'
+};
+
+/**
+ * Map weapons to their mastery properties
+ */
+export const WEAPON_TO_MASTERY: { [key: string]: string } = {
+  // Cleave weapons
+  'Greataxe': 'Cleave',
+  'Halberd': 'Cleave',
+  // Graze weapons
+  'Glaive': 'Graze',
+  'Greatsword': 'Graze',
+  // Nick weapons
+  'Dagger': 'Nick',
+  'Light Hammer': 'Nick',
+  'Sickle': 'Nick',
+  'Scimitar': 'Nick',
+  // Push weapons
+  'Greatclub': 'Push',
+  'Pike': 'Push',
+  'Warhammer': 'Push',
+  'Heavy Crossbow': 'Push',
+  // Sap weapons
+  'Mace': 'Sap',
+  'Spear': 'Sap',
+  'Flail': 'Sap',
+  'Longsword': 'Sap',
+  'Morningstar': 'Sap',
+  'War Pick': 'Sap',
+  // Slow weapons
+  'Club': 'Slow',
+  'Javelin': 'Slow',
+  'Light Crossbow': 'Slow',
+  'Sling': 'Slow',
+  'Whip': 'Slow',
+  'Longbow': 'Slow',
+  'Musket': 'Slow',
+  // Topple weapons
+  'Quarterstaff': 'Topple',
+  'Battleaxe': 'Topple',
+  'Lance': 'Topple',
+  'Maul': 'Topple',
+  'Trident': 'Topple',
+  // Vex weapons
+  'Handaxe': 'Vex',
+  'Dart': 'Vex',
+  'Shortbow': 'Vex',
+  'Rapier': 'Vex',
+  'Shortsword': 'Vex',
+  'Blowgun': 'Vex',
+  'Hand Crossbow': 'Vex',
+  'Pistol': 'Vex'
+};
 
 export interface SimpleFeature {
   name: string;
@@ -90,13 +157,13 @@ function generateDragonbornFeatures(character: CharacterSheetData): SimpleFeatur
 
   features.push({
     name: 'Breath Weapon',
-    description: `As an action, you can exhale destructive energy in a ${dragonData.area}. Each creature in the area must make a DC ${8 + getProficiencyBonus(character.level || 1) + getConstitutionModifier(character)} ${dragonData.saveType} saving throw, taking ${getBreathWeaponDamage(character.level || 1)} ${dragonData.damageType} damage on failure, or half on success. Once used, you can't use it again until you finish a short or long rest.`,
+    description: `**Action:** Exhale destructive energy in a **${dragonData.area}**.\n\nEach creature in the area must make a **DC ${8 + getProficiencyBonus(character.level || 1) + getConstitutionModifier(character)} ${dragonData.saveType}** saving throw, taking **${getBreathWeaponDamage(character.level || 1)} ${dragonData.damageType}** damage on failure, or half on success.\n\n*Recharge:* Short or Long Rest`,
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Damage Resistance',
-    description: `You have resistance to ${dragonData.damageType} damage.`,
+    description: `You have resistance to **${dragonData.damageType}** damage.`,
     category: 'Species Trait'
   });
 
@@ -104,7 +171,7 @@ function generateDragonbornFeatures(character: CharacterSheetData): SimpleFeatur
   if ((character.level || 1) >= 5) {
     features.push({
       name: 'Draconic Flight',
-      description: 'As a bonus action, you sprout draconic wings from your back that last for 1 minute. For the duration, you gain a flying speed equal to your walking speed. Once you use this trait, you can\'t use it again until you finish a long rest.',
+      description: '**Bonus Action:** Sprout draconic wings that last for **1 minute**. You gain a **flying speed** equal to your walking speed.\n\n*Recharge:* Long Rest',
       category: 'Species Trait'
     });
   }
@@ -120,7 +187,7 @@ function generateElfFeatures(character: CharacterSheetData): SimpleFeature[] {
 
   features.push({
     name: 'Darkvision',
-    description: 'You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light.',
+    description: 'You can see in dim light within **60 feet** as if it were bright light, and in darkness as if it were dim light.',
     category: 'Species Trait'
   });
 
@@ -129,19 +196,19 @@ function generateElfFeatures(character: CharacterSheetData): SimpleFeature[] {
 
   features.push({
     name: 'Keen Senses',
-    description: `You have proficiency in the ${elfSkill} skill.`,
+    description: `You have proficiency in the **${elfSkill}** skill.`,
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Fey Ancestry',
-    description: 'You have advantage on saving throws against being charmed, and magic can\'t put you to sleep.',
+    description: 'You have **advantage** on saving throws against being **charmed**, and magic can\'t put you to sleep.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Trance',
-    description: 'You don\'t need to sleep, and can\'t be forced to sleep by any means. To gain the benefits of a long rest, you can spend 4 hours in a trance-like meditation.',
+    description: 'You don\'t need to sleep. To gain the benefits of a **Long Rest**, you can spend **4 hours** in a trance-like meditation.',
     category: 'Species Trait'
   });
 
@@ -150,14 +217,14 @@ function generateElfFeatures(character: CharacterSheetData): SimpleFeature[] {
   const level = character.level || 1;
 
   if (elfLineage === 'High Elf') {
-    let highElfMagicDesc = 'You know the Prestidigitation cantrip.';
+    let highElfMagicDesc = 'You know the **Prestidigitation** cantrip.';
     if (level >= 3) {
-      highElfMagicDesc += ' You can cast Detect Magic once per long rest.';
+      highElfMagicDesc += ' You can cast **Detect Magic** once per long rest.';
     }
     if (level >= 5) {
-      highElfMagicDesc += ' You can cast Misty Step once per long rest.';
+      highElfMagicDesc += ' You can cast **Misty Step** once per long rest.';
     }
-    highElfMagicDesc += ' Intelligence is your spellcasting ability for these spells.';
+    highElfMagicDesc += '\n\n**Intelligence** is your spellcasting ability for these spells.';
 
     features.push({
       name: 'High Elf Magic',
@@ -165,14 +232,14 @@ function generateElfFeatures(character: CharacterSheetData): SimpleFeature[] {
       category: 'Species Trait'
     });
   } else if (elfLineage === 'Wood Elf') {
-    let woodElfMagicDesc = 'You know the Druidcraft cantrip.';
+    let woodElfMagicDesc = 'You know the **Druidcraft** cantrip.';
     if (level >= 3) {
-      woodElfMagicDesc += ' You can cast Longstrider once per long rest.';
+      woodElfMagicDesc += ' You can cast **Longstrider** once per long rest.';
     }
     if (level >= 5) {
-      woodElfMagicDesc += ' You can cast Pass without Trace once per long rest.';
+      woodElfMagicDesc += ' You can cast **Pass without Trace** once per long rest.';
     }
-    woodElfMagicDesc += ' Wisdom is your spellcasting ability for these spells.';
+    woodElfMagicDesc += '\n\n**Wisdom** is your spellcasting ability for these spells.';
 
     features.push({
       name: 'Wood Elf Magic',
@@ -182,7 +249,7 @@ function generateElfFeatures(character: CharacterSheetData): SimpleFeature[] {
   } else if (elfLineage === 'Drow') {
     features.push({
       name: 'Superior Darkvision',
-      description: 'Your darkvision has a radius of 120 feet.',
+      description: 'Your darkvision has a radius of **120 feet**.',
       category: 'Species Trait'
     });
 
@@ -213,7 +280,7 @@ function generateHumanFeatures(character: CharacterSheetData): SimpleFeature[] {
 
   features.push({
     name: 'Versatile',
-    description: 'You gain an additional Origin Feat at 1st level.',
+    description: 'You gain an **additional Origin Feat** at 1st level.',
     category: 'Species Trait'
   });
 
@@ -269,13 +336,13 @@ function generateTieflingFeatures(character: CharacterSheetData): SimpleFeature[
 
   features.push({
     name: 'Damage Resistance',
-    description: `You have resistance to ${legacy.damageType} damage.`,
+    description: `You have resistance to **${legacy.damageType}** damage.`,
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Darkvision',
-    description: 'You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light.',
+    description: 'You can see in dim light within **60 feet** as if it were bright light, and in darkness as if it were dim light.',
     category: 'Species Trait'
   });
 
@@ -306,25 +373,25 @@ function generateDwarfFeatures(_character: CharacterSheetData): SimpleFeature[] 
 
   features.push({
     name: 'Darkvision',
-    description: 'You can see in dim light within 120 feet of you as if it were bright light and in darkness as if it were dim light. You discern colors in that darkness only as shades of gray.',
+    description: 'You can see in dim light within **120 feet** as if it were bright light and in darkness as if it were dim light. You discern colors in that darkness only as shades of gray.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Dwarven Resilience',
-    description: 'You have advantage on saving throws against poison, and you have resistance to poison damage.',
+    description: 'You have **advantage** on saving throws against **poison**, and you have **resistance** to poison damage.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Dwarven Toughness',
-    description: 'Your hit point maximum increases by 1, and it increases by 1 every time you gain a level.',
+    description: 'Your hit point maximum increases by **1**, and it increases by **1 every level**.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Stonecunning',
-    description: 'As a Bonus Action, you can touch a stone object or surface and learn its history. You determine who or what created it, when, how it was made, and any other information the DM deems relevant. You can use this feature a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.',
+    description: '**Bonus Action:** Touch a stone object or surface and learn its history. You can use this feature a number of times equal to your **Proficiency Bonus**.\n\n*Recharge:* Long Rest',
     category: 'Species Trait'
   });
 
@@ -339,25 +406,25 @@ function generateHalflingFeatures(_character: CharacterSheetData): SimpleFeature
 
   features.push({
     name: 'Lucky',
-    description: 'When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll.',
+    description: 'When you roll a **1** on the d20 for an attack roll, ability check, or saving throw, you can **reroll the die** and must use the new roll.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Brave',
-    description: 'You have advantage on saving throws against being frightened.',
+    description: 'You have **advantage** on saving throws against being **frightened**.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Halfling Nimbleness',
-    description: 'You can move through the space of any creature that is of a size larger than yours.',
+    description: 'You can move through the space of any creature that is **larger than you**.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Naturally Stealthy',
-    description: 'You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you.',
+    description: 'You can attempt to **hide** even when obscured only by a creature that is **at least one size larger** than you.',
     category: 'Species Trait'
   });
 
@@ -372,13 +439,13 @@ function generateGnomeFeatures(character: CharacterSheetData): SimpleFeature[] {
 
   features.push({
     name: 'Darkvision',
-    description: 'You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light.',
+    description: 'You can see in dim light within **60 feet** as if it were bright light, and in darkness as if it were dim light.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Gnome Cunning',
-    description: 'You have advantage on Intelligence, Wisdom, and Charisma saving throws against magic.',
+    description: 'You have **advantage** on **Intelligence**, **Wisdom**, and **Charisma** saving throws against magic.',
     category: 'Species Trait'
   });
 
@@ -411,19 +478,19 @@ function generateOrcFeatures(_character: CharacterSheetData): SimpleFeature[] {
 
   features.push({
     name: 'Darkvision',
-    description: 'You can see in dim light within 120 feet of you as if it were bright light and in darkness as if it were dim light. You discern colors in that darkness only as shades of gray.',
+    description: 'You can see in dim light within **120 feet** as if it were bright light and in darkness as if it were dim light. You discern colors in that darkness only as shades of gray.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Adrenaline Rush',
-    description: 'You can take the Dash action as a bonus action. When you do so, you gain a number of temporary hit points equal to your proficiency bonus. You can use this trait a number of times equal to your proficiency bonus, and you regain all expended uses when you finish a long rest.',
+    description: '**Bonus Action:** Take the Dash action and gain **temporary HP** equal to your proficiency bonus. You can use this trait a number of times equal to your **proficiency bonus**.\n\n*Recharge:* Long Rest',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Relentless Endurance',
-    description: 'When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. Once you use this trait, you can\'t use it again until you finish a long rest.',
+    description: 'When you are reduced to **0 hit points** but not killed outright, you can drop to **1 hit point** instead.\n\n*Recharge:* Long Rest',
     category: 'Species Trait'
   });
 
@@ -482,13 +549,13 @@ function generateGoliathFeatures(character: CharacterSheetData): SimpleFeature[]
 
   features.push({
     name: 'Large Form',
-    description: 'Starting at 5th level, you can use a Bonus Action to gain the following benefits for 10 minutes: Your size increases to Large, your reach increases by 5 feet, and you have advantage on Strength checks and Strength saving throws. Once you use this trait, you can\'t use it again until you finish a Long Rest.',
+    description: '**Bonus Action:** For **10 minutes**, your size increases to **Large**, your reach increases by **5 feet**, and you have **advantage** on Strength checks and saves.\n\n*Recharge:* Long Rest',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Powerful Build',
-    description: 'You count as one size larger when determining your carrying capacity and the weight you can push, drag, or lift.',
+    description: 'You count as **one size larger** when determining your carrying capacity and the weight you can push, drag, or lift.',
     category: 'Species Trait'
   });
 
@@ -503,25 +570,25 @@ function generateAasimarFeatures(character: CharacterSheetData): SimpleFeature[]
 
   features.push({
     name: 'Celestial Resistance',
-    description: 'You have resistance to necrotic and radiant damage.',
+    description: 'You have resistance to **necrotic** and **radiant** damage.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Darkvision',
-    description: 'You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light.',
+    description: 'You can see in dim light within **60 feet** as if it were bright light, and in darkness as if it were dim light.',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Healing Hands',
-    description: 'As an action, you can touch a creature and heal it for a number of hit points equal to your Proficiency Bonus. Once you use this trait, you can\'t use it again until you finish a Long Rest.',
+    description: '**Action:** Touch a creature and heal it for hit points equal to your **Proficiency Bonus**.\n\n*Recharge:* Long Rest',
     category: 'Species Trait'
   });
 
   features.push({
     name: 'Light Bearer',
-    description: 'You know the Light cantrip. Charisma is your spellcasting ability for it.',
+    description: 'You know the **Light** cantrip. **Charisma** is your spellcasting ability for it.',
     category: 'Species Trait'
   });
 
@@ -589,19 +656,35 @@ function generateBarbarianFeatures(character: CharacterSheetData): SimpleFeature
   if (level >= 1) {
     features.push({
       name: 'Rage',
-      description: 'You can enter a rage as a bonus action. While raging, you have resistance to bludgeoning, piercing, and slashing damage, gain bonus damage on Strength-based attacks, have advantage on Strength checks and saves, but cannot concentrate on spells or cast spells. Your rage lasts until the end of your next turn and can be extended.',
+      description: '**Bonus Action:** Enter a rage.\n\n**While Raging:**\n• Resistance to **bludgeoning**, **piercing**, and **slashing** damage\n• Bonus damage on **Strength**-based attacks\n• **Advantage** on Strength checks and saves\n• Cannot concentrate on spells or cast spells\n\n*Duration:* Until the end of your next turn (can be extended)',
       category: 'Class Feature'
     });
 
     features.push({
       name: 'Unarmored Defense',
-      description: 'While not wearing armor, your AC equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit.',
+      description: 'While not wearing armor, your **AC = 10 + DEX + CON**. You can use a shield and still gain this benefit.',
       category: 'Class Feature'
     });
 
+    // Weapon Mastery feature with tracking
+    const masteryCount = 2; // Barbarians get 2 weapon masteries
+    const activeMasteries = character.weaponMasteries?.active || [];
+
+    let masteryDesc = `You can use the mastery properties of ${masteryCount} kinds of Simple or Martial Melee weapons of your choice. You can change one of these choices when you finish a Long Rest.`;
+
+    if (activeMasteries.length > 0) {
+      masteryDesc += '\n\n**Active Masteries:**';
+      activeMasteries.forEach(mastery => {
+        const propertyDesc = WEAPON_MASTERY_PROPERTIES[mastery.property];
+        masteryDesc += `\n\n**${mastery.weapon} (${mastery.property}):** ${propertyDesc}`;
+      });
+    } else {
+      masteryDesc += '\n\n*No weapon masteries currently selected. Choose your mastery weapons!*';
+    }
+
     features.push({
       name: 'Weapon Mastery',
-      description: 'You can use the mastery properties of two kinds of Simple or Martial Melee weapons of your choice. You can change one of these choices when you finish a Long Rest.',
+      description: masteryDesc,
       category: 'Class Feature'
     });
   }
@@ -652,13 +735,29 @@ function generateFighterFeatures(character: CharacterSheetData): SimpleFeature[]
 
     features.push({
       name: 'Second Wind',
-      description: 'You can use a bonus action to regain hit points equal to 1d10 + your Fighter level. Once you use this feature, you must finish a short or long rest before you can use it again.',
+      description: '**Bonus Action:** Regain **1d10 + Fighter level** hit points.\n\n*Recharge:* Short or Long Rest',
       category: 'Class Feature'
     });
 
+    // Weapon Mastery feature with tracking
+    const masteryCount = 3; // Fighters get 3 weapon masteries
+    const activeMasteries = character.weaponMasteries?.active || [];
+
+    let masteryDesc = `You can use the mastery properties of ${masteryCount} kinds of Simple or Martial weapons of your choice. You can change one of these choices when you finish a Long Rest.`;
+
+    if (activeMasteries.length > 0) {
+      masteryDesc += '\n\n**Active Masteries:**';
+      activeMasteries.forEach(mastery => {
+        const propertyDesc = WEAPON_MASTERY_PROPERTIES[mastery.property];
+        masteryDesc += `\n\n**${mastery.weapon} (${mastery.property}):** ${propertyDesc}`;
+      });
+    } else {
+      masteryDesc += '\n\n*No weapon masteries currently selected. Choose your mastery weapons!*';
+    }
+
     features.push({
       name: 'Weapon Mastery',
-      description: 'You can use the mastery properties of three kinds of Simple or Martial weapons of your choice. You can change one of these choices when you finish a Long Rest.',
+      description: masteryDesc,
       category: 'Class Feature'
     });
   }
@@ -713,16 +812,16 @@ function detectFightingStyleChoice(character: CharacterSheetData): string | null
  */
 function getFightingStyleDescription(style: string): string {
   const descriptions: { [key: string]: string } = {
-    'Archery': 'You gain a +2 bonus to attack rolls you make with ranged weapons.',
-    'Blind Fighting': 'You have Blindsight with a range of 10 feet.',
-    'Defense': 'While you are wearing armor, you gain a +1 bonus to AC.',
-    'Dueling': 'When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.',
-    'Great Weapon Fighting': 'When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit.',
-    'Interception': 'When a creature you can see hits a target other than you that is within 5 feet of you with an attack, you can use your reaction to reduce the damage by 1d10 + your Proficiency Bonus. You must be wielding a shield or a simple or martial weapon.',
-    'Protection': 'When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield.',
-    'Thrown Weapon Fighting': 'You can draw a weapon that has the Thrown property as part of the attack you make with the weapon. In addition, when you hit with a ranged attack using a thrown weapon, you gain a +2 bonus to the damage roll.',
-    'Two-Weapon Fighting': 'When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.',
-    'Unarmed Fighting': 'Your unarmed strikes can deal bludgeoning damage equal to 1d6 + your Strength modifier. If you strike with two free hands, the d6 becomes a d8. When you successfully start a grapple, you can deal 1d4 bludgeoning damage to the grappled creature.'
+    'Archery': 'You gain a **+2 bonus** to attack rolls you make with **ranged weapons**.',
+    'Blind Fighting': 'You have **Blindsight** with a range of **10 feet**.',
+    'Defense': 'While wearing armor, you gain a **+1 bonus to AC**.',
+    'Dueling': 'When wielding a melee weapon in one hand and no other weapons, you gain a **+2 bonus** to damage rolls with that weapon.',
+    'Great Weapon Fighting': 'When you roll a **1 or 2** on a damage die for an attack with a melee weapon wielded with **two hands**, you can **reroll the die** and must use the new roll. The weapon must have the **two-handed** or **versatile** property.',
+    'Interception': '**Reaction:** When a creature you can see hits a target other than you within **5 feet** of you, reduce the damage by **1d10 + Proficiency Bonus**. You must be wielding a **shield** or a weapon.',
+    'Protection': '**Reaction:** When a creature you can see attacks a target other than you within **5 feet** of you, impose **disadvantage** on the attack roll. You must be wielding a **shield**.',
+    'Thrown Weapon Fighting': 'You can draw a weapon with the **Thrown** property as part of the attack. When you hit with a ranged attack using a thrown weapon, you gain a **+2 bonus** to the damage roll.',
+    'Two-Weapon Fighting': 'When you engage in two-weapon fighting, you can add your **ability modifier** to the damage of the second attack.',
+    'Unarmed Fighting': 'Your unarmed strikes deal **1d6 + STR** bludgeoning damage (or **1d8** with two free hands). When you start a grapple, you can deal **1d4** bludgeoning damage to the grappled creature.'
   };
 
   return descriptions[style] || `Details for ${style} fighting style.`;
@@ -760,32 +859,48 @@ function getPaladinFightingStyleDescription(style: string): string {
 /**
  * Generate Rogue class features
  */
-function generateRogueFeatures(_character: CharacterSheetData): SimpleFeature[] {
+function generateRogueFeatures(character: CharacterSheetData): SimpleFeature[] {
   const features: SimpleFeature[] = [];
-  const level = _character.level || 1;
+  const level = character.level || 1;
 
   if (level >= 1) {
     features.push({
       name: 'Expertise',
-      description: 'Choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves\' tools. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.',
+      description: 'Choose **two skill proficiencies** or **one skill and thieves\' tools**. Your proficiency bonus is **doubled** for ability checks using these proficiencies.',
       category: 'Class Feature'
     });
 
     features.push({
       name: 'Sneak Attack',
-      description: 'Once per turn, you can deal an extra 1d6 damage to one creature you hit with an attack if you have advantage on the attack roll. The attack must use a finesse or ranged weapon.',
+      description: '**Once per turn**, deal an extra **1d6 damage** to one creature you hit if you have **advantage** on the attack roll. The attack must use a **finesse** or **ranged** weapon.',
       category: 'Class Feature'
     });
 
     features.push({
       name: 'Thieves\' Cant',
-      description: 'You have learned thieves\' cant, a secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation.',
+      description: 'You know thieves\' cant, a secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation.',
       category: 'Class Feature'
     });
 
+    // Weapon Mastery feature with tracking (Rogue has special restriction: Finesse weapons only)
+    const masteryCount = 2; // Rogues get 2 weapon masteries
+    const activeMasteries = character.weaponMasteries?.active || [];
+
+    let masteryDesc = `You can use the mastery properties of ${masteryCount} kinds of Simple or Martial weapons that have the Finesse property. You can change one of these choices when you finish a Long Rest.`;
+
+    if (activeMasteries.length > 0) {
+      masteryDesc += '\n\n**Active Masteries:**';
+      activeMasteries.forEach(mastery => {
+        const propertyDesc = WEAPON_MASTERY_PROPERTIES[mastery.property];
+        masteryDesc += `\n\n**${mastery.weapon} (${mastery.property}):** ${propertyDesc}`;
+      });
+    } else {
+      masteryDesc += '\n\n*No weapon masteries currently selected. Choose your mastery weapons (must have Finesse property)!*';
+    }
+
     features.push({
       name: 'Weapon Mastery',
-      description: 'You can use the mastery properties of two kinds of Simple or Martial weapons that have the Finesse property. You can change one of these choices when you finish a Long Rest.',
+      description: masteryDesc,
       category: 'Class Feature'
     });
   }
@@ -799,11 +914,11 @@ function generateRogueFeatures(_character: CharacterSheetData): SimpleFeature[] 
 function generateBardFeatures(_character: CharacterSheetData): SimpleFeature[] {
   return [{
     name: 'Bardic Inspiration',
-    description: 'You can inspire others through stirring words or music. As a bonus action, choose one creature within 60 feet who can hear you. That creature gains one Bardic Inspiration die (d6).',
+    description: '**Bonus Action:** Choose one creature within **60 feet** who can hear you. That creature gains one **Bardic Inspiration die (d6)**.',
     category: 'Class Feature'
   }, {
     name: 'Spellcasting',
-    description: 'You have learned to cast spells. Charisma is your spellcasting ability for your bard spells.',
+    description: 'You can cast **bard spells**. **Charisma** is your spellcasting ability.',
     category: 'Class Feature'
   }];
 }
@@ -811,11 +926,11 @@ function generateBardFeatures(_character: CharacterSheetData): SimpleFeature[] {
 function generateClericFeatures(_character: CharacterSheetData): SimpleFeature[] {
   return [{
     name: 'Spellcasting',
-    description: 'You can cast cleric spells. Wisdom is your spellcasting ability for your cleric spells.',
+    description: 'You can cast **cleric spells**. **Wisdom** is your spellcasting ability.',
     category: 'Class Feature'
   }, {
     name: 'Divine Order',
-    description: 'You have dedicated yourself to one of the following sacred roles of your choice: Protector or Thaumaturge.',
+    description: 'You have dedicated yourself to one of the following sacred roles: **Protector** or **Thaumaturge**.',
     category: 'Class Feature'
   }];
 }
@@ -823,11 +938,11 @@ function generateClericFeatures(_character: CharacterSheetData): SimpleFeature[]
 function generateDruidFeatures(_character: CharacterSheetData): SimpleFeature[] {
   return [{
     name: 'Druidcraft',
-    description: 'You know the Druidcraft cantrip.',
+    description: 'You know the **Druidcraft** cantrip.',
     category: 'Class Feature'
   }, {
     name: 'Spellcasting',
-    description: 'You can cast druid spells. Wisdom is your spellcasting ability for your druid spells.',
+    description: 'You can cast **druid spells**. **Wisdom** is your spellcasting ability.',
     category: 'Class Feature'
   }];
 }
@@ -835,11 +950,11 @@ function generateDruidFeatures(_character: CharacterSheetData): SimpleFeature[] 
 function generateMonkFeatures(_character: CharacterSheetData): SimpleFeature[] {
   return [{
     name: 'Martial Arts',
-    description: 'You can use Dexterity instead of Strength for attack and damage rolls of unarmed strikes and monk weapons. You can roll a d6 in place of the normal damage of your unarmed strike or monk weapon.',
+    description: 'You can use **Dexterity** instead of Strength for attack and damage rolls of **unarmed strikes** and **monk weapons**. You can roll a **d6** in place of the normal damage.',
     category: 'Class Feature'
   }, {
     name: 'Unarmored Defense',
-    description: 'While not wearing armor or wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier.',
+    description: 'While not wearing armor or wielding a shield, your **AC = 10 + DEX + WIS**.',
     category: 'Class Feature'
   }];
 }
@@ -851,13 +966,35 @@ function generatePaladinFeatures(character: CharacterSheetData): SimpleFeature[]
   if (level >= 1) {
     features.push({
       name: 'Lay on Hands',
-      description: 'You have a pool of healing power that replenishes when you take a long rest. With this pool, you can restore a total number of hit points equal to your paladin level × 5.',
+      description: `You have a pool of healing power equal to **${(character.level || 1) * 5} HP**. Touch a creature to restore any amount of HP from the pool.\n\n*Recharge:* Long Rest`,
       category: 'Class Feature'
     });
 
     features.push({
       name: 'Spellcasting',
-      description: 'You can cast paladin spells. Charisma is your spellcasting ability for your paladin spells.',
+      description: 'You can cast **paladin spells**. **Charisma** is your spellcasting ability.',
+      category: 'Class Feature'
+    });
+
+    // Weapon Mastery feature with tracking
+    const masteryCount = 2; // Paladins get 2 weapon masteries
+    const activeMasteries = character.weaponMasteries?.active || [];
+
+    let masteryDesc = `You can use the mastery properties of ${masteryCount} kinds of Simple or Martial weapons of your choice. You can change one of these choices when you finish a Long Rest.`;
+
+    if (activeMasteries.length > 0) {
+      masteryDesc += '\n\n**Active Masteries:**';
+      activeMasteries.forEach(mastery => {
+        const propertyDesc = WEAPON_MASTERY_PROPERTIES[mastery.property];
+        masteryDesc += `\n\n**${mastery.weapon} (${mastery.property}):** ${propertyDesc}`;
+      });
+    } else {
+      masteryDesc += '\n\n*No weapon masteries currently selected. Choose your mastery weapons!*';
+    }
+
+    features.push({
+      name: 'Weapon Mastery',
+      description: masteryDesc,
       category: 'Class Feature'
     });
   }
@@ -901,13 +1038,35 @@ function generateRangerFeatures(character: CharacterSheetData): SimpleFeature[] 
   if (level >= 1) {
     features.push({
       name: 'Favored Enemy',
-      description: 'Choose a type of creature: beasts, fey, humanoids, monstrosities, or undead. You have advantage on Wisdom (Survival) checks to track your favored enemies.',
+      description: 'Choose a creature type: **beasts**, **fey**, **humanoids**, **monstrosities**, or **undead**. You have **advantage** on Wisdom (Survival) checks to track your favored enemies.',
       category: 'Class Feature'
     });
 
     features.push({
       name: 'Spellcasting',
-      description: 'You can cast ranger spells. Wisdom is your spellcasting ability for your ranger spells.',
+      description: 'You can cast **ranger spells**. **Wisdom** is your spellcasting ability.',
+      category: 'Class Feature'
+    });
+
+    // Weapon Mastery feature with tracking
+    const masteryCount = 2; // Rangers get 2 weapon masteries
+    const activeMasteries = character.weaponMasteries?.active || [];
+
+    let masteryDesc = `You can use the mastery properties of ${masteryCount} kinds of Simple or Martial weapons of your choice. You can change one of these choices when you finish a Long Rest.`;
+
+    if (activeMasteries.length > 0) {
+      masteryDesc += '\n\n**Active Masteries:**';
+      activeMasteries.forEach(mastery => {
+        const propertyDesc = WEAPON_MASTERY_PROPERTIES[mastery.property];
+        masteryDesc += `\n\n**${mastery.weapon} (${mastery.property}):** ${propertyDesc}`;
+      });
+    } else {
+      masteryDesc += '\n\n*No weapon masteries currently selected. Choose your mastery weapons!*';
+    }
+
+    features.push({
+      name: 'Weapon Mastery',
+      description: masteryDesc,
       category: 'Class Feature'
     });
   }
@@ -947,11 +1106,11 @@ function generateRangerFeatures(character: CharacterSheetData): SimpleFeature[] 
 function generateSorcererFeatures(_character: CharacterSheetData): SimpleFeature[] {
   return [{
     name: 'Innate Sorcery',
-    description: 'An event in your past left an indelible mark on you, infusing you with sorcerous magic. The source of your magic determines some of your spells.',
+    description: 'An event in your past left an indelible mark on you, infusing you with **sorcerous magic**. The source of your magic determines some of your spells.',
     category: 'Class Feature'
   }, {
     name: 'Spellcasting',
-    description: 'You can cast sorcerer spells. Charisma is your spellcasting ability for your sorcerer spells.',
+    description: 'You can cast **sorcerer spells**. **Charisma** is your spellcasting ability.',
     category: 'Class Feature'
   }];
 }
@@ -959,11 +1118,11 @@ function generateSorcererFeatures(_character: CharacterSheetData): SimpleFeature
 function generateWarlockFeatures(_character: CharacterSheetData): SimpleFeature[] {
   return [{
     name: 'Otherworldly Patron',
-    description: 'You have made a pact with an otherworldly being. Your patron gives you features at 1st level and again at 6th, 10th, and 14th level.',
+    description: 'You have made a pact with an **otherworldly being**. Your patron gives you features at **1st, 6th, 10th, and 14th level**.',
     category: 'Class Feature'
   }, {
     name: 'Pact Magic',
-    description: 'You can cast warlock spells. Charisma is your spellcasting ability for your warlock spells.',
+    description: 'You can cast **warlock spells**. **Charisma** is your spellcasting ability.',
     category: 'Class Feature'
   }];
 }
@@ -971,11 +1130,11 @@ function generateWarlockFeatures(_character: CharacterSheetData): SimpleFeature[
 function generateWizardFeatures(_character: CharacterSheetData): SimpleFeature[] {
   return [{
     name: 'Spellcasting',
-    description: 'You can cast wizard spells. Intelligence is your spellcasting ability for your wizard spells.',
+    description: 'You can cast **wizard spells**. **Intelligence** is your spellcasting ability.',
     category: 'Class Feature'
   }, {
     name: 'Ritual Casting',
-    description: 'You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your spellbook.',
+    description: 'You can cast a wizard spell as a **ritual** if that spell has the ritual tag and you have the spell in your **spellbook**.',
     category: 'Class Feature'
   }];
 }
@@ -1042,7 +1201,7 @@ function extractFeatureDescription(bgFeature: any): string {
 }
 
 /**
- * Generate feat features
+ * Generate feat features - consolidated under one heading per feat
  */
 function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
   const features: SimpleFeature[] = [];
@@ -1050,6 +1209,8 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
   // Process origin feats and their features
   if (character.selectedOriginFeats && character.selectedOriginFeats.length > 0) {
     character.selectedOriginFeats.forEach((featName) => {
+      const descriptionParts: string[] = [];
+
       // Get feat features from the stored data
       const featFeatures = character.featFeatures?.[featName];
 
@@ -1060,25 +1221,17 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
         if (featChoices && typeof featChoices === 'object') {
           Object.entries(featChoices).forEach(([_choiceType, choiceValue]) => {
             if (Array.isArray(choiceValue) && choiceValue.length > 0) {
-              const prefix = featName === 'Skilled' ? 'You gain proficiency in' :
+              const prefix = featName === 'Skilled' ? 'You gain **proficiency** in' :
                             featName === 'Linguist' ? 'You learn' :
-                            featName === 'Weapon Master' ? 'You gain proficiency with' :
+                            featName === 'Weapon Master' ? 'You gain **proficiency** with' :
                             'You gain';
-              features.push({
-                name: `${featName}`,
-                description: `${prefix}: ${choiceValue.join(', ')}.`,
-                category: 'Feat'
-              });
+              descriptionParts.push(`${prefix} **${choiceValue.join('**, **')}**.`);
             } else if (typeof choiceValue === 'string') {
-              const prefix = featName === 'Skilled' ? 'You gain proficiency in' :
+              const prefix = featName === 'Skilled' ? 'You gain **proficiency** in' :
                             featName === 'Linguist' ? 'You learn' :
-                            featName === 'Weapon Master' ? 'You gain proficiency with' :
+                            featName === 'Weapon Master' ? 'You gain **proficiency** with' :
                             'You gain';
-              features.push({
-                name: `${featName}`,
-                description: `${prefix}: ${choiceValue}.`,
-                category: 'Feat'
-              });
+              descriptionParts.push(`${prefix} **${choiceValue}**.`);
             }
           });
         }
@@ -1091,18 +1244,23 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
           });
           if (cipherFeature) {
             const desc = typeof cipherFeature === 'string' ? cipherFeature : extractFeatFeatureDescription(cipherFeature);
-            features.push({
-              name: `${featName} - Ciphers`,
-              description: desc,
-              category: 'Feat'
-            });
+            descriptionParts.push(`**Ciphers:** ${desc}`);
           }
+        }
+
+        // Create single consolidated feature
+        if (descriptionParts.length > 0) {
+          features.push({
+            name: featName,
+            description: descriptionParts.join('\n\n'),
+            category: 'Feat'
+          });
         }
 
         return; // Skip the normal processing for these feats
       }
 
-      // For other feats, filter out non-useful information
+      // For other feats, filter out non-useful information and consolidate
       if (featFeatures && featFeatures.length > 0) {
         const filteredFeatures = featFeatures.filter((featFeature: any) => {
           // Skip generic/non-useful descriptions
@@ -1132,7 +1290,12 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
             '16th-level feat',
             '19th-level feat',
             'epic boon',
-            'you gain the following'
+            'you gain the following',
+            'tool proficiency:',
+            'skill proficiency:',
+            'weapon proficiency:',
+            'armor proficiency:',
+            'language proficiency:'
           ];
 
           // Check if description contains any skip patterns
@@ -1149,59 +1312,51 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
         });
 
         filteredFeatures.forEach((featFeature: any) => {
-          let featureName = featName;
           let featureDescription = 'A feat feature.';
 
           if (typeof featFeature === 'string') {
-            featureDescription = featFeature;
+            // Parse template tags in string features
+            featureDescription = parseComplexDnDEntry(featFeature);
           } else if (featFeature && typeof featFeature === 'object') {
-            featureName = featFeature.name || featFeature.title || featName;
+            const subName = featFeature.name || featFeature.title;
             featureDescription = extractFeatFeatureDescription(featFeature);
+            // If there's a sub-feature name, format it as a heading
+            if (subName && subName !== featName) {
+              featureDescription = `**${subName}:** ${featureDescription}`;
+            }
           }
 
-          features.push({
-            name: featureName,
-            description: featureDescription,
-            category: 'Feat'
-          });
+          descriptionParts.push(featureDescription);
         });
       }
 
       // Add spell features from feats if any
       const featSpells = character.featSpells?.[featName];
       if (featSpells && featSpells.length > 0) {
-        features.push({
-          name: `${featName} Spells`,
-          description: `You know the following spells from your ${featName} feat: ${featSpells.join(', ')}.`,
-          category: 'Feat'
-        });
+        descriptionParts.push(`**Spells:** You know **${featSpells.join('**, **')}**.`);
       }
 
       // Add choice-based features if any (for feats other than Skilled)
       const featChoices = character.featChoices?.[featName];
-      if (featChoices && typeof featChoices === 'object') {
+      if (featChoices && typeof featChoices === 'object' && !choiceBasedFeats.includes(featName)) {
         Object.entries(featChoices).forEach(([choiceType, choiceValue]) => {
           if (Array.isArray(choiceValue) && choiceValue.length > 0) {
-            features.push({
-              name: `${featName} - ${choiceType}`,
-              description: `You chose: ${choiceValue.join(', ')}.`,
-              category: 'Feat'
-            });
+            descriptionParts.push(`**${choiceType}:** **${choiceValue.join('**, **')}**`);
           } else if (typeof choiceValue === 'string') {
-            features.push({
-              name: `${featName} - ${choiceType}`,
-              description: `You chose: ${choiceValue}.`,
-              category: 'Feat'
-            });
+            descriptionParts.push(`**${choiceType}:** **${choiceValue}**`);
           }
         });
       }
 
-      // If no useful features were added for this feat, add a minimal description
-      const featHasFeatures = features.some(f =>
-        f.category === 'Feat' && f.name.includes(featName)
-      );
-      if (!featHasFeatures) {
+      // Create single consolidated feature for this feat
+      if (descriptionParts.length > 0) {
+        features.push({
+          name: featName,
+          description: descriptionParts.join('\n\n'),
+          category: 'Feat'
+        });
+      } else {
+        // If no useful features were added for this feat, add a minimal description
         features.push({
           name: featName,
           description: `You have the ${featName} feat.`,
@@ -1218,35 +1373,8 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
  * Extract description from feat feature data
  */
 function extractFeatFeatureDescription(featFeature: any): string {
-  // Handle string descriptions
-  if (typeof featFeature === 'string') {
-    return featFeature;
-  }
-
-  // Handle objects with various description fields
-  if (featFeature.description) {
-    return Array.isArray(featFeature.description)
-      ? featFeature.description.join(' ')
-      : featFeature.description;
-  }
-
-  if (featFeature.entries && Array.isArray(featFeature.entries)) {
-    return featFeature.entries.map((entry: any) =>
-      typeof entry === 'string' ? entry : JSON.stringify(entry)
-    ).join(' ');
-  }
-
-  if (featFeature.text) {
-    return featFeature.text;
-  }
-
-  // Try to extract from other common fields
-  if (featFeature.effect) {
-    return featFeature.effect;
-  }
-
-  // If all else fails, stringify the object
-  return JSON.stringify(featFeature);
+  // Use the parseComplexDnDEntry function which handles nested structures and template tags
+  return parseComplexDnDEntry(featFeature);
 }
 
 /**

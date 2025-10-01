@@ -45,7 +45,9 @@ import CharacterSkillsSection from './CharacterSkillsSection';
 import CompactResourcesBar from './CompactResourcesBar';
 import CharacterActionsSection from './CharacterActionsSection';
 import { CharacterTraitsSection } from './CharacterTraitsSection';
+import { CharacterProficienciesSection } from './CharacterProficienciesSection';
 import { CharacterStatsSection } from './CharacterStatsSection';
+import WeaponMasterySection from './WeaponMasterySection';
 
 
 export default function CharacterSheetPretty({
@@ -279,6 +281,13 @@ export default function CharacterSheetPretty({
     return spellcastingClasses.includes(className);
   }, [character.class]);
 
+  // Check if character has weapon mastery
+  const hasWeaponMastery = useMemo(() => {
+    const masteryClasses = ['barbarian', 'fighter', 'paladin', 'ranger', 'rogue'];
+    const className = character.class.toLowerCase().replace(/\s+/g, '');
+    return masteryClasses.some(c => className.includes(c));
+  }, [character.class]);
+
   // Calculate derived values using service
   const derivedValues = useMemo(() => {
     const calculations = calculateDerivedValues(character);
@@ -361,28 +370,50 @@ export default function CharacterSheetPretty({
               />
             </ThreeColumnContainer>
 
-
-            {/* Actions Section - Full Width */}
-            <CharacterActionsSection
-              character={character}
-              editingSections={{ actions: editingSections.actions }}
-              toggleSectionEdit={toggleSectionEdit}
-              cancelSectionEdit={cancelSectionEdit}
-              actions={actions}
-            />
-
-            {/* Inventory and Traits Side-by-Side Layout */}
-            <TwoColumnLayout>
-              {/* Inventory Section */}
-              <ConsolidatedInventorySection
-                inventory={inventory}
-                mode="scroll"
-                maxHeight="900px"
-                showEquipToggle={true}
+            {/* Actions Section - Conditional Layout */}
+            {hasWeaponMastery ? (
+              <TwoColumnLayout style={{ gridTemplateColumns: '2fr 1fr' }}>
+                <CharacterActionsSection
+                  character={character}
+                  editingSections={{ actions: editingSections.actions }}
+                  toggleSectionEdit={toggleSectionEdit}
+                  cancelSectionEdit={cancelSectionEdit}
+                  actions={actions}
+                />
+                <WeaponMasterySection
+                  character={character}
+                  onUpdateCharacter={updateCharacter}
+                />
+              </TwoColumnLayout>
+            ) : (
+              <CharacterActionsSection
+                character={character}
+                editingSections={{ actions: editingSections.actions }}
+                toggleSectionEdit={toggleSectionEdit}
+                cancelSectionEdit={cancelSectionEdit}
+                actions={actions}
               />
+            )}
 
-              {/* Traits and Abilities Section */}
-              <CharacterTraitsSection character={character} traits={traits} />
+            {/* Inventory/Proficiencies and Traits Side-by-Side Layout */}
+            <TwoColumnLayout>
+              {/* Left Column: Inventory and Proficiencies stacked */}
+              <div>
+                <ConsolidatedInventorySection
+                  inventory={inventory}
+                  mode="scroll"
+                  maxHeight="900px"
+                  showEquipToggle={true}
+                />
+                <CharacterProficienciesSection character={character} />
+              </div>
+
+              {/* Right Column: Features & Traits */}
+              <CharacterTraitsSection
+                character={character}
+                traits={traits}
+                onUpdateCharacter={updateCharacter}
+              />
             </TwoColumnLayout>
           </LeftColumn>
         </MainLayout>

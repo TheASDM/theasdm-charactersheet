@@ -15,6 +15,7 @@ import {
   calculateAbilityModifier
 } from '../data/lookupTables';
 import { inferSpeciesChoicesFromCharacter } from '../services/featureVariantsService';
+import { parseDnDTemplateTag, parseComplexDnDEntry } from './dndTemplateParser';
 
 export interface RenderedFeature extends CharacterFeature {
   resolvedName: string;
@@ -34,23 +35,30 @@ export function renderFeature(
   feature: CharacterFeature,
   characterContext: CharacterContext
 ): RenderedFeature {
-  if (!feature.variables) {
-    return feature as RenderedFeature;
-  }
+  const resolvedVariables = feature.variables
+    ? resolveVariables(feature.variables, characterContext)
+    : {};
 
-  const resolvedVariables = resolveVariables(feature.variables, characterContext);
+  // Helper to convert description (string or complex object) to string
+  const resolveDescription = (desc: any): string => {
+    if (typeof desc === 'string') {
+      return resolveTemplate(desc, resolvedVariables, characterContext);
+    }
+    // For complex objects (arrays, nested structures), use parseComplexDnDEntry
+    return parseComplexDnDEntry(desc);
+  };
 
   return {
     ...feature,
     resolvedName: resolveTemplate(feature.name, resolvedVariables, characterContext),
-    resolvedDescription: resolveTemplate(feature.description, resolvedVariables, characterContext),
+    resolvedDescription: resolveDescription(feature.description),
     resolvedShortDescription: feature.shortDescription
       ? resolveTemplate(feature.shortDescription, resolvedVariables, characterContext)
       : feature.shortDescription,
     resolvedAction: resolveAction(feature.action, resolvedVariables, characterContext),
     resolvedResource: resolveResource(feature.resource, resolvedVariables, characterContext),
-    resolvedCurrentDamage: getCurrentDamage(feature.variables, characterContext),
-    resolvedCurrentSaveDC: getCurrentSaveDC(feature.variables, characterContext),
+    resolvedCurrentDamage: getCurrentDamage(feature.variables || {}, characterContext),
+    resolvedCurrentSaveDC: getCurrentSaveDC(feature.variables || {}, characterContext),
     resolvedCurrentUses: getCurrentUses(feature.resource, characterContext)
   };
 }
@@ -174,6 +182,10 @@ function resolveTemplate(
   });
 
   console.log('🎯 Final template result:', result);
+
+  // Parse D&D template tags like {@condition Incapacitated|XPHB}
+  result = parseDnDTemplateTag(result);
+
   return result;
 }
 

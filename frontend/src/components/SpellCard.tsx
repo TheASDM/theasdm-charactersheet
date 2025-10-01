@@ -2,161 +2,148 @@ import React from 'react';
 import styled from 'styled-components';
 import { Spell } from '../types/api';
 
-// Main card container with medieval styling
+// Main card container with dark theme
 const CardContainer = styled.div<{ compact?: boolean; clickable?: boolean }>`
-  background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
-  border: 3px solid #8b6914;
-  border-radius: 15px;
+  background: rgba(45, 45, 45, 0.6);
+  border: 2px solid #444;
+  border-radius: 8px;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  font-family: 'Crimson Text', serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   cursor: ${(props) => (props.clickable ? 'pointer' : 'default')};
   overflow: hidden;
-  position: relative;
-  color: #2c1810;
-  will-change: transform;
-  contain: layout style paint;
+  color: #f0f0f0;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
     border-color: #d4af37;
   }
 `;
 
 const SpellHeader = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.9),
-    rgba(74, 42, 26, 0.9)
-  );
+  background: rgba(35, 35, 35, 0.9);
   color: #d4af37;
-  padding: 20px 25px;
+  padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 15px;
-  border-bottom: 2px solid #8b6914;
-  position: relative;
+  gap: 0.75rem;
+  border-bottom: 1px solid #444;
 
   @media (max-width: 480px) {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-    padding: 15px 20px;
+    gap: 0.5rem;
+    padding: 1rem;
   }
 `;
 
 const SpellName = styled.h3<{ compact?: boolean }>`
   margin: 0;
-  font-size: ${(props) => (props.compact ? '1.4rem' : '1.8rem')};
-  font-weight: 700;
+  font-size: ${(props) => (props.compact ? '1.1rem' : '1.2rem')};
+  font-weight: 600;
   color: #d4af37;
   font-family: 'Cinzel', serif;
   flex: 1;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  line-height: 1.2;
 `;
 
 const SpellLevel = styled.div`
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  background: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   white-space: nowrap;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-family: 'Cinzel', serif;
-  margin-left: 10px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
 `;
 
 const SpellContent = styled.div`
-  padding: 25px;
-  background: transparent;
+  padding: 1.25rem;
   flex: 1;
 `;
 
 const SchoolBadge = styled.div<{ school: string }>`
   display: inline-block;
-  padding: 10px 20px;
-  border-radius: 25px;
-  font-size: 1rem;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 20px;
-  color: white;
-  font-family: 'Cinzel', serif;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+  color: #f0f0f0;
 
   ${(props) => {
     const schoolColors: { [key: string]: string } = {
-      Abjuration: 'linear-gradient(145deg, #3c6382, #2f4f4f)',
-      Conjuration: 'linear-gradient(145deg, #8e44ad, #9b59b6)',
-      Divination: 'linear-gradient(145deg, #f39c12, #e67e22)',
-      Enchantment: 'linear-gradient(145deg, #e91e63, #ad1457)',
-      Evocation: 'linear-gradient(145deg, #ff6b47, #e55039)',
-      Illusion: 'linear-gradient(145deg, #9c88ff, #7b68ee)',
-      Necromancy: 'linear-gradient(145deg, #2c2c54, #40407a)',
-      Transmutation: 'linear-gradient(145deg, #27ae60, #229954)',
+      Abjuration: 'rgba(60, 99, 130, 0.3)',
+      Conjuration: 'rgba(142, 68, 173, 0.3)',
+      Divination: 'rgba(243, 156, 18, 0.3)',
+      Enchantment: 'rgba(233, 30, 99, 0.3)',
+      Evocation: 'rgba(255, 107, 71, 0.3)',
+      Illusion: 'rgba(156, 136, 255, 0.3)',
+      Necromancy: 'rgba(44, 44, 84, 0.3)',
+      Transmutation: 'rgba(39, 174, 96, 0.3)',
     };
 
-    const bgColor =
-      schoolColors[props.school] || 'linear-gradient(145deg, #8b7355, #6d5411)';
-    return `background: ${bgColor};`;
+    const borderColors: { [key: string]: string } = {
+      Abjuration: 'rgba(60, 99, 130, 0.6)',
+      Conjuration: 'rgba(142, 68, 173, 0.6)',
+      Divination: 'rgba(243, 156, 18, 0.6)',
+      Enchantment: 'rgba(233, 30, 99, 0.6)',
+      Evocation: 'rgba(255, 107, 71, 0.6)',
+      Illusion: 'rgba(156, 136, 255, 0.6)',
+      Necromancy: 'rgba(44, 44, 84, 0.6)',
+      Transmutation: 'rgba(39, 174, 96, 0.6)',
+    };
+
+    const bgColor = schoolColors[props.school] || 'rgba(139, 115, 85, 0.3)';
+    const borderColor = borderColors[props.school] || 'rgba(139, 115, 85, 0.6)';
+    return `
+      background: ${bgColor};
+      border: 1px solid ${borderColor};
+    `;
   }}
 `;
 
 const SpellDetails = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 0.75rem;
   }
 `;
 
 const DetailItem = styled.div`
-  background: rgba(139, 105, 20, 0.1);
-  padding: 15px;
-  border-radius: 8px;
-  border-left: 4px solid #8b6914;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(139, 105, 20, 0.15);
-    transform: translateX(2px);
-  }
+  background: rgba(35, 35, 35, 0.5);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid #d4af37;
+  font-size: 0.85rem;
 
   strong {
-    color: #8b6914;
+    color: #d4af37;
     font-weight: 600;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 0.25rem;
     text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
-    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
   }
 
   span {
-    color: #2c1810;
-    font-weight: 500;
+    color: #f0f0f0;
+    font-weight: 400;
     line-height: 1.4;
-    font-family: 'Crimson Text', serif;
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
 `;
 
@@ -164,38 +151,32 @@ const CompactDetails = styled(DetailItem)`
   grid-column: 1 / -1;
   text-align: center;
   border-left: none;
-  border: 2px solid rgba(139, 105, 20, 0.3);
+  border: 1px solid #555;
 
   span {
     font-style: italic;
-    color: #4a321a;
+    color: #ccc;
   }
 `;
 
 const SourceInfo = styled.div`
   margin-top: auto;
-  padding: 15px 20px;
-  font-size: 0.85rem;
-  color: #6d5411;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #888;
   font-style: italic;
   text-align: center;
-  background: linear-gradient(
-    145deg,
-    rgba(139, 105, 20, 0.1),
-    rgba(139, 105, 20, 0.05)
-  );
-  border-top: 1px solid rgba(139, 105, 20, 0.3);
-  font-family: 'Crimson Text', serif;
-  border-radius: 0 0 12px 12px;
+  background: rgba(35, 35, 35, 0.5);
+  border-top: 1px solid #444;
+  border-radius: 0 0 8px 8px;
 
   strong {
-    color: #8b6914;
+    color: #d4af37;
     font-weight: 600;
     font-style: normal;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 0.8rem;
-    font-family: 'Cinzel', serif;
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
   }
 `;
 

@@ -15,39 +15,42 @@ interface CharacterListProps {
 }
 
 const BulkActionsBar = styled.div`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
-  border: 2px solid #8b6914;
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
-  color: #2c1810;
-  font-family: 'Cinzel', serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
 `;
 
 const BulkActionButton = styled.button<{ variant?: 'danger' | 'primary' }>`
   background: ${props => props.variant === 'danger'
-    ? 'linear-gradient(145deg, #dc3545, #c82333)'
-    : 'linear-gradient(145deg, #5a3a2a, #4a2a1a)'};
-  color: #fff;
-  border: none;
+    ? 'rgba(244, 67, 54, 0.15)'
+    : 'rgba(212, 175, 55, 0.15)'};
+  color: ${props => props.variant === 'danger' ? '#f44336' : '#d4af37'};
+  border: 1px solid ${props => props.variant === 'danger' ? '#f44336' : '#d4af37'};
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: 'Cinzel', serif;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-left: 8px;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: ${props => props.variant === 'danger'
+      ? 'rgba(244, 67, 54, 0.25)'
+      : 'rgba(212, 175, 55, 0.25)'};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${props => props.variant === 'danger'
+      ? 'rgba(244, 67, 54, 0.3)'
+      : 'rgba(212, 175, 55, 0.3)'};
   }
 
   &:active {
@@ -58,6 +61,7 @@ const BulkActionButton = styled.button<{ variant?: 'danger' | 'primary' }>`
 const SelectionInfo = styled.span`
   font-weight: 600;
   font-size: 1rem;
+  color: #d4af37;
 `;
 
 const CharacterList: React.FC<CharacterListProps> = ({

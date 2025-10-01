@@ -119,6 +119,40 @@ Backend follows RESTful conventions with planned endpoints:
 - `docker-compose.yml` - Complete containerized deployment setup
 - `.env.example` - Environment variables template
 
+## Important Development Notes
+
+### D&D Template Tag Parsing
+
+**CRITICAL**: When displaying D&D content that comes from the database (feats, spells, class features, etc.), you MUST always parse it through the template tag parser to handle markup like `{@condition Incapacitated|XPHB}`, `{@spell Fireball|XPHB}`, etc.
+
+**The parser location**: `frontend/src/utils/dndTemplateParser.ts`
+
+**Key functions**:
+- `parseDnDTemplateTag(text: string)` - Parses a single string with template tags
+- `parseComplexDnDEntry(entry: any)` - Handles nested structures (objects, arrays) and recursively parses all strings
+
+**Common mistake**: When processing stored data (especially from `character.featFeatures`, `character.classFeatures`, etc.), developers often forget to parse strings through the template parser. This results in raw markup like `{@condition Incapacitated|XPHB}` being displayed to users instead of just "Incapacitated".
+
+**Solution pattern**:
+```typescript
+// BAD - displays raw template tags
+if (typeof feature === 'string') {
+  description = feature;  // ❌ No parsing!
+}
+
+// GOOD - parses template tags
+if (typeof feature === 'string') {
+  description = parseComplexDnDEntry(feature);  // ✅ Parses tags
+}
+```
+
+**Where this commonly occurs**:
+- `frontend/src/utils/simpleFeatureGenerator.ts` - When extracting feat/class/species features
+- Any component that displays character features, traits, or abilities
+- Modal components showing feat/spell/item details
+
+**Testing tip**: Search for unparsed content by looking for `{@` or `|XPHB` in the rendered UI.
+
 ## Testing the System
 
 After setting up, test the database imports:

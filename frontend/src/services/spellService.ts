@@ -5,6 +5,7 @@ export interface SpellFilters {
   level?: number;
   school?: string;
   search?: string;
+  className?: string;
   page?: number;
   limit?: number;
 }
@@ -18,6 +19,7 @@ export const spellService = {
       ...(filters.level !== undefined && { level: filters.level }),
       ...(filters.school && { school: filters.school }),
       ...(filters.search && { search: filters.search }),
+      ...(filters.className && { className: filters.className }),
       page: filters.page || 1,
       limit: filters.limit || 50,
     };
@@ -52,12 +54,31 @@ export const spellService = {
     return spellService.getByLevel(0);
   },
 
-  // Get spells for a specific class (if this data is available)
+  // Get spells for a specific class
   getByClass: async (
-    className: string
+    className: string,
+    filters: Omit<SpellFilters, 'className'> = {}
   ): Promise<ApiResponse<PaginatedResponse<Spell>>> => {
-    // This would need backend support to filter by class spell lists
-    return spellService.search(className);
+    return spellService.getAll({ ...filters, className });
+  },
+
+  // Get spells for a class by ID
+  getByClassId: async (
+    classId: number,
+    filters: Omit<SpellFilters, 'className'> = {}
+  ): Promise<ApiResponse<PaginatedResponse<Spell>>> => {
+    const params = {
+      ...(filters.level !== undefined && { level: filters.level }),
+      ...(filters.search && { search: filters.search }),
+      page: filters.page || 1,
+      limit: filters.limit || 200,
+    };
+    return apiClient.get<PaginatedResponse<Spell>>(`/classes/${classId}/spells`, params);
+  },
+
+  // Get spell statistics for a class
+  getClassSpellStats: async (classId: number): Promise<ApiResponse<{ total: number; byLevel: Record<number, number> }>> => {
+    return apiClient.get(`/classes/${classId}/spell-stats`);
   },
 };
 

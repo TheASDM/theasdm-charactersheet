@@ -8,36 +8,61 @@ const prisma = new PrismaClient();
 // Get all spells with optional filtering
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { level, school, search, page = '1', limit = '50' } = req.query;
-    
+    const { level, school, search, className, page = '1', limit = '50' } = req.query;
+
     const pageNum = parseInt(page as string);
     const limitNum = Math.min(parseInt(limit as string), 100); // Cap at 100
     const offset = (pageNum - 1) * limitNum;
-    
+
     // Build where clause
     const whereClause: any = {};
-    
+
     if (level !== undefined) {
       whereClause.level = parseInt(level as string);
     }
-    
+
     if (school) {
       whereClause.school = school as string;
     }
-    
+
     if (search) {
       whereClause.name = {
         contains: search as string,
         mode: 'insensitive'
       };
     }
-    
+
+    // Filter by class if provided
+    if (className) {
+      whereClause.classSpells = {
+        some: {
+          class: {
+            name: {
+              equals: className as string,
+              mode: 'insensitive'
+            }
+          }
+        }
+      };
+    }
+
     const [spells, total] = await Promise.all([
       prisma.spell.findMany({
         where: whereClause,
         orderBy: [{ level: 'asc' }, { name: 'asc' }],
         skip: offset,
-        take: limitNum
+        take: limitNum,
+        include: {
+          classSpells: {
+            select: {
+              class: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          }
+        }
       }),
       prisma.spell.count({ where: whereClause })
     ]);
@@ -61,13 +86,24 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
       return res.status(400).json({ error: 'Spell ID is required' });
     }
-    
+
     const spell = await prisma.spell.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
+      include: {
+        classSpells: {
+          select: {
+            class: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!spell) {

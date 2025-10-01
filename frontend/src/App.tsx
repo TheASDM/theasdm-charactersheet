@@ -17,6 +17,9 @@ import {
 } from './pages';
 import SpellsPage from './pages/SpellsPage';
 import CharacterGeneratorPage from './pages/CharacterGeneratorPage';
+import SubclassesPage from './pages/SubclassesPage';
+import ClassFullDetailsPage from './pages/ClassFullDetailsPage';
+import ClassSubclassesPage from './pages/ClassSubclassesPage';
 import { SpeciesFeaturesTestPage } from './pages/SpeciesFeaturesTestPage';
 
 // HomePage component with interactive features
@@ -36,146 +39,253 @@ const HomePage: React.FC = () => {
   return (
     <div
       style={{
-        padding: '2rem',
+        padding: '3rem 2rem',
         textAlign: 'center',
         fontFamily: '"Inter", sans-serif',
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+        background: 'linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%)',
         color: '#ffffff',
-        minHeight: '100vh',
+        minHeight: 'calc(100vh - 70px)',
       }}
     >
-      <h1
-        style={{
-          fontSize: '3rem',
-          marginBottom: '1rem',
-          fontFamily: '"Cinzel", serif',
-          color: '#8B5A2B',
-        }}
-      >
-        🐉 D&D Character Sheet Generator
-      </h1>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Hero Section */}
+        <div style={{ marginBottom: '4rem' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🪓</div>
+          <h1
+            style={{
+              fontSize: '3.5rem',
+              marginBottom: '1rem',
+              fontFamily: '"Cinzel", serif',
+              color: '#d4af37',
+              letterSpacing: '2px',
+              textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+            }}
+          >
+            WTForged
+          </h1>
+          <p
+            style={{
+              fontSize: '1.3rem',
+              marginBottom: '0.5rem',
+              color: '#e0e0e0',
+              fontWeight: '300',
+            }}
+          >
+            A Dungeons & Dragons 2024 and Nimble 2.0 inspired TTRPG
+          </p>
+          <p
+            style={{
+              fontSize: '1rem',
+              marginBottom: '3rem',
+              color: '#888',
+            }}
+          >
+            Created by The ASDM in conjunction with{' '}
+            <a
+              href="https://vanyas.quest"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#d4af37',
+                textDecoration: 'none',
+                borderBottom: '1px solid #d4af37',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.color = '#f0c851';
+                e.currentTarget.style.borderBottomColor = '#f0c851';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.color = '#d4af37';
+                e.currentTarget.style.borderBottomColor = '#d4af37';
+              }}
+            >
+              Vanya's Quest
+            </a>
+          </p>
 
-      <p
-        style={{
-          fontSize: '1.2rem',
-          marginBottom: '2rem',
-          color: '#cccccc',
-        }}
-      >
-        Create and manage D&D 2024 characters with Nimble TTRPG homebrew
-        mechanics
-      </p>
+          {/* CTA Buttons */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '1.5rem',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <button
+              onClick={handleCreateCharacter}
+              style={{
+                padding: '1.25rem 2.5rem',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #d4af37 0%, #b8941f 100%)',
+                color: '#1a1a1a',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(212, 175, 55, 0.3)';
+              }}
+            >
+              ⚔ Create New Character
+            </button>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: '1rem',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-        }}
-      >
-        <button
-          onClick={handleCreateCharacter}
-          style={{
-            padding: '1rem 2rem',
-            fontSize: '1.1rem',
-            backgroundColor: '#8B5A2B',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-          }}
-          onMouseOver={(e) =>
-            (e.currentTarget.style.backgroundColor = '#A0652F')
-          }
-          onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor = '#8B5A2B')
-          }
-        >
-          ⚡ Create New Character
-        </button>
-
-        <button
-          onClick={handleViewCharacters}
-          style={{
-            padding: '1rem 2rem',
-            fontSize: '1.1rem',
-            backgroundColor: '#DAA520',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-          }}
-          onMouseOver={(e) =>
-            (e.currentTarget.style.backgroundColor = '#E6B52A')
-          }
-          onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor = '#DAA520')
-          }
-        >
-          📋 View My Characters
-        </button>
-      </div>
-
-      <div
-        style={{
-          marginTop: '3rem',
-          padding: '2rem',
-          backgroundColor: '#2d2d2d',
-          borderRadius: '12px',
-          maxWidth: '800px',
-          margin: '3rem auto',
-        }}
-      >
-        <h2 style={{ color: '#8B5A2B', marginBottom: '1rem' }}>✨ Features</h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1rem',
-            textAlign: 'left',
-          }}
-        >
-          <div>
-            <h3 style={{ color: '#DAA520' }}>🎲 D&D 2024 Compliant</h3>
-            <p style={{ color: '#cccccc', fontSize: '0.9rem' }}>
-              Latest rules, background-driven ability scores, level 3 subclasses
-            </p>
-          </div>
-          <div>
-            <h3 style={{ color: '#DAA520' }}>⚡ Nimble TTRPG Integration</h3>
-            <p style={{ color: '#cccccc', fontSize: '0.9rem' }}>
-              Streamlined actions, mana system, wound mechanics
-            </p>
-          </div>
-          <div>
-            <h3 style={{ color: '#DAA520' }}>📱 Mobile Friendly</h3>
-            <p style={{ color: '#cccccc', fontSize: '0.9rem' }}>
-              Perfect for tablet gaming, PWA support
-            </p>
-          </div>
-          <div>
-            <h3 style={{ color: '#DAA520' }}>🤖 Discord Bot</h3>
-            <p style={{ color: '#cccccc', fontSize: '0.9rem' }}>
-              Character lookup, dice rolling, spell reference
-            </p>
+            <button
+              onClick={handleViewCharacters}
+              style={{
+                padding: '1.25rem 2.5rem',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#d4af37',
+                border: '1px solid #d4af37',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(212, 175, 55, 0.2)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              📋 My Characters
+            </button>
           </div>
         </div>
-      </div>
 
-      <footer
-        style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          color: '#666',
-          fontSize: '0.9rem',
-        }}
-      >
-        <p>🚧 Development Status: Frontend ✅ | Backend ✅ | Discord Bot ✅</p>
-        <p>Ready for feature development!</p>
-      </footer>
+        {/* Features Grid */}
+        <div
+          style={{
+            marginTop: '5rem',
+            padding: '3rem 2rem',
+            background: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '16px',
+            border: '1px solid #333',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <h2
+            style={{
+              color: '#d4af37',
+              marginBottom: '3rem',
+              fontSize: '2rem',
+              fontFamily: '"Cinzel", serif',
+              letterSpacing: '1px',
+            }}
+          >
+            ✨ Features
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '2rem',
+              textAlign: 'left',
+            }}
+            className="features-grid"
+          >
+            <style>{`
+              @media (max-width: 768px) {
+                .features-grid {
+                  grid-template-columns: 1fr !important;
+                }
+              }
+            `}</style>
+            <div
+              style={{
+                padding: '1.5rem',
+                background: 'rgba(26, 26, 26, 0.8)',
+                borderRadius: '12px',
+                border: '1px solid #333',
+              }}
+            >
+              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+                🎲 D&D 2024 Rules
+              </h3>
+              <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                Latest PHB rules with background-driven ability scores and updated class features
+              </p>
+            </div>
+            <div
+              style={{
+                padding: '1.5rem',
+                background: 'rgba(26, 26, 26, 0.8)',
+                borderRadius: '12px',
+                border: '1px solid #333',
+              }}
+            >
+              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+                ⚡ Complete Database
+              </h3>
+              <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                All spells, items, classes, species, backgrounds, and feats from D&D 2024
+              </p>
+            </div>
+            <div
+              style={{
+                padding: '1.5rem',
+                background: 'rgba(26, 26, 26, 0.8)',
+                borderRadius: '12px',
+                border: '1px solid #333',
+              }}
+            >
+              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+                📱 Mobile Optimized
+              </h3>
+              <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                Perfect for tablet gaming sessions with responsive design and PWA support
+              </p>
+            </div>
+            <div
+              style={{
+                padding: '1.5rem',
+                background: 'rgba(26, 26, 26, 0.8)',
+                borderRadius: '12px',
+                border: '1px solid #333',
+              }}
+            >
+              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+                🛠️ Character Management
+              </h3>
+              <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                Create, edit, and manage multiple characters with full sheet functionality
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer
+          style={{
+            marginTop: '4rem',
+            padding: '2rem',
+            color: '#666',
+            fontSize: '0.9rem',
+          }}
+        >
+          <p style={{ marginBottom: '0.5rem' }}>Dungeons.wtf</p>
+          <p>Built for adventurers, by adventurers ⚔️</p>
+        </footer>
+      </div>
     </div>
   );
 };
@@ -184,10 +294,10 @@ const App: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>D&D Character Sheet Generator</title>
+        <title>WTForged - D&D 2024 & Nimble 2.0 TTRPG</title>
         <meta
           name="description"
-          content="Create and manage D&D 2024 characters with Nimble TTRPG homebrew mechanics"
+          content="WTForged - A Dungeons & Dragons 2024 and Nimble 2.0 inspired TTRPG created by The ASDM in conjunction with Vanya's Quest"
         />
       </Helmet>
 
@@ -206,6 +316,7 @@ const App: React.FC = () => {
           <Route path="/species-features-test" element={<SpeciesFeaturesTestPage />} />
           <Route path="/spells" element={<SpellsPage />} />
           <Route path="/classes" element={<ClassesPage />} />
+          <Route path="/subclasses" element={<SubclassesPage />} />
           <Route path="/backgrounds" element={<BackgroundsPage />} />
           <Route path="/feats" element={<FeatsPage />} />
           <Route path="/species" element={<SpeciesPage />} />
@@ -217,6 +328,14 @@ const App: React.FC = () => {
           <Route
             path="/classes/:classId/details"
             element={<ClassDetailsPage />}
+          />
+          <Route
+            path="/classes/:classId/full-details"
+            element={<ClassFullDetailsPage />}
+          />
+          <Route
+            path="/classes/:classId/subclasses"
+            element={<ClassSubclassesPage />}
           />
         </Routes>
         </div>

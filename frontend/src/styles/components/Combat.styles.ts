@@ -2,10 +2,11 @@ import styled from 'styled-components';
 
 // Stats Container
 export const StatsContainer = styled.div`
-  border: 2px solid #8b6914;
+  border: 2px solid #333;
   border-radius: 6px;
   padding: 0.5rem;
-  background: rgba(139, 105, 20, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -26,9 +27,10 @@ export const StatsSection = styled.div`
 
 export const StatBox = styled.div`
   padding: 0.4rem;
-  border: 1px solid #8b6914;
+  border: 1px solid #333;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
   text-align: center;
   flex: 1;
   display: flex;
@@ -39,7 +41,7 @@ export const StatBox = styled.div`
   .stat-label {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #8b6914;
+    color: #888;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     margin-bottom: 0.4rem;
@@ -129,9 +131,9 @@ export const StatArrows = styled.div`
 `;
 
 export const StatArrow = styled.button<{ direction: 'up' | 'down' }>`
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  color: white;
-  border: none;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid #d4af37;
+  color: #d4af37;
   width: 14px;
   height: 12px;
   border-radius: 2px;
@@ -145,7 +147,7 @@ export const StatArrow = styled.button<{ direction: 'up' | 'down' }>`
   line-height: 1;
 
   &:hover {
-    background: linear-gradient(145deg, #6d5411, #5a430e);
+    background: rgba(212, 175, 55, 0.25);
     transform: translateY(${props => props.direction === 'up' ? '-1px' : '1px'});
   }
 

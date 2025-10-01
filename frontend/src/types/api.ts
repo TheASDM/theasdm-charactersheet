@@ -205,6 +205,7 @@ export interface Species {
   name: string;
   source?: string;
   page?: number;
+  description?: string; // Species description/flavor text
   size: string[];
   speed: any; // JSONB - can be complex object or simple value
   additionalSpeeds?: Record<string, unknown>; // JSONB

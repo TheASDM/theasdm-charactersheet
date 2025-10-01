@@ -111,6 +111,9 @@ model Spell {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
+  // Relations
+  classSpells     ClassSpell[]
+
   @@map("spells")
 }
 
@@ -188,6 +191,7 @@ model Class {
   // Relations
   subclasses    Subclass[]
   featureChoices ClassFeatureChoice[]
+  classSpells   ClassSpell[]
 
   @@map("classes")
 }
@@ -197,12 +201,13 @@ model Species {
   name          String @unique @db.VarChar(50)
   source        String? @db.VarChar(20) // XPHB, PHB, etc.
   page          Int?
-  
+  description   String? @db.Text // Species description/flavor text
+
   // Physical characteristics
   size          String @db.VarChar(20) // Small, Medium, Large
   speed         Int // Base walking speed
   additionalSpeeds Json? @map("additional_speeds") // fly, swim, climb speeds
-  
+
   // D&D 2024 Species traits
   creatureType  String @default("humanoid") @map("creature_type") // humanoid, fey, etc.
   lifespan      String? // Average lifespan
@@ -532,4 +537,19 @@ model DivineOrder {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("divine_orders")
+}
+
+// Class-Spell many-to-many relationship
+model ClassSpell {
+  id        Int      @id @default(autoincrement())
+  classId   Int      @map("class_id")
+  spellId   Int      @map("spell_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  spell Spell @relation(fields: [spellId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, spellId])
+  @@map("class_spells")
 }

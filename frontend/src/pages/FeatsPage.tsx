@@ -2,355 +2,241 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { featService } from '../services';
 import { Feat } from '../types/api';
-import { Hero } from '../components';
 import { parseDnDTemplateTag } from '../utils/dndTemplateParser';
 
-// Import medieval fonts
-const FontImport = styled.div`
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600&display=swap');
-`;
-
-// Main page container with forest green background
+// Main page container matching Generator theme
 const PageContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    #363636ff 0%,
-    #4b4b4bff 25%,
-    #323232ff 50%,
-    #222222ff 75%,
-    #0e0e0eff 100%
-  );
-  padding: 0;
-  font-family: 'Crimson Text', serif;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: #f0f0f0;
+  font-family: 'Inter', sans-serif;
+  padding: 2rem;
+`;
+
+// Header section
+const Header = styled.div`
+  text-align: center;
+  margin-bottom: 3rem;
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    color: #d4af37;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  p {
+    font-size: 1.2rem;
+    color: #ccc;
+    max-width: 600px;
+    margin: 0 auto;
+  }
 `;
 
 // Content wrapper
 const ContentContainer = styled.div`
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  position: relative;
 `;
 
-// Main container that holds everything below the hero
+// Main container matching Generator's WizardContent
 const MainContainer = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.8),
-    rgba(74, 42, 26, 0.8)
-  );
-  border: 2px solid #8b6914;
-  border-radius: 20px 20px 15px 15px;
-  margin: 0 20px;
-  margin-top: -5px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(139, 105, 20, 0.3);
-  position: relative;
-  overflow: hidden;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 3rem;
+  min-height: 500px;
   backdrop-filter: blur(10px);
-
-  /* Medieval parchment texture */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="paper"><feTurbulence baseFrequency="0.02" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/></filter></defs><rect width="100" height="100" fill="rgba(101,67,33,0.1)" filter="url(%23paper)"/></svg>')
-      repeat;
-    opacity: 0.6;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  @media (max-width: 768px) {
-    margin: 0 10px;
-    margin-top: -2px;
-  }
-
-  @media (max-width: 480px) {
-    margin: 0 5px;
-    margin-top: -2px;
-  }
 `;
 
-// Content inside the main container
-const ContainerContent = styled.div`
-  position: relative;
-  z-index: 2;
-  padding: 30px;
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 15px;
-  }
-`;
-
-// Search and filter section
+// Filter section
 const FilterSection = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.8),
-    rgba(74, 42, 26, 0.8)
-  );
-  border: 2px solid #8b6914;
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  padding: 30px;
-  margin-bottom: 30px;
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 15px;
-  }
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
 `;
 
 const SearchInput = styled.input`
-  background: linear-gradient(145deg, #4a2a1a, #3a1a0a);
-  border: 2px solid #8b6914;
-  border-radius: 12px;
-  padding: 16px 20px;
-  color: #d4af37;
-  font-family: 'Crimson Text', serif;
-  font-size: 18px;
-  width: 100%;
+  background: rgba(45, 45, 45, 0.8);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: #f0f0f0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  flex: 1;
+  min-width: 200px;
   transition: all 0.3s ease;
-  font-style: italic;
-  margin-bottom: 20px;
 
   &::placeholder {
-    color: #a0824a;
-    font-style: italic;
+    color: #888;
   }
 
   &:focus {
     outline: none;
     border-color: #d4af37;
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
-    font-style: normal;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
   }
 
   &:hover {
-    border-color: #d4af37;
-  }
-`;
-
-const FilterGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-`;
-
-const FilterLabel = styled.label`
-  font-weight: 600;
-  color: #d4af37;
-  font-size: 1.2rem;
-  font-family: 'Cinzel', serif;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  white-space: nowrap;
-  min-width: 100px;
-
-  @media (max-width: 480px) {
-    min-width: auto;
+    border-color: #666;
   }
 `;
 
 const FilterSelect = styled.select`
-  background: linear-gradient(145deg, #4a2a1a, #3a1a0a);
-  border: 2px solid #8b6914;
-  border-radius: 8px;
-  padding: 12px 16px;
-  color: #d4af37;
-  font-family: 'Crimson Text', serif;
-  font-size: 16px;
-  min-width: 180px;
+  background: rgba(45, 45, 45, 0.8);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: #f0f0f0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: #d4af37;
-    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
   }
 
   &:hover {
-    border-color: #d4af37;
+    border-color: #666;
   }
 
   option {
-    background: #3a1a0a;
-    color: #d4af37;
-  }
-
-  @media (max-width: 480px) {
-    min-width: auto;
-    width: 100%;
+    background: #2d2d2d;
+    color: #f0f0f0;
   }
 `;
 
 // Feat cards grid
 const FeatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 25px;
-  margin-bottom: 2rem;
-  contain: layout style;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  @media (max-width: 480px) {
-    gap: 15px;
   }
 `;
 
 // Individual feat card
 const FeatCard = styled.div`
-  background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
-  border: 3px solid #8b6914;
-  border-radius: 15px;
+  background: rgba(45, 45, 45, 0.6);
+  border: 2px solid #444;
+  border-radius: 8px;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  font-family: 'Crimson Text', serif;
   overflow: hidden;
-  position: relative;
-  color: #2c1810;
-  will-change: transform;
-  contain: layout style paint;
+  color: #f0f0f0;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
     border-color: #d4af37;
   }
 `;
 
 const FeatHeader = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.9),
-    rgba(74, 42, 26, 0.9)
-  );
-  color: #d4af37;
-  padding: 20px 25px;
-  border-bottom: 2px solid #8b6914;
-  position: relative;
-
-  @media (max-width: 480px) {
-    padding: 15px 20px;
-  }
+  background: rgba(35, 35, 35, 0.9);
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
 `;
 
 const FeatName = styled.h3`
-  margin: 0 0 8px 0;
-  font-size: 1.6rem;
-  font-weight: 700;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
   color: #d4af37;
   font-family: 'Cinzel', serif;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  line-height: 1.2;
+  flex: 1;
 `;
 
 const FeatCategory = styled.div`
   display: inline-block;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: white;
-  font-family: 'Cinzel', serif;
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  color: #f0f0f0;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
 `;
 
 const FeatContent = styled.div`
-  padding: 25px;
-  background: transparent;
+  padding: 1.25rem;
   flex: 1;
   display: flex;
   flex-direction: column;
 `;
 
 const Prerequisites = styled.div`
-  background: rgba(139, 105, 20, 0.1);
-  padding: 12px 15px;
-  border-radius: 8px;
-  border-left: 4px solid #8b6914;
-  margin-bottom: 15px;
-  font-size: 0.95rem;
+  background: rgba(35, 35, 35, 0.5);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid #d4af37;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
 
   .label {
-    color: #8b6914;
+    color: #d4af37;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-family: 'Cinzel', serif;
-    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
     display: block;
   }
 
   .content {
-    color: #2c1810;
-    font-weight: 500;
+    color: #f0f0f0;
+    font-weight: 400;
     line-height: 1.4;
   }
 `;
 
 const FeatDescription = styled.div`
-  color: #2c1810;
-  line-height: 1.6;
-  margin-bottom: 20px;
+  color: #f0f0f0;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
   white-space: pre-line;
   flex: 1;
-  font-size: 1rem;
+  font-size: 0.85rem;
 `;
 
 const FeatSource = styled.div`
   margin-top: auto;
-  padding: 12px 16px;
-  font-size: 0.8rem;
-  color: #6d5411;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.7rem;
+  color: #888;
   font-style: italic;
   text-align: center;
-  background: linear-gradient(
-    145deg,
-    rgba(139, 105, 20, 0.1),
-    rgba(139, 105, 20, 0.05)
-  );
-  border-top: 1px solid rgba(139, 105, 20, 0.3);
-  border-radius: 0 0 12px 12px;
+  background: rgba(35, 35, 35, 0.5);
+  border-top: 1px solid #444;
+  border-radius: 0 0 8px 8px;
 
   strong {
-    color: #8b6914;
+    color: #d4af37;
     font-weight: 600;
     font-style: normal;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 0.75rem;
-    font-family: 'Cinzel', serif;
+    letter-spacing: 0.5px;
+    font-size: 0.65rem;
   }
 `;
 
@@ -359,13 +245,11 @@ const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
+  min-height: 400px;
   color: #d4af37;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-  letter-spacing: 1px;
 `;
 
 const ErrorContainer = styled.div`
@@ -373,8 +257,8 @@ const ErrorContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
-  color: #d4af37;
+  min-height: 400px;
+  color: #ff6b6b;
   text-align: center;
   font-family: 'Cinzel', serif;
 
@@ -385,51 +269,29 @@ const ErrorContainer = styled.div`
   }
 
   .error-message {
+    color: #ccc;
     margin-bottom: 1rem;
-    opacity: 0.8;
-  }
-
-  button {
-    background: linear-gradient(145deg, #d4af37, #b8941f);
-    color: #2c1810;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Cinzel', serif;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-      background: linear-gradient(145deg, #b8941f, #a0801b);
-    }
   }
 `;
 
 const NoResultsMessage = styled.div`
   text-align: center;
-  color: #a0824a;
-  font-size: 1.4rem;
+  color: #888;
+  font-size: 1.2rem;
   margin-top: 60px;
   padding: 60px 20px;
-  font-family: 'Cinzel', serif;
-  font-style: italic;
 
   .title {
     font-size: 1.6rem;
     color: #d4af37;
     margin-bottom: 15px;
     font-weight: 600;
+    font-family: 'Cinzel', serif;
   }
 
   .subtitle {
-    font-size: 1.2rem;
-    color: #c9a961;
+    font-size: 1.1rem;
+    color: #ccc;
     line-height: 1.5;
   }
 `;
@@ -583,144 +445,116 @@ const FeatsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <>
-        <FontImport />
-        <PageContainer>
-          <ContentContainer>
-            <Hero
-              title="D&D FEATS"
-              subtitle="Unlock Your Potential"
-              height="280px"
-            />
-            <MainContainer>
-              <ContainerContent>
-                <LoadingContainer>
-                  📚 Gathering Ancient Knowledge from the Libraries...
-                </LoadingContainer>
-              </ContainerContent>
-            </MainContainer>
-          </ContentContainer>
-        </PageContainer>
-      </>
+      <PageContainer>
+        <ContentContainer>
+          <Header>
+            <h1>D&D Feats</h1>
+            <p>Unlock Your Potential</p>
+          </Header>
+          <MainContainer>
+            <LoadingContainer>
+              Loading feats data...
+            </LoadingContainer>
+          </MainContainer>
+        </ContentContainer>
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <>
-        <FontImport />
-        <PageContainer>
-          <ContentContainer>
-            <Hero
-              title="D&D FEATS"
-              subtitle="Unlock Your Potential"
-              height="280px"
-            />
-            <MainContainer>
-              <ContainerContent>
-                <ErrorContainer>
-                  <div className="error-title">
-                    📜 Ancient Scrolls Unavailable
-                  </div>
-                  <div className="error-message">{error}</div>
-                  <button onClick={() => window.location.reload()}>
-                    Retry Incantation
-                  </button>
-                </ErrorContainer>
-              </ContainerContent>
-            </MainContainer>
-          </ContentContainer>
-        </PageContainer>
-      </>
+      <PageContainer>
+        <ContentContainer>
+          <Header>
+            <h1>D&D Feats</h1>
+            <p>Unlock Your Potential</p>
+          </Header>
+          <MainContainer>
+            <ErrorContainer>
+              <div className="error-title">Error Loading Feats</div>
+              <div className="error-message">{error}</div>
+            </ErrorContainer>
+          </MainContainer>
+        </ContentContainer>
+      </PageContainer>
     );
   }
 
   return (
-    <>
-      <FontImport />
-      <PageContainer>
-        <ContentContainer>
-          <Hero
-            title="D&D FEATS"
-            subtitle="Unlock Your Potential"
-            height="280px"
-          />
+    <PageContainer>
+      <ContentContainer>
+        <Header>
+          <h1>D&D Feats</h1>
+          <p>Choose from {feats.length} powerful feats</p>
+        </Header>
 
-          <MainContainer>
-            <ContainerContent>
-              {/* Search and Filter Section */}
-              <FilterSection>
-                <SearchInput
-                  type="text"
-                  placeholder="Search the halls of knowledge..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        <MainContainer>
+          {/* Search and Filter Section */}
+          <FilterSection>
+            <SearchInput
+              type="text"
+              placeholder="Search feats..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <FilterSelect
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </FilterSelect>
+          </FilterSection>
 
-                <FilterGroup>
-                  <FilterLabel>Category:</FilterLabel>
-                  <FilterSelect
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </FilterSelect>
-                </FilterGroup>
-              </FilterSection>
+          {/* Content */}
+          {filteredFeats.length === 0 ? (
+            <NoResultsMessage>
+              <div className="title">No Feats Found</div>
+              <div className="subtitle">
+                Try different search terms or adjust your filters
+              </div>
+            </NoResultsMessage>
+          ) : (
+            <FeatsGrid>
+              {filteredFeats.map((feat, index) => (
+                <FeatCard key={feat.id || feat.name || index}>
+                  <FeatHeader>
+                    <FeatName>{feat.name}</FeatName>
+                    <FeatCategory>
+                      {formatCategory(feat.category)}
+                    </FeatCategory>
+                  </FeatHeader>
 
-              {/* Content */}
-              {filteredFeats.length === 0 ? (
-                <NoResultsMessage>
-                  <div className="title">📜 No Feats Found in the Archives</div>
-                  <div className="subtitle">
-                    The ancient knowledge remains hidden. Try different search
-                    terms or adjust your mystical filters.
-                  </div>
-                </NoResultsMessage>
-              ) : (
-                <FeatsGrid>
-                  {filteredFeats.map((feat, index) => (
-                    <FeatCard key={feat.id || feat.name || index}>
-                      <FeatHeader>
-                        <FeatName>{feat.name}</FeatName>
-                        <FeatCategory>
-                          {formatCategory(feat.category)}
-                        </FeatCategory>
-                      </FeatHeader>
+                  <FeatContent>
+                    <Prerequisites>
+                      <span className="label">Prerequisites:</span>
+                      <span className="content">
+                        {parsePrerequisites(feat.prerequisites)}
+                      </span>
+                    </Prerequisites>
 
-                      <FeatContent>
-                        <Prerequisites>
-                          <span className="label">Prerequisites:</span>
-                          <span className="content">
-                            {parsePrerequisites(feat.prerequisites)}
-                          </span>
-                        </Prerequisites>
+                    <FeatDescription>
+                      {parseDescription(feat.entries)}
+                    </FeatDescription>
 
-                        <FeatDescription>
-                          {parseDescription(feat.entries)}
-                        </FeatDescription>
-
-                        {feat.source && (
-                          <FeatSource>
-                            <strong>Source:</strong> {feat.source}
-                            {feat.page && ` p.${feat.page}`}
-                          </FeatSource>
-                        )}
-                      </FeatContent>
-                    </FeatCard>
-                  ))}
-                </FeatsGrid>
-              )}
-            </ContainerContent>
-          </MainContainer>
-        </ContentContainer>
-      </PageContainer>
-    </>
+                    {feat.source && (
+                      <FeatSource>
+                        <strong>Source:</strong> {feat.source}
+                        {feat.page && ` p.${feat.page}`}
+                      </FeatSource>
+                    )}
+                  </FeatContent>
+                </FeatCard>
+              ))}
+            </FeatsGrid>
+          )}
+        </MainContainer>
+      </ContentContainer>
+    </PageContainer>
   );
 };
 

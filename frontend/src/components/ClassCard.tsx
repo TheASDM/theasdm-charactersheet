@@ -1,274 +1,155 @@
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { CharacterClass } from '../types/api';
 
 interface ClassCardProps {
   characterClass: CharacterClass;
-  onLevelsClick?: (() => void) | undefined;
-  onDetailsClick?: (() => void) | undefined;
-  compact?: boolean;
 }
 
-// Individual class card (matching FeatCard)
-const ClassCard = styled.div`
-  background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
-  border: 2px solid #8b6914;
-  border-radius: 10px;
+const Card = styled.div`
+  background: rgba(45, 45, 45, 0.6);
+  border: 1px solid #555;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  color: #f0f0f0;
   transition: all 0.3s ease;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
-  font-family: 'Crimson Text', serif;
-  overflow: hidden;
-  position: relative;
-  color: #2c1810;
-  will-change: transform;
-  contain: layout style paint;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
     border-color: #d4af37;
   }
 `;
 
 const ClassHeader = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.9),
-    rgba(74, 42, 26, 0.9)
-  );
-  color: #d4af37;
-  padding: 12px 16px;
-  border-bottom: 2px solid #8b6914;
-  position: relative;
-
-  @media (max-width: 480px) {
-    padding: 10px 14px;
-  }
+  background: rgba(35, 35, 35, 0.9);
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 2px solid #d4af37;
 `;
 
 const ClassName = styled.h3`
-  margin: 0 0 6px 0;
-  font-size: 1.3rem;
-  font-weight: 700;
   color: #d4af37;
-  font-family: 'Cinzel', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
   letter-spacing: 0.5px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  line-height: 1.2;
+  font-family: 'Cinzel', serif;
 `;
 
 const ClassType = styled.div`
   display: inline-block;
-  padding: 4px 8px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: white;
-  font-family: 'Cinzel', serif;
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  color: #f0f0f0;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.3);
 `;
 
-const ClassContent = styled.div`
-  padding: 16px;
-  background: transparent;
+const CardBody = styled.div`
+  padding: 1.25rem;
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
 `;
 
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-`;
-
-const InfoBox = styled.div`
-  background: rgba(139, 105, 20, 0.1);
-  padding: 10px 12px;
-  border-radius: 6px;
-  border-left: 3px solid #8b6914;
-  text-align: center;
-
-  .label {
-    color: #8b6914;
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-family: 'Cinzel', serif;
-    margin-bottom: 4px;
-    display: block;
-  }
-
-  .value {
-    color: #2c1810;
-    font-weight: 700;
-    font-size: 1rem;
-    line-height: 1.3;
-  }
-`;
-
-const DetailsList = styled.div`
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid rgba(139, 105, 20, 0.2);
-`;
-
-const DetailsItem = styled.div`
+const InfoRow = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.9rem;
 
-  &:last-child {
-    border-bottom: none;
+  strong {
+    color: #d4af37;
+    font-weight: 600;
+    min-width: 110px;
   }
-`;
 
-const DetailsLabel = styled.span`
-  color: #8b6914;
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  font-family: 'Cinzel', serif;
-  min-width: 90px;
+  span {
+    color: #f0f0f0;
+  }
 `;
 
 const AbilityTags = styled.div`
   display: flex;
-  gap: 4px;
+  gap: 0.4rem;
   flex-wrap: wrap;
-  justify-content: flex-end;
 `;
 
 const AbilityTag = styled.span`
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  color: white;
-  padding: 3px 6px;
-  border-radius: 10px;
-  font-size: 0.65rem;
+  background: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.7rem;
   font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  font-family: 'Cinzel', serif;
+  border: 1px solid rgba(212, 175, 55, 0.3);
   letter-spacing: 0.3px;
 `;
 
-const SpellcastingInfo = styled.div`
-  background: rgba(139, 105, 20, 0.1);
-  padding: 10px 12px;
-  border-radius: 6px;
-  border-left: 3px solid #8b6914;
-  margin-bottom: 12px;
-
-  .label {
-    color: #8b6914;
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-family: 'Cinzel', serif;
-    margin-bottom: 4px;
-    display: block;
-  }
-
-  .content {
-    color: #2c1810;
-    font-weight: 600;
-    line-height: 1.3;
-    text-transform: capitalize;
-  }
+const SourceTag = styled.div`
+  background: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-block;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  align-self: flex-start;
+  margin-top: auto;
 `;
 
-const ClassSource = styled.div`
-  margin-top: 12px;
-  padding: 8px 12px;
-  font-size: 0.75rem;
-  color: #6d5411;
-  font-style: italic;
-  text-align: center;
-  background: linear-gradient(
-    145deg,
-    rgba(139, 105, 20, 0.1),
-    rgba(139, 105, 20, 0.05)
-  );
-  border-top: 1px solid rgba(139, 105, 20, 0.3);
-  border-radius: 0 0 8px 8px;
-
-  strong {
-    color: #8b6914;
-    font-weight: 600;
-    font-style: normal;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-size: 0.7rem;
-    font-family: 'Cinzel', serif;
-  }
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 12px;
-  margin-bottom: 0;
+const ButtonContainer = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(35, 35, 35, 0.7);
+  border-top: 1px solid #444;
 `;
 
 const ActionButton = styled.button`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
-  color: #2c1810;
-  border: none;
-  padding: 10px 14px;
+  background: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+  border: 1px solid #d4af37;
+  padding: 8px 12px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  font-family: 'Cinzel', serif;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: all 0.3s ease;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
-  font-size: 0.75rem;
-  text-align: center;
-  line-height: 1.2;
+  font-size: 0.7rem;
+  font-family: 'Cinzel', serif;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4);
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: rgba(212, 175, 55, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
   }
 
   &:active {
     transform: translateY(0);
   }
-
-  .icon {
-    display: block;
-    font-size: 1rem;
-    margin-bottom: 3px;
-  }
-
-  .text {
-    display: block;
-    font-size: 0.7rem;
-  }
 `;
 
 export default function ClassCardComponent({
   characterClass,
-  onLevelsClick,
-  onDetailsClick,
 }: ClassCardProps) {
+  const navigate = useNavigate();
+
   const getSubclassCount = (): number => {
     if (!characterClass.subclassFeatures) return 0;
     if (
@@ -281,7 +162,6 @@ export default function ClassCardComponent({
   };
 
   const getClassType = (): string => {
-    // Determine class type based on spellcasting ability or other characteristics
     if (characterClass.spellcastingAbility) {
       return 'Spellcaster';
     } else if (characterClass.hitDie === 12) {
@@ -295,72 +175,72 @@ export default function ClassCardComponent({
     }
   };
 
+  const handleFullDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/classes/${characterClass.id}/full-details`);
+  };
+
+  const handleSubclasses = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/classes/${characterClass.id}/subclasses`);
+  };
+
   return (
-    <ClassCard>
+    <Card>
       <ClassHeader>
         <ClassName>{characterClass.name}</ClassName>
         <ClassType>{getClassType()}</ClassType>
       </ClassHeader>
 
-      <ClassContent>
-        <InfoGrid>
-          <InfoBox>
-            <span className="label">Subclasses</span>
-            <div className="value">{getSubclassCount()}</div>
-          </InfoBox>
-          <InfoBox>
-            <span className="label">Hit Die</span>
-            <div className="value">d{characterClass.hitDie}</div>
-          </InfoBox>
-        </InfoGrid>
+      <CardBody>
+        <InfoRow>
+          <strong>Hit Die:</strong>
+          <span>d{characterClass.hitDie}</span>
+        </InfoRow>
+
+        <InfoRow>
+          <strong>Subclasses:</strong>
+          <span>{getSubclassCount()}</span>
+        </InfoRow>
+
+        <InfoRow>
+          <strong>Primary:</strong>
+          <AbilityTags>
+            {characterClass.primaryAbility?.map((ability) => (
+              <AbilityTag key={ability}>{ability.toUpperCase()}</AbilityTag>
+            )) || <AbilityTag>STR</AbilityTag>}
+          </AbilityTags>
+        </InfoRow>
+
+        <InfoRow>
+          <strong>Saves:</strong>
+          <AbilityTags>
+            {characterClass.savingThrowProficiencies?.map((save) => (
+              <AbilityTag key={save}>{save.toUpperCase()}</AbilityTag>
+            )) || <AbilityTag>NONE</AbilityTag>}
+          </AbilityTags>
+        </InfoRow>
 
         {characterClass.spellcastingAbility && (
-          <SpellcastingInfo>
-            <span className="label">Spellcasting Ability:</span>
-            <div className="content">{characterClass.spellcastingAbility}</div>
-          </SpellcastingInfo>
+          <InfoRow>
+            <strong>Spellcasting:</strong>
+            <span style={{ textTransform: 'capitalize' }}>
+              {characterClass.spellcastingAbility}
+            </span>
+          </InfoRow>
         )}
 
-        <DetailsList>
-          <DetailsItem>
-            <DetailsLabel>Primary Ability</DetailsLabel>
-            <AbilityTags>
-              {characterClass.primaryAbility?.map((ability) => (
-                <AbilityTag key={ability}>{ability.toUpperCase()}</AbilityTag>
-              )) || <AbilityTag>STR</AbilityTag>}
-            </AbilityTags>
-          </DetailsItem>
+        {characterClass.source && <SourceTag>{characterClass.source}</SourceTag>}
+      </CardBody>
 
-          <DetailsItem style={{ borderBottom: 'none' }}>
-            <DetailsLabel>Saving Throws</DetailsLabel>
-            <AbilityTags>
-              {characterClass.savingThrowProficiencies?.map((save) => (
-                <AbilityTag key={save}>{save.toUpperCase()}</AbilityTag>
-              )) || <AbilityTag>NONE</AbilityTag>}
-            </AbilityTags>
-          </DetailsItem>
-        </DetailsList>
-
-        <ActionButtons>
-          {onDetailsClick && (
-            <ActionButton onClick={onDetailsClick}>
-              <span className="icon">📖</span>
-              <span className="text">Class Details</span>
-            </ActionButton>
-          )}
-          {onLevelsClick && (
-            <ActionButton onClick={onLevelsClick}>
-              <span className="icon">🎭</span>
-              <span className="text">Subclasses</span>
-            </ActionButton>
-          )}
-        </ActionButtons>
-
-        <ClassSource>
-          <strong>Source:</strong> {characterClass.source}
-          {characterClass.page && ` p.${characterClass.page}`}
-        </ClassSource>
-      </ClassContent>
-    </ClassCard>
+      <ButtonContainer>
+        <ActionButton onClick={handleFullDetails}>
+          📖 Full Details
+        </ActionButton>
+        <ActionButton onClick={handleSubclasses}>
+          🎭 Subclasses
+        </ActionButton>
+      </ButtonContainer>
+    </Card>
   );
 }

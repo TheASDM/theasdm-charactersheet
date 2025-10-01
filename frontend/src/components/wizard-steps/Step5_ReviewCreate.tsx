@@ -7,6 +7,7 @@ import { mapGeneratorDataToCharacterSheet } from '../../utils/characterDataMappe
 import { characterService } from '../../services/characterService';
 import { StructuredFeaturesDisplay } from '../StructuredFeaturesDisplay';
 import { useUser } from '../../contexts/UserContext';
+import { parseDnDTemplateTag } from '../../utils/dndTemplateParser';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
@@ -308,40 +309,100 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     const equipment: string[] = [];
 
     // Helper function to extract string from object or return string directly
-    const extractEquipmentName = (item: any): string => {
-      if (typeof item === 'string') return item;
-      if (typeof item === 'object' && item?.item) return item.item;
-      if (typeof item === 'object' && item?.name) return item.name;
+    const extractEquipmentName = (item: any): string | string[] => {
+      // Handle null/undefined
+      if (!item) return '';
 
-      // Handle the {A, B} object structure
-      if (typeof item === 'object' && item?.A && item?.B) {
-        console.warn('🎯 Found {A, B} equipment object:', item);
-        // Try to extract meaningful text from A and B arrays
-        const aItems = Array.isArray(item.A) ? item.A.join(', ') : String(item.A);
-        const bItems = Array.isArray(item.B) ? item.B.join(', ') : String(item.B);
-        return `${aItems} | ${bItems}`;
+      if (typeof item === 'string') return parseDnDTemplateTag(item);
+      if (typeof item === 'object' && item?.item && typeof item.item === 'string') {
+        return parseDnDTemplateTag(item.item);
+      }
+      if (typeof item === 'object' && item?.name && typeof item.name === 'string') {
+        return parseDnDTemplateTag(item.name);
       }
 
-      return String(item || '');
+      // Handle the {A, B} object structure (equipment choices)
+      if (typeof item === 'object' && item?.A && item?.B) {
+        console.warn('🎯 Found {A, B} equipment object:', item);
+
+        // Helper to extract from nested arrays
+        const extractFromArray = (arr: any[]): string => {
+          if (!Array.isArray(arr)) {
+            const str = String(arr);
+            return parseDnDTemplateTag(str);
+          }
+
+          return arr.map(subItem => {
+            if (typeof subItem === 'string') return parseDnDTemplateTag(subItem);
+            if (typeof subItem === 'object' && subItem?.item && typeof subItem.item === 'string') {
+              return parseDnDTemplateTag(subItem.item);
+            }
+            if (typeof subItem === 'object' && subItem?.name && typeof subItem.name === 'string') {
+              return parseDnDTemplateTag(subItem.name);
+            }
+            if (typeof subItem === 'object' && subItem?.value !== undefined) {
+              return `${subItem.value} gp`;
+            }
+            return String(subItem);
+          }).join(', ');
+        };
+
+        const aItems = extractFromArray(item.A);
+        const bItems = extractFromArray(item.B);
+
+        // Return as separate items instead of combining
+        return [`Option A: ${aItems}`, `Option B: ${bItems}`];
+      }
+
+      // Handle {value: number} objects (gold amounts)
+      if (typeof item === 'object' && item?.value !== undefined) {
+        return `${item.value} gp`;
+      }
+
+      // Fallback: convert to string safely
+      const str = String(item || '');
+      return parseDnDTemplateTag(str);
+    };
+
+    // Helper to add items, flattening arrays
+    const addEquipment = (items: any[]) => {
+      items.forEach(item => {
+        const extracted = extractEquipmentName(item);
+        if (Array.isArray(extracted)) {
+          equipment.push(...extracted);
+        } else {
+          equipment.push(extracted);
+        }
+      });
     };
 
     if (data.classStartingEquipment) {
-      equipment.push(...data.classStartingEquipment.map(extractEquipmentName));
+      addEquipment(data.classStartingEquipment);
     }
     if (data.backgroundStartingEquipment) {
-      equipment.push(...data.backgroundStartingEquipment.map(extractEquipmentName));
+      addEquipment(data.backgroundStartingEquipment);
     }
     if (data.selectedEquipment.weapons) {
-      equipment.push(...data.selectedEquipment.weapons.map(extractEquipmentName));
+      addEquipment(data.selectedEquipment.weapons);
     }
     if (data.selectedEquipment.equipment) {
-      equipment.push(...data.selectedEquipment.equipment.map(extractEquipmentName));
+      addEquipment(data.selectedEquipment.equipment);
     }
     if (data.selectedEquipment.armor) {
-      equipment.push(extractEquipmentName(data.selectedEquipment.armor));
+      const extracted = extractEquipmentName(data.selectedEquipment.armor);
+      if (Array.isArray(extracted)) {
+        equipment.push(...extracted);
+      } else {
+        equipment.push(extracted);
+      }
     }
     if (data.selectedEquipment.shield) {
-      equipment.push(extractEquipmentName(data.selectedEquipment.shield));
+      const extracted = extractEquipmentName(data.selectedEquipment.shield);
+      if (Array.isArray(extracted)) {
+        equipment.push(...extracted);
+      } else {
+        equipment.push(extracted);
+      }
     }
 
     return equipment.filter(Boolean); // Remove empty values
@@ -494,7 +555,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
             <div className="section-content">
               {getAllEquipment().length > 0 ? (
                 getAllEquipment().map((item, index) => (
-                  <div key={index} className="list-item">{safeRender(item)}</div>
+                  <div key={index} className="list-item">{item}</div>
                 ))
               ) : (
                 <div>No equipment recorded</div>
@@ -509,7 +570,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
                 <div className="section-content">
                   {getAllSpells().cantrips.length > 0 ? (
                     getAllSpells().cantrips.map((cantrip, index) => (
-                      <div key={index} className="list-item">{safeRender(cantrip)}</div>
+                      <div key={index} className="list-item">{cantrip}</div>
                     ))
                   ) : (
                     <div>No cantrips known</div>
@@ -522,7 +583,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
                 <div className="section-content">
                   {getAllSpells().spells.length > 0 ? (
                     getAllSpells().spells.map((spell, index) => (
-                      <div key={index} className="list-item">{safeRender(spell)}</div>
+                      <div key={index} className="list-item">{spell}</div>
                     ))
                   ) : (
                     <div>No spells known</div>
@@ -546,7 +607,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
               <div className="section-title">Damage Resistances</div>
               <div className="section-content">
                 {data.speciesResistances.map((resistance, index) => (
-                  <div key={index} className="list-item">{safeRender(resistance)}</div>
+                  <div key={index} className="list-item">{resistance}</div>
                 ))}
               </div>
             </Section>

@@ -16,6 +16,12 @@ COPY index.html ./
 COPY public ./public
 COPY src ./src
 
+# Build arguments for environment variables
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_SOCKET_URL=${VITE_SOCKET_URL}
+
 # Build the React application
 RUN npm run build
 

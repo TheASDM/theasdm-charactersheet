@@ -2,12 +2,9 @@ import styled from 'styled-components';
 
 // Inventory Styles
 export const InventorySection = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(32, 32, 32, 0.95),
-    rgba(45, 45, 45, 0.9)
-  );
-  border: 2px solid #8b6914;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 2px solid #333;
   border-radius: 10px;
   padding: 1rem;
   margin-top: 1rem;
@@ -15,20 +12,6 @@ export const InventorySection = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="paper"><feTurbulence baseFrequency="0.02" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/></filter></defs><rect width="100" height="100" fill="rgba(101,67,33,0.05)" filter="url(%23paper)"/></svg>')
-      repeat;
-    opacity: 0.6;
-    pointer-events: none;
-    z-index: 1;
-  }
 
   @media (max-width: 768px) {
     margin-top: 0.5rem;
@@ -57,8 +40,8 @@ export const InventoryTitle = styled.h3`
 export const InventoryList = styled.div`
   position: relative;
   z-index: 2;
-  background: rgba(20, 20, 20, 0.8);
-  border: 2px solid #8b6914;
+  background: rgba(15, 15, 15, 0.95);
+  border: 2px solid #333;
   border-radius: 5px;
   padding: 0.5rem;
   display: flex;
@@ -67,11 +50,11 @@ export const InventoryList = styled.div`
 `;
 
 export const InventoryItem = styled.div`
-  color: #f4e7d1;
+  color: #e0e0e0;
   font-family: 'Crimson Text', serif;
   font-size: 0.9rem;
   padding: 0.4rem 0;
-  border-bottom: 1px solid rgba(139, 105, 20, 0.3);
+  border-bottom: 1px solid rgba(51, 51, 51, 0.3);
   flex: 1;
   display: flex;
   align-items: center;
@@ -85,18 +68,18 @@ export const InventoryItem = styled.div`
   input {
     background: transparent;
     border: none;
-    color: #f4e7d1;
+    color: #e0e0e0;
     font-family: 'Crimson Text', serif;
     font-size: 0.9rem;
     flex: 1;
 
     &::placeholder {
-      color: rgba(244, 231, 209, 0.5);
+      color: rgba(224, 224, 224, 0.5);
     }
 
     &:focus {
       outline: none;
-      background: rgba(139, 105, 20, 0.2);
+      background: rgba(212, 175, 55, 0.1);
     }
   }
 `;
@@ -112,7 +95,7 @@ export const InventoryItemContent = styled.div<{ clickable?: boolean }>`
 
   ${props => props.clickable && `
     &:hover {
-      background-color: rgba(139, 105, 20, 0.2);
+      background-color: rgba(212, 175, 55, 0.15);
       color: #d4af37;
     }
   `}
@@ -155,13 +138,13 @@ export const QuantityContainer = styled.div`
 
 export const QuantityLabel = styled.span`
   font-size: 0.8rem;
-  color: #8b6914;
+  color: #888;
   font-weight: 600;
 `;
 
 export const QuantityInput = styled.input`
-  background: rgba(139, 105, 20, 0.2);
-  border: 1px solid #8b6914;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid #333;
   border-radius: 3px;
   color: #d4af37;
   font-size: 0.8rem;
@@ -174,7 +157,7 @@ export const QuantityInput = styled.input`
   &:focus {
     outline: none;
     border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.2);
+    background: rgba(212, 175, 55, 0.15);
   }
 
   &::-webkit-outer-spin-button,
@@ -229,9 +212,9 @@ export const InventoryButtonContainer = styled.div`
 `;
 
 export const InventoryActionButton = styled.button`
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  color: #f4e7d1;
-  border: none;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid #d4af37;
+  color: #d4af37;
   border-radius: 4px;
   padding: 0.5rem 0.75rem;
   font-family: 'Cinzel', serif;
@@ -244,9 +227,9 @@ export const InventoryActionButton = styled.button`
   flex: 1;
 
   &:hover {
-    background: linear-gradient(145deg, #6d5411, #5a450e);
+    background: rgba(212, 175, 55, 0.25);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(139, 105, 20, 0.3);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
   }
 
   &:active {

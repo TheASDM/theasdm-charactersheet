@@ -69,6 +69,15 @@ export interface CharacterSheetData {
     [key: string]: any;
   };
 
+  // Weapon Mastery tracking
+  weaponMasteries?: {
+    available: number; // How many weapon masteries the character can have active
+    active: Array<{
+      weapon: string; // e.g., "Longsword", "Greatsword"
+      property: string; // e.g., "Sap", "Graze"
+    }>;
+  };
+
   xp: number;
   abilityScores: {
     strength: number;

@@ -13,89 +13,80 @@ interface CharacterCardProps {
   isSelected?: boolean;
 }
 
-// Character card container (matching medieval theme)
+// Character card container (matching new black theme)
 const Card = styled.div<{ $clickable?: boolean; $hasActions?: boolean; $selectionMode?: boolean; $isSelected?: boolean }>`
   background: ${props => props.$isSelected
-    ? 'linear-gradient(145deg, #d4af37, #b8941f)'
-    : 'linear-gradient(145deg, #f4e7d1, #e8d5b7)'};
-  border: 2px solid ${props => props.$isSelected ? '#d4af37' : '#8b6914'};
-  border-radius: 10px;
+    ? 'rgba(212, 175, 55, 0.15)'
+    : 'rgba(255, 255, 255, 0.03)'};
+  border: 2px solid ${props => props.$isSelected ? '#d4af37' : '#333'};
+  border-radius: 12px;
   box-shadow: ${props => props.$isSelected
-    ? '0 6px 18px rgba(212, 175, 55, 0.4)'
-    : '0 3px 12px rgba(0, 0, 0, 0.3)'};
-  font-family: 'Crimson Text', serif;
-  margin: 8px;
+    ? '0 6px 20px rgba(212, 175, 55, 0.3)'
+    : '0 4px 12px rgba(0, 0, 0, 0.5)'};
+  margin: 0;
   overflow: hidden;
   position: relative;
-  color: #2c1810;
   transition: all 0.3s ease;
   cursor: ${props => props.$clickable || props.$selectionMode ? 'pointer' : 'default'};
-  will-change: transform;
-  contain: layout style paint;
-  height: ${props => props.$hasActions ? '240px' : '200px'};
+  height: ${props => props.$hasActions ? '280px' : '240px'};
   display: flex;
   flex-direction: column;
   transform: ${props => props.$isSelected ? 'translateY(-2px)' : 'none'};
+  backdrop-filter: blur(10px);
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.2);
     border-color: #d4af37;
+    background: rgba(255, 255, 255, 0.05);
   }
 `;
 
 const SelectionIndicator = styled.div<{ $isSelected: boolean }>`
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
+  bottom: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
   border: 2px solid #d4af37;
   border-radius: 50%;
-  background: ${props => props.$isSelected ? '#d4af37' : 'rgba(244, 231, 209, 0.9)'};
+  background: ${props => props.$isSelected ? '#d4af37' : 'rgba(26, 26, 26, 0.9)'};
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 
   &::after {
     content: '✓';
-    color: #2c1810;
+    color: ${props => props.$isSelected ? '#1a1a1a' : '#d4af37'};
     font-weight: bold;
-    font-size: 14px;
-    opacity: ${props => props.$isSelected ? 1 : 0};
+    font-size: 16px;
+    opacity: ${props => props.$isSelected ? 1 : 0.3};
     transition: opacity 0.3s ease;
   }
 `;
 
 const CharacterHeader = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.9),
-    rgba(74, 42, 26, 0.9)
-  );
-  color: #d4af37;
-  padding: 12px 16px;
-  border-bottom: 2px solid #8b6914;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%);
+  border-bottom: 1px solid #333;
+  padding: 16px;
   position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 60px;
-  min-height: 60px;
+  min-height: 70px;
 
   @media (max-width: 480px) {
-    padding: 10px 14px;
-    height: 50px;
-    min-height: 50px;
+    padding: 14px;
+    min-height: 60px;
   }
 `;
 
 const CharacterNameContainer = styled.div`
   flex: 1;
-  margin-right: 8px;
+  margin-right: 12px;
   display: flex;
   align-items: center;
 `;
@@ -103,45 +94,37 @@ const CharacterNameContainer = styled.div`
 const CharacterName = styled.h3<{ $nameLength: number }>`
   margin: 0;
   font-size: ${props => {
-    if (props.$nameLength > 25) return '0.9rem';
-    if (props.$nameLength > 20) return '1.0rem';
-    if (props.$nameLength > 15) return '1.1rem';
-    if (props.$nameLength > 10) return '1.2rem';
+    if (props.$nameLength > 25) return '1rem';
+    if (props.$nameLength > 20) return '1.1rem';
+    if (props.$nameLength > 15) return '1.2rem';
     return '1.3rem';
   }};
   font-weight: 700;
   color: #d4af37;
-  font-family: 'Cinzel', serif;
   letter-spacing: 0.5px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1.3;
   word-break: break-word;
-  hyphens: auto;
 
   @media (max-width: 480px) {
     font-size: ${props => {
-      if (props.$nameLength > 25) return '0.8rem';
-      if (props.$nameLength > 20) return '0.9rem';
-      if (props.$nameLength > 15) return '1.0rem';
-      if (props.$nameLength > 10) return '1.1rem';
-      return '1.2rem';
+      if (props.$nameLength > 25) return '0.9rem';
+      if (props.$nameLength > 20) return '1rem';
+      return '1.1rem';
     }};
   }
 `;
 
 const PrivacyTag = styled.span<{ $isPublic: boolean }>`
-  background: linear-gradient(
-    145deg,
-    ${props => props.$isPublic ? '#4CAF50' : '#ff9800'},
-    ${props => props.$isPublic ? '#388E3C' : '#f57c00'}
-  );
-  color: white;
-  padding: 4px 8px;
-  border-radius: 8px;
+  background: ${props => props.$isPublic
+    ? 'rgba(76, 175, 80, 0.2)'
+    : 'rgba(255, 152, 0, 0.2)'};
+  color: ${props => props.$isPublic ? '#4CAF50' : '#ff9800'};
+  border: 1px solid ${props => props.$isPublic ? '#4CAF50' : '#ff9800'};
+  padding: 6px 10px;
+  border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  font-family: 'Cinzel', serif;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 `;
@@ -162,14 +145,13 @@ const CharacterInfo = styled.div`
 
 const InfoRow = styled.p`
   margin: 4px 0;
-  color: #2c1810;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  color: #e0e0e0;
+  font-size: 0.95rem;
+  line-height: 1.5;
 
   strong {
-    color: #8b6914;
+    color: #d4af37;
     font-weight: 700;
-    font-family: 'Cinzel', serif;
   }
 `;
 
@@ -180,58 +162,65 @@ const MetaInfo = styled.div<{ $hasActions?: boolean }>`
 
 const CreatedBy = styled.div`
   font-size: 0.8rem;
-  color: #6d5411;
+  color: #888;
   font-style: italic;
   margin-bottom: 4px;
 `;
 
 const LastUpdated = styled.div`
   font-size: 0.75rem;
-  color: #6d5411;
+  color: #666;
   font-style: italic;
 `;
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 2px solid rgba(139, 105, 20, 0.2);
+  border-top: 1px solid #333;
 `;
 
 const ActionButton = styled.button<{ $variant: 'edit' | 'delete' | 'open' }>`
-  background: linear-gradient(
-    145deg,
-    ${props => {
-      if (props.$variant === 'edit') return '#2196F3';
-      if (props.$variant === 'delete') return '#f44336';
-      return '#8b6914'; // open button
-    }},
-    ${props => {
-      if (props.$variant === 'edit') return '#1976D2';
-      if (props.$variant === 'delete') return '#d32f2f';
-      return '#6d5411'; // open button
-    }}
-  );
-  color: white;
-  border: none;
-  padding: 8px 12px;
+  background: ${props => {
+    if (props.$variant === 'edit') return 'rgba(33, 150, 243, 0.15)';
+    if (props.$variant === 'delete') return 'rgba(244, 67, 54, 0.15)';
+    return 'rgba(212, 175, 55, 0.15)';
+  }};
+  color: ${props => {
+    if (props.$variant === 'edit') return '#2196F3';
+    if (props.$variant === 'delete') return '#f44336';
+    return '#d4af37';
+  }};
+  border: 1px solid ${props => {
+    if (props.$variant === 'edit') return '#2196F3';
+    if (props.$variant === 'delete') return '#f44336';
+    return '#d4af37';
+  }};
+  padding: 8px 14px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  font-family: 'Cinzel', serif;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   font-size: 0.75rem;
   text-align: center;
   line-height: 1.2;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background: ${props => {
+      if (props.$variant === 'edit') return 'rgba(33, 150, 243, 0.25)';
+      if (props.$variant === 'delete') return 'rgba(244, 67, 54, 0.25)';
+      return 'rgba(212, 175, 55, 0.25)';
+    }};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${props => {
+      if (props.$variant === 'edit') return 'rgba(33, 150, 243, 0.3)';
+      if (props.$variant === 'delete') return 'rgba(244, 67, 54, 0.3)';
+      return 'rgba(212, 175, 55, 0.3)';
+    }};
   }
 
   &:active {

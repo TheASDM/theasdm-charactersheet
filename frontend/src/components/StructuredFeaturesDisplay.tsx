@@ -61,7 +61,7 @@ const FeatureSection = styled.div`
 
   .features-grid {
     display: grid;
-    gap: 0.75rem;
+    gap: 1rem;
   }
 `;
 
@@ -73,7 +73,7 @@ const FeatureCard = styled.div<{ $type: FeatureType }>`
   );
   border: 1px solid ${(props) => getFeatureTypeColor(props.$type, 0.3)};
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1.25rem;
   transition: all 0.3s ease;
 
   &:hover {
@@ -92,8 +92,9 @@ const FeatureCard = styled.div<{ $type: FeatureType }>`
   .feature-name {
     color: ${(props) => getFeatureTypeColor(props.$type, 1)};
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 1rem;
     margin: 0;
+    font-family: 'Cinzel', serif;
   }
 
   .feature-badges {
@@ -104,9 +105,11 @@ const FeatureCard = styled.div<{ $type: FeatureType }>`
 
   .feature-description {
     color: #ccc;
-    font-size: 0.8rem;
-    line-height: 1.4;
-    margin: 0.5rem 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 0.75rem 0;
+    white-space: pre-line;
+    word-wrap: break-word;
   }
 
   .feature-mechanics {

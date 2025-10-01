@@ -2,10 +2,11 @@ import styled from 'styled-components';
 
 // Ability Scores Section Container
 export const AbilityScoresSection = styled.div`
-  border: 2px solid #8b6914;
+  border: 2px solid #333;
   border-radius: 6px;
   padding: 0.5rem;
-  background: rgba(139, 105, 20, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
   flex: 2;
   position: relative;
   display: flex;
@@ -23,7 +24,7 @@ export const SectionTitle = styled.div`
   margin-bottom: 0.5rem;
   text-align: center;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #8b6914;
+  border-bottom: 1px solid #333;
 
   @media (max-width: 768px) {
     font-size: 0.9rem;
@@ -53,15 +54,16 @@ export const AbilityScoresGrid = styled.div`
 export const AbilityScore = styled.div`
   text-align: center;
   padding: 0.4rem;
-  border: 1px solid #8b6914;
+  border: 1px solid #333;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
   position: relative;
 
   .ability-name {
     font-size: 0.65rem;
     font-weight: 600;
-    color: #8b6914;
+    color: #888;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     margin-bottom: 0.2rem;
@@ -77,7 +79,7 @@ export const AbilityScore = styled.div`
 
   .modifier {
     font-size: 0.7rem;
-    color: #ffffff;
+    color: #e0e0e0;
     font-weight: 600;
   }
 `;
@@ -95,9 +97,9 @@ export const AbilityArrows = styled.div`
 
 // Individual arrow buttons
 export const AbilityArrow = styled.button<{ direction: 'up' | 'down' }>`
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  color: white;
-  border: none;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid #d4af37;
+  color: #d4af37;
   width: 14px;
   height: 12px;
   border-radius: 2px;
@@ -111,7 +113,7 @@ export const AbilityArrow = styled.button<{ direction: 'up' | 'down' }>`
   line-height: 1;
 
   &:hover {
-    background: linear-gradient(145deg, #6d5411, #5a430e);
+    background: rgba(212, 175, 55, 0.25);
     transform: translateY(${props => props.direction === 'up' ? '-1px' : '1px'});
   }
 

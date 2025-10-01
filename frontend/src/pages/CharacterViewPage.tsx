@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Hero } from '../components';
 import CharacterSheetPretty from '../components/CharacterSheetPretty';
 import {
   CharacterSheetData,
@@ -10,114 +9,56 @@ import {
 import { Character } from '../types/api';
 import { characterService } from '../services';
 
-// Import medieval fonts
-const FontImport = styled.div`
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600&display=swap');
-`;
-
 const PageContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    #363636ff 0%,
-    #4b4b4bff 25%,
-    #323232ff 50%,
-    #222222ff 75%,
-    #0e0e0eff 100%
-  );
-  padding: 0;
-  font-family: 'Crimson Text', serif;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.5rem;
+  }
 `;
 
 const ContentContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  position: relative;
-`;
-
-const MainContainer = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.8),
-    rgba(74, 42, 26, 0.8)
-  );
-  border: 2px solid #8b6914;
-  border-radius: 20px 20px 15px 15px;
-  margin: 0 20px;
-  margin-top: -5px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(139, 105, 20, 0.3);
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="paper"><feTurbulence baseFrequency="0.02" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/></filter></defs><rect width="100" height="100" fill="rgba(101,67,33,0.1)" filter="url(%23paper)"/></svg>')
-      repeat;
-    opacity: 0.6;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  @media (max-width: 768px) {
-    margin: 0 10px;
-    margin-top: -2px;
-  }
-
-  @media (max-width: 480px) {
-    margin: 0 5px;
-    margin-top: -2px;
-  }
-`;
-
-const MainContent = styled.div`
-  position: relative;
-  z-index: 2;
-  padding: 30px;
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
 `;
 
 const NavigationBar = styled.div`
-  background: rgba(139, 105, 20, 0.1);
-  border: 2px solid #8b6914;
-  border-radius: 10px;
-  padding: 15px 20px;
-  margin-bottom: 20px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 1rem;
+  backdrop-filter: blur(10px);
 `;
 
 const BackButton = styled.button`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
-  color: #2c1810;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background: rgba(212, 175, 55, 0.15);
+  color: #d4af37;
+  border: 1px solid #d4af37;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: 'Cinzel', serif;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: rgba(212, 175, 55, 0.25);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
   }
 
   &:active {
@@ -126,8 +67,7 @@ const BackButton = styled.button`
 `;
 
 const CharacterTitle = styled.h2`
-  color: #8b6914;
-  font-family: 'Cinzel', serif;
+  color: #d4af37;
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
@@ -135,6 +75,7 @@ const CharacterTitle = styled.h2`
   letter-spacing: 1px;
   text-align: center;
   flex: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 
   @media (max-width: 768px) {
     font-size: 1.2rem;
@@ -146,8 +87,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #8b6914;
-  font-family: 'Cinzel', serif;
+  color: #d4af37;
   font-size: 1.2rem;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -159,9 +99,9 @@ const ErrorContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #dc3545;
-  font-family: 'Cinzel', serif;
+  color: #f44336;
   text-align: center;
+  gap: 1rem;
 `;
 
 const CharacterViewPage: React.FC = () => {
@@ -239,89 +179,52 @@ const CharacterViewPage: React.FC = () => {
 
   if (loading) {
     return (
-      <>
-        <FontImport />
-        <PageContainer>
-          <ContentContainer>
-            <Hero
-              title="CHARACTER SHEET"
-              subtitle="Loading character..."
-              height="280px"
-            />
-            <MainContainer>
-              <MainContent>
-                <LoadingContainer>
-                  ⚡ Loading Character...
-                </LoadingContainer>
-              </MainContent>
-            </MainContainer>
-          </ContentContainer>
-        </PageContainer>
-      </>
+      <PageContainer>
+        <ContentContainer>
+          <LoadingContainer>
+            ⚡ Loading Character...
+          </LoadingContainer>
+        </ContentContainer>
+      </PageContainer>
     );
   }
 
   if (error || !character) {
     return (
-      <>
-        <FontImport />
-        <PageContainer>
-          <ContentContainer>
-            <Hero
-              title="CHARACTER SHEET"
-              subtitle="Error loading character"
-              height="280px"
-            />
-            <MainContainer>
-              <MainContent>
-                <ErrorContainer>
-                  <h3>⚠️ Error</h3>
-                  <p>{error || 'Character not found'}</p>
-                  <BackButton onClick={handleBackClick}>
-                    ← Back to Characters
-                  </BackButton>
-                </ErrorContainer>
-              </MainContent>
-            </MainContainer>
-          </ContentContainer>
-        </PageContainer>
-      </>
+      <PageContainer>
+        <ContentContainer>
+          <ErrorContainer>
+            <h3>⚠️ Error</h3>
+            <p>{error || 'Character not found'}</p>
+            <BackButton onClick={handleBackClick}>
+              ← Back to Characters
+            </BackButton>
+          </ErrorContainer>
+        </ContentContainer>
+      </PageContainer>
     );
   }
 
   return (
-    <>
-      <FontImport />
-      <PageContainer>
-        <ContentContainer>
-          <Hero
-            title="CHARACTER SHEET"
-            subtitle={`${character.name} - Level ${character.level} ${character.species} ${character.class}`}
-            height="280px"
-          />
+    <PageContainer>
+      <ContentContainer>
+        <NavigationBar>
+          <BackButton onClick={handleBackClick}>
+            ← Back to Characters
+          </BackButton>
+          <CharacterTitle>
+            {character.name}
+          </CharacterTitle>
+          <div style={{ width: '140px' }} /> {/* Spacer for centering */}
+        </NavigationBar>
 
-          <MainContainer>
-            <MainContent>
-              <NavigationBar>
-                <BackButton onClick={handleBackClick}>
-                  ← Back to Characters
-                </BackButton>
-                <CharacterTitle>
-                  {character.name}
-                </CharacterTitle>
-                <div style={{ width: '140px' }} /> {/* Spacer for centering */}
-              </NavigationBar>
-
-              <CharacterSheetPretty
-                character={character}
-                onUpdate={handleCharacterUpdate}
-                onSave={handleCharacterSave}
-              />
-            </MainContent>
-          </MainContainer>
-        </ContentContainer>
-      </PageContainer>
-    </>
+        <CharacterSheetPretty
+          character={character}
+          onUpdate={handleCharacterUpdate}
+          onSave={handleCharacterSave}
+        />
+      </ContentContainer>
+    </PageContainer>
   );
 };
 

@@ -2,10 +2,11 @@ import styled from 'styled-components';
 
 // Actions Section Styles - Redesigned to match sheet aesthetic
 export const ActionsSection = styled.div`
-  border: 2px solid #8b6914;
+  border: 2px solid #333;
   border-radius: 6px;
   padding: 0.5rem;
-  background: rgba(139, 105, 20, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -20,7 +21,7 @@ export const ActionsTitle = styled.h3`
   text-transform: uppercase;
   letter-spacing: 0.5px;
   text-align: center;
-  border-bottom: 1px solid #8b6914;
+  border-bottom: 1px solid #333;
   padding-bottom: 0.25rem;
 `;
 
@@ -36,8 +37,9 @@ export const ActionsTableHeader = styled.div<{ $column: number }>`
   grid-template-columns: 2fr 1fr 1.5fr;
   gap: 0.5rem;
   padding: 0.3rem 0.5rem;
-  background: rgba(139, 105, 20, 0.2);
-  border: 1px solid rgba(139, 105, 20, 0.3);
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid #333;
   border-radius: 4px;
   margin-bottom: 0.25rem;
 
@@ -57,17 +59,18 @@ export const ActionsTableCell = styled.div<{ $column: number; $editable?: boolea
   grid-template-columns: 2fr 1fr 1.5fr;
   gap: 0.5rem;
   padding: 0.3rem 0.5rem;
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(139, 105, 20, 0.2);
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid #333;
   border-radius: 3px;
   align-items: center;
   font-size: 0.75rem;
-  color: #f4e7d1;
+  color: #e0e0e0;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(139, 105, 20, 0.08);
-    border-color: rgba(139, 105, 20, 0.3);
+    background: rgba(212, 175, 55, 0.08);
+    border-color: rgba(212, 175, 55, 0.3);
   }
 
   .action-name {
@@ -84,7 +87,7 @@ export const ActionsTableCell = styled.div<{ $column: number; $editable?: boolea
   }
 
   input {
-    background: rgba(40, 40, 40, 0.5);
+    background: rgba(15, 15, 15, 0.8);
     border: 1px solid transparent;
     color: inherit;
     font-family: inherit;
@@ -98,16 +101,16 @@ export const ActionsTableCell = styled.div<{ $column: number; $editable?: boolea
     &:focus {
       outline: none;
       border: 1px solid #d4af37;
-      background: rgba(139, 105, 20, 0.2);
+      background: rgba(212, 175, 55, 0.15);
       box-shadow: 0 0 3px rgba(212, 175, 55, 0.3);
     }
   }
 `;
 
 export const AddActionButton = styled.button`
-  background: linear-gradient(145deg, #8b6914, #6d5411);
-  color: #f4e7d1;
-  border: none;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid #d4af37;
+  color: #d4af37;
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
   font-size: 0.7rem;
@@ -122,9 +125,9 @@ export const AddActionButton = styled.button`
   align-self: flex-start;
 
   &:hover {
-    background: linear-gradient(145deg, #6d5411, #5a430e);
+    background: rgba(212, 175, 55, 0.25);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(139, 105, 20, 0.3);
+    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
   }
 
   &:active {
@@ -161,10 +164,11 @@ export const RemoveActionButton = styled.button`
 
 // Traits and Abilities Section Styles
 export const TraitsSection = styled.section`
-  border: 2px solid #8b6914;
+  border: 2px solid #333;
   border-radius: 6px;
   padding: 0.5rem;
-  background: rgba(139, 105, 20, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
   position: relative;
   width: 100%;
   height: fit-content;
@@ -179,7 +183,7 @@ export const TraitsTitle = styled.h2`
   margin: 0 0 0.5rem 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #8b6914;
+  border-bottom: 1px solid #333;
   padding-bottom: 0.25rem;
 `;
 
@@ -198,15 +202,16 @@ export const TraitsGrid = styled.div`
 `;
 
 export const TraitCard = styled.div`
-  background: rgba(139, 105, 20, 0.1);
-  border: 1px solid rgba(139, 105, 20, 0.3);
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid #333;
   border-radius: 4px;
   padding: 0.4rem;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(139, 105, 20, 0.15);
-    border-color: rgba(139, 105, 20, 0.5);
+    background: rgba(212, 175, 55, 0.08);
+    border-color: rgba(212, 175, 55, 0.3);
   }
 `;
 
@@ -221,7 +226,7 @@ export const TraitName = styled.h3`
 `;
 
 export const TraitDescription = styled.p`
-  color: #f4e7d1;
+  color: #e0e0e0;
   font-size: 0.7rem;
   line-height: 1.3;
   margin: 0;
@@ -229,7 +234,7 @@ export const TraitDescription = styled.p`
 
 export const EmptyTraitsMessage = styled.div`
   text-align: center;
-  color: #8b6914;
+  color: #888;
   font-style: italic;
   padding: 2rem;
   font-size: 1.1rem;
@@ -237,8 +242,9 @@ export const EmptyTraitsMessage = styled.div`
 
 // Proficiencies Card Styles with flexible sizing
 export const ProficienciesCard = styled.div<{ $isLastCard?: boolean; $totalCards?: number }>`
-  background: rgba(76, 100, 139, 0.15); /* Different blue-tinted background */
-  border: 1px solid rgba(76, 100, 139, 0.4); /* Blue border to match */
+  background: rgba(76, 100, 139, 0.1); /* Different blue-tinted background */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(76, 100, 139, 0.3); /* Blue border to match */
   border-radius: 4px;
   padding: 0.5rem;
   transition: all 0.2s ease;
@@ -253,8 +259,8 @@ export const ProficienciesCard = styled.div<{ $isLastCard?: boolean; $totalCards
   }};
 
   &:hover {
-    background: rgba(76, 100, 139, 0.2);
-    border-color: rgba(76, 100, 139, 0.6);
+    background: rgba(76, 100, 139, 0.15);
+    border-color: rgba(76, 100, 139, 0.5);
   }
 `;
 
@@ -272,7 +278,7 @@ export const ProficienciesTitle = styled.h3`
 `;
 
 export const ProficienciesContent = styled.div`
-  color: #f4e7d1;
+  color: #e0e0e0;
   font-size: 0.7rem;
   line-height: 1.4;
   margin: 0;

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CharacterSheetData } from '../types/characterSheet';
 import {
   TraitsSection,
@@ -9,20 +9,47 @@ import {
   TraitName,
   TraitDescription,
   EmptyTraitsMessage,
-  ProficienciesCard,
-  ProficienciesTitle,
-  ProficienciesContent,
 } from '../styles/components';
 import { generateFeaturesForCharacter, SimpleFeature } from '../utils/simpleFeatureGenerator';
+import WeaponMasteryModal from './WeaponMasteryModal';
+import styled from 'styled-components';
 
-// Helper function to render markdown-style bold text
+const FeatureButton = styled.button`
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(145deg, #d4af37, #b8941f);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(145deg, #f4d469, #d4af37);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  }
+`;
+
+// Helper function to render markdown-style text with bold and italic
 const renderMarkdownText = (text: string) => {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  // First split by bold (**text**), then handle italic in the remaining parts
+  const parts = text.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, index) => {
+    // Handle bold
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
+      return <strong key={index} style={{ color: '#f4d469', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
     }
-    return part;
+    // Handle italic in non-bold parts
+    const italicParts = part.split(/(\*.*?\*)/g);
+    return italicParts.map((italicPart, italicIndex) => {
+      if (italicPart.startsWith('*') && italicPart.endsWith('*') && italicPart.length > 2) {
+        return <em key={`${index}-${italicIndex}`} style={{ color: '#aaa', fontStyle: 'italic' }}>{italicPart.slice(1, -1)}</em>;
+      }
+      return <span key={`${index}-${italicIndex}`}>{italicPart}</span>;
+    });
   });
 };
 
@@ -31,12 +58,15 @@ interface CharacterTraitsSectionProps {
   traits: {
     handleManageTraits: () => void;
   };
+  onUpdateCharacter?: (updates: Partial<CharacterSheetData>) => void;
 }
 
 export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
   character,
   traits,
+  onUpdateCharacter,
 }) => {
+  const [isWeaponMasteryModalOpen, setIsWeaponMasteryModalOpen] = useState(false);
   // Generate features directly from character data - no complex templates!
   const generatedFeatures = useMemo(() => {
     return generateFeaturesForCharacter(character);
@@ -98,24 +128,40 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
 
   const allFeatures = [...generatedFeatures, ...legacyFeatures];
 
-  // Separate proficiencies from other features
-  const { regularFeatures, proficienciesFeature } = useMemo(() => {
-    const regular: SimpleFeature[] = [];
-    let proficiencies: SimpleFeature | null = null;
-
-    allFeatures.forEach((feature: SimpleFeature) => {
-      if (feature.category === 'Proficiencies') {
-        proficiencies = feature;
-      } else {
-        regular.push(feature);
-      }
-    });
-
-    return {
-      regularFeatures: regular,
-      proficienciesFeature: proficiencies
-    };
+  // Filter out proficiencies - they're displayed in a separate section now
+  const regularFeatures = useMemo(() => {
+    return allFeatures.filter((feature: SimpleFeature) => feature.category !== 'Proficiencies');
   }, [allFeatures]);
+
+  // Determine max masteries and restrictions based on class
+  const getMasteryConfig = () => {
+    const characterClass = character.class?.toLowerCase() || '';
+
+    if (characterClass.includes('fighter')) {
+      return { max: 3, restriction: null };
+    } else if (characterClass.includes('barbarian')) {
+      return { max: 2, restriction: 'melee' as const };
+    } else if (characterClass.includes('rogue')) {
+      return { max: 2, restriction: 'finesse' as const };
+    } else if (characterClass.includes('paladin') || characterClass.includes('ranger')) {
+      return { max: 2, restriction: null };
+    }
+    return { max: 0, restriction: null };
+  };
+
+  const masteryConfig = getMasteryConfig();
+
+  const handleWeaponMasteryConfirm = (masteries: Array<{ weapon: string; property: string }>) => {
+    if (onUpdateCharacter) {
+      onUpdateCharacter({
+        weaponMasteries: {
+          available: masteryConfig.max,
+          active: masteries
+        }
+      });
+    }
+    setIsWeaponMasteryModalOpen(false);
+  };
 
   return (
     <TraitsSection>
@@ -142,14 +188,19 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
         </SectionEditButton>
       </div>
 
-      {/* Render features with special handling for proficiencies */}
-      {(regularFeatures.length > 0 || proficienciesFeature) ? (
+      {/* Render features (proficiencies are now in a separate section) */}
+      {regularFeatures.length > 0 ? (
         <TraitsGrid>
-          {/* Render regular features first */}
           {regularFeatures.map((feature, index) => (
             <TraitCard key={`feature-${index}`}>
               <TraitName>{feature.name}</TraitName>
-              <TraitDescription>{feature.description}</TraitDescription>
+              <TraitDescription>
+                {feature.description.split('\n\n').map((section: string, sectionIndex: number) => (
+                  <div key={sectionIndex} style={{ marginBottom: sectionIndex < feature.description.split('\n\n').length - 1 ? '0.5rem' : 0 }}>
+                    {renderMarkdownText(section)}
+                  </div>
+                ))}
+              </TraitDescription>
               {feature.category && !feature.category.includes('Legacy') && (
                 <div style={{
                   marginTop: '0.5rem',
@@ -160,30 +211,31 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
                   {feature.category}
                 </div>
               )}
+              {/* Add button for Weapon Mastery feature */}
+              {feature.name === 'Weapon Mastery' && masteryConfig.max > 0 && onUpdateCharacter && (
+                <FeatureButton onClick={() => setIsWeaponMasteryModalOpen(true)}>
+                  ⚔️ Manage Weapon Masteries
+                </FeatureButton>
+              )}
             </TraitCard>
           ))}
-
-          {/* Render proficiencies feature last with special styling */}
-          {proficienciesFeature && (
-            <ProficienciesCard
-              $isLastCard={true}
-              $totalCards={regularFeatures.length + 1}
-            >
-              <ProficienciesTitle>{(proficienciesFeature as SimpleFeature).name}</ProficienciesTitle>
-              <ProficienciesContent>
-                {(proficienciesFeature as SimpleFeature).description.split('\n\n').map((section: string, index: number) => (
-                  <div key={index} style={{ marginBottom: '0.3rem' }}>
-                    {renderMarkdownText(section)}
-                  </div>
-                ))}
-              </ProficienciesContent>
-            </ProficienciesCard>
-          )}
         </TraitsGrid>
       ) : (
         <EmptyTraitsMessage>
           No features or traits available. Add them through the 🌟 button above.
         </EmptyTraitsMessage>
+      )}
+
+      {/* Weapon Mastery Modal */}
+      {masteryConfig.max > 0 && (
+        <WeaponMasteryModal
+          isOpen={isWeaponMasteryModalOpen}
+          maxMasteries={masteryConfig.max}
+          currentMasteries={character.weaponMasteries?.active || []}
+          onConfirm={handleWeaponMasteryConfirm}
+          onCancel={() => setIsWeaponMasteryModalOpen(false)}
+          classRestrictions={masteryConfig.restriction}
+        />
       )}
     </TraitsSection>
   );

@@ -27,8 +27,9 @@ interface ConsolidatedInventoryProps {
 const InventoryContainer = styled.div<{ $mode: string; $maxHeight?: string }>`
   display: flex;
   flex-direction: column;
-  background: rgba(26, 26, 26, 0.9);
-  border: 2px solid #8b6914;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 2px solid #333;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -36,27 +37,13 @@ const InventoryContainer = styled.div<{ $mode: string; $maxHeight?: string }>`
 `;
 
 const InventoryHeader = styled.div`
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(139, 105, 20, 0.2) 100%);
-  padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(26, 26, 26, 0.8);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #333;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(212, 175, 55, 0.6) 50%,
-      transparent 100%
-    );
-  }
 
   .title {
     color: #d4af37;
@@ -67,7 +54,7 @@ const InventoryHeader = styled.div`
     letter-spacing: 1px;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.4rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 
     .icon {
@@ -85,13 +72,13 @@ const InventoryHeader = styled.div`
       display: flex;
       align-items: center;
       gap: 0.2rem;
-      padding: 0.15rem 0.3rem;
+      padding: 0.2rem 0.4rem;
       background: rgba(0, 0, 0, 0.3);
       border-radius: 3px;
       border: 1px solid rgba(212, 175, 55, 0.2);
 
       .label {
-        color: #999;
+        color: #888;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.3px;
@@ -99,7 +86,7 @@ const InventoryHeader = styled.div`
       }
 
       .value {
-        color: #f0f0f0;
+        color: #e0e0e0;
         font-weight: 700;
         font-size: 0.7rem;
       }
@@ -131,7 +118,7 @@ const InventoryContent = styled.div<{ $mode: string; $maxHeight?: string }>`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #8b6914;
+    background: #333;
     border-radius: 4px;
 
     &:hover {
@@ -140,29 +127,29 @@ const InventoryContent = styled.div<{ $mode: string; $maxHeight?: string }>`
   }
 
   scrollbar-width: thin;
-  scrollbar-color: #8b6914 rgba(0, 0, 0, 0.3);
+  scrollbar-color: #333 rgba(0, 0, 0, 0.3);
 `;
 
 const InventoryItemStyled = styled.div<{ $equipped?: boolean; $mode: string }>`
   display: flex;
   align-items: center;
   padding: 0.25rem 0.4rem;
-  border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+  border-bottom: 1px solid #333;
   transition: all 0.2s ease;
-  background: rgba(212, 175, 55, 0.1);
+  background: ${props => props.$equipped ? 'rgba(74, 222, 128, 0.1)' : 'rgba(26, 26, 26, 0.6)'};
 
   ${props => props.$mode === 'grid' ? `
     flex-direction: column;
     align-items: stretch;
-    border: 1px solid rgba(139, 105, 20, 0.2);
+    border: 1px solid #333;
     border-radius: 8px;
-    background: rgba(212, 175, 55, 0.1);
+    background: ${props.$equipped ? 'rgba(74, 222, 128, 0.1)' : 'rgba(26, 26, 26, 0.6)'};
     padding: 0.5rem;
     min-height: 80px;
   ` : ''}
 
   &:hover {
-    background: rgba(212, 175, 55, 0.2);
+    background: ${props => props.$equipped ? 'rgba(74, 222, 128, 0.15)' : 'rgba(212, 175, 55, 0.1)'};
     transform: translateX(1px);
   }
 
@@ -177,29 +164,30 @@ const ItemContent = styled.div<{ $clickable?: boolean }>`
   margin-right: 0.25rem;
 
   .item-name {
-    color: #f0f0f0;
+    color: #e0e0e0;
     font-weight: 600;
     font-size: 0.7rem;
     margin-bottom: 0.1rem;
     line-height: 1.2;
 
     &.equipped {
-      color: #d4af37;
+      color: #4ade80;
     }
   }
 
   .item-details {
-    color: #aaa;
+    color: #b0b0b0;
     font-size: 0.6rem;
     display: flex;
     gap: 0.25rem;
     flex-wrap: wrap;
 
     .detail {
-      background: rgba(139, 105, 20, 0.2);
+      background: rgba(212, 175, 55, 0.15);
       padding: 0.1rem 0.25rem;
       border-radius: 2px;
       font-size: 0.55rem;
+      border: 1px solid rgba(212, 175, 55, 0.3);
     }
   }
 `;
@@ -216,7 +204,7 @@ const QuantityControl = styled.div`
   gap: 0.15rem;
 
   .qty-label {
-    color: #8b6914;
+    color: #d4af37;
     font-size: 0.6rem;
     font-weight: 600;
   }
@@ -224,10 +212,10 @@ const QuantityControl = styled.div`
   .qty-input {
     width: 35px;
     padding: 0.15rem;
-    background: rgba(40, 40, 40, 0.8);
-    border: 1px solid #555;
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid #333;
     border-radius: 2px;
-    color: #fff;
+    color: #e0e0e0;
     text-align: center;
     font-size: 0.65rem;
 
@@ -254,35 +242,35 @@ const ActionButton = styled.button<{ $variant?: 'equip' | 'delete' | 'primary'; 
         return `
           width: 65px;
           text-align: center;
-          background: ${props.$equipped ? 'rgba(46, 125, 50, 0.5)' : 'rgba(76, 175, 80, 0.2)'};
-          color: ${props.$equipped ? '#f0f0f0' : '#4caf50'};
-          border: 1px solid ${props.$equipped ? 'rgba(46, 125, 50, 0.8)' : 'rgba(76, 175, 80, 0.5)'};
+          background: ${props.$equipped ? 'rgba(74, 222, 128, 0.2)' : 'rgba(74, 222, 128, 0.15)'};
+          color: ${props.$equipped ? '#4ade80' : '#4ade80'};
+          border: 1px solid ${props.$equipped ? '#4ade80' : 'rgba(74, 222, 128, 0.5)'};
           font-weight: ${props.$equipped ? '700' : '600'};
 
           &:hover {
-            background: ${props.$equipped ? 'rgba(46, 125, 50, 0.6)' : 'rgba(76, 175, 80, 0.3)'};
+            background: ${props.$equipped ? 'rgba(74, 222, 128, 0.25)' : 'rgba(74, 222, 128, 0.2)'};
             transform: translateY(-1px);
           }
         `;
       case 'delete':
         return `
-          background: rgba(244, 67, 54, 0.2);
+          background: rgba(244, 67, 54, 0.15);
           color: #f44336;
-          border: 1px solid rgba(244, 67, 54, 0.5);
+          border: 1px solid #f44336;
 
           &:hover {
-            background: rgba(244, 67, 54, 0.3);
+            background: rgba(244, 67, 54, 0.25);
             transform: translateY(-1px);
           }
         `;
       default:
         return `
-          background: rgba(139, 105, 20, 0.3);
+          background: rgba(212, 175, 55, 0.15);
           color: #d4af37;
-          border: 1px solid rgba(139, 105, 20, 0.5);
+          border: 1px solid #d4af37;
 
           &:hover {
-            background: rgba(139, 105, 20, 0.5);
+            background: rgba(212, 175, 55, 0.25);
             transform: translateY(-1px);
           }
         `;
@@ -293,31 +281,16 @@ const ActionButton = styled.button<{ $variant?: 'equip' | 'delete' | 'primary'; 
 const InventoryActions = styled.div`
   display: flex;
   gap: 0.5rem;
-  padding: 0.75rem;
-  border-top: 1px solid rgba(212, 175, 55, 0.3);
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(139, 105, 20, 0.15) 100%);
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(212, 175, 55, 0.4) 50%,
-      transparent 100%
-    );
-  }
+  padding: 0.5rem;
+  border-top: 1px solid #333;
+  background: rgba(26, 26, 26, 0.8);
 `;
 
 const AddItemButton = styled.button`
   flex: 1;
   padding: 0.5rem 0.75rem;
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
   border-radius: 4px;
   color: #d4af37;
   font-weight: 600;
@@ -332,14 +305,14 @@ const AddItemButton = styled.button`
   gap: 0.4rem;
 
   .icon {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   &:hover {
-    background: rgba(212, 175, 55, 0.25);
-    border-color: rgba(212, 175, 55, 0.6);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #d4af37;
     transform: translateY(-1px);
-    color: #e6b52a;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
   }
 
   &:active {
@@ -352,22 +325,22 @@ const PaginationControls = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border-top: 1px solid rgba(139, 105, 20, 0.3);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid #333;
+  background: rgba(26, 26, 26, 0.8);
 `;
 
 const PaginationButton = styled.button<{ $disabled?: boolean }>`
   padding: 0.5rem 1rem;
-  background: ${props => props.$disabled ? 'rgba(139, 105, 20, 0.2)' : 'rgba(139, 105, 20, 0.5)'};
-  border: 1px solid ${props => props.$disabled ? 'rgba(139, 105, 20, 0.3)' : '#8b6914'};
+  background: ${props => props.$disabled ? 'rgba(212, 175, 55, 0.1)' : 'rgba(212, 175, 55, 0.15)'};
+  border: 1px solid ${props => props.$disabled ? '#333' : '#d4af37'};
   border-radius: 4px;
-  color: ${props => props.$disabled ? '#666' : '#d4af37'};
+  color: ${props => props.$disabled ? '#888' : '#d4af37'};
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   font-weight: 600;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: rgba(139, 105, 20, 0.7);
+    background: rgba(212, 175, 55, 0.25);
     transform: translateY(-1px);
   }
 `;
@@ -383,9 +356,9 @@ const EmptySlot = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 60px;
-  color: #666;
+  color: #888;
   font-style: italic;
-  border: 1px dashed #444;
+  border: 1px dashed #333;
   border-radius: 4px;
   margin: 0.25rem;
   font-size: 0.85rem;

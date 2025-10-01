@@ -58,11 +58,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${BACKEND_URL:-http://localhost:3001}/api
+        VITE_SOCKET_URL: ${BACKEND_URL:-http://localhost:3001}
     container_name: dnd-frontend
     restart: unless-stopped
-    environment:
-      REACT_APP_API_URL: ${BACKEND_URL:-http://localhost:3001}/api
-      REACT_APP_SOCKET_URL: ${BACKEND_URL:-http://localhost:3001}
     ports:
       - '3000:80'
     depends_on:

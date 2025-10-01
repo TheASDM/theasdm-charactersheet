@@ -95,11 +95,6 @@ export const parseComplexDnDEntry = (entry: any): string => {
 export const parseDnDTemplateTag = (text: string): string => {
   if (!text) return '';
 
-  // Enhanced debug logging
-  // const originalText = text;
-  // const hasTemplates = text.includes('{@') || text.includes('(@');
-
-
   const result = text
     // Handle parenthetical references like (@sense Darkvision|XPHB)
     .replace(/\(@([^)]+)\)/g, (_fullMatch, content) => {
@@ -208,8 +203,6 @@ export const parseDnDTemplateTag = (text: string): string => {
           return name || '';
       }
     });
-
-  // Enhanced debug logging for results
 
   return result.replace(/\s+/g, ' ').trim();
 };

@@ -13,9 +13,18 @@ const getApiBaseUrl = (): string => {
     return '/api';
   }
 
-  // In production, use the full API URL
+  // In production, try to use the proxy path first (for reverse proxy setups)
+  // If that doesn't work, fall back to the full API URL
   const currentHost = window.location.hostname;
-  return `http://${currentHost}:3001/api`;
+
+  // If accessing through a domain (not localhost), assume reverse proxy handles /api
+  if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+    return '/api';
+  }
+
+  // Otherwise use direct connection to API server
+  const protocol = window.location.protocol;
+  return `${protocol}//${currentHost}:3001/api`;
 };
 
 // Create axios instance with base configuration

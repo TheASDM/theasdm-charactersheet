@@ -47,10 +47,25 @@ export interface Equipment {
   updatedAt: string;
 }
 
+export interface EquipmentFilters {
+  page?: number;
+  limit?: number;
+  type?: string;
+  rarity?: string;
+  search?: string;
+}
+
 export const equipmentService = {
-  // Get all equipment
-  getAll: async (): Promise<ApiResponse<{ items: Equipment[], pagination?: any }>> => {
-    return apiClient.get<{ items: Equipment[], pagination?: any }>('/items');
+  // Get all equipment with optional filters and pagination
+  getAll: async (filters: EquipmentFilters = {}): Promise<ApiResponse<{ items: Equipment[], pagination?: any }>> => {
+    const params = {
+      ...(filters.page && { page: filters.page }),
+      ...(filters.limit && { limit: filters.limit }),
+      ...(filters.type && { type: filters.type }),
+      ...(filters.rarity && { rarity: filters.rarity }),
+      ...(filters.search && { search: filters.search }),
+    };
+    return apiClient.get<{ items: Equipment[], pagination?: any }>('/items', params);
   },
 
   // Get equipment by ID

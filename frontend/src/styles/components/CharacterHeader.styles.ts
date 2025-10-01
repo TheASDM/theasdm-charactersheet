@@ -4,7 +4,7 @@ import styled from 'styled-components';
 export const CharacterNameSection = styled.div`
   text-align: center;
   padding: 1rem 0;
-  border-bottom: 2px solid #8b6914;
+  border-bottom: 2px solid #333;
   margin-bottom: 1rem;
   position: relative;
 `;
@@ -34,8 +34,8 @@ export const CharacterName = styled.div`
   flex: 1;
   text-align: center;
   padding: 0.5rem 0;
-  border-top: 2px solid #8b6914;
-  border-bottom: 2px solid #8b6914;
+  border-top: 2px solid #333;
+  border-bottom: 2px solid #333;
 
   @media (max-width: 768px) {
     font-size: 1.2rem;
@@ -49,8 +49,9 @@ export const CharacterName = styled.div`
 
 // Level and Proficiency Bonus display boxes
 export const TopStatBox = styled.div`
-  background: rgba(139, 105, 20, 0.2);
-  border: 2px solid #8b6914;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 2px solid #333;
   border-radius: 8px;
   padding: 0.75rem;
   text-align: center;
@@ -59,7 +60,7 @@ export const TopStatBox = styled.div`
   .stat-label {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #8b6914;
+    color: #888;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 0.25rem;
@@ -116,7 +117,7 @@ export const InfoBox = styled.div`
   .label {
     font-size: 0.7rem;
     font-weight: 600;
-    color: #8b6914;
+    color: #888;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 0.2rem;
@@ -129,8 +130,8 @@ export const InfoBox = styled.div`
   }
 
   select {
-    background: rgba(139, 105, 20, 0.2);
-    border: 1px solid #8b6914;
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid #333;
     border-radius: 3px;
     color: #d4af37;
     font-family: inherit;
@@ -147,15 +148,15 @@ export const InfoBox = styled.div`
     }
 
     option {
-      background: #2a2520;
+      background: #1a1a1a;
       color: #d4af37;
       padding: 0.25rem;
     }
   }
 
   input {
-    background: rgba(139, 105, 20, 0.2);
-    border: 1px solid #8b6914;
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid #333;
     border-radius: 3px;
     color: #d4af37;
     font-family: inherit;
@@ -217,9 +218,9 @@ export const SectionEditControls = styled.div`
 export const SectionEditButton = styled.button<{ variant?: 'edit' | 'save' }>`
   background: ${props => props.variant === 'save'
     ? 'linear-gradient(145deg, #4CAF50, #388E3C)'
-    : 'linear-gradient(145deg, #8b6914, #6d5411)'};
-  color: white;
-  border: none;
+    : 'rgba(212, 175, 55, 0.15)'};
+  border: 1px solid ${props => props.variant === 'save' ? '#4CAF50' : '#d4af37'};
+  color: ${props => props.variant === 'save' ? 'white' : '#d4af37'};
   padding: 3px 6px;
   border-radius: 3px;
   font-size: 0.6rem;
@@ -237,6 +238,9 @@ export const SectionEditButton = styled.button<{ variant?: 'edit' | 'save' }>`
   justify-content: center;
 
   &:hover {
+    background: ${props => props.variant === 'save'
+      ? 'linear-gradient(145deg, #388E3C, #2E7D32)'
+      : 'rgba(212, 175, 55, 0.25)'};
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   }

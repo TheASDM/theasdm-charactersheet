@@ -9,20 +9,19 @@ export const FontImport = styled.div`
 export const SheetContainer = styled.div`
   max-width: 900px;
   margin: 0 auto;
-  padding: 1rem;
-  background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  color: #d4af37;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  color: #e0e0e0;
   min-height: 100vh;
-  font-family: 'Cinzel', serif;
 
   @media (max-width: 768px) {
-    padding: 0.5rem;
+    padding: 1rem;
     max-width: 100%;
     overflow-x: hidden;
   }
 
   @media (max-width: 480px) {
-    padding: 0.25rem;
+    padding: 0.5rem;
   }
 `;
 

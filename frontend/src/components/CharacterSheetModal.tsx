@@ -21,7 +21,8 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
   align-items: center;
@@ -30,10 +31,10 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
 `;
 
 const ModalContent = styled.div`
-  background: #f4e7d1;
-  border: 3px solid #8b6914;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border: 2px solid #333;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
   max-width: 95vw;
   max-height: 95vh;
   overflow: auto;
@@ -44,13 +45,13 @@ const CloseButton = styled.button`
   position: absolute;
   top: 15px;
   right: 20px;
-  background: #d4af37;
-  color: #2c1810;
-  border: none;
+  background: rgba(212, 175, 55, 0.15);
+  color: #d4af37;
+  border: 1px solid #d4af37;
   border-radius: 50%;
-  width: 35px;
-  height: 35px;
-  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -58,10 +59,12 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 
   &:hover {
-    background: #b8941f;
+    background: rgba(212, 175, 55, 0.25);
     transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
   }
 
   &:active {
@@ -70,12 +73,12 @@ const CloseButton = styled.button`
 `;
 
 const ErrorMessage = styled.div`
-  background: rgba(220, 53, 69, 0.1);
-  border: 2px solid #dc3545;
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid #f44336;
   border-radius: 8px;
-  color: #721c24;
-  padding: 12px;
-  margin: 10px 0;
+  color: #f44336;
+  padding: 14px;
+  margin: 10px 20px;
   text-align: center;
   font-weight: 600;
 `;
@@ -85,21 +88,19 @@ const SuccessMessage = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(145deg, rgba(34, 139, 34, 0.9), rgba(46, 125, 50, 0.9));
-  border: 3px solid rgba(76, 175, 80, 0.8);
-  border-radius: 20px;
-  color: #ffffff;
+  background: rgba(26, 26, 26, 0.95);
+  border: 2px solid #4CAF50;
+  border-radius: 12px;
+  color: #4CAF50;
   padding: 24px 48px;
   text-align: center;
   font-weight: 600;
   font-size: 2rem;
-  font-family: 'Cinzel', serif;
   text-transform: uppercase;
   letter-spacing: 2px;
   z-index: 9999;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(76, 175, 80, 0.4);
   backdrop-filter: blur(10px);
-  opacity: 0.95;
   transition: all 0.3s ease;
 `;
 

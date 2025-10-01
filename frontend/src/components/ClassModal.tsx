@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { CharacterClass } from '../types/api';
+import { parseDnDTemplateTag } from '../utils/dndTemplateParser';
 
 interface ClassModalProps {
   characterClass: CharacterClass | null;
@@ -15,79 +16,107 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.8);
   display: ${(props) => (props.isOpen ? 'flex' : 'none')};
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 2rem;
+  overflow-y: auto;
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: rgba(26, 26, 26, 0.98);
+  border: 2px solid #d4af37;
   border-radius: 12px;
-  max-width: 700px;
+  max-width: 1200px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9);
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(35, 35, 35, 0.5);
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d4af37;
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #b8941f;
+  }
 `;
 
 const ModalHeader = styled.div`
-  padding: 24px 24px 0 24px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 24px;
+  background: rgba(35, 35, 35, 0.9);
+  padding: 2rem;
+  text-align: center;
+  border-bottom: 2px solid #d4af37;
 `;
 
 const CloseButton = styled.button`
   position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 24px;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid #d4af37;
+  color: #d4af37;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   cursor: pointer;
-  color: #666;
-  width: 32px;
-  height: 32px;
+  font-size: 1.5rem;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
   transition: all 0.2s ease;
+  z-index: 1;
 
   &:hover {
-    background-color: #f3f4f6;
-    color: #333;
+    background: rgba(212, 175, 55, 0.4);
+    transform: rotate(90deg);
   }
 `;
 
 const ModalBody = styled.div`
-  padding: 0 24px 24px 24px;
+  padding: 2rem;
 `;
 
 const ClassTitle = styled.h2`
-  margin: 0 0 8px 0;
-  color: #8b5a2b;
+  margin: 0 0 0.5rem 0;
+  color: #d4af37;
   font-family: 'Cinzel', serif;
-  font-size: 28px;
+  font-size: 2rem;
   font-weight: 600;
 `;
 
 const ClassMeta = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 1rem;
+  margin-bottom: 2rem;
 `;
 
 const MetaItem = styled.div`
+  background: rgba(35, 35, 35, 0.5);
+  padding: 1.25rem;
+  border-radius: 6px;
+  border-left: 3px solid #d4af37;
+
   h4 {
-    color: #333;
-    margin: 0 0 8px 0;
-    font-size: 14px;
+    color: #d4af37;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -95,65 +124,122 @@ const MetaItem = styled.div`
 
   p {
     margin: 0;
-    color: #333;
+    color: #f0f0f0;
     font-weight: 500;
+    font-size: 1.1rem;
   }
 `;
 
 const Section = styled.div`
-  margin-bottom: 24px;
+  margin-bottom: 1.5rem;
+  background: rgba(35, 35, 35, 0.3);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #444;
 
   h3 {
-    color: #8b5a2b;
-    font-size: 18px;
-    margin: 0 0 12px 0;
+    color: #d4af37;
+    font-size: 1.1rem;
+    margin: 0 0 1rem 0;
     font-family: 'Cinzel', serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 `;
 
 const FeaturesList = styled.div`
-  background-color: #f9fafb;
+  background: rgba(35, 35, 35, 0.5);
   border-radius: 8px;
-  padding: 16px;
+  padding: 1rem;
 `;
 
 const FeatureItem = styled.div`
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
+  color: #f0f0f0;
+  line-height: 1.6;
 
   &:last-child {
     margin-bottom: 0;
   }
 
   strong {
-    color: #8b5a2b;
+    color: #d4af37;
     font-weight: 600;
   }
 `;
 
-const SubclassList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 12px;
+const FeatureBlock = styled.div`
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(35, 35, 35, 0.5);
+  border-radius: 8px;
+  border: 1px solid #444;
 `;
 
-const SubclassItem = styled.div`
-  background-color: #f3f4f6;
-  padding: 12px;
-  border-radius: 6px;
-  border-left: 4px solid #8b5a2b;
+const FeatureName = styled.h4`
+  color: #d4af37;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+  font-family: 'Cinzel', serif;
+`;
 
-  h4 {
-    margin: 0 0 4px 0;
-    color: #8b5a2b;
-    font-size: 14px;
-    font-weight: 600;
-  }
+const FeatureDescription = styled.div`
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #f0f0f0;
 
   p {
-    margin: 0;
-    color: #666;
-    font-size: 12px;
+    margin-bottom: 0.75rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
+
+  strong {
+    color: #d4af37;
+    font-weight: 600;
+  }
+`;
+
+const QuickRefTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  background: rgba(35, 35, 35, 0.5);
+  border-radius: 8px;
+  overflow: hidden;
+
+  th {
+    background: rgba(35, 35, 35, 0.9);
+    color: #d4af37;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 700;
+    font-family: 'Cinzel', serif;
+    border: 1px solid #444;
+    font-size: 0.9rem;
+  }
+
+  td {
+    padding: 0.75rem;
+    border: 1px solid #444;
+    color: #f0f0f0;
+    vertical-align: top;
+    font-size: 0.85rem;
+  }
+
+  tr:nth-child(even) td {
+    background: rgba(45, 45, 45, 0.3);
+  }
+`;
+
+const TableHeader = styled.h3`
+  color: #d4af37;
+  font-size: 1.3rem;
+  margin: 1.5rem 0 0.5rem 0;
+  font-family: 'Cinzel', serif;
 `;
 
 const ClassModal: React.FC<ClassModalProps> = ({
@@ -242,44 +328,6 @@ const ClassModal: React.FC<ClassModalProps> = ({
     return 'See class details';
   };
 
-  const formatClassFeatures = (features: any): string => {
-    if (!features) return '';
-
-    if (typeof features === 'string') return features;
-    if (typeof features === 'number') return features.toString();
-
-    if (Array.isArray(features)) {
-      // Handle array of feature objects
-      return features
-        .map((feature) => {
-          if (typeof feature === 'object' && feature.name) {
-            return feature.name;
-          }
-          if (typeof feature === 'string') {
-            return feature;
-          }
-          return 'Feature';
-        })
-        .join(', ');
-    }
-
-    if (typeof features === 'object') {
-      // Try to extract feature names from object keys or values
-      const entries = Object.entries(features);
-      return entries
-        .map(([key, value]) => {
-          if (typeof value === 'object' && value !== null) {
-            // If value is an object, use the key as the feature name
-            return key;
-          }
-          return `${key}: ${value}`;
-        })
-        .join(', ');
-    }
-
-    return 'Class Feature';
-  };
-
   const getClassFeatures = () => {
     if (!characterClass.classFeatures) return [];
     if (typeof characterClass.classFeatures === 'object') {
@@ -293,21 +341,37 @@ const ClassModal: React.FC<ClassModalProps> = ({
     return [];
   };
 
-  const getSubclasses = () => {
-    // Use subclassFeatures instead of subclasses
-    if (!characterClass.subclassFeatures) return [];
-    if (
-      typeof characterClass.subclassFeatures === 'object' &&
-      characterClass.subclassFeatures !== null
-    ) {
-      return Object.entries(characterClass.subclassFeatures).map(
-        ([name, details]: [string, any]) => ({
-          name,
-          details,
-        })
-      );
+  const getProficiencyBonus = (level: number): string => {
+    if (level >= 17) return '+6';
+    if (level >= 13) return '+5';
+    if (level >= 9) return '+4';
+    if (level >= 5) return '+3';
+    return '+2';
+  };
+
+  const getFeaturesForLevel = (level: number): string => {
+    const classFeatures = getClassFeatures();
+    const levelFeatures = classFeatures.find((f) => f.level === level);
+
+    if (!levelFeatures || !levelFeatures.features) {
+      return '—';
     }
-    return [];
+
+    if (Array.isArray(levelFeatures.features)) {
+      return levelFeatures.features
+        .map((feature: any) =>
+          typeof feature === 'string'
+            ? feature
+            : feature.name || feature.title || 'Unknown Feature'
+        )
+        .join(', ');
+    } else if (typeof levelFeatures.features === 'object') {
+      return Object.keys(levelFeatures.features).join(', ');
+    } else if (typeof levelFeatures.features === 'string') {
+      return levelFeatures.features;
+    }
+
+    return '—';
   };
 
   return (
@@ -357,6 +421,37 @@ const ClassModal: React.FC<ClassModalProps> = ({
             )}
           </ClassMeta>
 
+          {/* Level Progression Table */}
+          <TableHeader>Level Progression</TableHeader>
+          <QuickRefTable>
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Prof. Bonus</th>
+                <th>Features</th>
+                <th>Hit Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 20 }, (_, i) => {
+                const level = i + 1;
+                const hitPoints =
+                  level === 1
+                    ? `${characterClass.hitDie} + Con`
+                    : `+${Math.floor(characterClass.hitDie / 2) + 1} (or ${characterClass.hitDie}) + Con`;
+
+                return (
+                  <tr key={level}>
+                    <td>{level}</td>
+                    <td>{getProficiencyBonus(level)}</td>
+                    <td>{getFeaturesForLevel(level)}</td>
+                    <td>{hitPoints}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </QuickRefTable>
+
           {/* Proficiencies */}
           <Section>
             <h3>Proficiencies</h3>
@@ -388,36 +483,48 @@ const ClassModal: React.FC<ClassModalProps> = ({
             </FeaturesList>
           </Section>
 
-          {/* Class Features */}
+          {/* Detailed Class Features */}
           {getClassFeatures().length > 0 && (
             <Section>
-              <h3>Class Features by Level</h3>
-              <FeaturesList>
-                {getClassFeatures().map(({ level, features }) => (
-                  <FeatureItem key={level}>
-                    <strong>Level {level}:</strong>{' '}
-                    {formatClassFeatures(features)}
-                  </FeatureItem>
-                ))}
-              </FeaturesList>
-            </Section>
-          )}
+              <h3>Class Features</h3>
+              {getClassFeatures().map(({ level, features }) => {
+                if (!Array.isArray(features)) return null;
 
-          {/* Subclasses */}
-          {getSubclasses().length > 0 && (
-            <Section>
-              <h3>Subclasses ({getSubclasses().length})</h3>
-              <SubclassList>
-                {getSubclasses().map(({ name, details }) => (
-                  <SubclassItem key={name}>
-                    <h4>{name}</h4>
-                    <p>
-                      {details?.shortName && `${details.shortName} • `}
-                      {details?.source || 'Official'}
-                    </p>
-                  </SubclassItem>
-                ))}
-              </SubclassList>
+                return features.map((feature: any, index: number) => {
+                  if (typeof feature === 'object' && feature.name) {
+                    return (
+                      <FeatureBlock key={`${level}-${index}`}>
+                        <FeatureName>
+                          Level {level} - {feature.name}
+                        </FeatureName>
+                        <FeatureDescription>
+                          {feature.entries && Array.isArray(feature.entries) ? (
+                            feature.entries.map((entry: any, i: number) => {
+                              if (typeof entry === 'string') {
+                                const cleanedEntry = parseDnDTemplateTag(entry);
+                                if (cleanedEntry.trim()) {
+                                  return (
+                                    <p
+                                      key={i}
+                                      dangerouslySetInnerHTML={{
+                                        __html: cleanedEntry,
+                                      }}
+                                    />
+                                  );
+                                }
+                              }
+                              return null;
+                            })
+                          ) : (
+                            <p>See {characterClass.source} for details.</p>
+                          )}
+                        </FeatureDescription>
+                      </FeatureBlock>
+                    );
+                  }
+                  return null;
+                });
+              })}
             </Section>
           )}
 
@@ -434,6 +541,12 @@ const ClassModal: React.FC<ClassModalProps> = ({
                     <strong>Focus:</strong> {characterClass.spellcastingFocus}
                   </FeatureItem>
                 )}
+                <FeatureItem>
+                  <strong>Spell Save DC:</strong> 8 + proficiency bonus + {characterClass.spellcastingAbility} modifier
+                </FeatureItem>
+                <FeatureItem>
+                  <strong>Spell Attack:</strong> proficiency bonus + {characterClass.spellcastingAbility} modifier
+                </FeatureItem>
               </FeaturesList>
             </Section>
           )}

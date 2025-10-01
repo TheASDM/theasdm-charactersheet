@@ -1,145 +1,106 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { CharacterList, Hero, CharacterSheetModal } from '../components';
+import { CharacterList, CharacterSheetModal } from '../components';
 import { Character } from '../types/api';
 
-// Import medieval fonts
-const FontImport = styled.div`
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600&display=swap');
-`;
-
-// Main page container with forest green background (matching other pages)
+// Main page container with black background (matching new design)
 const PageContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    #363636ff 0%,
-    #4b4b4bff 25%,
-    #323232ff 50%,
-    #222222ff 75%,
-    #0e0e0eff 100%
-  );
-  padding: 0;
-  font-family: 'Crimson Text', serif;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 // Content wrapper
 const ContentContainer = styled.div`
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  position: relative;
 `;
 
-// Main container that holds everything below the hero (matching other pages)
-const MainContainer = styled.div`
-  background: linear-gradient(
-    145deg,
-    rgba(90, 58, 42, 0.8),
-    rgba(74, 42, 26, 0.8)
-  );
-  border: 2px solid #8b6914;
-  border-radius: 20px 20px 15px 15px;
-  margin: 0 20px;
-  margin-top: -5px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(139, 105, 20, 0.3);
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
+// Header section
+const Header = styled.div`
+  margin-bottom: 2rem;
+  text-align: center;
+`;
 
-  /* Medieval parchment texture */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="paper"><feTurbulence baseFrequency="0.02" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/></filter></defs><rect width="100" height="100" fill="rgba(101,67,33,0.1)" filter="url(%23paper)"/></svg>')
-      repeat;
-    opacity: 0.6;
-    pointer-events: none;
-    z-index: 1;
-  }
+const Title = styled.h1`
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 
   @media (max-width: 768px) {
-    margin: 0 10px;
-    margin-top: -2px;
-  }
-
-  @media (max-width: 480px) {
-    margin: 0 5px;
-    margin-top: -2px;
+    font-size: 2rem;
   }
 `;
 
-// Content inside the main container
-const MainContent = styled.div`
-  position: relative;
-  z-index: 2;
-  padding: 30px;
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 15px;
-  }
+const Subtitle = styled.p`
+  font-size: 1.125rem;
+  color: #b0b0b0;
+  margin: 0;
 `;
 
+// Action buttons section
 const ActionButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
-  padding: 20px;
-  background: linear-gradient(145deg, #f4e7d1, #e8d5b7);
-  border: 3px solid #8b6914;
-  border-radius: 15px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  flex-wrap: wrap;
 `;
 
-const ActionButton = styled.button<{ variant?: 'secondary' }>`
+const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   background: ${props => props.variant === 'secondary'
-    ? 'linear-gradient(145deg, #5a3a2a, #4a2a1a)'
-    : 'linear-gradient(145deg, #d4af37, #b8941f)'};
-  color: ${props => props.variant === 'secondary' ? '#f0f0f0' : '#2c1810'};
-  border: none;
-  padding: 12px 24px;
+    ? 'rgba(255, 255, 255, 0.05)'
+    : 'linear-gradient(135deg, #d4af37 0%, #b8941f 100%)'};
+  color: ${props => props.variant === 'secondary' ? '#d4af37' : '#1a1a1a'};
+  border: ${props => props.variant === 'secondary' ? '1px solid #333' : 'none'};
+  padding: 0.875rem 1.75rem;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: 'Cinzel', serif;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
   &:hover {
     background: ${props => props.variant === 'secondary'
-      ? 'linear-gradient(145deg, #4a2a1a, #3a1a0a)'
-      : 'linear-gradient(145deg, #b8941f, #a0801b)'};
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'linear-gradient(135deg, #b8941f 0%, #a0801b 100%)'};
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px ${props => props.variant === 'secondary'
-      ? 'rgba(0, 0, 0, 0.5)'
+    box-shadow: 0 6px 16px ${props => props.variant === 'secondary'
+      ? 'rgba(212, 175, 55, 0.2)'
       : 'rgba(212, 175, 55, 0.4)'};
   }
 
   &:active {
     transform: translateY(0);
   }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
 `;
 
 const CharactersPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(
     null
   );
   const [isSheetModalOpen, setIsSheetModalOpen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
-
 
   const handleCharacterClick = (character: Character) => {
     setSelectedCharacter(character);
@@ -170,20 +131,7 @@ const CharactersPage: React.FC = () => {
   };
 
   const handleCreateNewCharacter = () => {
-    // Create a basic character for the sheet
-    const newCharacter: Character = {
-      id: 0, // Will be assigned by backend
-      userId: 1, // TODO: Get from auth context
-      name: '',
-      level: 1,
-      characterData: {},
-      isPublic: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setSelectedCharacter(newCharacter);
-    setIsSheetModalOpen(true);
+    navigate('/generator');
   };
 
   const toggleSelectionMode = () => {
@@ -191,39 +139,33 @@ const CharactersPage: React.FC = () => {
   };
 
   return (
-    <>
-      <FontImport />
-      <PageContainer>
-        <ContentContainer>
-          <Hero
-            title="D&D CHARACTERS"
-            subtitle="Manage Your Heroes"
-            height="280px"
-          />
+    <PageContainer>
+      <ContentContainer>
+        <Header>
+          <Title>Your Characters</Title>
+          <Subtitle>Manage your heroes and their adventures</Subtitle>
+        </Header>
 
-          <MainContainer>
-            <MainContent>
-              <ActionButtonContainer>
-                <ActionButton onClick={handleCreateNewCharacter}>
-                  ⚔️ Create New Hero
-                </ActionButton>
-                <ActionButton variant="secondary" onClick={toggleSelectionMode}>
-                  {selectionMode ? '✖️ Exit Selection' : '☑️ Select Multiple'}
-                </ActionButton>
-              </ActionButtonContainer>
+        <ActionButtonContainer>
+          <ActionButton onClick={handleCreateNewCharacter}>
+            <span>⚔</span>
+            Create New Hero
+          </ActionButton>
+          <ActionButton variant="secondary" onClick={toggleSelectionMode}>
+            <span>{selectionMode ? '✕' : '☑'}</span>
+            {selectionMode ? 'Exit Selection' : 'Select Multiple'}
+          </ActionButton>
+        </ActionButtonContainer>
 
-              <CharacterList
-                showActions={true}
-                selectionMode={selectionMode}
-                onCharacterClick={handleCharacterClick}
-                onCharacterEdit={handleCharacterEdit}
-                onCharacterDelete={handleCharacterDelete}
-                onCharacterOpenInNewTab={handleCharacterOpenInNewTab}
-              />
-            </MainContent>
-          </MainContainer>
-        </ContentContainer>
-      </PageContainer>
+        <CharacterList
+          showActions={true}
+          selectionMode={selectionMode}
+          onCharacterClick={handleCharacterClick}
+          onCharacterEdit={handleCharacterEdit}
+          onCharacterDelete={handleCharacterDelete}
+          onCharacterOpenInNewTab={handleCharacterOpenInNewTab}
+        />
+      </ContentContainer>
 
       <CharacterSheetModal
         isOpen={isSheetModalOpen}
@@ -231,7 +173,7 @@ const CharactersPage: React.FC = () => {
         {...(selectedCharacter ? { character: selectedCharacter } : {})}
         onSave={handleSheetSave}
       />
-    </>
+    </PageContainer>
   );
 };
 
