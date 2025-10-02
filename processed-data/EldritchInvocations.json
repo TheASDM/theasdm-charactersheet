@@ -1,0 +1,229 @@
+{
+  "source": "XPHB",
+  "invocations": [
+    {
+      "id": "agonizing-blast",
+      "name": "Agonizing Blast",
+      "prerequisite": "Level 2+ Warlock, a Warlock Cantrip That Deals Damage",
+      "level": 2,
+      "repeatable": true,
+      "description": "When you cast {@spell Eldritch Blast|XPHB}, add your Charisma modifier to the damage it deals on a hit."
+    },
+    {
+      "id": "armor-of-shadows",
+      "name": "Armor of Shadows",
+      "prerequisite": null,
+      "level": 1,
+      "repeatable": false,
+      "description": "You can cast {@spell Mage Armor|XPHB} on yourself without expending a spell slot."
+    },
+    {
+      "id": "ascendant-step",
+      "name": "Ascendant Step",
+      "prerequisite": "Level 5+ Warlock",
+      "level": 5,
+      "repeatable": false,
+      "description": "You can cast {@spell Levitate|XPHB} on yourself without expending a spell slot."
+    },
+    {
+      "id": "devils-sight",
+      "name": "Devil's Sight",
+      "prerequisite": "Level 2+ Warlock",
+      "level": 2,
+      "repeatable": false,
+      "description": "You can see normally in Dim Light and Darkness—both magical and nonmagical—within 120 feet of yourself."
+    },
+    {
+      "id": "devouring-blade",
+      "name": "Devouring Blade",
+      "prerequisite": "Level 12+ Warlock, Thirsting Blade Invocation",
+      "level": 12,
+      "repeatable": false,
+      "description": "The Extra Attack feature works for you when you attack with a weapon summoned by your Pact of the Blade feature and when you attack with a magic weapon you perform that feature's ritual on."
+    },
+    {
+      "id": "eldritch-mind",
+      "name": "Eldritch Mind",
+      "prerequisite": null,
+      "level": 1,
+      "repeatable": false,
+      "description": "You have Advantage on Constitution saving throws that you make to maintain Concentration."
+    },
+    {
+      "id": "eldritch-smite",
+      "name": "Eldritch Smite",
+      "prerequisite": "Level 5+ Warlock, Pact of the Blade Invocation",
+      "level": 5,
+      "repeatable": false,
+      "description": "Once per turn when you hit a creature with your pact weapon, you can expend a Pact Magic spell slot to deal an extra 1d8 Force damage to the target, plus another 1d8 per level of the spell slot, and you can give the target the {@condition Prone|XPHB} condition if it is Huge or smaller."
+    },
+    {
+      "id": "eldritch-spear",
+      "name": "Eldritch Spear",
+      "prerequisite": "Level 2+ Warlock, a Warlock Cantrip That Deals Damage",
+      "level": 2,
+      "repeatable": true,
+      "description": "When you cast {@spell Eldritch Blast|XPHB}, its range is 300 feet."
+    },
+    {
+      "id": "fiendish-vigor",
+      "name": "Fiendish Vigor",
+      "prerequisite": "Level 2+ Warlock",
+      "level": 2,
+      "repeatable": false,
+      "description": "You can cast {@spell False Life|XPHB} on yourself without expending a spell slot. When you cast the spell with this feature, you don't roll the die for the Temporary Hit Points; you automatically get the highest number on the die."
+    },
+    {
+      "id": "gaze-of-two-minds",
+      "name": "Gaze of Two Minds",
+      "prerequisite": "Level 5+ Warlock",
+      "level": 5,
+      "repeatable": false,
+      "description": "You can use a Bonus Action to touch a willing creature and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use a Bonus Action on subsequent turns to maintain this connection, extending the duration until the end of your next turn. The connection ends if you don't maintain it in this way. While perceiving through the other creature's senses, you benefit from any special senses possessed by that creature, and you can cast spells as if you were in your space or the other creature's space if the two of you are within 60 feet of each other."
+    },
+    {
+      "id": "gift-of-the-depths",
+      "name": "Gift of the Depths",
+      "prerequisite": "Level 5+ Warlock",
+      "level": 5,
+      "repeatable": false,
+      "description": "You can breathe underwater, and you gain a Swim Speed equal to your Speed. You can also cast {@spell Water Breathing|XPHB} once without expending a spell slot. You regain the ability to cast it in this way when you finish a Long Rest."
+    },
+    {
+      "id": "gift-of-the-protectors",
+      "name": "Gift of the Protectors",
+      "prerequisite": "Level 9+ Warlock, Pact of the Tome Invocation",
+      "level": 9,
+      "repeatable": false,
+      "description": "A new page appears in your Book of Shadows when you conjure it. With your permission, a creature can take 1 minute to write its name on that page, which can contain a number of names equal to your Charisma modifier (minimum of one name). When any creature whose name is on the page is reduced to 0 Hit Points but not killed outright, the creature magically drops to 1 Hit Point instead. Once this magic is triggered, no creature can benefit from it until you finish a Long Rest. As a Magic action, you can erase a name on the page by touching it."
+    },
+    {
+      "id": "investment-of-the-chain-master",
+      "name": "Investment of the Chain Master",
+      "prerequisite": "Level 5+ Warlock, Pact of the Chain Invocation",
+      "level": 5,
+      "repeatable": false,
+      "description": "When you cast {@spell Find Familiar|XPHB}, you infuse the summoned familiar with a measure of your eldritch power, granting the creature the following benefits:\nThe familiar gains either a Fly Speed or a Swim Speed (your choice) of 40 feet.\nThe familiar no longer needs to breathe.\nThe familiar's weapon attacks are considered magical for the purpose of overcoming immunity and resistance to nonmagical attacks.\nIf the familiar forces a creature to make a saving throw, it uses your spell save DC.\nWhen the familiar takes damage, you can take a Reaction to grant it Resistance against that damage."
+    },
+    {
+      "id": "lessons-of-the-first-ones",
+      "name": "Lessons of the First Ones",
+      "prerequisite": "Level 2+ Warlock",
+      "level": 2,
+      "repeatable": true,
+      "description": "You have received knowledge from an elder entity of the multiverse, allowing you to gain one Origin feat of your choice."
+    },
+    {
+      "id": "lifedrinker",
+      "name": "Lifedrinker",
+      "prerequisite": "Level 9+ Warlock, Pact of the Blade Invocation",
+      "level": 9,
+      "repeatable": false,
+      "description": "Once per turn when you hit a creature with your pact weapon, you can deal an extra 1d6 Necrotic, Psychic, or Radiant damage (your choice) to the creature, and you regain a number of Hit Points equal to the extra damage dealt."
+    },
+    {
+      "id": "mask-of-many-faces",
+      "name": "Mask of the Many Faces",
+      "prerequisite": "Level 2+ Warlock",
+      "level": 2,
+      "repeatable": false,
+      "description": "You can cast {@spell Disguise Self|XPHB} without expending a spell slot."
+    },
+    {
+      "id": "master-of-myriad-forms",
+      "name": "Master of Myriad Forms",
+      "prerequisite": "Level 5+ Warlock",
+      "level": 5,
+      "repeatable": false,
+      "description": "You can cast {@spell Alter Self|XPHB} without expending a spell slot."
+    },
+    {
+      "id": "misty-visions",
+      "name": "Misty Visions",
+      "prerequisite": "Level 2+ Warlock",
+      "level": 2,
+      "repeatable": false,
+      "description": "You can cast {@spell Silent Image|XPHB} without expending a spell slot."
+    },
+    {
+      "id": "one-with-shadows",
+      "name": "One with Shadows",
+      "prerequisite": "Level 5+ Warlock",
+      "level": 5,
+      "repeatable": false,
+      "description": "When you are in an area of Dim Light or Darkness, you can cast {@spell Invisibility|XPHB} on yourself without expending a spell slot."
+    },
+    {
+      "id": "otherworldly-leap",
+      "name": "Otherworldly Leap",
+      "prerequisite": "Level 2+ Warlock",
+      "level": 2,
+      "repeatable": false,
+      "description": "You can cast {@spell Jump|XPHB} on yourself without expending a spell slot."
+    },
+    {
+      "id": "pact-of-the-blade",
+      "name": "Pact of the Blade",
+      "prerequisite": null,
+      "level": 1,
+      "repeatable": false,
+      "description": "As a Bonus Action, you can conjure a pact weapon in your hand—a Simple or Martial Melee weapon of your choice with which you bond. Until the bond ends, you have proficiency with the weapon, and you can use it as a Spellcasting Focus. Whenever you attack with the bonded weapon, you can use your Charisma modifier for the attack and damage rolls instead of using Strength or Dexterity; and you can cause the weapon to deal Necrotic, Psychic, or Radiant damage or its normal damage type. Your bond with the weapon ends if you use this feature's Bonus Action again, if the weapon is more than 5 feet away from you for 1 minute or more, or if you die. A conjured weapon disappears when the bond ends."
+    },
+    {
+      "id": "pact-of-the-chain",
+      "name": "Pact of the Chain",
+      "prerequisite": null,
+      "level": 1,
+      "repeatable": false,
+      "description": "You learn the {@spell Find Familiar|XPHB} spell and can cast it as a Ritual without using a spell slot. When you cast the spell, you choose one of the normal forms for your familiar or one of the following special forms: {@creature Imp|XPHB}, {@creature Pseudodragon|XPHB}, {@creature Quasit|XPHB}, or {@creature Sprite|XPHB}. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction."
+    },
+    {
+      "id": "pact-of-the-tome",
+      "name": "Pact of the Tome",
+      "prerequisite": null,
+      "level": 1,
+      "repeatable": false,
+      "description": "Stitching together strands of shadow, you conjure forth a book in your hand at the end of a Short Rest or Long Rest. This Book of Shadows contains eldritch magic of your choice. Choose three cantrips from any class's spell list, and the cantrips are in the book and count as Warlock spells for you. While the book is on your person, you can cast those cantrips at will. If you lose the book, you can perform a 1-hour ceremony to receive a replacement from your patron, and this ceremony can be performed during a Short Rest or Long Rest. The book turns to ash when you die."
+    },
+    {
+      "id": "repelling-blast",
+      "name": "Repelling Blast",
+      "prerequisite": "Level 2+ Warlock, a Warlock Cantrip That Deals Damage via an Attack Roll",
+      "level": 2,
+      "repeatable": true,
+      "description": "When you hit a Large or smaller creature with {@spell Eldritch Blast|XPHB}, you can push the creature up to 10 feet straight away from you."
+    },
+    {
+      "id": "thirsting-blade",
+      "name": "Thirsting Blade",
+      "prerequisite": "Level 5+ Warlock, Pact of the Blade Invocation",
+      "level": 5,
+      "repeatable": false,
+      "description": "You gain the Extra Attack feature for attacks with your pact weapon only."
+    },
+    {
+      "id": "visions-of-distant-realms",
+      "name": "Visions of Distant Realms",
+      "prerequisite": "Level 9+ Warlock",
+      "level": 9,
+      "repeatable": false,
+      "description": "You can cast {@spell Arcane Eye|XPHB} without expending a spell slot."
+    },
+    {
+      "id": "whispers-of-the-grave",
+      "name": "Whispers of the Grave",
+      "prerequisite": "Level 7+ Warlock",
+      "level": 7,
+      "repeatable": false,
+      "description": "You can cast {@spell Speak with Dead|XPHB} without expending a spell slot."
+    },
+    {
+      "id": "witch-sight",
+      "name": "Witch Sight",
+      "prerequisite": "Level 15+ Warlock",
+      "level": 15,
+      "repeatable": false,
+      "description": "You have Truesight with a range of 30 feet."
+    }
+  ]
+}

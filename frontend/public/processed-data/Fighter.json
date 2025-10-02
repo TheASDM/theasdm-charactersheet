@@ -1,0 +1,1351 @@
+{
+  "className": "Fighter",
+  "source": "XPHB",
+  "spellcasting": null,
+  "features": [
+    {
+      "id": "fighting-style-1",
+      "name": "Fighting Style",
+      "level": 1,
+      "source": "XPHB",
+      "page": 123,
+      "featureType": "base",
+      "description": "You gain a Fighting Style feat of your choice (see chapter 5). Instead of choosing one of those feats, you can choose the option below.\n\nBlind Fighting: You have Blindsight with a range of 10 feet.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": true,
+      "requiresSelection": true,
+      "choiceType": "external-feat",
+      "externalReference": {
+        "type": "feat",
+        "category": "Fighting Style",
+        "count": 1,
+        "allowCustomOption": true,
+        "customOption": {
+          "id": "blind-fighting",
+          "name": "Blind Fighting",
+          "description": "You have Blindsight with a range of 10 feet."
+        }
+      },
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "second-wind-1",
+      "name": "Second Wind",
+      "level": 1,
+      "source": "XPHB",
+      "page": 91,
+      "featureType": "base",
+      "description": "You have a limited well of physical and mental stamina that you can draw on. As a Bonus Action, you can use it to regain Hit Points equal to 1d10 plus your Fighter level. You can use this feature twice. You regain one expended use when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest. When you reach certain Fighter levels, you gain more uses of this feature, as shown in the Second Wind column of the Fighter Features table.",
+      "mechanics": {
+        "diceRolls": [
+          "1d10"
+        ],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": "bonus-action",
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": true
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": true,
+      "scalingProgression": []
+    },
+    {
+      "id": "weapon-mastery-1",
+      "name": "Weapon Mastery",
+      "level": 1,
+      "source": "XPHB",
+      "page": 91,
+      "featureType": "base",
+      "description": "Your training with weapons allows you to use the weapon mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can practice weapon drills and change one of those weapon choices. When you reach certain Fighter levels, you gain the ability to use the weapon mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Fighter Features table.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": true
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": true,
+      "scalingProgression": []
+    },
+    {
+      "id": "action-surge-2",
+      "name": "Action Surge",
+      "level": 2,
+      "source": "XPHB",
+      "page": 91,
+      "featureType": "base",
+      "description": "You can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action, except the Magic action. Once you use this feature, you can't do so again until you finish a Short Rest or Long Rest. Starting at level 17, you can use it twice before a rest but only once on a turn.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": "until rest",
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false,
+        "scalingProgression": []
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": true,
+      "scalingProgression": [
+        {
+          "level": 17,
+          "changes": {
+            "uses": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "tactical-mind-2",
+      "name": "Tactical Mind",
+      "level": 2,
+      "source": "XPHB",
+      "page": 91,
+      "featureType": "base",
+      "description": "You have a mind for tactics on and off the battlefield. When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success. Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success. If the check still fails, this use of Second Wind isn't expended.",
+      "mechanics": {
+        "diceRolls": [
+          "1d10"
+        ],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "fighter-subclass-3",
+      "name": "Fighter Subclass",
+      "level": 3,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain a Fighter subclass of your choice. A subclass is a specialization that grants you features at certain Fighter levels. For the rest of your career, you gain each of your subclass's features that are of your Fighter level or lower.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-4",
+      "name": "Ability Score Improvement",
+      "level": 4,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Fighter levels 6, 8, 12, 14, and 16.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "extra-attack-5",
+      "name": "Extra Attack",
+      "level": 5,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You can attack twice instead of once whenever you take the Attack action on your turn.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false,
+        "scalingProgression": []
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "tactical-shift-5",
+      "name": "Tactical Shift",
+      "level": 5,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "Whenever you activate your Second Wind with a Bonus Action, you can move up to half your Speed without provoking Opportunity Attack.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": "bonus-action",
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-6",
+      "name": "Ability Score Improvement",
+      "level": 6,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "subclass-feature-7",
+      "name": "Subclass Feature",
+      "level": 7,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain a feature from your Fighter Subclass.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-8",
+      "name": "Ability Score Improvement",
+      "level": 8,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "indomitable-9",
+      "name": "Indomitable",
+      "level": 9,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll, and you can't use this feature again until you finish a Long Rest. You can use this feature twice before a Long Rest starting at level 13 and three times before a Long Rest starting at level 17.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": "until rest",
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false,
+        "scalingProgression": []
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": true,
+      "scalingProgression": [
+        {
+          "level": 13,
+          "changes": {
+            "uses": 2
+          }
+        },
+        {
+          "level": 17,
+          "changes": {
+            "uses": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "tactical-master-9",
+      "name": "Tactical Master",
+      "level": 9,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "When you attack with a weapon whose mastery property you can use, you can replace that property with the {@itemMastery Push|XPHB}, {@itemMastery Sap|XPHB}, or {@itemMastery Slow|XPHB} property for that attack.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "subclass-feature-10",
+      "name": "Subclass Feature",
+      "level": 10,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain a feature from your Fighter Subclass.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-12",
+      "name": "Ability Score Improvement",
+      "level": 12,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "studied-attacks-13",
+      "name": "Studied Attacks",
+      "level": 13,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You study your opponents and learn from each attack you make. If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-14",
+      "name": "Ability Score Improvement",
+      "level": 14,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "subclass-feature-15",
+      "name": "Subclass Feature",
+      "level": 15,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain a feature from your Fighter Subclass.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-16",
+      "name": "Ability Score Improvement",
+      "level": 16,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "subclass-feature-18",
+      "name": "Subclass Feature",
+      "level": 18,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain a feature from your Fighter Subclass.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "epic-boon-19",
+      "name": "Epic Boon",
+      "level": 19,
+      "source": "XPHB",
+      "page": 92,
+      "featureType": "base",
+      "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Combat Prowess is recommended.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    }
+  ],
+  "subclasses": {
+    "Battle Master": [
+      {
+        "id": "combat-superiority-3",
+        "name": "Combat Superiority",
+        "level": 3,
+        "source": "XPHB",
+        "page": 93,
+        "featureType": "subclass",
+        "description": "Your experience on the battlefield has refined your fighting techniques. You learn maneuvers that are fueled by special dice called Superiority Dice. Maneuvers: You learn three maneuvers of your choice from the \"Maneuvers Options\" section later in this subclass's description. Many maneuvers enhance an attack in some way. You can use only one maneuver per attack. You learn two additional maneuvers of your choice when you reach Fighter levels 7, 10, and 15. Each time you learn new maneuvers, you can also replace one maneuver you know with a different one. Superiority Dice: You have four Superiority Dice, which are d8|d8s. A Superiority Die is expended when you use it. You regain all expended Superiority Dice when you finish a Short Rest or Long Rest. You gain an additional Superiority Die when you reach Fighter levels 7 (five dice total) and 15 (six dice total). Saving Throws: If a maneuver requires a saving throw, the DC equals 8 plus your Strength or Dexterity modifier (your choice) and Proficiency.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "strength",
+            "dexterity"
+          ],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": true
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": true,
+        "scalingProgression": [],
+        "subclass": "Battle Master"
+      },
+      {
+        "id": "student-of-war-3",
+        "name": "Student of War",
+        "level": 3,
+        "source": "XPHB",
+        "page": 94,
+        "featureType": "subclass",
+        "description": "You gain proficiency with one type of Artisan's Tools of your choice, and you gain proficiency in one skill of your choice from the skills available to Fighters at level 1.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [
+            "one type of artisan's tools of your choice, and you gain proficiency in one skill of your choice from the skills available to fighters at level 1"
+          ],
+          "spellsGranted": [],
+          "scales": true
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": true,
+        "scalingProgression": [],
+        "subclass": "Battle Master"
+      },
+      {
+        "id": "maneuver-options-3",
+        "name": "Maneuver Options",
+        "level": 3,
+        "source": "XPHB",
+        "page": 94,
+        "featureType": "subclass",
+        "description": "The maneuvers are presented here in alphabetical order.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Battle Master"
+      },
+      {
+        "id": "know-your-enemy-7",
+        "name": "Know Your Enemy",
+        "level": 7,
+        "source": "XPHB",
+        "page": 94,
+        "featureType": "subclass",
+        "description": "As a Bonus Action, you can discern certain strengths and weaknesses of a creature you can see within 30 feet of yourself; you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if the creature has any, you know what they are. Once you use this feature, you can't do so again until you finish a Long Rest. You can also restore a use of the feature by expending one Superiority Die (no action required).",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "strength"
+          ],
+          "actionType": "bonus-action",
+          "range": "30 feet",
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Battle Master"
+      },
+      {
+        "id": "improved-combat-superiority-10",
+        "name": "Improved Combat Superiority",
+        "level": 10,
+        "source": "XPHB",
+        "page": 94,
+        "featureType": "subclass",
+        "description": "Your Superiority Die becomes a d10.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Battle Master"
+      },
+      {
+        "id": "relentless-15",
+        "name": "Relentless",
+        "level": 15,
+        "source": "XPHB",
+        "page": 94,
+        "featureType": "subclass",
+        "description": "Once per turn, when you use a maneuver, you can roll 1d8 and use the number rolled instead of expending a Superiority Die.",
+        "mechanics": {
+          "diceRolls": [
+            "1d8"
+          ],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Battle Master"
+      },
+      {
+        "id": "ultimate-combat-superiority-18",
+        "name": "Ultimate Combat Superiority",
+        "level": 18,
+        "source": "XPHB",
+        "page": 94,
+        "featureType": "subclass",
+        "description": "Your Superiority Die becomes a d12.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Battle Master"
+      }
+    ],
+    "Champion": [
+      {
+        "id": "improved-critical-3",
+        "name": "Improved Critical",
+        "level": 3,
+        "source": "XPHB",
+        "page": 96,
+        "featureType": "subclass",
+        "description": "Your attack rolls with weapons and Unarmed Strikes can score a Critical Hit on a roll of 19 or 20 on the d20.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Champion"
+      },
+      {
+        "id": "remarkable-athlete-3",
+        "name": "Remarkable Athlete",
+        "level": 3,
+        "source": "XPHB",
+        "page": 96,
+        "featureType": "subclass",
+        "description": "Thanks to your athleticism, you have Advantage on Initiative rolls and Strength (Athletics) checks. In addition, immediately after you score a Critical Hit, you can move up to half your Speed without provoking Opportunity Attack.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "strength"
+          ],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Champion"
+      },
+      {
+        "id": "additional-fighting-style-7",
+        "name": "Additional Fighting Style",
+        "level": 7,
+        "source": "XPHB",
+        "page": 96,
+        "featureType": "subclass",
+        "description": "You gain another Fighting Style feat of your choice.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Champion"
+      },
+      {
+        "id": "heroic-warrior-10",
+        "name": "Heroic Warrior",
+        "level": 10,
+        "source": "XPHB",
+        "page": 96,
+        "featureType": "subclass",
+        "description": "The thrill of battle drives you toward victory. During combat, you can give yourself Heroic Inspiration whenever you start your turn without it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Champion"
+      },
+      {
+        "id": "superior-critical-15",
+        "name": "Superior Critical",
+        "level": 15,
+        "source": "XPHB",
+        "page": 96,
+        "featureType": "subclass",
+        "description": "Your attack rolls with weapons and Unarmed Strikes can now score a Critical Hit on a roll of 18–20 on the d20.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Champion"
+      },
+      {
+        "id": "survivor-18",
+        "name": "Survivor",
+        "level": 18,
+        "source": "XPHB",
+        "page": 96,
+        "featureType": "subclass",
+        "description": "You attain the pinnacle of resilience in battle, giving you these benefits. Defy Death: You have Advantage on Death Saving Throws. Moreover, when you roll 18–20 on a Death Saving Throw, you gain the benefit of rolling a 20 on it. Heroic Rally: At the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Points.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "constitution"
+          ],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Champion"
+      }
+    ],
+    "Eldritch Knight": [
+      {
+        "id": "spellcasting-3",
+        "name": "Spellcasting",
+        "level": 3,
+        "source": "XPHB",
+        "page": 96,
+        "featureType": "subclass",
+        "description": "You have learned to cast spells. See chapter 7 for the rules on spellcasting. The information below details how you use those rules as an Eldritch Knight. Cantrips: You know two cantrips of your choice from the Wizard spell list (see that class's section for its list). Ray of Frost and Shocking Grasp are recommended. Whenever you gain a Fighter level, you can replace one of these cantrips with another cantrip of your choice from the Wizard spell list. When you reach Fighter level 10, you learn another Wizard cantrip of your choice. Spell Slots: The Eldritch Knight Spellcasting table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a Long Rest. Prepared Spells of Level 1+: You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose three level 1 spells from the Wizard spell list. Burning Hands, Jump, and Shield are recommended. The number of spells on your list increases as you gain Fighter levels, as shown in the Prepared Spells column of the Eldritch Knight Spellcasting table. Whenever that number increases, choose additional spells from the Wizard spell list until the number of spells on your list matches the number on the table. The chosen spells must be of a level for which you have spell slots. For example, if you're a level 7 Fighter, your list of prepared spells can include five Wizard spells of levels 1 and 2 in any combination. Changing your Prepared Spells: Whenever you gain a Fighter level, you can replace one spell on your list with another Wizard spell for which you have spell slots. Spellcasting Ability: Intelligence is your spellcasting ability for your Wizard spells. Spellcasting Focus: You can use an Arcane Focus as a Spellcasting Focus for your Wizard spells.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "intelligence"
+          ],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [
+            "Ray of Frost",
+            "Shocking Grasp",
+            "Burning Hands",
+            "Jump",
+            "Shield"
+          ],
+          "scales": true
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": true,
+        "scalingProgression": [],
+        "subclass": "Eldritch Knight"
+      },
+      {
+        "id": "war-bond-3",
+        "name": "War Bond",
+        "level": 3,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "You learn a ritual that creates a magical bond between yourself and one weapon. You perform the ritual over the course of 1 hour, which can be done during a Short Rest. The weapon must be within your reach throughout the ritual, at the conclusion of which you touch the weapon and forge the bond. The bond fails if another Fighter is bonded to the weapon or if the weapon is a magic item to which someone else is attuned. Once you have bonded a weapon to yourself, you can't be disarmed of that weapon unless you have the Incapacitated condition. If it is on the same plane of existence, you can summon that weapon as a Bonus Action, causing it to teleport instantly to your hand. You can have up to two bonded weapons, but you can summon only one at a time with a Bonus Action. If you attempt to bond with a third weapon, you must break the bond with one of the other two.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "bonus-action",
+          "range": "touch",
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Eldritch Knight"
+      },
+      {
+        "id": "war-magic-7",
+        "name": "War Magic",
+        "level": 7,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "When you take the Attack action on your turn, you can replace one of the attacks with a casting of one of your Wizard cantrips that has a casting time of an action.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Eldritch Knight"
+      },
+      {
+        "id": "eldritch-strike-10",
+        "name": "Eldritch Strike",
+        "level": 10,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "You learn how to make your weapon strikes undercut a creature's ability to withstand your spells. When you hit a creature with an attack using a weapon, that creature has Disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Eldritch Knight"
+      },
+      {
+        "id": "arcane-charge-15",
+        "name": "Arcane Charge",
+        "level": 15,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "When you use your Action Surge, you can teleport up to 30 feet to an unoccupied space you can see. You can teleport before or after the additional action.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": true
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": true,
+        "scalingProgression": [],
+        "subclass": "Eldritch Knight"
+      },
+      {
+        "id": "improved-war-magic-18",
+        "name": "Improved War Magic",
+        "level": 18,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "When you take the Attack action on your turn, you can replace two of the attacks with a casting of one of your level 1 or level 2 Wizard spells that has a casting time of an action.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Eldritch Knight"
+      }
+    ],
+    "Psi Warrior": [
+      {
+        "id": "protective-field-3",
+        "name": "Protective Field",
+        "level": 3,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "When you or another creature you can see within 30 feet of you takes damage, you can take a Reaction to expend one Psionic Energy Die, roll the die, and reduce the damage taken by the number rolled plus your Intelligence modifier (minimum reduction of 1), as you create a momentary shield of telekinetic force.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "force"
+          ],
+          "abilities": [
+            "intelligence"
+          ],
+          "actionType": "reaction",
+          "range": "30 feet",
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      },
+      {
+        "id": "psionic-strike-3",
+        "name": "Psionic Strike",
+        "level": 3,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "You can propel your weapons with psionic force. Once on each of your turns, immediately after you hit a target within 30 feet of yourself with an attack and deal damage to it with a weapon, you can expend one Psionic Energy Die, rolling it and dealing Force damage to the target equal to the number rolled plus your Intelligence modifier.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "force"
+          ],
+          "abilities": [
+            "intelligence"
+          ],
+          "actionType": null,
+          "range": "30 feet",
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      },
+      {
+        "id": "telekinetic-movement-3",
+        "name": "Telekinetic Movement",
+        "level": 3,
+        "source": "XPHB",
+        "page": 98,
+        "featureType": "subclass",
+        "description": "You can move an object or a creature with your mind. As a Magic action, choose one target you can see within 30 feet of yourself; the target must be a loose object that is Large or smaller or one willing creature other than you. You transport the target up to 30 feet to an unoccupied space you can see. Alternatively, if the target is a Tiny object, you can transport it to or from your hand. Once you take this action, you can't do so again until you finish a Short Rest or Long Rest unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "action",
+          "range": "30 feet",
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      },
+      {
+        "id": "psi-powered-leap-7",
+        "name": "Psi-Powered Leap",
+        "level": 7,
+        "source": "XPHB",
+        "page": 99,
+        "featureType": "subclass",
+        "description": "As a Bonus Action, you gain a Fly Speed equal to twice your Speed until the end of the current turn. Once you take this Bonus Action, you can't do so again until you finish a Short Rest or Long Rest unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "bonus-action",
+          "range": null,
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      },
+      {
+        "id": "telekinetic-thrust-7",
+        "name": "Telekinetic Thrust",
+        "level": 7,
+        "source": "XPHB",
+        "page": 99,
+        "featureType": "subclass",
+        "description": "When you deal damage to a target with your Psionic Strike, you can force the target to make a Strength saving throw (8 plus your Intelligence modifier and Proficiency). On a failed save, you can give the target the Prone condition or transport it up to 10 feet horizontally.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "force"
+          ],
+          "abilities": [
+            "strength",
+            "intelligence"
+          ],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      },
+      {
+        "id": "guarded-mind-10",
+        "name": "Guarded Mind",
+        "level": 10,
+        "source": "XPHB",
+        "page": 99,
+        "featureType": "subclass",
+        "description": "You have Resistance to Psychic damage. Moreover, if you start your turn with the Charmed or Frightened condition, you can expend a Psionic Energy Die (no action required) and end every effect on yourself giving you those conditions.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "psychic"
+          ],
+          "abilities": [],
+          "actionType": "free",
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      },
+      {
+        "id": "bulwark-of-force-15",
+        "name": "Bulwark of Force",
+        "level": 15,
+        "source": "XPHB",
+        "page": 99,
+        "featureType": "subclass",
+        "description": "You can shield yourself and others with telekinetic force. As a Bonus Action, you can choose creatures, including yourself, within 30 feet of yourself, up to a number of creatures equal to your Intelligence modifier (minimum of one creature). Each of the chosen creatures has Cover for 1 minute or until you have the Incapacitated condition. Once you use this feature, you can't do so again until you finish a Long Rest unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "force"
+          ],
+          "abilities": [
+            "intelligence"
+          ],
+          "actionType": "bonus-action",
+          "range": "30 feet",
+          "duration": "1 minute",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      },
+      {
+        "id": "telekinetic-master-18",
+        "name": "Telekinetic Master",
+        "level": 18,
+        "source": "XPHB",
+        "page": 99,
+        "featureType": "subclass",
+        "description": "You always have the Telekinesis spell prepared. With this feature, you can cast it without a spell slot or components, and your spellcasting ability for it is Intelligence. On each of your turns while you maintain Concentration on it, including the turn when you cast it, you can make one attack with a weapon as a Bonus Action. Once you cast the spell with this feature, you can't do so in this way again until you finish a Long Rest unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "intelligence"
+          ],
+          "actionType": "bonus-action",
+          "range": null,
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Psi Warrior"
+      }
+    ]
+  }
+}

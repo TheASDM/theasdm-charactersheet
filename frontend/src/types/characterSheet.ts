@@ -69,6 +69,14 @@ export interface CharacterSheetData {
     [key: string]: any;
   };
 
+  // Selected class choices from character generator
+  // Maps choiceGroup ID to array of selected feature IDs
+  // Example: { "divine-order-1": ["divine-order-protector-1"] }
+  // Example: { "cunning-strike-5": ["cunning-strike-poison-cost-1d6-5", "cunning-strike-trip-cost-1d6-5"] }
+  selectedClassChoices?: {
+    [choiceGroupId: string]: string[]; // Array of selected feature IDs (supports single or multiple selections)
+  };
+
   // Weapon Mastery tracking
   weaponMasteries?: {
     available: number; // How many weapon masteries the character can have active

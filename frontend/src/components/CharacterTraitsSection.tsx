@@ -67,9 +67,21 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
   onUpdateCharacter,
 }) => {
   const [isWeaponMasteryModalOpen, setIsWeaponMasteryModalOpen] = useState(false);
-  // Generate features directly from character data - no complex templates!
-  const generatedFeatures = useMemo(() => {
-    return generateFeaturesForCharacter(character);
+  const [generatedFeatures, setGeneratedFeatures] = useState<SimpleFeature[]>([]);
+
+  // Generate features directly from character data - now async to support choice system!
+  React.useEffect(() => {
+    let cancelled = false;
+
+    generateFeaturesForCharacter(character).then((features) => {
+      if (!cancelled) {
+        setGeneratedFeatures(features);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [character]);
 
   // Check which categories have generated features

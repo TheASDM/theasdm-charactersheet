@@ -257,7 +257,7 @@ export const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
 
         <ModalHeader>
           <ClassName>{className}</ClassName>
-          <ClassTagline>{classData.description}</ClassTagline>
+          <ClassTagline>{classData.description || `A ${className.toLowerCase()} adventurer with unique abilities.`}</ClassTagline>
         </ModalHeader>
 
         <ModalContent>
@@ -271,11 +271,18 @@ export const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
               </InfoRow>
               <InfoRow>
                 <InfoLabel>Primary Ability:</InfoLabel>
-                <InfoValue>{classData.primaryAbility}</InfoValue>
+                <InfoValue>
+                  {Array.isArray(classData.primaryAbility)
+                    ? classData.primaryAbility.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)).join(', ')
+                    : classData.primaryAbility}
+                </InfoValue>
               </InfoRow>
               <InfoRow>
                 <InfoLabel>Saving Throws:</InfoLabel>
-                <InfoValue>{classData.savingThrows}</InfoValue>
+                <InfoValue>
+                  {classData.savingThrows || (classData.savingThrowProficiencies &&
+                    classData.savingThrowProficiencies.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(', '))}
+                </InfoValue>
               </InfoRow>
             </Section>
 
@@ -283,22 +290,35 @@ export const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
             <Section>
               <SectionTitle>Proficiencies</SectionTitle>
               <ProficienciesGrid>
-                {classData.proficiencies.armor && (
+                {/* Handle both API format (armorProficiencies array) and hardcoded format (proficiencies.armor string) */}
+                {(classData.armorProficiencies || classData.proficiencies?.armor) && (
                   <ProficiencyItem>
-                    <strong>Armor:</strong> {classData.proficiencies.armor}
+                    <strong>Armor:</strong> {
+                      Array.isArray(classData.armorProficiencies)
+                        ? classData.armorProficiencies.join(', ')
+                        : classData.proficiencies?.armor
+                    }
                   </ProficiencyItem>
                 )}
-                {classData.proficiencies.weapons && (
+                {(classData.weaponProficiencies || classData.proficiencies?.weapons) && (
                   <ProficiencyItem>
-                    <strong>Weapons:</strong> {classData.proficiencies.weapons}
+                    <strong>Weapons:</strong> {
+                      Array.isArray(classData.weaponProficiencies)
+                        ? classData.weaponProficiencies.join(', ')
+                        : classData.proficiencies?.weapons
+                    }
                   </ProficiencyItem>
                 )}
-                {classData.proficiencies.tools && (
+                {(classData.toolProficiencies || classData.proficiencies?.tools) && (
                   <ProficiencyItem>
-                    <strong>Tools:</strong> {classData.proficiencies.tools}
+                    <strong>Tools:</strong> {
+                      Array.isArray(classData.toolProficiencies)
+                        ? classData.toolProficiencies.join(', ')
+                        : classData.proficiencies?.tools
+                    }
                   </ProficiencyItem>
                 )}
-                {classData.proficiencies.skills && (
+                {classData.proficiencies?.skills && (
                   <ProficiencyItem>
                     <strong>Skills:</strong> {classData.proficiencies.skills}
                   </ProficiencyItem>
@@ -310,17 +330,33 @@ export const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
           {/* Class Features */}
           <Section style={{ marginTop: '2rem' }}>
             <SectionTitle>Level 1 Class Features</SectionTitle>
-            {classData.classFeatures && Object.entries(classData.classFeatures).map(([name, feature]: [string, any]) => (
-              <FeatureCard key={name}>
-                <FeatureName>{name}</FeatureName>
-                <FeatureDescription>{feature.description}</FeatureDescription>
-                {feature.details && (
-                  <FeatureDescription style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.9 }}>
-                    {feature.details}
-                  </FeatureDescription>
-                )}
-              </FeatureCard>
-            ))}
+            {classData.classFeatures && (() => {
+              // Handle API format: classFeatures is an object with level keys
+              if (classData.classFeatures['1'] && Array.isArray(classData.classFeatures['1'])) {
+                return classData.classFeatures['1'].map((feature: any, idx: number) => (
+                  <FeatureCard key={idx}>
+                    <FeatureName>{feature.name}</FeatureName>
+                    <FeatureDescription>
+                      {Array.isArray(feature.entries)
+                        ? feature.entries.map((e: any) => typeof e === 'string' ? e : JSON.stringify(e)).join(' ')
+                        : feature.entries || feature.description || ''}
+                    </FeatureDescription>
+                  </FeatureCard>
+                ));
+              }
+              // Handle hardcoded format: classFeatures is an object with feature names as keys
+              return Object.entries(classData.classFeatures).map(([name, feature]: [string, any]) => (
+                <FeatureCard key={name}>
+                  <FeatureName>{name}</FeatureName>
+                  <FeatureDescription>{feature.description}</FeatureDescription>
+                  {feature.details && (
+                    <FeatureDescription style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.9 }}>
+                      {feature.details}
+                    </FeatureDescription>
+                  )}
+                </FeatureCard>
+              ));
+            })()}
           </Section>
         </ModalContent>
 

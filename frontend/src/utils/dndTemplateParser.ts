@@ -8,6 +8,15 @@ export const parseComplexDnDEntry = (entry: any): string => {
     return String(entry);
   }
 
+  // Handle arrays - recursively parse each element and join
+  if (Array.isArray(entry)) {
+    const result = entry
+      .map((item: any) => parseComplexDnDEntry(item))
+      .filter((text: string) => text.trim().length > 0) // Filter out empty strings from options/refs
+      .join(' ');
+    return result;
+  }
+
   // Handle table structures
   if (entry.type === 'table') {
     let result = '';
@@ -56,6 +65,18 @@ export const parseComplexDnDEntry = (entry: any): string => {
     }
 
     return result;
+  }
+
+  // Handle options structures (choice prompts - skip these as they're for interactive choices)
+  if (entry.type === 'options') {
+    // Options are handled by the character generator UI, not displayed as text
+    return '';
+  }
+
+  // Handle refClassFeature (references to other features - skip as they're pointers)
+  if (entry.type === 'refClassFeature') {
+    // These are references that get resolved elsewhere
+    return '';
   }
 
   // Handle nested entry objects

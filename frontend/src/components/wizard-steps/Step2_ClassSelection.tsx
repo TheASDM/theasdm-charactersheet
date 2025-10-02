@@ -3,8 +3,14 @@ import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { classOptions } from '../../constants/characterOptions';
-import { CLASS_SKILLS, CLASS_SKILL_CHOICES } from '../../services/classService';
+import { CLASS_SKILLS, CLASS_SKILL_CHOICES, classService } from '../../services/classService';
 import { ClassDetailsModal } from '../ui/ClassDetailsModal';
+import { CharacterClass } from '../../types/api';
+import { parseComplexDnDEntry } from '../../utils/dndTemplateParser';
+import { loadClassData } from '../../utils/classDataLoader';
+import { detectRequiredChoices } from '../../utils/classChoiceDetection';
+import { ClassData, ChoicePrompt } from '../../types/classFeatures';
+import { loadExternalChoiceData } from '../../utils/externalChoiceLoader';
 
 // Complete list of all D&D skills for classes that can choose "any" skill
 const ALL_SKILLS = [
@@ -773,6 +779,158 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousClass, setPreviousClass] = useState<string | null>(data.selectedClass);
+  const [apiClasses, setApiClasses] = useState<CharacterClass[]>([]);
+  const [_loadingClasses, setLoadingClasses] = useState(true);
+  const [_classLoadError, setClassLoadError] = useState<string | null>(null);
+
+  // New choice system state
+  const [_loadedClassData, setLoadedClassData] = useState<ClassData | null>(null);
+  const [detectedChoices, setDetectedChoices] = useState<ChoicePrompt[]>([]);
+
+  // Load classes from API on mount
+  useEffect(() => {
+    const loadClasses = async () => {
+      try {
+        setLoadingClasses(true);
+        setClassLoadError(null);
+        const response = await classService.getAll();
+
+        if (response.error) {
+          setClassLoadError(response.error);
+        } else if (response.data) {
+          setApiClasses(response.data);
+        }
+      } catch (err) {
+        setClassLoadError('Failed to load class data');
+        console.error('Error loading classes:', err);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+
+    loadClasses();
+  }, []);
+
+  // Load class data and detect choices when class is selected
+  useEffect(() => {
+    if (!data.selectedClass) {
+      setLoadedClassData(null);
+      setDetectedChoices([]);
+      return;
+    }
+
+    const loadAndDetectChoices = async () => {
+      try {
+        const classData = await loadClassData(data.selectedClass);
+        setLoadedClassData(classData);
+
+        // Detect required choices for level 1
+        const detection = detectRequiredChoices(
+          classData,
+          1, // Level 1
+          data.selectedClassChoices || {},
+          undefined // No subclass at level 1
+        );
+
+        // Load external options for any external reference choices
+        const promptsWithExternalOptions = await Promise.all(
+          detection.prompts.map(async (prompt) => {
+            if (prompt.externalReference && prompt.choiceType) {
+              // This is an external reference - load the options
+              try {
+                const externalOptions = await loadExternalChoiceData(
+                  prompt.externalReference,
+                  1, // Level 1
+                  data.selectedClassChoices || {}
+                );
+
+                // Update the prompt with the loaded options
+                return {
+                  ...prompt,
+                  options: externalOptions
+                };
+              } catch (error) {
+                console.error(`Failed to load external options for ${prompt.title}:`, error);
+                return prompt; // Return original prompt with empty options
+              }
+            }
+            // Not an external reference, return as-is
+            return prompt;
+          })
+        );
+
+        setDetectedChoices(promptsWithExternalOptions);
+      } catch (error) {
+        console.error('Failed to load class data:', error);
+        setLoadedClassData(null);
+        setDetectedChoices([]);
+      }
+    };
+
+    loadAndDetectChoices();
+  }, [data.selectedClass, data.selectedClassChoices]);
+
+  // Helper function to extract choices from API class data
+  const extractChoicesFromAPI = (classData: any) => {
+    if (!classData.classFeatures || !classData.classFeatures['1']) return {};
+
+    const choices: any = {};
+
+    // Look through level 1 features for options
+    classData.classFeatures['1'].forEach((feature: any) => {
+      if (feature.entries && Array.isArray(feature.entries)) {
+        feature.entries.forEach((entry: any) => {
+          // Look for type: "options" entries
+          if (entry.type === 'options' && entry.entries && Array.isArray(entry.entries)) {
+            // This is a choice!
+            const options = entry.entries
+              .filter((opt: any) => opt.type === 'refClassFeature')
+              .map((opt: any) => {
+                // Extract the option name from the reference
+                const refParts = opt.classFeature.split('|');
+                const optionName = refParts[0];
+
+                // Find the actual feature details in the same level
+                const optionFeature = classData.classFeatures['1'].find((f: any) => f.name === optionName);
+
+                // Use parseComplexDnDEntry to handle nested objects and template tags
+                const description = parseComplexDnDEntry(optionFeature?.entries || '');
+
+                return {
+                  name: optionName,
+                  description: description
+                };
+              });
+
+            if (options.length > 0) {
+              choices[feature.name] = {
+                description: `Choose your ${feature.name.toLowerCase()}:`,
+                options: options
+              };
+            }
+          }
+        });
+      }
+    });
+
+    return choices;
+  };
+
+  // Helper function to get class data (prioritize API, fallback to hardcoded)
+  const getClassData = (className: string) => {
+    // Try to find in API classes first (2024 data)
+    const apiClass = apiClasses.find(c => c.name === className);
+    if (apiClass) {
+      // Add extracted choices to API class data
+      const choices = extractChoicesFromAPI(apiClass);
+      return {
+        ...apiClass,
+        choices: Object.keys(choices).length > 0 ? choices : (apiClass as any).choices
+      };
+    }
+    // Fallback to hardcoded CLASS_DATA if API hasn't loaded yet
+    return CLASS_DATA[className as keyof typeof CLASS_DATA];
+  };
 
   const handleClassClick = (className: string) => {
     setSelectedClassForModal(className);
@@ -788,10 +946,22 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
     // Small delay to allow modal to close
     setTimeout(() => {
-      const classData = CLASS_DATA[className as keyof typeof CLASS_DATA];
+      const classData = getClassData(className);
 
-      // Extract class proficiencies
-      const extractProficiencies = (proficiencies: any) => {
+      // Extract class proficiencies from API or hardcoded data
+      const extractProficiencies = (classData: any) => {
+        // Handle API format (direct properties on classData)
+        if (classData.armorProficiencies || classData.weaponProficiencies) {
+          return {
+            armor: classData.armorProficiencies || [],
+            weapons: classData.weaponProficiencies || [],
+            tools: classData.toolProficiencies || [],
+            savingThrows: classData.savingThrowProficiencies?.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)) || []
+          };
+        }
+
+        // Handle hardcoded format (proficiencies object)
+        const proficiencies = classData.proficiencies || {};
         return {
           armor: proficiencies.armor ? proficiencies.armor.split(', ') : [],
           weapons: proficiencies.weapons ? proficiencies.weapons.split(', ') : [],
@@ -800,29 +970,61 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         };
       };
 
-      // Extract level 1 class features from CLASS_DATA structure
+      // Extract level 1 class features from API or hardcoded data
       const extractClassFeatures = (classData: any) => {
-        // Handle the CLASS_DATA format where classFeatures is an object with feature names as keys
-        if (classData.classFeatures && typeof classData.classFeatures === 'object') {
+        // Handle API format: classFeatures is an object with level keys like "1", "2", etc.
+        if (classData.classFeatures && classData.classFeatures['1'] && Array.isArray(classData.classFeatures['1'])) {
+          // Get list of choice option names to filter them out
+          const choiceOptionNames = new Set<string>();
+          classData.classFeatures['1'].forEach((feature: any) => {
+            if (feature.entries && Array.isArray(feature.entries)) {
+              feature.entries.forEach((entry: any) => {
+                if (entry.type === 'options' && entry.entries) {
+                  entry.entries.forEach((opt: any) => {
+                    if (opt.type === 'refClassFeature') {
+                      const optionName = opt.classFeature.split('|')[0];
+                      choiceOptionNames.add(optionName);
+                    }
+                  });
+                }
+              });
+            }
+          });
+
+          // Filter out choice options - we only want the parent feature
+          const level1Features = classData.classFeatures['1'].filter(
+            (f: any) => !choiceOptionNames.has(f.name)
+          );
+
+          return level1Features.map((feature: any) => {
+            // Use parseComplexDnDEntry to handle nested objects and template tags
+            const description = parseComplexDnDEntry(feature.entries || feature.description || '');
+
+            return {
+              name: feature.name,
+              description: description,
+              details: description,
+              level: 1,
+              page: feature.page,
+              source: feature.source || 'Class Feature',
+              entries: feature.entries,
+              ...feature
+            };
+          });
+        }
+
+        // Handle hardcoded CLASS_DATA format where classFeatures is an object with feature names as keys
+        if (classData.classFeatures && typeof classData.classFeatures === 'object' && !classData.classFeatures['1']) {
           return Object.entries(classData.classFeatures).map(([featureName, featureData]: [string, any]) => ({
             name: featureName,
             description: featureData.description || '',
             details: featureData.details || featureData.description || '',
-            level: 1, // Level 1 features for character creation
+            level: 1,
             source: 'Class Feature'
           }));
         }
 
-        // Fallback to API format if it exists
-        const level1Features = classData.classFeatures?.["1"] || [];
-        return level1Features.map((feature: any) => ({
-          name: feature.name,
-          description: feature.entries?.join(' ') || '',
-          details: feature.entries?.join(' ') || '',
-          page: feature.page,
-          source: feature.source,
-          ...feature
-        }));
+        return [];
       };
 
       // Determine if class is a spellcaster
@@ -851,10 +1053,10 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         classStep: 2, // Move to combined skills/features view
 
         // Extract and store all class data
-        classProficiencies: extractProficiencies(classData.proficiencies),
+        classProficiencies: extractProficiencies(classData),
         classFeatures: extractClassFeatures(classData),
         hitDice: `d${classData.hitDie}`,
-        primaryAbility: [classData.primaryAbility],
+        primaryAbility: Array.isArray(classData.primaryAbility) ? classData.primaryAbility : [classData.primaryAbility],
         spellcaster: isSpellcaster,
         spellcastingAbility: getSpellcastingAbility(className),
         classStartingEquipment: [] // TODO: Add starting equipment data
@@ -895,26 +1097,24 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     onUpdate({ classStep: step });
   };
 
-  const handleClassChoiceToggle = (category: string, choice: string) => {
-    const currentChoices = data.selectedClassChoices[category] || [];
+  const handleClassChoiceToggle = (choiceGroupId: string, featureId: string, maxSelections?: number) => {
+    const currentChoices = data.selectedClassChoices[choiceGroupId] || [];
+    const max = maxSelections || 1;
 
-    // Determine max choices for this category based on the feature
-    const maxChoices = category === 'Expertise' ? 2 : 1;
-
-    if (currentChoices.includes(choice)) {
+    if (currentChoices.includes(featureId)) {
       // Remove choice
       onUpdate({
         selectedClassChoices: {
           ...data.selectedClassChoices,
-          [category]: currentChoices.filter(c => c !== choice)
+          [choiceGroupId]: currentChoices.filter(c => c !== featureId)
         }
       });
-    } else if (currentChoices.length < maxChoices) {
+    } else if (currentChoices.length < max) {
       // Add choice if under limit
       onUpdate({
         selectedClassChoices: {
           ...data.selectedClassChoices,
-          [category]: [...currentChoices, choice]
+          [choiceGroupId]: [...currentChoices, featureId]
         }
       });
     }
@@ -972,7 +1172,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         <ClassDetailsModal
           isOpen={isModalOpen}
           className={selectedClassForModal}
-          classData={CLASS_DATA[selectedClassForModal as keyof typeof CLASS_DATA]}
+          classData={getClassData(selectedClassForModal)}
           onSelect={() => handleClassSelect(selectedClassForModal)}
           onClose={() => {
             setIsModalOpen(false);
@@ -1064,8 +1264,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
             <ClassGrid>
               {classOptions.map((className) => {
-                const classInfo =
-                  CLASS_DATA[className as keyof typeof CLASS_DATA];
+                const classInfo = getClassData(className);
                 const isSelected = data.selectedClass === className;
 
                 return (
@@ -1078,7 +1277,9 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
                     <ClassName>{className}</ClassName>
 
-                    <ClassDescription>{classInfo.description}</ClassDescription>
+                    <ClassDescription>
+                      {(classInfo as any).description || `A ${className.toLowerCase()} adventurer with unique abilities and skills.`}
+                    </ClassDescription>
 
                     <ClassFeatures>
                       <div className="feature-title">Hit Die:</div>
@@ -1086,17 +1287,23 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
                       <div className="feature-title">Primary Ability:</div>
                       <div className="feature-list">
-                        {classInfo.primaryAbility}
+                        {Array.isArray(classInfo.primaryAbility)
+                          ? classInfo.primaryAbility.map((a: string) => a.toUpperCase()).join(', ')
+                          : classInfo.primaryAbility}
                       </div>
 
                       <div className="feature-title">Saving Throws:</div>
                       <div className="feature-list">
-                        {classInfo.savingThrows}
+                        {(classInfo as any).savingThrows || ((classInfo as any).savingThrowProficiencies && (classInfo as any).savingThrowProficiencies.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(', '))}
                       </div>
 
                       <div className="feature-title">Level 1 Features:</div>
                       <div className="feature-list">
-                        {classInfo.features.join(', ')}
+                        {(classInfo as any).features
+                          ? (classInfo as any).features.join(', ')
+                          : ((classInfo as any).classFeatures && (classInfo as any).classFeatures['1'])
+                            ? (classInfo as any).classFeatures['1'].map((f: any) => f.name).join(', ')
+                            : 'View details for features'}
                       </div>
                     </ClassFeatures>
                   </ClassCard>
@@ -1177,47 +1384,51 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
             </ClassSelectionInfo>
 
             {(() => {
-              const classInfo = CLASS_DATA[data.selectedClass as keyof typeof CLASS_DATA];
-              const hasChoices = classInfo?.choices && Object.keys(classInfo.choices).length > 0;
+              // Use new choice detection system if available
+              if (detectedChoices.length > 0) {
+                return detectedChoices.map((prompt) => {
+                  const currentSelections = data.selectedClassChoices[prompt.choiceGroup] || [];
+                  const isComplete = prompt.minSelections ? currentSelections.length >= prompt.minSelections : currentSelections.length > 0;
+                  const maxSelections = prompt.maxSelections || 1;
 
-              if (hasChoices) {
-                return Object.entries(classInfo.choices).map(([choiceName, choiceData]) => (
-                  <div key={choiceName} style={{ marginBottom: '1.5rem' }}>
-                    <ClassSelectionInfo>
-                      <h4>{choiceName}</h4>
-                      <p>{choiceData.description}</p>
-                    </ClassSelectionInfo>
+                  return (
+                    <div key={prompt.choiceGroup} style={{ marginBottom: '1.5rem' }}>
+                      <ClassSelectionInfo>
+                        <h4>{prompt.title}</h4>
+                        <p>{prompt.description}</p>
+                      </ClassSelectionInfo>
 
-                    <SkillGrid>
-                      {choiceData.options.map((option: any) => (
-                        <SkillOption
-                          key={option.name}
-                          selected={data.selectedClassChoices[choiceName]?.includes(option.name) || false}
-                          onClick={() => handleClassChoiceToggle(choiceName, option.name)}
-                        >
-                          <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
-                            {option.name}
-                          </div>
-                          <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                            {option.description}
-                          </div>
-                        </SkillOption>
-                      ))}
-                    </SkillGrid>
+                      <SkillGrid>
+                        {prompt.options.map((option) => (
+                          <SkillOption
+                            key={option.id}
+                            selected={currentSelections.includes(option.id)}
+                            onClick={() => handleClassChoiceToggle(prompt.choiceGroup, option.id, maxSelections)}
+                          >
+                            <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                              {option.name}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                              {parseComplexDnDEntry(option.description)}
+                            </div>
+                          </SkillOption>
+                        ))}
+                      </SkillGrid>
 
-                    <div
-                      style={{
-                        textAlign: 'center',
-                        color: (data.selectedClassChoices[choiceName]?.length || 0) === (choiceName === 'Eldritch Invocations' ? 2 : 1) ? '#4caf50' : '#d4af37',
-                        fontWeight: 600,
-                        marginTop: '1rem',
-                      }}
-                    >
-                      Selected: {data.selectedClassChoices[choiceName]?.length || 0} / {choiceName === 'Expertise' ? 2 : 1}
-                      {(data.selectedClassChoices[choiceName]?.length || 0) === (choiceName === 'Expertise' ? 2 : 1) && ' ✓ Complete!'}
+                      <div
+                        style={{
+                          textAlign: 'center',
+                          color: isComplete ? '#4caf50' : '#d4af37',
+                          fontWeight: 600,
+                          marginTop: '1rem',
+                        }}
+                      >
+                        Selected: {currentSelections.length} / {maxSelections}
+                        {isComplete && ' ✓ Complete!'}
+                      </div>
                     </div>
-                  </div>
-                ));
+                  );
+                });
               } else {
                 return (
                   <div

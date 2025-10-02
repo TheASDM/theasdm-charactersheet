@@ -1,0 +1,76 @@
+{
+  "source": "XPHB",
+  "category": "Fighting Style",
+  "fightingStyles": [
+    {
+      "id": "archery",
+      "name": "Archery",
+      "prerequisite": null,
+      "description": "You gain a +2 bonus to attack rolls you make with Ranged weapons.",
+      "category": "feat"
+    },
+    {
+      "id": "defense",
+      "name": "Defense",
+      "prerequisite": null,
+      "description": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.",
+      "category": "feat"
+    },
+    {
+      "id": "dueling",
+      "name": "Dueling",
+      "prerequisite": null,
+      "description": "When you're holding a Melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
+      "category": "feat"
+    },
+    {
+      "id": "great-weapon-fighting",
+      "name": "Great Weapon Fighting",
+      "prerequisite": null,
+      "description": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit.",
+      "category": "feat"
+    },
+    {
+      "id": "interception",
+      "name": "Interception",
+      "prerequisite": null,
+      "description": "When a creature you can see hits another creature within 5 feet of you with an attack roll, you can take a Reaction to reduce the damage the target takes by 1d10 + your Proficiency Bonus (to a minimum of 0 damage). You must be holding a Shield or a Simple or Martial weapon to use this Reaction.",
+      "category": "feat"
+    },
+    {
+      "id": "protection",
+      "name": "Protection",
+      "prerequisite": null,
+      "description": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can take a Reaction to interpose your Shield if you're holding one. You impose Disadvantage on the triggering attack roll and all other attack rolls against the target until the start of your next turn if you remain within 5 feet of the target.",
+      "category": "feat"
+    },
+    {
+      "id": "thrown-weapon-fighting",
+      "name": "Thrown Weapon Fighting",
+      "prerequisite": null,
+      "description": "When you hit with a ranged attack roll using a Thrown weapon, you gain a +2 bonus to the damage roll.",
+      "category": "feat"
+    },
+    {
+      "id": "two-weapon-fighting",
+      "name": "Two-Weapon Fighting",
+      "prerequisite": null,
+      "description": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that extra attack if you aren't already adding it to the damage.",
+      "category": "feat"
+    },
+    {
+      "id": "unarmed-fighting",
+      "name": "Unarmed Fighting",
+      "prerequisite": null,
+      "description": "When you hit with your Unarmed Strike and deal damage, you can deal Bludgeoning damage equal to 1d6 + your Strength modifier instead of the normal damage of an Unarmed Strike. If you have two hands free when you make this Unarmed Strike, the d6 becomes a d8.\n\nAt the start of each of your turns, you can deal 1d4 Bludgeoning damage to one creature {@condition Grappled|XPHB} by you.",
+      "category": "feat"
+    },
+    {
+      "id": "blind-fighting",
+      "name": "Blind Fighting",
+      "prerequisite": null,
+      "description": "You have Blindsight with a range of 10 feet.",
+      "category": "feat"
+    }
+  ]
+}

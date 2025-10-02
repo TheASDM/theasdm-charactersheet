@@ -12,13 +12,14 @@ datasource db {
 
 // Users and Authentication
 model User {
-  id        Int      @id @default(autoincrement())
-  discordId BigInt?  @unique @map("discord_id")
-  username  String   @db.VarChar(50)
-  email     String?  @db.VarChar(255)
-  isDm      Boolean  @default(false) @map("is_dm")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           Int      @id @default(autoincrement())
+  discordId    BigInt?  @unique @map("discord_id")
+  username     String   @unique @db.VarChar(50)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  isDm         Boolean  @default(false) @map("is_dm")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
   characters Character[]

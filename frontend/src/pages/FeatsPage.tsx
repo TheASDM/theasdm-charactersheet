@@ -36,7 +36,7 @@ const Header = styled.div`
 
 // Content wrapper
 const ContentContainer = styled.div`
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
 `;
 
@@ -296,6 +296,51 @@ const NoResultsMessage = styled.div`
   }
 `;
 
+// Pagination controls
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #444;
+`;
+
+const PaginationButton = styled.button<{ $active?: boolean }>`
+  background: ${props => props.$active
+    ? 'linear-gradient(135deg, #d4af37 0%, #b8941f 100%)'
+    : 'rgba(45, 45, 45, 0.8)'};
+  color: ${props => props.$active ? '#1a1a1a' : '#f0f0f0'};
+  border: 1px solid ${props => props.$active ? '#d4af37' : '#444'};
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 40px;
+
+  &:hover:not(:disabled) {
+    background: ${props => props.$active
+      ? 'linear-gradient(135deg, #b8941f 0%, #a0801b 100%)'
+      : 'rgba(212, 175, 55, 0.2)'};
+    border-color: #d4af37;
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+const PageInfo = styled.span`
+  color: #ccc;
+  font-size: 0.9rem;
+  margin: 0 1rem;
+`;
+
 const FeatsPage: React.FC = () => {
   const [feats, setFeats] = useState<Feat[]>([]);
   const [filteredFeats, setFilteredFeats] = useState<Feat[]>([]);
@@ -303,6 +348,8 @@ const FeatsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const featsPerPage = 12;
 
   useEffect(() => {
     const fetchFeats = async () => {
@@ -344,6 +391,7 @@ const FeatsPage: React.FC = () => {
     }
 
     setFilteredFeats(filtered);
+    setCurrentPage(1); // Reset to page 1 when filters change
   }, [feats, searchTerm, selectedCategory]);
 
   // Helper functions
@@ -443,6 +491,49 @@ const FeatsPage: React.FC = () => {
     new Set(feats.map((feat) => formatCategory(feat.category)))
   ).sort();
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredFeats.length / featsPerPage);
+  const indexOfLastFeat = currentPage * featsPerPage;
+  const indexOfFirstFeat = indexOfLastFeat - featsPerPage;
+  const currentFeats = filteredFeats.slice(indexOfFirstFeat, indexOfLastFeat);
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        pages.push(currentPage - 1);
+        pages.push(currentPage);
+        pages.push(currentPage + 1);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <PageContainer>
@@ -519,38 +610,73 @@ const FeatsPage: React.FC = () => {
               </div>
             </NoResultsMessage>
           ) : (
-            <FeatsGrid>
-              {filteredFeats.map((feat, index) => (
-                <FeatCard key={feat.id || feat.name || index}>
-                  <FeatHeader>
-                    <FeatName>{feat.name}</FeatName>
-                    <FeatCategory>
-                      {formatCategory(feat.category)}
-                    </FeatCategory>
-                  </FeatHeader>
+            <>
+              <FeatsGrid>
+                {currentFeats.map((feat, index) => (
+                  <FeatCard key={feat.id || feat.name || index}>
+                    <FeatHeader>
+                      <FeatName>{feat.name}</FeatName>
+                      <FeatCategory>
+                        {formatCategory(feat.category)}
+                      </FeatCategory>
+                    </FeatHeader>
 
-                  <FeatContent>
-                    <Prerequisites>
-                      <span className="label">Prerequisites:</span>
-                      <span className="content">
-                        {parsePrerequisites(feat.prerequisites)}
-                      </span>
-                    </Prerequisites>
+                    <FeatContent>
+                      <Prerequisites>
+                        <span className="label">Prerequisites:</span>
+                        <span className="content">
+                          {parsePrerequisites(feat.prerequisites)}
+                        </span>
+                      </Prerequisites>
 
-                    <FeatDescription>
-                      {parseDescription(feat.entries)}
-                    </FeatDescription>
+                      <FeatDescription>
+                        {parseDescription(feat.entries)}
+                      </FeatDescription>
 
-                    {feat.source && (
-                      <FeatSource>
-                        <strong>Source:</strong> {feat.source}
-                        {feat.page && ` p.${feat.page}`}
-                      </FeatSource>
-                    )}
-                  </FeatContent>
-                </FeatCard>
-              ))}
-            </FeatsGrid>
+                      {feat.source && (
+                        <FeatSource>
+                          <strong>Source:</strong> {feat.source}
+                          {feat.page && ` p.${feat.page}`}
+                        </FeatSource>
+                      )}
+                    </FeatContent>
+                  </FeatCard>
+                ))}
+              </FeatsGrid>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <PaginationContainer>
+                  <PaginationButton
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    ← Prev
+                  </PaginationButton>
+
+                  {getPageNumbers().map((page, index) => (
+                    typeof page === 'number' ? (
+                      <PaginationButton
+                        key={index}
+                        $active={currentPage === page}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </PaginationButton>
+                    ) : (
+                      <PageInfo key={index}>{page}</PageInfo>
+                    )
+                  ))}
+
+                  <PaginationButton
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next →
+                  </PaginationButton>
+                </PaginationContainer>
+              )}
+            </>
           )}
         </MainContainer>
       </ContentContainer>

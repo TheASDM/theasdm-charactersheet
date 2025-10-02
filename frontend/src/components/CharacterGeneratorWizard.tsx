@@ -576,9 +576,9 @@ export default function CharacterGeneratorWizard() {
           {wizardState.currentStep === 'review-create' && (
             <Step5ReviewCreate
               data={builderData}
-              onComplete={() => {
-                alert('Character created successfully! Redirecting to characters page...');
-                navigate('/characters');
+              onComplete={(characterId: number) => {
+                // Navigate directly to character sheet - choices are now handled in Step2
+                navigate(`/characters/${characterId}`);
               }}
             />
           )}

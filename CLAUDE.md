@@ -150,8 +150,11 @@ if (typeof feature === 'string') {
 - `frontend/src/utils/simpleFeatureGenerator.ts` - When extracting feat/class/species features
 - Any component that displays character features, traits, or abilities
 - Modal components showing feat/spell/item details
+- **CRITICAL**: When processing `feature.entries` arrays from the API - these MUST be passed to `parseComplexDnDEntry()` as arrays, NOT joined first
 
-**Testing tip**: Search for unparsed content by looking for `{@` or `|XPHB` in the rendered UI.
+**Testing tip**: Search for unparsed content by looking for `{@` or `|XPHB` in the rendered UI, or for `[object Object]` which indicates objects weren't parsed.
+
+**CRITICAL BUG FIX (2025-01-10)**: The parser NOW properly handles when the input is an array (like `feature.entries`). Previously, passing an array would cause `[object Object]` to appear because arrays weren't explicitly handled. The parser now recursively processes array elements and filters out empty results from `type: "options"` and `type: "refClassFeature"` entries.
 
 ## Testing the System
 

@@ -1,10 +1,14 @@
 /**
  * Simple feature generator that creates features based on character data
  * No templates, no complex resolution - just direct data-to-feature conversion
+ *
+ * UPDATED: Now uses the new choice detection system for D&D 2024 class features
  */
 
 import { CharacterSheetData } from '../types/characterSheet';
 import { parseComplexDnDEntry } from './dndTemplateParser';
+import { getDisplayableFeatures } from './classChoiceDetection';
+import { ClassData } from '../types/classFeatures';
 
 /**
  * Weapon Mastery property definitions
@@ -80,15 +84,28 @@ export interface SimpleFeature {
 
 /**
  * Generate all features for a character based on their data
+ * Now async to support the new choice-based class feature system
  */
-export function generateFeaturesForCharacter(character: CharacterSheetData): SimpleFeature[] {
+export async function generateFeaturesForCharacter(character: CharacterSheetData): Promise<SimpleFeature[]> {
   const features: SimpleFeature[] = [];
 
   // Add species features
   features.push(...generateSpeciesFeatures(character));
 
-  // Add class features
-  features.push(...generateClassFeatures(character));
+  // Add class features using new choice system
+  try {
+    // Dynamically import class data
+    const className = character.class;
+    if (className) {
+      const { loadClassData } = await import('./classDataLoader');
+      const classData = await loadClassData(className);
+      const classFeatures = await generateClassFeaturesWithChoiceSystem(character, classData);
+      features.push(...classFeatures);
+    }
+  } catch (error) {
+    console.warn('Failed to load class data, falling back to old system:', error);
+    features.push(...generateClassFeatures(character));
+  }
 
   // Add background features
   features.push(...generateBackgroundFeatures(character));
@@ -605,42 +622,206 @@ function generateAasimarFeatures(character: CharacterSheetData): SimpleFeature[]
 }
 
 /**
- * Generate class features (placeholder)
+ * Helper to check if a feature is a "choice parent" (like Divine Order) that should be replaced by the actual choice
+ */
+function isChoiceParentFeature(featureName: string, character: CharacterSheetData): boolean {
+  // Check if there's a choice made for this feature
+  return !!(character.selectedClassChoices && Object.keys(character.selectedClassChoices).includes(featureName));
+}
+
+/**
+ * Generate class features using the new choice detection system
+ * This replaces the old logic and properly handles choices, granted options, and scaling
+ *
+ * @param character - Character data
+ * @param classData - Complete class data from processed JSON (optional, will use stored features if not provided)
+ * @returns Array of features to display
+ */
+export async function generateClassFeaturesWithChoiceSystem(
+  character: CharacterSheetData,
+  classData?: ClassData
+): Promise<SimpleFeature[]> {
+  const features: SimpleFeature[] = [];
+  const level = character.level || 1;
+
+  // If classData is provided, use the new system
+  if (classData) {
+    // Use the choice detection system to get displayable features
+    const displayableFeatures = await getDisplayableFeatures(
+      classData,
+      level,
+      character.selectedClassChoices || {},
+      character.subclass
+    );
+
+    // Convert ClassFeature objects to SimpleFeature format
+    displayableFeatures.forEach((feature) => {
+      // Apply scaling if needed
+      let description = feature.description;
+      let mechanics = feature.mechanics;
+
+      if (feature.scales && feature.scalingProgression) {
+        // Find applicable scaling
+        for (const progression of feature.scalingProgression) {
+          if (level >= progression.level) {
+            // Apply scaling changes to description
+            if (progression.changes.damage) {
+              description = description.replace(
+                /\d+d\d+/,
+                progression.changes.damage
+              );
+            }
+
+            // Update mechanics
+            if (progression.changes) {
+              mechanics = { ...mechanics, ...progression.changes };
+            }
+          }
+        }
+      }
+
+      // Parse template tags in description
+      const parsedDescription = parseComplexDnDEntry(description);
+
+      features.push({
+        name: feature.name,
+        description: parsedDescription,
+        category: feature.featureType === 'subclass' ? 'Subclass Feature' : 'Class Feature'
+      });
+    });
+
+    return features;
+  }
+
+  // Fallback to old system if no classData provided
+  return generateClassFeaturesOld(character);
+}
+
+/**
+ * Generate class features (synchronous wrapper for backwards compatibility)
+ * Uses old system by default. For new choice system, call generateClassFeaturesWithChoiceSystem directly.
  */
 function generateClassFeatures(character: CharacterSheetData): SimpleFeature[] {
+  return generateClassFeaturesOld(character);
+}
+
+/**
+ * Old class feature generation logic (kept for backwards compatibility)
+ * This will be removed once all character creation flows use the new system
+ */
+function generateClassFeaturesOld(character: CharacterSheetData): SimpleFeature[] {
   const features: SimpleFeature[] = [];
   const characterClass = character.class?.toLowerCase();
-  // const level = character.level || 1; // TODO: Use level for level-based features
+  const level = character.level || 1;
 
   if (!characterClass) return features;
 
-  // For now, generate some basic level 1 class features
-  // This is a simplified version - we'll enhance it to use actual API data later
+  // Use stored class features from character data (from API/database with 2024 data)
+  // Note: character.classFeatures is the EXTRACTED level 1 features from the generator, not ALL features
+  if (character.classFeatures && Array.isArray(character.classFeatures)) {
+    // Get list of choice option names to exclude them
+    const choiceOptionNames = new Set<string>();
+    if (character.selectedClassChoices) {
+      Object.values(character.selectedClassChoices).forEach(options => {
+        options.forEach(opt => choiceOptionNames.add(opt));
+      });
+    }
 
-  if (characterClass.includes('barbarian')) {
-    features.push(...generateBarbarianFeatures(character));
-  } else if (characterClass.includes('bard')) {
-    features.push(...generateBardFeatures(character));
-  } else if (characterClass.includes('cleric')) {
-    features.push(...generateClericFeatures(character));
-  } else if (characterClass.includes('druid')) {
-    features.push(...generateDruidFeatures(character));
-  } else if (characterClass.includes('fighter')) {
-    features.push(...generateFighterFeatures(character));
-  } else if (characterClass.includes('monk')) {
-    features.push(...generateMonkFeatures(character));
-  } else if (characterClass.includes('paladin')) {
-    features.push(...generatePaladinFeatures(character));
-  } else if (characterClass.includes('ranger')) {
-    features.push(...generateRangerFeatures(character));
-  } else if (characterClass.includes('rogue')) {
-    features.push(...generateRogueFeatures(character));
-  } else if (characterClass.includes('sorcerer')) {
-    features.push(...generateSorcererFeatures(character));
-  } else if (characterClass.includes('warlock')) {
-    features.push(...generateWarlockFeatures(character));
-  } else if (characterClass.includes('wizard')) {
-    features.push(...generateWizardFeatures(character));
+    character.classFeatures.forEach((feature: any) => {
+      // Only process level 1 features
+      if (feature.level !== 1 && feature.level !== undefined) {
+        return;
+      }
+
+      // Skip choice option features (like Protector, Thaumaturge) - they're not parent features
+      if (choiceOptionNames.has(feature.name)) {
+        return;
+      }
+
+      // Skip "choice parent" features (like Divine Order) if a choice has been made
+      if (isChoiceParentFeature(feature.name, character)) {
+        // Instead, add the chosen option(s)
+        const chosenOptions = character.selectedClassChoices![feature.name];
+        if (chosenOptions && Array.isArray(chosenOptions)) {
+          chosenOptions.forEach(optionName => {
+            // Find the option feature in classFeatures
+            const optionFeature = character.classFeatures?.find((f: any) => f.name === optionName);
+            if (optionFeature) {
+              const description = parseComplexDnDEntry(optionFeature);
+              features.push({
+                name: optionName,
+                description: description,
+                category: 'Class Feature'
+              });
+            }
+          });
+        }
+        return; // Skip the parent feature
+      }
+
+      // Parse the feature description through the template parser
+      const description = parseComplexDnDEntry(feature);
+      features.push({
+        name: feature.name,
+        description: description,
+        category: 'Class Feature'
+      });
+    });
+  } else {
+    // Fallback to class-specific generators for classes without stored features
+    if (characterClass.includes('barbarian')) {
+      features.push(...generateBarbarianFeatures(character));
+    } else if (characterClass.includes('bard')) {
+      features.push(...generateBardFeatures(character));
+    } else if (characterClass.includes('cleric')) {
+      features.push(...generateClericFeatures(character));
+    } else if (characterClass.includes('druid')) {
+      features.push(...generateDruidFeatures(character));
+    } else if (characterClass.includes('fighter')) {
+      features.push(...generateFighterFeatures(character));
+    } else if (characterClass.includes('monk')) {
+      features.push(...generateMonkFeatures(character));
+    } else if (characterClass.includes('paladin')) {
+      features.push(...generatePaladinFeatures(character));
+    } else if (characterClass.includes('ranger')) {
+      features.push(...generateRangerFeatures(character));
+    } else if (characterClass.includes('rogue')) {
+      features.push(...generateRogueFeatures(character));
+    } else if (characterClass.includes('sorcerer')) {
+      features.push(...generateSorcererFeatures(character));
+    } else if (characterClass.includes('warlock')) {
+      features.push(...generateWarlockFeatures(character));
+    } else if (characterClass.includes('wizard')) {
+      features.push(...generateWizardFeatures(character));
+    }
+  }
+
+  // Add Weapon Mastery if applicable and not already included
+  const classesWithWeaponMastery = ['barbarian', 'fighter', 'paladin', 'ranger', 'rogue'];
+  if (classesWithWeaponMastery.some(c => characterClass.includes(c))) {
+    const hasWeaponMastery = features.some(f => f.name === 'Weapon Mastery');
+    if (!hasWeaponMastery && level >= 1) {
+      const masteryCount = characterClass.includes('fighter') ? 3 : 2;
+      const activeMasteries = character.weaponMasteries?.active || [];
+
+      let masteryDesc = `You can use the mastery properties of ${masteryCount} kinds of Simple or Martial weapons of your choice. You can change one of these choices when you finish a Long Rest.`;
+
+      if (activeMasteries.length > 0) {
+        masteryDesc += '\n\n**Active Masteries:**';
+        activeMasteries.forEach(mastery => {
+          const propertyDesc = WEAPON_MASTERY_PROPERTIES[mastery.property];
+          masteryDesc += `\n\n**${mastery.weapon} (${mastery.property}):** ${propertyDesc}`;
+        });
+      } else {
+        masteryDesc += '\n\n*No weapon masteries currently selected. Choose your mastery weapons!*';
+      }
+
+      features.push({
+        name: 'Weapon Mastery',
+        description: masteryDesc,
+        category: 'Class Feature'
+      });
+    }
   }
 
   return features;
@@ -1035,20 +1216,24 @@ function generateRangerFeatures(character: CharacterSheetData): SimpleFeature[] 
   const features: SimpleFeature[] = [];
   const level = character.level || 1;
 
-  if (level >= 1) {
-    features.push({
-      name: 'Favored Enemy',
-      description: 'Choose a creature type: **beasts**, **fey**, **humanoids**, **monstrosities**, or **undead**. You have **advantage** on Wisdom (Survival) checks to track your favored enemies.',
-      category: 'Class Feature'
+  // Use stored class features from character data (from API/database with 2024 data)
+  if (character.classFeatures && Array.isArray(character.classFeatures)) {
+    character.classFeatures.forEach((feature: any) => {
+      if (feature.level === 1 || !feature.level) {
+        // Parse the feature description through the template parser
+        const description = parseComplexDnDEntry(feature);
+        features.push({
+          name: feature.name,
+          description: description,
+          category: 'Class Feature'
+        });
+      }
     });
+  }
 
-    features.push({
-      name: 'Spellcasting',
-      description: 'You can cast **ranger spells**. **Wisdom** is your spellcasting ability.',
-      category: 'Class Feature'
-    });
-
-    // Weapon Mastery feature with tracking
+  // Add Weapon Mastery with tracking if not already included
+  const hasWeaponMastery = features.some(f => f.name === 'Weapon Mastery');
+  if (!hasWeaponMastery && level >= 1) {
     const masteryCount = 2; // Rangers get 2 weapon masteries
     const activeMasteries = character.weaponMasteries?.active || [];
 

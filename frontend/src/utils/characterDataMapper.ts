@@ -138,11 +138,15 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     featSpells: builderData.featSpells || {},
     featChoices: builderData.featChoices || {},
 
-    // Class choices from wizard
+    // Class choices from wizard (legacy format, deprecated)
     classChoices: {
-      fightingStyle: builderData.selectedClassChoices?.['Fighting Style']?.[0] || undefined,
-      ...builderData.selectedClassChoices
+      fightingStyle: builderData.selectedClassChoices?.['fighting-style-1']?.[0] ||
+                     builderData.selectedClassChoices?.['fighting-style-2']?.[0] ||
+                     undefined,
     },
+
+    // New class choices system - pass through as-is
+    selectedClassChoices: builderData.selectedClassChoices || {},
 
     subclass: '', // Subclass comes at level 3
     level: 1,

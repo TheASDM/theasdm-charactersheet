@@ -1,0 +1,1203 @@
+{
+  "className": "Sorcerer",
+  "source": "XPHB",
+  "spellcasting": {
+    "ability": "cha",
+    "progression": "full"
+  },
+  "features": [
+    {
+      "id": "ability-score-improvement-4",
+      "name": "Ability Score Improvement",
+      "level": 4,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Sorcerer levels 8, 12, and 16.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "subclass-feature-6",
+      "name": "Subclass Feature",
+      "level": 6,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain a feature from your Sorcerer subclass.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-8",
+      "name": "Ability Score Improvement",
+      "level": 8,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-12",
+      "name": "Ability Score Improvement",
+      "level": 12,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "subclass-feature-14",
+      "name": "Subclass Feature",
+      "level": 14,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain a feature from your Sorcerer subclass.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "ability-score-improvement-16",
+      "name": "Ability Score Improvement",
+      "level": 16,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "subclass-feature-18",
+      "name": "Subclass Feature",
+      "level": 18,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain a feature from your Sorcerer subclass.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "epic-boon-19",
+      "name": "Epic Boon",
+      "level": 19,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Dimensional Travel is recommended.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "spellcasting-1",
+      "name": "Spellcasting",
+      "level": 1,
+      "source": "XPHB",
+      "page": 139,
+      "featureType": "base",
+      "description": "Drawing from your innate magic, you can cast spells. See chapter 7 for the rules on spellcasting. The information below details how you use those rules with Sorcerer spells, which appear in the Sorcerer spell list later in the class's description. Cantrips: You know four Sorcerer cantrips of your choice. Light, Prestidigitation, Shocking Grasp, and Sorcerous Burst are recommended. Whenever you gain a Sorcerer level, you can replace one of your cantrips from this feature with another Sorcerer cantrip of your choice. When you reach Sorcerer levels 4 and 10, you learn another Sorcerer cantrip of your choice, as shown in the Cantrips column of the Sorcerer Features table. Spell Slots: The Sorcerer Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a Long Rest. Prepared Spells of Level 1+: You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose two level 1 Sorcerer spells. Burning Hands and Detect Magic are recommended. The number of spells on your list increases as you gain Sorcerer levels, as shown in the Prepared Spells column of the Sorcerer Features table. Whenever that number increases, choose additional Sorcerer spells until the number of spells on your list matches the number in the Sorcerer Features table. The chosen spells must be of a level for which you have spell slots. For example, if you're a level 3 Sorcerer, your list of prepared spells can include six Sorcerer spells of level 1 or 2 in any combination. If another Sorcerer feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature, but those spells otherwise count as Sorcerer spells for you. Changing Your Prepared Spells: Whenever you gain a Sorcerer level, you can replace one spell on your list with another Sorcerer spell for which you have spell slots. Spellcasting Ability: Charisma is your spellcasting ability for your Sorcerer spells. Spellcasting Focus: You can use an Arcane Focus as a Spellcasting Focus for your Sorcerer spells.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [
+          "charisma"
+        ],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [
+          "Light",
+          "Prestidigitation",
+          "Shocking Grasp",
+          "Sorcerous Burst",
+          "Burning Hands",
+          "Detect Magic"
+        ],
+        "scales": true
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": true,
+      "scalingProgression": []
+    },
+    {
+      "id": "innate-sorcery-1",
+      "name": "Innate Sorcery",
+      "level": 1,
+      "source": "XPHB",
+      "page": 140,
+      "featureType": "base",
+      "description": "An event in your past left an indelible mark on you, infusing you with simmering magic. As a Bonus Action, you can unleash that magic for 1 minute, during which you gain the following benefits: The spell save DC of your Sorcerer spells increases by 1.; You have Advantage on the attack rolls of Sorcerer spells you cast. You can use this feature twice, and you regain all expended uses of it when you finish a Long Rest.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": "bonus-action",
+        "range": null,
+        "duration": "1 minute",
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "font-of-magic-2",
+      "name": "Font of Magic",
+      "level": 2,
+      "source": "XPHB",
+      "page": 140,
+      "featureType": "base",
+      "description": "You can tap into the wellspring of magic within yourself. This wellspring is represented by Sorcery Points, which allow you to create a variety of magical effects. You have 2 Sorcery Points, and you gain more as you reach higher levels, as shown in the Sorcery Points column of the Sorcerer Features table. You can't have more Sorcery Points than the number shown in the table for your level. You regain all expended Sorcery Points when you finish a Long Rest. You can use your Sorcery Points to fuel the options below, along with other features, such as Metamagic, that use those points. Converting Spell Slots to Sorcery Points: You can expend a spell slot to gain a number of Sorcery Points equal to the slot's level (no action required). Creating Spell Slots: As a Bonus Action, you can transform unexpended Sorcery Points into one spell slot. The Creating Spell Slots table shows the cost of creating a spell slot of a given level, and it lists the minimum Sorcerer level you must be to create a slot. You can create a spell slot no higher than level 5. Any spell slot you create with this feature vanishes when you finish a Long Rest. Creating Spell Slots: 1 - 2 - 2; 2 - 3 - 3; 3 - 5 - 5; 4 - 6 - 7; 5 - 7 - 9",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": "bonus-action",
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": true,
+        "sorceryPoints": 2
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": true,
+      "scalingProgression": [
+        {
+          "level": 3,
+          "changes": {
+            "sorceryPoints": 3
+          }
+        },
+        {
+          "level": 4,
+          "changes": {
+            "sorceryPoints": 4
+          }
+        },
+        {
+          "level": 5,
+          "changes": {
+            "sorceryPoints": 5
+          }
+        },
+        {
+          "level": 6,
+          "changes": {
+            "sorceryPoints": 6
+          }
+        },
+        {
+          "level": 7,
+          "changes": {
+            "sorceryPoints": 7
+          }
+        },
+        {
+          "level": 8,
+          "changes": {
+            "sorceryPoints": 8
+          }
+        },
+        {
+          "level": 9,
+          "changes": {
+            "sorceryPoints": 9
+          }
+        },
+        {
+          "level": 10,
+          "changes": {
+            "sorceryPoints": 10
+          }
+        },
+        {
+          "level": 11,
+          "changes": {
+            "sorceryPoints": 11
+          }
+        },
+        {
+          "level": 12,
+          "changes": {
+            "sorceryPoints": 12
+          }
+        },
+        {
+          "level": 13,
+          "changes": {
+            "sorceryPoints": 13
+          }
+        },
+        {
+          "level": 14,
+          "changes": {
+            "sorceryPoints": 14
+          }
+        },
+        {
+          "level": 15,
+          "changes": {
+            "sorceryPoints": 15
+          }
+        },
+        {
+          "level": 16,
+          "changes": {
+            "sorceryPoints": 16
+          }
+        },
+        {
+          "level": 17,
+          "changes": {
+            "sorceryPoints": 17
+          }
+        },
+        {
+          "level": 18,
+          "changes": {
+            "sorceryPoints": 18
+          }
+        },
+        {
+          "level": 19,
+          "changes": {
+            "sorceryPoints": 19
+          }
+        },
+        {
+          "level": 20,
+          "changes": {
+            "sorceryPoints": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "metamagic-2",
+      "name": "Metamagic",
+      "level": 2,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "Because your magic flows from within, you can alter your spells to suit your needs; you gain two Metamagic options of your choice from \"Metamagic Options\" later in this class's description. You use the chosen options to temporarily modify spells you cast. To use an option, you must spend the number of Sorcery Points that it costs. You can use only one Metamagic option on a spell when you cast it unless otherwise noted in one of those options. Whenever you gain a Sorcerer level, you can replace one of your Metamagic options with one you don't know. You gain two more options at Sorcerer level 10 and two more at Sorcerer level 17.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": true,
+        "options": 2
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": true,
+      "scalingProgression": [
+        {
+          "level": 10,
+          "changes": {
+            "options": 4
+          }
+        },
+        {
+          "level": 17,
+          "changes": {
+            "options": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "sorcerer-subclass-3",
+      "name": "Sorcerer Subclass",
+      "level": 3,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "You gain a Sorcerer subclass of your choice. A subclass is a specialization that grants you features at certain Sorcerer levels. For the rest of your career, you gain each of your subclass's features that are of your Sorcerer level or lower.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "sorcerous-restoration-5",
+      "name": "Sorcerous Restoration",
+      "level": 5,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "When you finish a Short Rest, you can regain expended Sorcery Points, but no more than a number equal to half your Sorcerer level (round down). Once you use this feature, you can't do so again until you finish a Long Rest.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": "until rest",
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "sorcery-incarnate-7",
+      "name": "Sorcery Incarnate",
+      "level": 7,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "If you have no uses of Innate Sorcery left, you can use it if you spend 2 Sorcery Points when you take the Bonus Action to activate it. In addition, while your Innate Sorcery feature is active, you can use up to two of your Metamagic options on each spell you cast.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": "bonus-action",
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    },
+    {
+      "id": "arcane-apotheosis-20",
+      "name": "Arcane Apotheosis",
+      "level": 20,
+      "source": "XPHB",
+      "page": 141,
+      "featureType": "base",
+      "description": "While your Innate Sorcery feature is active, you can use one Metamagic option on each of your turns without spending Sorcery Points on it.",
+      "mechanics": {
+        "diceRolls": [],
+        "damageTypes": [],
+        "abilities": [],
+        "actionType": null,
+        "range": null,
+        "duration": null,
+        "savingThrow": null,
+        "proficiencies": [],
+        "spellsGranted": [],
+        "scales": false
+      },
+      "isChoice": false,
+      "prerequisites": [],
+      "scales": false,
+      "scalingProgression": []
+    }
+  ],
+  "subclasses": {
+    "Aberrant Sorcery": [
+      {
+        "id": "psionic-spells-3",
+        "name": "Psionic Spells",
+        "level": 3,
+        "source": "XPHB",
+        "page": 145,
+        "featureType": "subclass",
+        "description": "When you reach a Sorcerer level specified in the Psionic Spells table, you thereafter always have the listed spells prepared. Psionic Spells: 3rd - Arms of Hadar, Calm Emotions, Detect Thoughts, Dissonant Whispers, Mind Sliver; 5th - Hunger of Hadar, Sending; 7th - Evard's Black Tentacles, Summon Aberration; 9th - Rary's Telepathic Bond, Telekinesis",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": true,
+          "spellsByLevel": {
+            "3": [
+              "Arms of Hadar",
+              "Calm Emotions",
+              "Detect Thoughts",
+              "Dissonant Whispers",
+              "Mind Sliver"
+            ],
+            "5": [
+              "Hunger of Hadar",
+              "Sending"
+            ],
+            "7": [
+              "Evard's Black Tentacles",
+              "Summon Aberration"
+            ],
+            "9": [
+              "Rary's Telepathic Bond",
+              "Telekinesis"
+            ]
+          }
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": true,
+        "scalingProgression": [],
+        "subclass": "Aberrant Sorcery"
+      },
+      {
+        "id": "telepathic-speech-3",
+        "name": "Telepathic Speech",
+        "level": 3,
+        "source": "XPHB",
+        "page": 145,
+        "featureType": "subclass",
+        "description": "You can form a telepathic connection between your mind and the mind of another. As a Bonus Action, choose one creature you can see within 30 feet of yourself. You and the chosen creature can communicate telepathically with each other while the two of you are within a number of miles of each other equal to your Charisma modifier (minimum of 1 mile). To understand each other, you each must mentally use a language the other knows. The telepathic connection lasts for a number of minutes equal to your Sorcerer level. It ends early if you use this ability to form a connection with a different creature.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "charisma"
+          ],
+          "actionType": "bonus-action",
+          "range": "30 feet",
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Aberrant Sorcery"
+      },
+      {
+        "id": "psionic-sorcery-6",
+        "name": "Psionic Sorcery",
+        "level": 6,
+        "source": "XPHB",
+        "page": 146,
+        "featureType": "subclass",
+        "description": "When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal or by spending a number of Sorcery Points equal to the spell's level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and it requires no Material components unless they are consumed by the spell or have a cost specified in it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Aberrant Sorcery"
+      },
+      {
+        "id": "psychic-defenses-6",
+        "name": "Psychic Defenses",
+        "level": 6,
+        "source": "XPHB",
+        "page": 146,
+        "featureType": "subclass",
+        "description": "You have Resistance to Psychic damage, and you have Advantage on saving throws to avoid or end the Charmed or Frightened condition.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "psychic"
+          ],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Aberrant Sorcery"
+      },
+      {
+        "id": "revelation-in-flesh-14",
+        "name": "Revelation in Flesh",
+        "level": 14,
+        "source": "XPHB",
+        "page": 146,
+        "featureType": "subclass",
+        "description": "You can unleash the aberrant truth hidden within yourself. As a Bonus Action, you can spend 1 Sorcery Point or more to magically alter your body for 10 minutes. For each Sorcery Point you spend, you gain one of the following benefits of your choice, the effects of which last until the alteration ends. Aquatic Adaptation: You gain a Swim Speed equal to twice your Speed, and you can breathe underwater. Gills grow from your neck or flare behind your ears, and your fingers become webbed or you grow wriggling cilia. Glistening Flight: You gain a Fly Speed equal to your Speed, and you can hover. As you fly, your skin glistens with mucus or otherworldly light. See the Invisible: You can see any Invisible creature within 60 feet of yourself that isn't behind Cover. Your eyes also turn black or become writhing sensory tendrils. Wormlike Movement: Your body, along with any equipment you are wearing or carrying, becomes slimy and pliable. You can move through any space as narrow as 1 inch, and you can spend 5 feet of movement to escape from nonmagical restraints or the Grappled condition.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "bonus-action",
+          "range": "60 feet",
+          "duration": "10 minutes",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Aberrant Sorcery"
+      },
+      {
+        "id": "warping-implosion-18",
+        "name": "Warping Implosion",
+        "level": 18,
+        "source": "XPHB",
+        "page": 146,
+        "featureType": "subclass",
+        "description": "You can unleash a space-warping anomaly. As a Magic action, you teleport to an unoccupied space you can see within 120 feet of yourself. Immediately after you disappear, each creature within 30 feet of the space you left must make a Strength saving throw against your spell save DC. On a failed save, a creature takes 3d10 Force damage and is pulled straight toward the space you left, ending in an unoccupied space as close to your former space as possible. On a successful save, the creature takes half as much damage only. Once you use this feature, you can't do so again until you finish a Long Rest unless you spend 5 Sorcery Points (no action required) to restore your use of it.",
+        "mechanics": {
+          "diceRolls": [
+            "3d10"
+          ],
+          "damageTypes": [
+            "force"
+          ],
+          "abilities": [
+            "strength"
+          ],
+          "actionType": "action",
+          "range": "120 feet",
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Aberrant Sorcery"
+      }
+    ],
+    "Clockwork Sorcery": [
+      {
+        "id": "clockwork-spells-3",
+        "name": "Clockwork Spells",
+        "level": 3,
+        "source": "XPHB",
+        "page": 146,
+        "featureType": "subclass",
+        "description": "When you reach a Sorcerer level specified in the Clockwork Spells table, you thereafter always have the listed spells prepared. Clockwork Spells: 3rd - Aid, Alarm, Lesser Restoration, Protection from Evil and Good; 5th - Dispel Magic, Protection From Energy; 7th - Freedom of Movement, Summon Construct; 9th - Greater Restoration, Wall of Force In addition, consult the Manifestations of Order table and choose or randomly determine a way your connection to order manifests while you are casting any of your Sorcerer spells. Manifestations of Order: 1 - Spectral cogwheels hover behind you.; 2 - The hands of a clock spin in your eyes.; 3 - Your skin glows with a brassy sheen.; 4 - Floating equations and geometric objects overlay your body.; 5 - Your Spellcasting Focus temporarily takes the form of a Tiny clockwork mechanism.; 6 - The ticking of gears or ringing of a clock can be heard by you and those affected by your magic.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "force"
+          ],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": true,
+          "spellsByLevel": {
+            "3": [
+              "Aid",
+              "Alarm",
+              "Lesser Restoration",
+              "Protection from Evil and Good"
+            ],
+            "5": [
+              "Dispel Magic",
+              "Protection From Energy"
+            ],
+            "7": [
+              "Freedom of Movement",
+              "Summon Construct"
+            ],
+            "9": [
+              "Greater Restoration",
+              "Wall of Force"
+            ]
+          }
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": true,
+        "scalingProgression": [],
+        "subclass": "Clockwork Sorcery"
+      },
+      {
+        "id": "restore-balance-3",
+        "name": "Restore Balance",
+        "level": 3,
+        "source": "XPHB",
+        "page": 146,
+        "featureType": "subclass",
+        "description": "Your connection to the plane of absolute order allows you to equalize chaotic moments. When a creature you can see within 60 feet of yourself is about to roll a d20 with Advantage or Disadvantage, you can take a Reaction to prevent the roll from being affected by Advantage and Disadvantage. You can use this feature a number of times equal to your Charisma modifier (minimum of once), and you regain all expended uses when you finish a Long Rest.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "charisma"
+          ],
+          "actionType": "reaction",
+          "range": "60 feet",
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Clockwork Sorcery"
+      },
+      {
+        "id": "bastion-of-law-6",
+        "name": "Bastion of Law",
+        "level": 6,
+        "source": "XPHB",
+        "page": 147,
+        "featureType": "subclass",
+        "description": "You can tap into the grand equation of existence to imbue a creature with a shimmering shield of order. As a Magic action, you can expend 1 to 5 Sorcery Points to create a magical ward around yourself or another creature you can see within 30 feet of yourself. The ward is represented by a number of d8s equal to the number of Sorcery Points spent to create it. When the warded creature takes damage, it can expend a number of those dice, roll them, and reduce the damage taken by the total rolled on those dice. The ward lasts until you finish a Long Rest or until you use this feature again.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "action",
+          "range": "30 feet",
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Clockwork Sorcery"
+      },
+      {
+        "id": "trance-of-order-14",
+        "name": "Trance of Order",
+        "level": 14,
+        "source": "XPHB",
+        "page": 147,
+        "featureType": "subclass",
+        "description": "You gain the ability to align your consciousness with the endless calculations of Mechanus. As a Bonus Action, you can enter this state for 1 minute. For the duration, attack rolls against you can't benefit from Advantage, and whenever you make a D20 Test, you can treat a roll of 9 or lower on the d20 as a 10. Once you use this feature, you can't use it again until you finish a Long Rest unless you spend 5 Sorcery Points (no action required) to restore your use of it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "bonus-action",
+          "range": null,
+          "duration": "1 minute",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Clockwork Sorcery"
+      },
+      {
+        "id": "clockwork-cavalcade-18",
+        "name": "Clockwork Cavalcade",
+        "level": 18,
+        "source": "XPHB",
+        "page": 147,
+        "featureType": "subclass",
+        "description": "You momentarily summon spirits of order to expunge disorder around you. As a Magic action, you summon the spirits in a 30-foot Cube [Area of Effect] originating from you. The spirits look like modrons or other Constructs of your choice. The spirits are intangible and invulnerable, and they create the effects below within the Cube [Area of Effect] before vanishing. Once you use this action, you can't use it again until you finish a Long Rest unless you spend 7 Sorcery Points (no action required) to restore your use of it. Heal: The spirits restore up to 100 Hit Points, divided as you choose among any number of creatures of your choice in the Cube [Area of Effect]. Repair: Any damaged objects entirely in the Cube [Area of Effect] are repaired instantly. Dispel: Every spell of level 6 and lower ends on creatures and objects of your choice in the Cube [Area of Effect].",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "action",
+          "range": null,
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Clockwork Sorcery"
+      }
+    ],
+    "Draconic Sorcery": [
+      {
+        "id": "draconic-resilience-3",
+        "name": "Draconic Resilience",
+        "level": 3,
+        "source": "XPHB",
+        "page": 148,
+        "featureType": "subclass",
+        "description": "The magic in your body manifests physical traits of your draconic gift. Your Hit Points maximum increases by 3, and it increases by 1 whenever you gain another Sorcerer level. Parts of you are also covered by dragon-like scales. While you aren't wearing armor, your base Armor Class equals 10 plus your Dexterity and Charisma modifiers.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [
+            "dexterity",
+            "charisma"
+          ],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Draconic Sorcery"
+      },
+      {
+        "id": "draconic-spells-3",
+        "name": "Draconic Spells",
+        "level": 3,
+        "source": "XPHB",
+        "page": 148,
+        "featureType": "subclass",
+        "description": "When you reach a Sorcerer level specified in the Draconic Spells table, you thereafter always have the listed spells prepared. Draconic Spells: 3rd - Alter Self, Chromatic Orb, Command, Dragon's Breath; 5th - Fear, Fly; 7th - Arcane Eye, Charm Monster; 9th - Legend Lore, Summon Dragon",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": "self",
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": true,
+          "spellsByLevel": {
+            "3": [
+              "Alter Self",
+              "Chromatic Orb",
+              "Command",
+              "Dragon's Breath"
+            ],
+            "5": [
+              "Fear",
+              "Fly"
+            ],
+            "7": [
+              "Arcane Eye",
+              "Charm Monster"
+            ],
+            "9": [
+              "Legend Lore",
+              "Summon Dragon"
+            ]
+          }
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": true,
+        "scalingProgression": [],
+        "subclass": "Draconic Sorcery"
+      },
+      {
+        "id": "elemental-affinity-6",
+        "name": "Elemental Affinity",
+        "level": 6,
+        "source": "XPHB",
+        "page": 148,
+        "featureType": "subclass",
+        "description": "Your draconic magic has an affinity with a damage type associated with dragons. Choose one of those types: Acid, Cold, Fire, Lightning, or Poison. You have Resistance to that damage type, and when you cast a spell that deals damage of that type, you can add your Charisma modifier to one damage roll of that spell.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [
+            "fire",
+            "cold",
+            "lightning",
+            "poison",
+            "acid"
+          ],
+          "abilities": [
+            "charisma"
+          ],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Draconic Sorcery"
+      },
+      {
+        "id": "dragon-wings-14",
+        "name": "Dragon Wings",
+        "level": 14,
+        "source": "XPHB",
+        "page": 148,
+        "featureType": "subclass",
+        "description": "As a Bonus Action, you can cause draconic wings to appear on your back. The wings last for 1 hour or until you dismiss them (no action required). For the duration, you have a Fly Speed of 60 feet. Once you use this feature, you can't use it again until you finish a Long Rest unless you spend 3 Sorcery Points (no action required) to restore your use of it.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "bonus-action",
+          "range": null,
+          "duration": "1 hour",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Draconic Sorcery"
+      },
+      {
+        "id": "dragon-companion-18",
+        "name": "Dragon Companion",
+        "level": 18,
+        "source": "XPHB",
+        "page": 148,
+        "featureType": "subclass",
+        "description": "You can cast Summon Dragon without a Material component. You can also cast it once without a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. Whenever you start casting the spell, you can modify it so that it doesn't require Concentration. If you do so, the spell's duration becomes 1 minute for that casting.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Draconic Sorcery"
+      }
+    ],
+    "Wild Magic Sorcery": [
+      {
+        "id": "wild-magic-surge-3",
+        "name": "Wild Magic Surge",
+        "level": 3,
+        "source": "XPHB",
+        "page": 149,
+        "featureType": "subclass",
+        "description": "Your spellcasting can unleash surges of untamed magic. Once per turn, you can roll 1d20 immediately after you cast a Sorcerer spell with a spell slot. If you roll a 20, roll on the Wild Magic Surge table to create a magical effect. If the magical effect is a spell, it is too wild to be affected by your Metamagic. Wild Magic Surge: 01\u201304 - Roll on this table at the start of each of your turns for the next minute, ignoring this result on subsequent rolls.; 05\u201308 - A creature that is Friendly toward you appears in a random unoccupied space within 60 feet of you. The creature is under the DM's control and disappears 1 minute later. Roll 1d4 to determine the creature: on a 1, a Modron Duodrone appears; on a 2, a Flumph appears; on a 3, a Modron Monodrone appears; on a 4, a Unicorn appears. See the Monster Manual for the creature's stat block.; 09\u201312 - For the next minute, you regain 5 Hit Points at the start of each of your turns.; 13\u201316 - Creatures have Disadvantage on saving throws against the next spell you cast in the next minute that involves a saving throw.; 17\u201320 - You are subjected to an effect that lasts for 1 minute unless its description says otherwise. Roll 1d8 to determine the effect: on a 1, you're surrounded by faint, ethereal music only you and creatures within 5 feet of you can hear; on a 2, your size increases by one size category; on a 3, you grow a long beard made of feathers that remains until you sneeze, at which point the feathers explode from your face and vanish; on a 4, you must shout when you speak; on a 5, illusory butterflies flutter in the air within 10 feet of you; on a 6, an eye appears on your forehead, granting you Advantage on Wisdom (Perception) checks; on an 7, pink bubbles float out of your mouth whenever you speak; on an 8, your skin turns a vibrant shade of blue for 24 hours or until the effect is ended by a Remove Curse spell.; 21\u201324 - For the next minute, all your spells with a casting time of an action have a casting time of a Bonus Action.; 25\u201328 - You are transported to the Astral Plane until the end of your next turn. You then return to the space you previously occupied or the nearest unoccupied space if that space is occupied.; 29\u201332 - The next time you cast a spell that deals damage within the next minute, don't roll the spell's damage dice for the damage. Instead use the highest number possible for each damage die.; 33\u201336 - You have Resistance to all damage for the next minute.; 37\u201340 - You turn into a potted plant until the start of your next turn. While you're a plant, you have the Incapacitated condition and have Vulnerability to all damage. If you drop to 0 Hit Points, your pot breaks, and your form reverts.; 41\u201344 - For the next minute, you can teleport up to 20 feet as a Bonus Action on each of your turns.; 45\u201348 - You and up to three creatures you choose within 30 feet of you have the Invisible condition for 1 minute. This invisibility ends on a creature immediately after it makes an attack roll, deals damage, or casts a spell.; 49\u201352 - A spectral shield hovers near you for the next minute, granting you a +2 bonus to AC and immunity to Magic Missile.; 53\u201356 - You can take one extra action on this turn.; 57\u201360 - You cast a random spell. If the spell normally requires Concentration, it doesn't require Concentration in this case; the spell lasts for its full duration. Roll 1d10 to determine the spell: on a 1, Confusion; on a 2, Fireball; on a 3, Fog Cloud; on a 4, Fly (cast on a random creature within 60 feet of you), on a 5, Grease; on a 6, Levitate (cast on yourself); on a 7, Magic Missile (cast as a level 5 spell); on an 8, Mirror Image; on a 9, Polymorph (cast on yourself), and if you fail the saving throw, you turn into a Goat (see appendix B); on a 10, See Invisibility.; 61\u201364 - For the next minute, any flammable, nonmagical object you touch that isn't being worn or carried by another creature bursts into flame, takes 1d4 Fire damage, and is burning.; 65\u201368 - If you die within the next hour, you immediately revive as if by the Reincarnate spell.; 69\u201372 - You have the Frightened condition until the end of your next turn. The DM determines the source of your fear.; 73\u201376 - You teleport up to 60 feet to an unoccupied space you can see.; 77\u201380 - A random creature within 60 feet of you has the Poisoned condition for 1d4 hours.; 81\u201384 - You radiate Bright Light in a 30-foot radius for the next minute. Any creature that ends its turn within 5 feet of you has the Blinded condition until the end of its next turn.; 85\u201388 - Up to three creatures of your choice that you can see within 30 feet of you take 1d10 Necrotic damage. You regain Hit Points equal to the sum of the Necrotic damage dealt.; 89\u201392 - Up to three creatures of your choice that you can see within 30 feet of you take 4d10 Lightning damage.; 93\u201396 - You and all creatures within 30 feet of you have Vulnerability to Piercing damage for the next minute.; 97\u201300 - Roll 1d6 On a 1, you regain 2d10 Hit Points; on a 2, one ally of your choice within 300 feet of you regains 2d10 Hit Points; on a 3, you regain your lowest-level expended spell slot; on a 4, one ally of your choice within 300 feet of you regains their lowest-level expended spell slot; on a 5, you regain all your expended Sorcery Points; on a 6, all the effects of row 17\u201320 affect you simultaneously.",
+        "mechanics": {
+          "diceRolls": [
+            "1d20",
+            "1d4",
+            "1d8",
+            "1d10",
+            "4d10",
+            "1d6",
+            "2d10"
+          ],
+          "damageTypes": [
+            "fire",
+            "lightning",
+            "poison",
+            "necrotic",
+            "piercing"
+          ],
+          "abilities": [
+            "wisdom"
+          ],
+          "actionType": "bonus-action",
+          "range": "60 feet",
+          "duration": "1 minute",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Wild Magic Sorcery"
+      },
+      {
+        "id": "tides-of-chaos-3",
+        "name": "Tides of Chaos",
+        "level": 3,
+        "source": "XPHB",
+        "page": 149,
+        "featureType": "subclass",
+        "description": "You can manipulate chaos itself to give yourself Advantage on one D20 Test before you roll the d20. Once you do so, you must cast a Sorcerer spell with a spell slot or finish a Long Rest before you can use this feature again. If you do cast a Sorcerer spell with a spell slot before you finish a Long Rest, you automatically roll on the {@table Wild Magic Surge|XPHB} table.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Wild Magic Sorcery"
+      },
+      {
+        "id": "bend-luck-6",
+        "name": "Bend Luck",
+        "level": 6,
+        "source": "XPHB",
+        "page": 149,
+        "featureType": "subclass",
+        "description": "You have the ability to twist fate using your wild magic. Immediately after another creature you can see rolls the d20 for a D20 Test, you can take a Reaction and spend 1 Sorcery Point to roll 1d4 and apply the number rolled as a bonus or penalty (your choice) to the d20 roll.",
+        "mechanics": {
+          "diceRolls": [
+            "1d4"
+          ],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": "reaction",
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Wild Magic Sorcery"
+      },
+      {
+        "id": "controlled-chaos-14",
+        "name": "Controlled Chaos",
+        "level": 14,
+        "source": "XPHB",
+        "page": 149,
+        "featureType": "subclass",
+        "description": "You gain a modicum of control over the surges of your wild magic. Whenever you roll on the Wild Magic Surge table, you can roll twice and use either number.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": null,
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Wild Magic Sorcery"
+      },
+      {
+        "id": "tamed-surge-18",
+        "name": "Tamed Surge",
+        "level": 18,
+        "source": "XPHB",
+        "page": 150,
+        "featureType": "subclass",
+        "description": "Immediately after you cast a Sorcerer spell with a spell slot, you can create an effect of your choice from the {@table Wild Magic Surge|XPHB} table instead of rolling on that table. You can choose any effect in the table except for the final row, and if the chosen effect involves a roll, you must make it. Once you use this feature, you can't do so again until you finish a Long Rest.",
+        "mechanics": {
+          "diceRolls": [],
+          "damageTypes": [],
+          "abilities": [],
+          "actionType": null,
+          "range": null,
+          "duration": "until rest",
+          "savingThrow": null,
+          "proficiencies": [],
+          "spellsGranted": [],
+          "scales": false
+        },
+        "isChoice": false,
+        "prerequisites": [],
+        "scales": false,
+        "scalingProgression": [],
+        "subclass": "Wild Magic Sorcery"
+      }
+    ]
+  }
+}

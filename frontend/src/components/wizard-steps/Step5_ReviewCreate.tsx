@@ -11,7 +11,7 @@ import { parseDnDTemplateTag } from '../../utils/dndTemplateParser';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
-  onComplete: () => void;
+  onComplete: (characterId: number) => void;
 }
 
 const ReviewContainer = styled.div`
@@ -261,10 +261,10 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
       setCreateStatus('success');
 
-      // Wait a moment to show success message, then complete
+      // Wait a moment to show success message, then pass character ID to trigger choice detection
       setTimeout(() => {
-        onComplete();
-      }, 2000);
+        onComplete(response.data!.id);
+      }, 1500);
     } catch (error) {
       console.error('❌ Error creating character:', error);
       setCreateStatus('error');

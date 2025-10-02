@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useAuth } from '../contexts/AuthContext';
 
 // Import fonts
 const FontImport = styled.div`
@@ -18,13 +19,14 @@ const NavContainer = styled.nav`
 `;
 
 const NavContent = styled.div`
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 70px;
+  gap: 2rem;
 
   @media (max-width: 768px) {
     padding: 0 1rem;
@@ -74,6 +76,8 @@ const NavLinks = styled.div<{ $isOpen: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 1;
+  justify-content: flex-end;
 
   @media (max-width: 1024px) {
     position: fixed;
@@ -98,22 +102,30 @@ const NavLinks = styled.div<{ $isOpen: boolean }>`
   }
 `;
 
-const NavLink = styled(Link)<{ $isActive: boolean }>`
+const DropdownContainer = styled.div`
+  position: relative;
+
+  @media (max-width: 1024px) {
+    width: 100%;
+  }
+`;
+
+const DropdownButton = styled.button<{ $isActive: boolean; $isOpen: boolean }>`
   position: relative;
   padding: 0.75rem 1.25rem;
   color: ${props => props.$isActive ? '#d4af37' : '#ccc'};
   font-family: 'Inter', sans-serif;
   font-weight: ${props => props.$isActive ? '600' : '500'};
   font-size: 0.95rem;
-  text-decoration: none;
   border-radius: 8px;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: ${props => props.$isActive ? 'rgba(212, 175, 55, 0.1)' : 'transparent'};
-  border: 1px solid ${props => props.$isActive ? 'rgba(212, 175, 55, 0.3)' : 'transparent'};
+  background: ${props => props.$isActive || props.$isOpen ? 'rgba(212, 175, 55, 0.1)' : 'transparent'};
+  border: 1px solid ${props => props.$isActive || props.$isOpen ? 'rgba(212, 175, 55, 0.3)' : 'transparent'};
   white-space: nowrap;
+  cursor: pointer;
 
   .icon {
     font-size: 1.2rem;
@@ -125,16 +137,10 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
     letter-spacing: 0.3px;
   }
 
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: ${props => props.$isActive ? '80%' : '0'};
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #d4af37, transparent);
-    transition: width 0.3s ease;
+  .arrow {
+    font-size: 0.7rem;
+    transition: transform 0.3s ease;
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0)'};
   }
 
   &:hover {
@@ -146,36 +152,103 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
       filter: brightness(1.2);
       transform: scale(1.1);
     }
-
-    &::before {
-      width: 80%;
-    }
   }
 
   @media (max-width: 1024px) {
+    width: 100%;
     padding: 1rem 1.25rem;
     border-radius: 6px;
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    justify-content: space-between;
+  }
+`;
 
-    &::before {
-      display: none;
-    }
+const DropdownMenu = styled.div<{ $isOpen: boolean }>`
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  background: linear-gradient(135deg, #1f1f1f 0%, #161616 100%);
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+  opacity: ${props => props.$isOpen ? '1' : '0'};
+  visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
+  transform: ${props => props.$isOpen ? 'translateY(0)' : 'translateY(-10px)'};
+  transition: all 0.3s ease;
+  z-index: 1000;
 
-    &::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: ${props => props.$isActive ? '4px' : '0'};
-      background: linear-gradient(180deg, #d4af37, #f0c851);
-      transition: width 0.3s ease;
-    }
+  @media (max-width: 1024px) {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    margin: ${props => props.$isOpen ? '0.5rem 0 0 1rem' : '0'};
+    max-height: ${props => props.$isOpen ? '500px' : '0'};
+    overflow: hidden;
+  }
+`;
 
-    &:hover::after {
-      width: 4px;
+const DropdownItem = styled(Link)<{ $isActive: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  color: ${props => props.$isActive ? '#d4af37' : '#ccc'};
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  border-left: 3px solid ${props => props.$isActive ? '#d4af37' : 'transparent'};
+
+  .icon {
+    font-size: 1.1rem;
+    filter: ${props => props.$isActive ? 'brightness(1.2)' : 'brightness(0.8)'};
+  }
+
+  &:hover {
+    background: rgba(212, 175, 55, 0.1);
+    color: #d4af37;
+    border-left-color: #d4af37;
+
+    .icon {
+      filter: brightness(1.2);
     }
+  }
+
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    border-left: none;
+
+    &:first-child,
+    &:last-child {
+      border-radius: 4px;
+    }
+  }
+`;
+
+const DropdownDivider = styled.div`
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0.5rem 0;
+
+  @media (max-width: 1024px) {
+    margin: 0.25rem 0;
   }
 `;
 
@@ -245,22 +318,44 @@ const Overlay = styled.div<{ $isOpen: boolean }>`
 
 const Navigation: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems = [
-    { path: '/generator', label: 'Generator', icon: '🎲' },
-    { path: '/characters', label: 'Characters', icon: '🧙‍♂️' },
-    { path: '/species', label: 'Species', icon: '🐉' },
-    { path: '/classes', label: 'Classes', icon: '⚔️' },
-    { path: '/backgrounds', label: 'Backgrounds', icon: '📜' },
-    { path: '/feats', label: 'Feats', icon: '⭐' },
-    { path: '/equipment', label: 'Equipment', icon: '🛡️' },
-    { path: '/spells', label: 'Spells', icon: '✨' },
-  ];
+  const [charactersOpen, setCharactersOpen] = useState(false);
+  const [referenceOpen, setReferenceOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const handleLinkClick = () => {
     setMobileMenuOpen(false);
+    setCharactersOpen(false);
+    setReferenceOpen(false);
+    setAccountOpen(false);
   };
+
+  const handleLogout = async () => {
+    await logout();
+    setMobileMenuOpen(false);
+    setAccountOpen(false);
+    navigate('/');
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+    handleLinkClick();
+  };
+
+  const handleRegister = () => {
+    navigate('/register');
+    handleLinkClick();
+  };
+
+  // Check if any character path is active
+  const isCharactersActive = location.pathname === '/characters' || location.pathname === '/generator';
+
+  // Check if any reference path is active
+  const isReferenceActive = ['/species', '/classes', '/backgrounds', '/feats', '/equipment', '/spells'].some(
+    path => location.pathname.startsWith(path)
+  );
 
   return (
     <>
@@ -285,17 +380,163 @@ const Navigation: React.FC = () => {
           </MobileMenuButton>
 
           <NavLinks $isOpen={mobileMenuOpen}>
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                $isActive={location.pathname === item.path}
-                onClick={handleLinkClick}
+            {/* Characters Dropdown */}
+            <DropdownContainer>
+              <DropdownButton
+                $isActive={isCharactersActive}
+                $isOpen={charactersOpen}
+                onClick={() => setCharactersOpen(!charactersOpen)}
               >
-                <span className="icon">{item.icon}</span>
-                <span className="label">{item.label}</span>
-              </NavLink>
-            ))}
+                <span className="icon">🧙‍♂️</span>
+                <span className="label">Characters</span>
+                <span className="arrow">▼</span>
+              </DropdownButton>
+              <DropdownMenu $isOpen={charactersOpen}>
+                <DropdownItem
+                  to="/characters"
+                  $isActive={location.pathname === '/characters'}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">📋</span>
+                  <span>My Characters</span>
+                </DropdownItem>
+                <DropdownItem
+                  to="/generator"
+                  $isActive={location.pathname === '/generator'}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">🎲</span>
+                  <span>Character Generator</span>
+                </DropdownItem>
+              </DropdownMenu>
+            </DropdownContainer>
+
+            {/* Reference Dropdown */}
+            <DropdownContainer>
+              <DropdownButton
+                $isActive={isReferenceActive}
+                $isOpen={referenceOpen}
+                onClick={() => setReferenceOpen(!referenceOpen)}
+              >
+                <span className="icon">📚</span>
+                <span className="label">Reference</span>
+                <span className="arrow">▼</span>
+              </DropdownButton>
+              <DropdownMenu $isOpen={referenceOpen}>
+                <DropdownItem
+                  to="/species"
+                  $isActive={location.pathname.startsWith('/species')}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">🐉</span>
+                  <span>Species</span>
+                </DropdownItem>
+                <DropdownItem
+                  to="/classes"
+                  $isActive={location.pathname.startsWith('/classes') || location.pathname.startsWith('/subclasses')}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">⚔️</span>
+                  <span>Classes</span>
+                </DropdownItem>
+                <DropdownItem
+                  to="/backgrounds"
+                  $isActive={location.pathname === '/backgrounds'}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">📜</span>
+                  <span>Backgrounds</span>
+                </DropdownItem>
+                <DropdownItem
+                  to="/feats"
+                  $isActive={location.pathname === '/feats'}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">⭐</span>
+                  <span>Feats</span>
+                </DropdownItem>
+                <DropdownItem
+                  to="/equipment"
+                  $isActive={location.pathname === '/equipment'}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">🛡️</span>
+                  <span>Equipment</span>
+                </DropdownItem>
+                <DropdownItem
+                  to="/spells"
+                  $isActive={location.pathname === '/spells'}
+                  onClick={handleLinkClick}
+                >
+                  <span className="icon">✨</span>
+                  <span>Spells</span>
+                </DropdownItem>
+              </DropdownMenu>
+            </DropdownContainer>
+
+            {/* My Account Dropdown */}
+            <DropdownContainer>
+              <DropdownButton
+                $isActive={false}
+                $isOpen={accountOpen}
+                onClick={() => setAccountOpen(!accountOpen)}
+              >
+                <span className="icon">👤</span>
+                <span className="label">
+                  {isAuthenticated ? user?.username : 'My Account'}
+                </span>
+                <span className="arrow">▼</span>
+              </DropdownButton>
+              <DropdownMenu $isOpen={accountOpen}>
+                {isAuthenticated ? (
+                  <>
+                    <DropdownItem
+                      to="#"
+                      $isActive={false}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        // TODO: Navigate to profile page when created
+                        handleLinkClick();
+                      }}
+                    >
+                      <span className="icon">⚙️</span>
+                      <span>Profile</span>
+                    </DropdownItem>
+                    <DropdownDivider />
+                    <DropdownItem
+                      to="#"
+                      $isActive={false}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLogout();
+                      }}
+                    >
+                      <span className="icon">🚪</span>
+                      <span>Logout</span>
+                    </DropdownItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownItem
+                      to="/login"
+                      $isActive={location.pathname === '/login'}
+                      onClick={handleLogin}
+                    >
+                      <span className="icon">🔑</span>
+                      <span>Login</span>
+                    </DropdownItem>
+                    <DropdownItem
+                      to="/register"
+                      $isActive={location.pathname === '/register'}
+                      onClick={handleRegister}
+                    >
+                      <span className="icon">📝</span>
+                      <span>Register</span>
+                    </DropdownItem>
+                  </>
+                )}
+              </DropdownMenu>
+            </DropdownContainer>
           </NavLinks>
         </NavContent>
       </NavContainer>

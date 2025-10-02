@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Navigation } from './components';
 import { UserProvider } from './contexts/UserContext';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import {
   CharactersPage,
   CharacterViewPage,
@@ -14,6 +16,8 @@ import {
   FeatsPage,
   SpeciesPage,
   EquipmentPage,
+  LoginPage,
+  RegisterPage,
 } from './pages';
 import SpellsPage from './pages/SpellsPage';
 import CharacterGeneratorPage from './pages/CharacterGeneratorPage';
@@ -301,45 +305,52 @@ const App: React.FC = () => {
         />
       </Helmet>
 
-      <UserProvider>
-        <div className="App">
-          <Navigation />
-          <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/characters" element={<CharactersPage />} />
-          <Route path="/characters/:characterId" element={<CharacterViewPage />} />
-          <Route path="/generator" element={<CharacterGeneratorPage />} />
-          <Route
-            path="/character-sheet-test"
-            element={<CharacterSheetTestPage />}
-          />
-          <Route path="/species-features-test" element={<SpeciesFeaturesTestPage />} />
-          <Route path="/spells" element={<SpellsPage />} />
-          <Route path="/classes" element={<ClassesPage />} />
-          <Route path="/subclasses" element={<SubclassesPage />} />
-          <Route path="/backgrounds" element={<BackgroundsPage />} />
-          <Route path="/feats" element={<FeatsPage />} />
-          <Route path="/species" element={<SpeciesPage />} />
-          <Route path="/equipment" element={<EquipmentPage />} />
-          <Route
-            path="/classes/:classId/levels"
-            element={<ClassLevelsPage />}
-          />
-          <Route
-            path="/classes/:classId/details"
-            element={<ClassDetailsPage />}
-          />
-          <Route
-            path="/classes/:classId/full-details"
-            element={<ClassFullDetailsPage />}
-          />
-          <Route
-            path="/classes/:classId/subclasses"
-            element={<ClassSubclassesPage />}
-          />
-        </Routes>
-        </div>
-      </UserProvider>
+      <AuthProvider>
+        <UserProvider>
+          <div className="App">
+            <Navigation />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+
+              {/* Auth routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+
+              {/* Protected routes - require authentication */}
+              <Route path="/characters" element={
+                <ProtectedRoute>
+                  <CharactersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/characters/:characterId" element={
+                <ProtectedRoute>
+                  <CharacterViewPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/generator" element={
+                <ProtectedRoute>
+                  <CharacterGeneratorPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Public routes */}
+              <Route path="/character-sheet-test" element={<CharacterSheetTestPage />} />
+              <Route path="/species-features-test" element={<SpeciesFeaturesTestPage />} />
+              <Route path="/spells" element={<SpellsPage />} />
+              <Route path="/classes" element={<ClassesPage />} />
+              <Route path="/subclasses" element={<SubclassesPage />} />
+              <Route path="/backgrounds" element={<BackgroundsPage />} />
+              <Route path="/feats" element={<FeatsPage />} />
+              <Route path="/species" element={<SpeciesPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/classes/:classId/levels" element={<ClassLevelsPage />} />
+              <Route path="/classes/:classId/details" element={<ClassDetailsPage />} />
+              <Route path="/classes/:classId/full-details" element={<ClassFullDetailsPage />} />
+              <Route path="/classes/:classId/subclasses" element={<ClassSubclassesPage />} />
+            </Routes>
+          </div>
+        </UserProvider>
+      </AuthProvider>
     </>
   );
 };

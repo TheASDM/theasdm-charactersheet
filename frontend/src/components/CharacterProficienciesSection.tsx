@@ -1,10 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { CharacterSheetData } from '../types/characterSheet';
 import {
   TraitsSection,
   TraitsTitle,
   ProficienciesCard,
-  ProficienciesTitle,
   ProficienciesContent,
   EmptyTraitsMessage,
 } from '../styles/components';
@@ -37,10 +36,22 @@ interface CharacterProficienciesSectionProps {
 export const CharacterProficienciesSection: React.FC<CharacterProficienciesSectionProps> = ({
   character,
 }) => {
-  // Generate features and extract proficiencies
-  const proficienciesFeature = useMemo(() => {
-    const features = generateFeaturesForCharacter(character);
-    return features.find((feature: SimpleFeature) => feature.category === 'Proficiencies') || null;
+  const [proficienciesFeature, setProficienciesFeature] = useState<SimpleFeature | null>(null);
+
+  // Generate features and extract proficiencies - now async!
+  React.useEffect(() => {
+    let cancelled = false;
+
+    generateFeaturesForCharacter(character).then((features) => {
+      if (!cancelled) {
+        const prof = features.find((feature: SimpleFeature) => feature.category === 'Proficiencies') || null;
+        setProficienciesFeature(prof);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [character]);
 
   return (

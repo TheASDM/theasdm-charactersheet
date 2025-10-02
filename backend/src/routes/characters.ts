@@ -1,17 +1,38 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { Request, Response } from 'express';
+import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// Get all characters (optionally filtered by user)
-router.get('/', async (req: Request, res: Response) => {
+/**
+ * Get all characters
+ * - If authenticated: returns user's characters and public characters
+ * - If not authenticated: returns only public characters
+ * GET /api/characters
+ */
+router.get('/', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.query;
-    
-    const whereClause = userId ? { userId: parseInt(userId as string) } : {};
-    
+
+    let whereClause: any = {};
+
+    if (userId) {
+      // Filter by specific user ID (if provided in query)
+      whereClause = { userId: parseInt(userId as string) };
+    } else if (req.user) {
+      // If authenticated, show user's own characters and public characters
+      whereClause = {
+        OR: [
+          { userId: req.user.id },
+          { isPublic: true }
+        ]
+      };
+    } else {
+      // If not authenticated, show only public characters
+      whereClause = { isPublic: true };
+    }
+
     const characters = await prisma.character.findMany({
       where: whereClause,
       include: {
@@ -32,15 +53,19 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Get a single character by ID
-router.get('/:id', async (req: Request, res: Response) => {
+/**
+ * Get a single character by ID
+ * - Must be owned by user OR be public
+ * GET /api/characters/:id
+ */
+router.get('/:id', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
       return res.status(400).json({ error: 'Character ID is required' });
     }
-    
+
     const character = await prisma.character.findUnique({
       where: { id: parseInt(id) },
       include: {
@@ -57,6 +82,11 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Character not found' });
     }
 
+    // Check if user has permission to view this character
+    if (!character.isPublic && (!req.user || character.userId !== req.user.id)) {
+      return res.status(403).json({ error: 'You do not have permission to view this character' });
+    }
+
     return res.json(character);
   } catch (error) {
     console.error('Error fetching character:', error);
@@ -64,18 +94,26 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Create a new character
-router.post('/', async (req: Request, res: Response) => {
+/**
+ * Create a new character
+ * Requires authentication
+ * POST /api/characters
+ */
+router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, name, level = 1, characterData, isPublic = false, campaignId } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    if (!userId || !name || !characterData) {
-      return res.status(400).json({ error: 'Missing required fields: userId, name, characterData' });
+    const { name, level = 1, characterData, isPublic = false, campaignId } = req.body;
+
+    if (!name || !characterData) {
+      return res.status(400).json({ error: 'Missing required fields: name, characterData' });
     }
 
     const character = await prisma.character.create({
       data: {
-        userId: parseInt(userId),
+        userId: req.user.id,
         name,
         level: parseInt(level),
         characterData,
@@ -99,14 +137,35 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// Update a character
-router.put('/:id', async (req: Request, res: Response) => {
+/**
+ * Update a character
+ * Must be owned by authenticated user
+ * PUT /api/characters/:id
+ */
+router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     const { id } = req.params;
     const { name, level, characterData, isPublic, campaignId } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: 'Character ID is required' });
+    }
+
+    // Check if character exists and belongs to user
+    const existingCharacter = await prisma.character.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!existingCharacter) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    if (existingCharacter.userId !== req.user.id) {
+      return res.status(403).json({ error: 'You do not have permission to update this character' });
     }
 
     const character = await prisma.character.update({
@@ -135,13 +194,111 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Delete a character
-router.delete('/:id', async (req: Request, res: Response) => {
+/**
+ * Update character class choices
+ * Allows storing a single choice selection without overwriting the entire character
+ * PATCH /api/characters/:id/choices
+ */
+router.patch('/:id/choices', authenticate, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { id } = req.params;
+    const { choiceGroupId, selectedFeatureIds } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Character ID is required' });
+    }
+
+    if (!choiceGroupId || !Array.isArray(selectedFeatureIds)) {
+      return res.status(400).json({
+        error: 'Missing required fields: choiceGroupId (string), selectedFeatureIds (array)'
+      });
+    }
+
+    // Check if character exists and belongs to user
+    const existingCharacter = await prisma.character.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!existingCharacter) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    if (existingCharacter.userId !== req.user.id) {
+      return res.status(403).json({ error: 'You do not have permission to update this character' });
+    }
+
+    // Get current character data
+    const characterData = existingCharacter.characterData as any;
+
+    // Update selectedClassChoices
+    const updatedCharacterData = {
+      ...characterData,
+      selectedClassChoices: {
+        ...(characterData.selectedClassChoices || {}),
+        [choiceGroupId]: selectedFeatureIds
+      }
+    };
+
+    // Save updated character
+    const character = await prisma.character.update({
+      where: { id: parseInt(id) },
+      data: { characterData: updatedCharacterData },
+      include: {
+        user: {
+          select: { id: true, username: true }
+        },
+        campaign: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    return res.json({
+      success: true,
+      character,
+      choiceApplied: {
+        choiceGroupId,
+        selectedFeatureIds
+      }
+    });
+  } catch (error) {
+    console.error('Error updating character choices:', error);
+    return res.status(500).json({ error: 'Failed to update character choices' });
+  }
+});
+
+/**
+ * Delete a character
+ * Must be owned by authenticated user
+ * DELETE /api/characters/:id
+ */
+router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     const { id } = req.params;
 
     if (!id) {
       return res.status(400).json({ error: 'Character ID is required' });
+    }
+
+    // Check if character exists and belongs to user
+    const existingCharacter = await prisma.character.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!existingCharacter) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    if (existingCharacter.userId !== req.user.id) {
+      return res.status(403).json({ error: 'You do not have permission to delete this character' });
     }
 
     await prisma.character.delete({
