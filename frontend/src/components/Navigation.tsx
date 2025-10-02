@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
@@ -324,12 +324,40 @@ const Navigation: React.FC = () => {
   const [charactersOpen, setCharactersOpen] = useState(false);
   const [referenceOpen, setReferenceOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const autoCloseTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handleLinkClick = () => {
     setMobileMenuOpen(false);
     setCharactersOpen(false);
     setReferenceOpen(false);
     setAccountOpen(false);
+
+    // Clear any pending auto-close timeouts
+    if (autoCloseTimeout.current) {
+      clearTimeout(autoCloseTimeout.current);
+      autoCloseTimeout.current = null;
+    }
+  };
+
+  const handleMouseEnter = () => {
+    // Clear any pending auto-close timeout when mouse enters
+    if (autoCloseTimeout.current) {
+      clearTimeout(autoCloseTimeout.current);
+      autoCloseTimeout.current = null;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    // Set a timeout to close all dropdowns after 3 seconds
+    if (autoCloseTimeout.current) {
+      clearTimeout(autoCloseTimeout.current);
+    }
+
+    autoCloseTimeout.current = setTimeout(() => {
+      setCharactersOpen(false);
+      setReferenceOpen(false);
+      setAccountOpen(false);
+    }, 3000);
   };
 
   const handleLogout = async () => {
@@ -360,7 +388,7 @@ const Navigation: React.FC = () => {
   return (
     <>
       <FontImport />
-      <NavContainer>
+      <NavContainer onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         <NavContent>
           <LogoSection>
             <Logo to="/" onClick={handleLinkClick}>

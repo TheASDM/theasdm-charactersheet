@@ -101,6 +101,7 @@ export interface CharacterSheetData {
   speed: number;
   size: string;
   passivePerception: number;
+  darkvision?: number; // Darkvision range in feet, 0 or undefined if none
   hitPoints: {
     current: number;
     max: number;

@@ -12,9 +12,7 @@ import { Step1AbilityScores } from './wizard-steps/Step1_AbilityScores';
 import { Step2ClassSelection } from './wizard-steps/Step2_ClassSelection';
 import { Step3ABackgroundSelection } from './wizard-steps/Step3A_BackgroundSelection';
 import { Step3BSpeciesSelection } from './wizard-steps/Step3B_SpeciesSelection';
-import { Step3CSpeciesChoices } from './wizard-steps/Step3C_SpeciesChoices';
 import { Step3DOriginFeats } from './wizard-steps/Step3D_OriginFeats';
-import { Step3EFeatChoices } from './wizard-steps/Step3E_FeatChoices';
 import { Step4EquipmentSelection } from './wizard-steps/Step4_EquipmentSelection';
 import { Step5ReviewCreate } from './wizard-steps/Step5_ReviewCreate';
 import { AbilityScoresHeader } from './wizard-steps/AbilityScoresHeader';
@@ -26,9 +24,7 @@ export type WizardStep =
   | 'class-selection'
   | 'background-selection'
   | 'species-selection'
-  | 'species-choices'
   | 'origin-feats'
-  | 'feat-choices'
   | 'equipment-selection'
   | 'review-create';
 
@@ -132,9 +128,7 @@ const WIZARD_STEPS: WizardStep[] = [
   'class-selection',
   'background-selection',
   'species-selection',
-  'species-choices',
   'origin-feats',
-  'feat-choices',
   'equipment-selection',
   'review-create'
 ];
@@ -145,9 +139,7 @@ const STEP_LABELS = {
   'class-selection': 'Class',
   'background-selection': 'Background',
   'species-selection': 'Species',
-  'species-choices': 'Species Choices',
   'origin-feats': 'Origin Feats',
-  'feat-choices': 'Feat Choices',
   'equipment-selection': 'Equipment',
   'review-create': 'Review & Create'
 };
@@ -360,69 +352,9 @@ export default function CharacterGeneratorWizard() {
     return !!builderData.selectedSpecies;
   };
 
-  // Check if species choices are complete
-  const isSpeciesChoicesComplete = (): boolean => {
-    // First check if species selection is complete
-    if (!isSpeciesSelectionComplete()) return false;
-
-    const needsChoices = ['dragonborn', 'elf', 'gnome', 'goliath', 'tiefling', 'human'].includes(
-      builderData.selectedSpecies?.toLowerCase() || ''
-    );
-
-    if (!needsChoices) return true; // Species doesn't need choices
-
-    const choices = builderData.speciesChoices || {};
-    switch (builderData.selectedSpecies?.toLowerCase()) {
-      case 'dragonborn':
-        return !!choices.draconicAncestry;
-      case 'elf':
-        return !!choices.elfLineage;
-      case 'gnome':
-        return !!choices.gnomeLineage;
-      case 'goliath':
-        return !!choices.giantAncestry;
-      case 'tiefling':
-        return !!choices.fiendishLegacy;
-      case 'human':
-        return !!choices.humanSkill;
-      default:
-        return true;
-    }
-  };
-
   // Check if origin feats selection is complete
   const isOriginFeatsComplete = (): boolean => {
     return builderData.selectedOriginFeats.length >= builderData.requiredFeatCount;
-  };
-
-  // Check if feat choices are complete
-  const isFeatChoicesComplete = (): boolean => {
-    // First check if origin feats selection is complete
-    if (!isOriginFeatsComplete()) return false;
-
-    const featsWithChoices = builderData.selectedOriginFeats?.filter(featName =>
-      ['Magic Initiate', 'Skilled', 'Crafter', 'Musician'].includes(featName)
-    ) || [];
-
-    if (featsWithChoices.length === 0) return true; // No feats require choices
-
-    return featsWithChoices.every(featName => {
-      const choices = builderData.featChoices?.[featName];
-      if (!choices) return false;
-
-      switch (featName) {
-        case 'Magic Initiate':
-          return !!choices.spellClass;
-        case 'Skilled':
-          return choices.skills?.length === 3;
-        case 'Crafter':
-          return choices.tools?.length === 3;
-        case 'Musician':
-          return choices.instruments?.length === 3;
-        default:
-          return true;
-      }
-    });
   };
 
   // Check if equipment selection is complete
@@ -450,12 +382,8 @@ export default function CharacterGeneratorWizard() {
         return isBackgroundSelectionComplete();
       case 'species-selection':
         return isSpeciesSelectionComplete();
-      case 'species-choices':
-        return isSpeciesChoicesComplete();
       case 'origin-feats':
         return isOriginFeatsComplete();
-      case 'feat-choices':
-        return isFeatChoicesComplete();
       case 'equipment-selection':
         return isEquipmentSelectionComplete();
       case 'review-create':
@@ -539,6 +467,7 @@ export default function CharacterGeneratorWizard() {
               <Step3ABackgroundSelection
                 data={builderData}
                 onUpdate={updateBuilderData}
+                onAdvance={goNext}
               />
             </>
           )}
@@ -549,22 +478,11 @@ export default function CharacterGeneratorWizard() {
               onAdvance={goNext}
             />
           )}
-          {wizardState.currentStep === 'species-choices' && (
-            <Step3CSpeciesChoices
-              data={builderData}
-              onUpdate={updateBuilderData}
-            />
-          )}
           {wizardState.currentStep === 'origin-feats' && (
             <Step3DOriginFeats
               data={builderData}
               onUpdate={updateBuilderData}
-            />
-          )}
-          {wizardState.currentStep === 'feat-choices' && (
-            <Step3EFeatChoices
-              data={builderData}
-              onUpdate={updateBuilderData}
+              onAdvance={goNext}
             />
           )}
           {wizardState.currentStep === 'equipment-selection' && (
@@ -582,7 +500,7 @@ export default function CharacterGeneratorWizard() {
               }}
             />
           )}
-          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'species-choices', 'origin-feats', 'feat-choices', 'equipment-selection', 'review-create'].includes(wizardState.currentStep) && (
+          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'origin-feats', 'equipment-selection', 'review-create'].includes(wizardState.currentStep) && (
             <div className="step-placeholder">
               <h2>{STEP_LABELS[wizardState.currentStep]}</h2>
               <p>Step content coming soon...</p>
@@ -610,9 +528,7 @@ export default function CharacterGeneratorWizard() {
                     (step === 'class-selection' && isClassSelectionComplete()) ||
                     (step === 'background-selection' && isBackgroundSelectionComplete()) ||
                     (step === 'species-selection' && isSpeciesSelectionComplete()) ||
-                    (step === 'species-choices' && isSpeciesChoicesComplete()) ||
                     (step === 'origin-feats' && isOriginFeatsComplete()) ||
-                    (step === 'feat-choices' && isFeatChoicesComplete()) ||
                     (step === 'equipment-selection' && isEquipmentSelectionComplete())
                   ) ? '#4caf50' : undefined
                 }}>

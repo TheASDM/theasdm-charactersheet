@@ -269,6 +269,7 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
   const [showMethodModal, setShowMethodModal] = useState(!data.abilityScoreMethod || data.abilityScoreMethod === 'standard-array');
   const [rolledValues, setRolledValues] = useState<number[]>([]);
   const [usedRolledIndices, setUsedRolledIndices] = useState<Set<number>>(new Set());
+  const [abilityToIndexMap, setAbilityToIndexMap] = useState<Map<string, number>>(new Map());
 
   const handleMethodSelect = (method: 'standard-array' | 'custom') => {
     setShowMethodModal(false);
@@ -335,8 +336,19 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
   const handleRollValue = (rolledValue: number, rolledIndex: number, ability: keyof CharacterBuilderData['abilityScores']) => {
     if (usedRolledIndices.has(rolledIndex)) return;
 
-    // Add the new index
+    // If this ability already has a rolled value assigned, free up that old index
+    const oldIndex = abilityToIndexMap.get(ability);
+    if (oldIndex !== undefined) {
+      setUsedRolledIndices(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(oldIndex);
+        return newSet;
+      });
+    }
+
+    // Add the new index and update the mapping
     setUsedRolledIndices(prev => new Set([...prev, rolledIndex]));
+    setAbilityToIndexMap(prev => new Map(prev).set(ability, rolledIndex));
 
     onUpdate({
       abilityScores: {
@@ -354,6 +366,7 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
   const resetRolls = () => {
     setRolledValues([]);
     setUsedRolledIndices(new Set());
+    setAbilityToIndexMap(new Map());
     onUpdate({
       abilityScores: {
         strength: 0,

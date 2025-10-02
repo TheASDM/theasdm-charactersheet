@@ -208,6 +208,8 @@ export const TraitCard = styled.div`
   border-radius: 4px;
   padding: 0.4rem;
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     background: rgba(212, 175, 55, 0.08);
@@ -230,6 +232,19 @@ export const TraitDescription = styled.p`
   font-size: 0.7rem;
   line-height: 1.3;
   margin: 0;
+  flex: 1;
+`;
+
+export const TraitCategory = styled.div`
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  font-size: 0.75rem;
+  color: #d4af37;
+  font-style: italic;
+  font-weight: 500;
+  text-align: right;
+  align-self: flex-end;
 `;
 
 export const EmptyTraitsMessage = styled.div`

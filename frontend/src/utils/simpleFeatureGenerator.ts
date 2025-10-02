@@ -166,6 +166,14 @@ function generateDragonbornFeatures(character: CharacterSheetData): SimpleFeatur
   // Map to damage types and areas
   const dragonData = getDragonData(draconicAncestry);
 
+  // Add Darkvision
+  const darkvisionRange = character.darkvision || 60;
+  features.push({
+    name: 'Darkvision',
+    description: `You can see in dim light within **${darkvisionRange} feet** as if it were bright light, and in darkness as if it were dim light.`,
+    category: 'Species Trait'
+  });
+
   features.push({
     name: 'Draconic Ancestry',
     description: `You have ${dragonData.fullName} ancestry, granting you ${dragonData.damageType} damage resistance and a ${dragonData.damageType} breath weapon that affects a ${dragonData.area}.`,
@@ -495,7 +503,7 @@ function generateOrcFeatures(_character: CharacterSheetData): SimpleFeature[] {
 
   features.push({
     name: 'Darkvision',
-    description: 'You can see in dim light within **120 feet** as if it were bright light and in darkness as if it were dim light. You discern colors in that darkness only as shades of gray.',
+    description: 'You can see in dim light within **60 feet** as if it were bright light and in darkness as if it were dim light.',
     category: 'Species Trait'
   });
 
@@ -656,6 +664,29 @@ export async function generateClassFeaturesWithChoiceSystem(
 
     // Convert ClassFeature objects to SimpleFeature format
     displayableFeatures.forEach((feature) => {
+      // Replace verbose Spellcasting/Pact Magic with concise calculated version
+      if (feature.name === 'Spellcasting' || feature.name === 'Pact Magic') {
+        const className = character.class || '';
+        const spellcastingAbility = getClassSpellcastingAbility(className);
+
+        if (spellcastingAbility) {
+          const stats = getSpellcastingStats(character, spellcastingAbility);
+          const spellsKnown = getSpellsKnown(className, level, stats.modifier);
+
+          // Different label for Wizard
+          const spellsLabel = className === 'Wizard' ? 'Spells in Spellbook' :
+                             (className === 'Cleric' || className === 'Druid' || className === 'Paladin') ? 'Spells Prepared' :
+                             'Spells Known';
+
+          features.push({
+            name: feature.name,
+            description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**${spellsLabel}:** ${spellsKnown}`,
+            category: feature.featureType === 'subclass' ? 'Subclass Feature' : 'Class Feature'
+          });
+          return;
+        }
+      }
+
       // Apply scaling if needed
       let description = feature.description;
       let mechanics = feature.mechanics;
@@ -1092,22 +1123,30 @@ function generateRogueFeatures(character: CharacterSheetData): SimpleFeature[] {
 /**
  * Generate placeholder features for other classes
  */
-function generateBardFeatures(_character: CharacterSheetData): SimpleFeature[] {
+function generateBardFeatures(character: CharacterSheetData): SimpleFeature[] {
+  const stats = getSpellcastingStats(character, 'cha');
+  const level = character.level || 1;
+  const spellsKnown = getSpellsKnown('Bard', level, stats.modifier);
+
   return [{
     name: 'Bardic Inspiration',
     description: '**Bonus Action:** Choose one creature within **60 feet** who can hear you. That creature gains one **Bardic Inspiration die (d6)**.',
     category: 'Class Feature'
   }, {
     name: 'Spellcasting',
-    description: 'You can cast **bard spells**. **Charisma** is your spellcasting ability.',
+    description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**Spells Known:** ${spellsKnown}`,
     category: 'Class Feature'
   }];
 }
 
-function generateClericFeatures(_character: CharacterSheetData): SimpleFeature[] {
+function generateClericFeatures(character: CharacterSheetData): SimpleFeature[] {
+  const stats = getSpellcastingStats(character, 'wis');
+  const level = character.level || 1;
+  const spellsKnown = getSpellsKnown('Cleric', level, stats.modifier);
+
   return [{
     name: 'Spellcasting',
-    description: 'You can cast **cleric spells**. **Wisdom** is your spellcasting ability.',
+    description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**Spells Prepared:** ${spellsKnown}`,
     category: 'Class Feature'
   }, {
     name: 'Divine Order',
@@ -1116,14 +1155,18 @@ function generateClericFeatures(_character: CharacterSheetData): SimpleFeature[]
   }];
 }
 
-function generateDruidFeatures(_character: CharacterSheetData): SimpleFeature[] {
+function generateDruidFeatures(character: CharacterSheetData): SimpleFeature[] {
+  const stats = getSpellcastingStats(character, 'wis');
+  const level = character.level || 1;
+  const spellsKnown = getSpellsKnown('Druid', level, stats.modifier);
+
   return [{
     name: 'Druidcraft',
     description: 'You know the **Druidcraft** cantrip.',
     category: 'Class Feature'
   }, {
     name: 'Spellcasting',
-    description: 'You can cast **druid spells**. **Wisdom** is your spellcasting ability.',
+    description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**Spells Prepared:** ${spellsKnown}`,
     category: 'Class Feature'
   }];
 }
@@ -1151,9 +1194,12 @@ function generatePaladinFeatures(character: CharacterSheetData): SimpleFeature[]
       category: 'Class Feature'
     });
 
+    const stats = getSpellcastingStats(character, 'cha');
+    const spellsKnown = getSpellsKnown('Paladin', level, stats.modifier);
+
     features.push({
       name: 'Spellcasting',
-      description: 'You can cast **paladin spells**. **Charisma** is your spellcasting ability.',
+      description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**Spells Prepared:** ${spellsKnown}`,
       category: 'Class Feature'
     });
 
@@ -1288,34 +1334,46 @@ function generateRangerFeatures(character: CharacterSheetData): SimpleFeature[] 
   return features;
 }
 
-function generateSorcererFeatures(_character: CharacterSheetData): SimpleFeature[] {
+function generateSorcererFeatures(character: CharacterSheetData): SimpleFeature[] {
+  const stats = getSpellcastingStats(character, 'cha');
+  const level = character.level || 1;
+  const spellsKnown = getSpellsKnown('Sorcerer', level, stats.modifier);
+
   return [{
     name: 'Innate Sorcery',
     description: 'An event in your past left an indelible mark on you, infusing you with **sorcerous magic**. The source of your magic determines some of your spells.',
     category: 'Class Feature'
   }, {
     name: 'Spellcasting',
-    description: 'You can cast **sorcerer spells**. **Charisma** is your spellcasting ability.',
+    description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**Spells Known:** ${spellsKnown}`,
     category: 'Class Feature'
   }];
 }
 
-function generateWarlockFeatures(_character: CharacterSheetData): SimpleFeature[] {
+function generateWarlockFeatures(character: CharacterSheetData): SimpleFeature[] {
+  const stats = getSpellcastingStats(character, 'cha');
+  const level = character.level || 1;
+  const spellsKnown = getSpellsKnown('Warlock', level, stats.modifier);
+
   return [{
     name: 'Otherworldly Patron',
     description: 'You have made a pact with an **otherworldly being**. Your patron gives you features at **1st, 6th, 10th, and 14th level**.',
     category: 'Class Feature'
   }, {
     name: 'Pact Magic',
-    description: 'You can cast **warlock spells**. **Charisma** is your spellcasting ability.',
+    description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**Spells Known:** ${spellsKnown}`,
     category: 'Class Feature'
   }];
 }
 
-function generateWizardFeatures(_character: CharacterSheetData): SimpleFeature[] {
+function generateWizardFeatures(character: CharacterSheetData): SimpleFeature[] {
+  const stats = getSpellcastingStats(character, 'int');
+  const level = character.level || 1;
+  const spellsKnown = getSpellsKnown('Wizard', level, stats.modifier);
+
   return [{
     name: 'Spellcasting',
-    description: 'You can cast **wizard spells**. **Intelligence** is your spellcasting ability.',
+    description: `**Spellcasting Ability:** ${stats.abilityName}\n\n**Spell Save DC:** ${stats.spellSaveDC}\n\n**Spell Attack Bonus:** +${stats.spellAttackBonus}\n\n**Spells in Spellbook:** ${spellsKnown}`,
     category: 'Class Feature'
   }, {
     name: 'Ritual Casting',
@@ -1666,4 +1724,109 @@ function getBreathWeaponDamage(level: number): string {
   if (level >= 11) return '3d6';
   if (level >= 5) return '2d6';
   return '1d6';
+}
+
+/**
+ * Get ability modifier for a given ability score
+ */
+function getAbilityModifier(abilityScore: number): number {
+  return Math.floor((abilityScore - 10) / 2);
+}
+
+/**
+ * Get the spellcasting ability for a class
+ */
+function getClassSpellcastingAbility(className: string): 'int' | 'wis' | 'cha' | null {
+  const abilityMap: { [key: string]: 'int' | 'wis' | 'cha' } = {
+    'Bard': 'cha',
+    'Cleric': 'wis',
+    'Druid': 'wis',
+    'Paladin': 'cha',
+    'Ranger': 'wis',
+    'Sorcerer': 'cha',
+    'Warlock': 'cha',
+    'Wizard': 'int'
+  };
+
+  return abilityMap[className] || null;
+}
+
+/**
+ * Get spellcasting stats for a class
+ */
+function getSpellcastingStats(character: CharacterSheetData, spellcastingAbility: 'int' | 'wis' | 'cha'): {
+  abilityName: string;
+  abilityScore: number;
+  modifier: number;
+  spellSaveDC: number;
+  spellAttackBonus: number;
+} {
+  const level = character.level || 1;
+  const profBonus = getProficiencyBonus(level);
+
+  let abilityScore = 10;
+  let abilityName = '';
+
+  switch (spellcastingAbility) {
+    case 'int':
+      abilityScore = character.abilityScores?.intelligence || 10;
+      abilityName = 'Intelligence';
+      break;
+    case 'wis':
+      abilityScore = character.abilityScores?.wisdom || 10;
+      abilityName = 'Wisdom';
+      break;
+    case 'cha':
+      abilityScore = character.abilityScores?.charisma || 10;
+      abilityName = 'Charisma';
+      break;
+  }
+
+  const modifier = getAbilityModifier(abilityScore);
+  const spellSaveDC = 8 + profBonus + modifier;
+  const spellAttackBonus = profBonus + modifier;
+
+  return {
+    abilityName,
+    abilityScore,
+    modifier,
+    spellSaveDC,
+    spellAttackBonus
+  };
+}
+
+/**
+ * Get number of spells known for a class at a given level
+ * Note: This is for spells known, not including always-prepared spells
+ */
+function getSpellsKnown(className: string, level: number, spellcastingModifier: number): number | string {
+  // Clerics and Druids prepare spells (Level + Modifier)
+  if (className === 'Cleric' || className === 'Druid') {
+    return `${level + Math.max(1, spellcastingModifier)} prepared`;
+  }
+
+  // Wizards have spellbooks
+  if (className === 'Wizard') {
+    return `${6 + (level - 1) * 2} in spellbook`;
+  }
+
+  // Bard, Sorcerer, Warlock, Ranger - spells known by level
+  const spellsKnownTable: { [key: string]: number[] } = {
+    'Bard': [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22],
+    'Sorcerer': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15],
+    'Warlock': [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15],
+    'Ranger': [0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11]
+  };
+
+  if (spellsKnownTable[className]) {
+    return spellsKnownTable[className][level - 1] || 0;
+  }
+
+  // Paladin - half caster, spells known
+  if (className === 'Paladin') {
+    const paladinSpells = [0, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11];
+    return paladinSpells[level - 1] || 0;
+  }
+
+  return 0;
 }

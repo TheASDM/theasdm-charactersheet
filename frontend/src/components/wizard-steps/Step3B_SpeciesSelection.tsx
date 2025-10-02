@@ -7,6 +7,53 @@ import { Species as ApiSpecies } from '../../types/api';
 import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
 
+// Species choice constants (from Step3C)
+const DRAGONBORN_ANCESTRY = [
+  { type: 'Black', damage: 'Acid', area: '15-foot line (5 feet wide)' },
+  { type: 'Blue', damage: 'Lightning', area: '15-foot line (5 feet wide)' },
+  { type: 'Brass', damage: 'Fire', area: '15-foot line (5 feet wide)' },
+  { type: 'Bronze', damage: 'Lightning', area: '15-foot line (5 feet wide)' },
+  { type: 'Copper', damage: 'Acid', area: '15-foot line (5 feet wide)' },
+  { type: 'Gold', damage: 'Fire', area: '15-foot cone' },
+  { type: 'Green', damage: 'Poison', area: '15-foot cone' },
+  { type: 'Red', damage: 'Fire', area: '15-foot cone' },
+  { type: 'Silver', damage: 'Cold', area: '15-foot cone' },
+  { type: 'White', damage: 'Cold', area: '15-foot cone' },
+];
+
+const ELF_LINEAGES = [
+  { name: 'Drow', description: 'The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip.', level3: 'Faerie Fire', level5: 'Darkness' },
+  { name: 'High Elf', description: 'You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.', level3: 'Detect Magic', level5: 'Misty Step' },
+  { name: 'Wood Elf', description: 'Your Speed increases to 35 feet. You also know the Druidcraft cantrip.', level3: 'Longstrider', level5: 'Pass without Trace' }
+];
+
+const GNOME_LINEAGES = [
+  { name: 'Forest Gnome', description: 'You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared.' },
+  { name: 'Rock Gnome', description: 'You know the Mending and Prestidigitation cantrips. You can create tiny clockwork devices using Prestidigitation.' }
+];
+
+const GOLIATH_GIANT_ANCESTRY = [
+  { name: "Cloud's Jaunt (Cloud Giant)", description: 'As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.' },
+  { name: "Fire's Burn (Fire Giant)", description: 'When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.' },
+  { name: "Frost's Chill (Frost Giant)", description: 'When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.' },
+  { name: "Hill's Tumble (Hill Giant)", description: 'When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.' },
+  { name: "Stone's Endurance (Stone Giant)", description: 'When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.' },
+  { name: "Storm's Thunder (Storm Giant)", description: 'When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature.' }
+];
+
+const TIEFLING_FIENDISH_LEGACIES = [
+  { name: 'Abyssal', description: 'You have Resistance to Poison damage. You also know the Poison Spray cantrip.', level3: 'Ray of Sickness', level5: 'Hold Person' },
+  { name: 'Chthonic', description: 'You have Resistance to Necrotic damage. You also know the Chill Touch cantrip.', level3: 'False Life', level5: 'Ray of Enfeeblement' },
+  { name: 'Infernal', description: 'You have Resistance to Fire damage. You also know the Fire Bolt cantrip.', level3: 'Hellish Rebuke', level5: 'Darkness' }
+];
+
+const ALL_SKILLS = [
+  'Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception',
+  'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine',
+  'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion',
+  'Sleight of Hand', 'Stealth', 'Survival'
+];
+
 interface Step3BSpeciesSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
@@ -348,6 +395,8 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedSpeciesForModal, setSelectedSpeciesForModal] = useState<Species | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [modalPage, setModalPage] = useState<'details' | 'choices'>('details');
+  const [currentSpeciesChoices, setCurrentSpeciesChoices] = useState<any>({});
 
   useEffect(() => {
     fetchSpecies();
@@ -448,6 +497,103 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
         }
       };
 
+      const extractDarkvision = (speciesData: any): number => {
+        try {
+          console.log('🔍 Extracting darkvision for:', speciesData.name);
+
+          // Check if darkvision is a direct property
+          if (speciesData.darkvision && typeof speciesData.darkvision === 'number') {
+            console.log('✅ Found direct darkvision property:', speciesData.darkvision);
+            return speciesData.darkvision;
+          }
+
+          // Check in traits for darkvision
+          if (speciesData.traits) {
+            const traits = Array.isArray(speciesData.traits) ? speciesData.traits : [speciesData.traits];
+            for (const trait of traits) {
+              if (trait.name && trait.name.toLowerCase().includes('darkvision')) {
+                console.log('✅ Found darkvision trait:', trait);
+
+                // Convert description to string (it might be an array or object)
+                let desc = '';
+                if (typeof trait.description === 'string') {
+                  desc = trait.description;
+                } else if (Array.isArray(trait.description)) {
+                  desc = trait.description.join(' ');
+                } else if (trait.description) {
+                  desc = JSON.stringify(trait.description);
+                }
+
+                // Try to extract the range from the description
+                const match = desc.match(/(\d+)\s*feet?/i);
+                if (match) {
+                  console.log('✅ Extracted darkvision range:', parseInt(match[1]));
+                  return parseInt(match[1]);
+                }
+                // Default darkvision is usually 60 feet
+                console.log('✅ Using default darkvision: 60');
+                return 60;
+              }
+            }
+          }
+
+          console.log('❌ No darkvision found');
+          return 0; // No darkvision
+        } catch (error) {
+          console.error('Error extracting darkvision:', error);
+          return 0;
+        }
+      };
+
+      const extractResistances = (speciesData: any): string[] => {
+        try {
+          // Check if resist is a direct property
+          if (speciesData.resist) {
+            if (Array.isArray(speciesData.resist)) {
+              return speciesData.resist;
+            }
+            if (typeof speciesData.resist === 'string') {
+              return [speciesData.resist];
+            }
+          }
+
+          // Check in traits for resistances
+          const resistances: string[] = [];
+          if (speciesData.traits) {
+            const traits = Array.isArray(speciesData.traits) ? speciesData.traits : [speciesData.traits];
+            for (const trait of traits) {
+              // Convert description to string (it might be an array or object)
+              let desc = '';
+              if (typeof trait.description === 'string') {
+                desc = trait.description.toLowerCase();
+              } else if (Array.isArray(trait.description)) {
+                desc = trait.description.join(' ').toLowerCase();
+              } else if (trait.description) {
+                desc = JSON.stringify(trait.description).toLowerCase();
+              }
+
+              if (desc.includes('resistance to')) {
+                // Try to extract resistance types
+                const resistanceTypes = ['fire', 'cold', 'lightning', 'poison', 'acid', 'necrotic', 'radiant', 'psychic', 'thunder', 'force'];
+                for (const type of resistanceTypes) {
+                  if (desc.includes(type)) {
+                    resistances.push(type.charAt(0).toUpperCase() + type.slice(1));
+                  }
+                }
+              }
+            }
+          }
+
+          return resistances;
+        } catch (error) {
+          console.error('Error extracting resistances:', error);
+          return [];
+        }
+      };
+
+      const darkvision = extractDarkvision(speciesData);
+      const resistances = extractResistances(speciesData);
+
       const updateData = {
         selectedSpecies: speciesData.name,
         isHuman: isHuman,
@@ -458,13 +604,15 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
         speciesSize: safeGetSize(speciesData.size),
         speciesSpeed: safeGetSpeed(speciesData.speed),
 
-        // Simplified placeholders for now
+        // Extract special abilities
         speciesSpells: { cantrips: [], level1: [], level3: [], level5: [] },
-        speciesDarkvision: 0, // TODO: Extract from traits
-        speciesResistances: [], // TODO: Extract from traits
-        speciesImmunities: [] // TODO: Extract immunities
+        speciesDarkvision: darkvision,
+        speciesResistances: resistances,
+        speciesImmunities: [] // TODO: Extract immunities if needed
       };
 
+      console.log('📦 Update data being sent:', updateData);
+      console.log('Darkvision value:', darkvision);
       onUpdate(updateData);
 
     } catch (error) {
@@ -478,23 +626,32 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     }
   };
 
+  // Check if species needs choices
+  const speciesNeedsChoices = (speciesName: string): boolean => {
+    return ['dragonborn', 'elf', 'gnome', 'goliath', 'tiefling', 'human'].includes(speciesName.toLowerCase());
+  };
+
   const confirmSpeciesSelection = () => {
-    if (selectedSpeciesForModal && onAdvance) {
-      // Start transition
+    if (!selectedSpeciesForModal) return;
+
+    // Select the species
+    handleSpeciesSelect(selectedSpeciesForModal);
+
+    // Check if this species needs choices
+    if (speciesNeedsChoices(selectedSpeciesForModal.name)) {
+      // Initialize choices for this species
+      setCurrentSpeciesChoices(data.speciesChoices || {});
+      setModalPage('choices');
+    } else {
+      // No choices needed, advance
       setIsTransitioning(true);
       closeModal();
 
-      // Small delay for transition effect
       setTimeout(() => {
-        handleSpeciesSelect(selectedSpeciesForModal);
-
-        // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Trigger advance to next step
         setTimeout(() => {
           setIsTransitioning(false);
-          onAdvance();
+          if (onAdvance) onAdvance();
         }, 500);
       }, 300);
     }
@@ -502,6 +659,61 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
 
   const closeModal = () => {
     setSelectedSpeciesForModal(null);
+    setModalPage('details');
+    setCurrentSpeciesChoices({});
+  };
+
+  // Update species choice
+  const updateSpeciesChoice = (choiceKey: string, value: any) => {
+    const newChoices = {
+      ...currentSpeciesChoices,
+      [choiceKey]: value
+    };
+    setCurrentSpeciesChoices(newChoices);
+
+    // Update in parent data
+    onUpdate({ speciesChoices: newChoices });
+  };
+
+  // Check if current species choices are complete
+  const areChoicesComplete = (): boolean => {
+    if (!selectedSpeciesForModal) return false;
+
+    const speciesName = selectedSpeciesForModal.name.toLowerCase();
+    const choices = currentSpeciesChoices;
+
+    switch (speciesName) {
+      case 'dragonborn':
+        return !!choices.draconicAncestry;
+      case 'elf':
+        return !!choices.elfLineage && !!choices.elfSkill;
+      case 'gnome':
+        return !!choices.gnomeLineage;
+      case 'goliath':
+        return !!choices.giantAncestry;
+      case 'tiefling':
+        return !!choices.fiendishLegacy;
+      case 'human':
+        return !!choices.humanSkill;
+      default:
+        return true;
+    }
+  };
+
+  // Confirm choices and advance
+  const confirmChoices = () => {
+    if (!areChoicesComplete()) return;
+
+    setIsTransitioning(true);
+    closeModal();
+
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        setIsTransitioning(false);
+        if (onAdvance) onAdvance();
+      }, 500);
+    }, 300);
   };
 
   const getMainTraits = (traits?: any[]): string[] => {
@@ -515,6 +727,188 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     }
     return size === 'Medium' ? 'Medium' : 'Small';
   };
+
+  // Species choice rendering functions
+  const renderDragonbornChoices = () => (
+    <div style={{ marginTop: '1rem' }}>
+      <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Draconic Ancestry</h3>
+      <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
+        Select your dragon ancestor type, which determines your breath weapon damage.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto' }}>
+        {DRAGONBORN_ANCESTRY.map((ancestry) => (
+          <div
+            key={ancestry.type}
+            onClick={() => updateSpeciesChoice('draconicAncestry', ancestry.type)}
+            style={{
+              background: currentSpeciesChoices.draconicAncestry === ancestry.type ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
+              border: `2px solid ${currentSpeciesChoices.draconicAncestry === ancestry.type ? '#d4af37' : '#444'}`,
+              borderRadius: '8px',
+              padding: '1rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <div style={{ color: '#d4af37', fontWeight: 600, marginBottom: '0.5rem' }}>{ancestry.type} Dragon</div>
+            <div style={{ color: '#ccc', fontSize: '0.85rem' }}>Damage: {ancestry.damage}</div>
+            <div style={{ color: '#888', fontSize: '0.75rem' }}>{ancestry.area}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderElfChoices = () => (
+    <div style={{ marginTop: '1rem' }}>
+      <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Elf Lineage</h3>
+      <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
+        Select your elf lineage and gain a skill proficiency.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        {ELF_LINEAGES.map((lineage) => (
+          <div
+            key={lineage.name}
+            onClick={() => updateSpeciesChoice('elfLineage', lineage.name)}
+            style={{
+              background: currentSpeciesChoices.elfLineage === lineage.name ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
+              border: `2px solid ${currentSpeciesChoices.elfLineage === lineage.name ? '#d4af37' : '#444'}`,
+              borderRadius: '8px',
+              padding: '1rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <div style={{ color: '#d4af37', fontWeight: 600, marginBottom: '0.5rem' }}>{lineage.name}</div>
+            <div style={{ color: '#ccc', fontSize: '0.85rem' }}>{lineage.description}</div>
+          </div>
+        ))}
+      </div>
+
+      <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem', marginTop: '1rem' }}>Choose Skill Proficiency</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+        {ALL_SKILLS.map((skill) => (
+          <div
+            key={skill}
+            onClick={() => updateSpeciesChoice('elfSkill', skill)}
+            style={{
+              background: currentSpeciesChoices.elfSkill === skill ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
+              border: `2px solid ${currentSpeciesChoices.elfSkill === skill ? '#d4af37' : '#444'}`,
+              borderRadius: '8px',
+              padding: '0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ color: '#d4af37', fontSize: '0.85rem' }}>{skill}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderGnomeChoices = () => (
+    <div style={{ marginTop: '1rem' }}>
+      <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Gnome Lineage</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.75rem' }}>
+        {GNOME_LINEAGES.map((lineage) => (
+          <div
+            key={lineage.name}
+            onClick={() => updateSpeciesChoice('gnomeLineage', lineage.name)}
+            style={{
+              background: currentSpeciesChoices.gnomeLineage === lineage.name ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
+              border: `2px solid ${currentSpeciesChoices.gnomeLineage === lineage.name ? '#d4af37' : '#444'}`,
+              borderRadius: '8px',
+              padding: '1rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <div style={{ color: '#d4af37', fontWeight: 600, marginBottom: '0.5rem' }}>{lineage.name}</div>
+            <div style={{ color: '#ccc', fontSize: '0.85rem' }}>{lineage.description}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderGoliathChoices = () => (
+    <div style={{ marginTop: '1rem' }}>
+      <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Giant Ancestry</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto' }}>
+        {GOLIATH_GIANT_ANCESTRY.map((ancestry) => (
+          <div
+            key={ancestry.name}
+            onClick={() => updateSpeciesChoice('giantAncestry', ancestry.name)}
+            style={{
+              background: currentSpeciesChoices.giantAncestry === ancestry.name ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
+              border: `2px solid ${currentSpeciesChoices.giantAncestry === ancestry.name ? '#d4af37' : '#444'}`,
+              borderRadius: '8px',
+              padding: '1rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <div style={{ color: '#d4af37', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.9rem' }}>{ancestry.name}</div>
+            <div style={{ color: '#ccc', fontSize: '0.85rem' }}>{ancestry.description}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderTieflingChoices = () => (
+    <div style={{ marginTop: '1rem' }}>
+      <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Fiendish Legacy</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.75rem' }}>
+        {TIEFLING_FIENDISH_LEGACIES.map((legacy) => (
+          <div
+            key={legacy.name}
+            onClick={() => updateSpeciesChoice('fiendishLegacy', legacy.name)}
+            style={{
+              background: currentSpeciesChoices.fiendishLegacy === legacy.name ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
+              border: `2px solid ${currentSpeciesChoices.fiendishLegacy === legacy.name ? '#d4af37' : '#444'}`,
+              borderRadius: '8px',
+              padding: '1rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <div style={{ color: '#d4af37', fontWeight: 600, marginBottom: '0.5rem' }}>{legacy.name}</div>
+            <div style={{ color: '#ccc', fontSize: '0.85rem' }}>{legacy.description}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderHumanChoices = () => (
+    <div style={{ marginTop: '1rem' }}>
+      <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Skill Proficiency</h3>
+      <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
+        Humans gain proficiency in one skill of their choice.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto' }}>
+        {ALL_SKILLS.map((skill) => (
+          <div
+            key={skill}
+            onClick={() => updateSpeciesChoice('humanSkill', skill)}
+            style={{
+              background: currentSpeciesChoices.humanSkill === skill ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
+              border: `2px solid ${currentSpeciesChoices.humanSkill === skill ? '#d4af37' : '#444'}`,
+              borderRadius: '8px',
+              padding: '0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ color: '#d4af37', fontSize: '0.85rem' }}>{skill}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const renderTraitContent = (trait: any) => {
     const { text, tables, lists } = processTraitDescriptionWithTables(trait.description);
@@ -708,75 +1102,105 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
         )}
       </div>
 
-      {/* Species Detail Modal */}
+      {/* Species Detail/Choice Modal */}
       {selectedSpeciesForModal && (
         <ModalOverlay onClick={closeModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
-            <h2>{selectedSpeciesForModal.name}</h2>
+            {modalPage === 'details' ? (
+              <>
+                <h2>{selectedSpeciesForModal.name}</h2>
 
-            <div className="species-description">
-              {getSpeciesSize(selectedSpeciesForModal.size)} {selectedSpeciesForModal.creatureType} • {selectedSpeciesForModal.speed} ft Speed
-            </div>
+                <div className="species-description">
+                  {getSpeciesSize(selectedSpeciesForModal.size)} {selectedSpeciesForModal.creatureType} • {selectedSpeciesForModal.speed} ft Speed
+                </div>
 
-            <TraitsSection>
-              <h3>Species Traits</h3>
-              <div className="traits-grid">
-                {getTraitList(selectedSpeciesForModal.traits).map((trait, index) => (
-                  <div key={index} className="trait-item">
-                    <div className="trait-name">{trait.name || `Trait ${index + 1}`}</div>
-                    {renderTraitContent(trait)}
+                <TraitsSection>
+                  <h3>Species Traits</h3>
+                  <div className="traits-grid">
+                    {getTraitList(selectedSpeciesForModal.traits).map((trait, index) => (
+                      <div key={index} className="trait-item">
+                        <div className="trait-name">{trait.name || `Trait ${index + 1}`}</div>
+                        {renderTraitContent(trait)}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </TraitsSection>
+                </TraitsSection>
 
-            {selectedSpeciesForModal.skillProficiencies && (
-              <ModalSection>
-                <h3>Skill Proficiencies</h3>
-                <div className="section-content">
-                  {Array.isArray(selectedSpeciesForModal.skillProficiencies)
-                    ? selectedSpeciesForModal.skillProficiencies.map((prof: any, idx: number) => {
-                        if (typeof prof === 'string') return <div key={idx}>{prof}</div>;
-                        if (prof.choose) return <div key={idx}>Choose {prof.choose.count || 1} from: {prof.choose.from?.join(', ') || 'various skills'}</div>;
-                        if (prof.any) return <div key={idx}>Choose {prof.any} skill from any skill list</div>;
-                        return <div key={idx}>{JSON.stringify(prof)}</div>;
-                      })
-                    : (
-                      <div dangerouslySetInnerHTML={{
-                        __html: processTraitDescription(selectedSpeciesForModal.skillProficiencies)
-                      }} />
-                    )}
+                {selectedSpeciesForModal.skillProficiencies && (
+                  <ModalSection>
+                    <h3>Skill Proficiencies</h3>
+                    <div className="section-content">
+                      {Array.isArray(selectedSpeciesForModal.skillProficiencies)
+                        ? selectedSpeciesForModal.skillProficiencies.map((prof: any, idx: number) => {
+                            if (typeof prof === 'string') return <div key={idx}>{prof}</div>;
+                            if (prof.choose) return <div key={idx}>Choose {prof.choose.count || 1} from: {prof.choose.from?.join(', ') || 'various skills'}</div>;
+                            if (prof.any) return <div key={idx}>Choose {prof.any} skill from any skill list</div>;
+                            return <div key={idx}>{JSON.stringify(prof)}</div>;
+                          })
+                        : (
+                          <div dangerouslySetInnerHTML={{
+                            __html: processTraitDescription(selectedSpeciesForModal.skillProficiencies)
+                          }} />
+                        )}
+                    </div>
+                  </ModalSection>
+                )}
+
+                <div style={{
+                  textAlign: 'center',
+                  fontSize: '0.7rem',
+                  color: '#888',
+                  marginTop: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <strong>Source:</strong> {selectedSpeciesForModal.contentVersion} Player's Handbook
+                  {selectedSpeciesForModal.name.toLowerCase() === 'human' && (
+                    <div style={{ color: '#d4af37', marginTop: '0.25rem' }}>
+                      🌟 Humans receive 2 Origin Feats instead of 1
+                    </div>
+                  )}
                 </div>
-              </ModalSection>
+
+                <ModalButtons>
+                  <button className="btn-cancel" onClick={closeModal}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn-confirm"
+                    onClick={confirmSpeciesSelection}
+                  >
+                    Select Species
+                  </button>
+                </ModalButtons>
+              </>
+            ) : (
+              <>
+                <h2>{selectedSpeciesForModal.name} - Make Choices</h2>
+
+                {selectedSpeciesForModal.name.toLowerCase() === 'dragonborn' && renderDragonbornChoices()}
+                {selectedSpeciesForModal.name.toLowerCase() === 'elf' && renderElfChoices()}
+                {selectedSpeciesForModal.name.toLowerCase() === 'gnome' && renderGnomeChoices()}
+                {selectedSpeciesForModal.name.toLowerCase() === 'goliath' && renderGoliathChoices()}
+                {selectedSpeciesForModal.name.toLowerCase() === 'tiefling' && renderTieflingChoices()}
+                {selectedSpeciesForModal.name.toLowerCase() === 'human' && renderHumanChoices()}
+
+                <ModalButtons style={{ marginTop: '1.5rem' }}>
+                  <button
+                    className="btn-cancel"
+                    onClick={() => setModalPage('details')}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className="btn-confirm"
+                    onClick={confirmChoices}
+                    disabled={!areChoicesComplete()}
+                  >
+                    Confirm Choices
+                  </button>
+                </ModalButtons>
+              </>
             )}
-
-            {/* Small info at bottom */}
-            <div style={{
-              textAlign: 'center',
-              fontSize: '0.7rem',
-              color: '#888',
-              marginTop: '1rem',
-              marginBottom: '1rem'
-            }}>
-              <strong>Source:</strong> {selectedSpeciesForModal.contentVersion} Player's Handbook
-              {selectedSpeciesForModal.name.toLowerCase() === 'human' && (
-                <div style={{ color: '#d4af37', marginTop: '0.25rem' }}>
-                  🌟 Humans receive 2 Origin Feats instead of 1
-                </div>
-              )}
-            </div>
-
-            <ModalButtons>
-              <button className="btn-cancel" onClick={closeModal}>
-                Cancel
-              </button>
-              <button
-                className="btn-confirm"
-                onClick={confirmSpeciesSelection}
-              >
-                Select Species
-              </button>
-            </ModalButtons>
           </ModalContent>
         </ModalOverlay>
       )}

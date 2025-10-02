@@ -8,6 +8,7 @@ import {
   TraitCard,
   TraitName,
   TraitDescription,
+  TraitCategory,
   EmptyTraitsMessage,
 } from '../styles/components';
 import { generateFeaturesForCharacter, SimpleFeature } from '../utils/simpleFeatureGenerator';
@@ -214,14 +215,9 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
                 ))}
               </TraitDescription>
               {feature.category && !feature.category.includes('Legacy') && (
-                <div style={{
-                  marginTop: '0.5rem',
-                  fontSize: '0.75rem',
-                  color: '#d4af37',
-                  fontStyle: 'italic'
-                }}>
+                <TraitCategory>
                   {feature.category}
-                </div>
+                </TraitCategory>
               )}
               {/* Add button for Weapon Mastery feature */}
               {feature.name === 'Weapon Mastery' && masteryConfig.max > 0 && onUpdateCharacter && (

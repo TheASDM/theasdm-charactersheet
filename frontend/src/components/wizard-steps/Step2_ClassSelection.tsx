@@ -4,7 +4,6 @@ import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { classOptions } from '../../constants/characterOptions';
 import { CLASS_SKILLS, CLASS_SKILL_CHOICES, classService } from '../../services/classService';
-import { ClassDetailsModal } from '../ui/ClassDetailsModal';
 import { CharacterClass } from '../../types/api';
 import { parseComplexDnDEntry } from '../../utils/dndTemplateParser';
 import { loadClassData } from '../../utils/classDataLoader';
@@ -775,8 +774,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   data,
   onUpdate
 }) => {
-  const [selectedClassForModal, setSelectedClassForModal] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousClass, setPreviousClass] = useState<string | null>(data.selectedClass);
   const [apiClasses, setApiClasses] = useState<CharacterClass[]>([]);
@@ -933,18 +930,15 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   };
 
   const handleClassClick = (className: string) => {
-    setSelectedClassForModal(className);
-    setIsModalOpen(true);
+    // Directly select the class without modal
+    handleClassSelect(className);
   };
 
   const handleClassSelect = (className: string) => {
-    setIsModalOpen(false);
-    setSelectedClassForModal(null);
-
     // Start transition
     setIsTransitioning(true);
 
-    // Small delay to allow modal to close
+    // Small delay for visual transition
     setTimeout(() => {
       const classData = getClassData(className);
 
@@ -1167,20 +1161,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
   return (
     <>
-      {/* Class Details Modal */}
-      {selectedClassForModal && (
-        <ClassDetailsModal
-          isOpen={isModalOpen}
-          className={selectedClassForModal}
-          classData={getClassData(selectedClassForModal)}
-          onSelect={() => handleClassSelect(selectedClassForModal)}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedClassForModal(null);
-          }}
-        />
-      )}
-
       <StepContainer style={{
         opacity: isTransitioning ? 0.3 : 1,
         transition: 'opacity 0.3s ease',
@@ -1207,7 +1187,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
               margin: 0,
               textAlign: 'center',
             }}>
-              Configuring {selectedClassForModal || data.selectedClass}...
+              Configuring {data.selectedClass}...
             </h2>
             <p style={{
               color: '#ccc',

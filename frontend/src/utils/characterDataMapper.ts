@@ -158,6 +158,7 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     speed,
     size,
     passivePerception,
+    darkvision: builderData.speciesDarkvision || 0,
     hitPoints: {
       current: hitPoints,
       max: hitPoints,

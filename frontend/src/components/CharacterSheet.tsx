@@ -937,6 +937,17 @@ export default function CharacterSheet({
             />
           </SectionBox>
 
+          {character.darkvision && character.darkvision > 0 && (
+            <SectionBox>
+              <h3>Special Senses</h3>
+              <textarea
+                placeholder="Special senses..."
+                value={`Darkvision ${character.darkvision} ft`}
+                readOnly
+              />
+            </SectionBox>
+          )}
+
           <SectionBox>
             <h3>Class Features</h3>
             <textarea

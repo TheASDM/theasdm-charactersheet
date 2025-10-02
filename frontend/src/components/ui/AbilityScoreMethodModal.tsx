@@ -4,6 +4,7 @@ import styled from 'styled-components';
 interface AbilityScoreMethodModalProps {
   isOpen: boolean;
   onSelect: (method: 'standard-array' | 'custom') => void;
+  onClose?: () => void;
 }
 
 const ModalOverlay = styled.div`
@@ -29,6 +30,7 @@ const ModalContent = styled.div`
   width: 100%;
   color: #f0f0f0;
   text-align: center;
+  position: relative;
 
   h2 {
     font-family: 'Cinzel', serif;
@@ -42,6 +44,30 @@ const ModalContent = styled.div`
     margin-bottom: 2rem;
     font-size: 1rem;
     line-height: 1.4;
+  }
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #d4af37;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: all 0.3s ease;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #f0c851;
+    transform: scale(1.1);
   }
 `;
 
@@ -101,13 +127,19 @@ const MethodCard = styled.div`
 
 export const AbilityScoreMethodModal: React.FC<AbilityScoreMethodModalProps> = ({
   isOpen,
-  onSelect
+  onSelect,
+  onClose
 }) => {
   if (!isOpen) return null;
 
   return (
     <ModalOverlay>
       <ModalContent>
+        {onClose && (
+          <CloseButton onClick={onClose} aria-label="Close">
+            ✕
+          </CloseButton>
+        )}
         <h2>Choose Ability Score Method</h2>
         <div className="modal-description">
           How would you like to determine your character's ability scores?

@@ -8,6 +8,7 @@ import { Background } from '../../types/api';
 interface Step3ABackgroundSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
+  onAdvance?: () => void;
 }
 
 
@@ -373,7 +374,8 @@ const STANDARD_LANGUAGES = [
 
 export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps> = ({
   data,
-  onUpdate
+  onUpdate,
+  onAdvance
 }) => {
   const [backgrounds, setBackgrounds] = useState<Background[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -629,6 +631,11 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
         backgroundFeatures: extractBackgroundFeatures(selectedBackgroundForModal.feature)
       });
       closeModal();
+
+      // Automatically advance to next step
+      if (onAdvance) {
+        setTimeout(() => onAdvance(), 300); // Small delay for smooth UX
+      }
     }
   };
 
