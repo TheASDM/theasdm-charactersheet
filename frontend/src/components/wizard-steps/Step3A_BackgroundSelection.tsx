@@ -124,57 +124,59 @@ const LoadingSpinner = styled.div`
 
 const ModalOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: clamp(2.5rem, 8vh, 4.5rem) 1.25rem 2rem;
+  backdrop-filter: blur(2px);
+  overflow-y: auto;
 `;
 
 const ModalContent = styled.div`
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #1c1c1c 0%, #262626 100%);
   border: 2px solid #d4af37;
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 900px;
+  border-radius: 14px;
+  padding: 1.4rem 1.6rem;
+  max-width: 860px;
   width: 100%;
   color: #f0f0f0;
+  max-height: calc(100vh - clamp(5rem, 12vh, 7rem));
+  overflow-y: auto;
 
   h2 {
     font-family: 'Cinzel', serif;
     color: #d4af37;
-    font-size: 1.8rem;
-    margin: 0 0 1rem 0;
+    font-size: clamp(1.35rem, 2.4vw, 1.6rem);
+    margin: 0 0 0.75rem 0;
     text-align: center;
   }
 
   .background-description {
-    color: #ccc;
+    color: #d0d0d0;
     text-align: center;
-    margin-bottom: 1.5rem;
-    font-size: 1rem;
+    margin-bottom: 1.2rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
   }
 `;
 
 const ModalSection = styled.div`
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 
   h3 {
     color: #d4af37;
-    font-size: 1.1rem;
-    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    margin: 0 0 0.45rem 0;
     font-weight: 600;
   }
 
   .section-content {
-    color: #ccc;
-    font-size: 0.9rem;
-    line-height: 1.4;
+    color: #cccccc;
+    font-size: 0.88rem;
+    line-height: 1.45;
   }
 `;
 
@@ -404,6 +406,7 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
 
   const handleBackgroundClick = (background: Background) => {
     setSelectedBackgroundForModal(background);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     // Initialize ability score allocations to all 0
     if (background.abilityScoreIncrease && 'options' in background.abilityScoreIncrease && Array.isArray(background.abilityScoreIncrease.options)) {
       const initialAllocations: { [ability: string]: number } = {};

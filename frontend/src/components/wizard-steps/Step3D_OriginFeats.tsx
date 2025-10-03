@@ -355,6 +355,7 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
 
   const handleFeatClick = (feat: Feat) => {
     setSelectedFeatForModal(feat);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleFeatSelect = (featName: string) => {

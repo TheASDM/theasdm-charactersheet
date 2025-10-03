@@ -8,8 +8,9 @@ import { CharacterClass } from '../../types/api';
 import { parseComplexDnDEntry } from '../../utils/dndTemplateParser';
 import { loadClassData } from '../../utils/classDataLoader';
 import { detectRequiredChoices } from '../../utils/classChoiceDetection';
-import { ClassData, ChoicePrompt } from '../../types/classFeatures';
+import { ChoicePrompt } from '../../types/classFeatures';
 import { loadExternalChoiceData } from '../../utils/externalChoiceLoader';
+import WizardModal from '../wizard/WizardModal';
 
 // Complete list of all D&D skills for classes that can choose "any" skill
 const ALL_SKILLS = [
@@ -36,6 +37,7 @@ const ALL_SKILLS = [
 interface Step2ClassSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
+  onAdvance?: () => void;
 }
 
 const ClassGrid = styled.div`
@@ -164,35 +166,6 @@ const SkillOption = styled.div<{ selected: boolean; disabled?: boolean }>`
   `}
 `;
 
-const ClassStepNavigation = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
-`;
-
-const StepButton = styled.button<{ $active?: boolean }>`
-  padding: 0.5rem 1rem;
-  background: ${(props) =>
-    props.$active ? '#d4af37' : 'rgba(26, 26, 26, 0.8)'};
-  color: ${(props) => (props.$active ? '#1a1a1a' : '#ccc')};
-  border: 2px solid ${(props) => (props.$active ? '#d4af37' : '#444')};
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
-
-  &:hover {
-    border-color: #d4af37;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-
 const ClassSelectionInfo = styled.div`
   background: rgba(212, 175, 55, 0.1);
   border: 1px solid rgba(212, 175, 55, 0.3);
@@ -209,6 +182,133 @@ const ClassSelectionInfo = styled.div`
     color: #ccc;
     margin: 0;
     font-size: 0.9rem;
+  }
+`;
+
+
+const ModalChoiceCard = styled.button<{ $selected?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  padding: 1.25rem 1.1rem 1.35rem;
+  background: ${(props) => (props.$selected ? 'rgba(212, 175, 55, 0.12)' : 'rgba(26, 26, 26, 0.88)')};
+  border: 2px solid ${(props) => (props.$selected ? '#d4af37' : 'rgba(90, 90, 90, 0.7)')};
+  border-radius: 14px;
+  transition: all 0.28s ease;
+  cursor: pointer;
+  min-height: 180px;
+  box-shadow: ${(props) => (props.$selected ? '0 10px 28px rgba(212, 175, 55, 0.22)' : '0 6px 18px rgba(0, 0, 0, 0.28)')};
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(2px);
+
+  &:hover {
+    border-color: #d4af37;
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px rgba(212, 175, 55, 0.24);
+    background: ${(props) => (props.$selected ? 'rgba(212, 175, 55, 0.16)' : 'rgba(34, 34, 34, 0.92)')};
+  }
+`;
+
+const ModalChoiceTitle = styled.div`
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  font-weight: 600;
+  color: #f0d693;
+  margin-bottom: 0.7rem;
+`;
+
+const ModalChoiceOptionText = styled.div`
+  color: #d9d9d9;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin: 0;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.45);
+    border-radius: 4px;
+  }
+`;
+
+const ChoiceGrid = styled.div`
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: stretch;
+`;
+
+const ModalButtonRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  .btn-secondary {
+    background: linear-gradient(145deg, #4a4a4a, #363636);
+    color: #f0f0f0;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  .btn-primary {
+    background: linear-gradient(145deg, #d4af37, #b8941f);
+    color: #1a1a1a;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+    }
+  }
+`;
+
+const ReviewButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #d4af37;
+  background: rgba(212, 175, 55, 0.1);
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(212, 175, 55, 0.2);
+    box-shadow: 0 6px 18px rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
   }
 `;
 
@@ -770,19 +870,143 @@ const CLASS_DATA = {
   },
 };
 
+const SPELLCASTER_CLASSES = new Set([
+  'Bard',
+  'Cleric',
+  'Druid',
+  'Paladin',
+  'Ranger',
+  'Sorcerer',
+  'Warlock',
+  'Wizard',
+]);
+
+const SPELLCASTING_ABILITIES: Record<string, string> = {
+  Bard: 'Charisma',
+  Cleric: 'Wisdom',
+  Druid: 'Wisdom',
+  Paladin: 'Charisma',
+  Ranger: 'Wisdom',
+  Sorcerer: 'Charisma',
+  Warlock: 'Charisma',
+  Wizard: 'Intelligence',
+};
+
+const extractProficiencies = (info: any) => {
+  if (info.armorProficiencies || info.weaponProficiencies) {
+    return {
+      armor: info.armorProficiencies || [],
+      weapons: info.weaponProficiencies || [],
+      tools: info.toolProficiencies || [],
+      savingThrows:
+        info.savingThrowProficiencies?.map(
+          (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+        ) || [],
+    };
+  }
+
+  const proficiencies = info.proficiencies || {};
+  return {
+    armor: proficiencies.armor ? proficiencies.armor.split(', ') : [],
+    weapons: proficiencies.weapons ? proficiencies.weapons.split(', ') : [],
+    tools:
+      proficiencies.tools === 'None'
+        ? []
+        : proficiencies.tools?.split(', ') || [],
+    savingThrows: proficiencies.savingThrows
+      ? proficiencies.savingThrows.split(', ')
+      : [],
+  };
+};
+
+const extractClassFeatures = (info: any) => {
+  if (info.classFeatures && info.classFeatures['1'] && Array.isArray(info.classFeatures['1'])) {
+    const choiceOptionNames = new Set<string>();
+    info.classFeatures['1'].forEach((feature: any) => {
+      if (feature.entries && Array.isArray(feature.entries)) {
+        feature.entries.forEach((entry: any) => {
+          if (entry.type === 'options' && Array.isArray(entry.entries)) {
+            entry.entries.forEach((opt: any) => {
+              if (opt.type === 'refClassFeature') {
+                const optionName = opt.classFeature.split('|')[0];
+                choiceOptionNames.add(optionName);
+              }
+            });
+          }
+        });
+      }
+    });
+
+    const level1Features = info.classFeatures['1'].filter(
+      (f: any) => !choiceOptionNames.has(f.name)
+    );
+
+    return level1Features.map((feature: any) => {
+      const description = parseComplexDnDEntry(
+        feature.entries || feature.description || ''
+      );
+
+      return {
+        name: feature.name,
+        description,
+        details: description,
+        level: 1,
+        page: feature.page,
+        source: feature.source || 'Class Feature',
+        entries: feature.entries,
+        ...feature,
+      };
+    });
+  }
+
+  if (
+    info.classFeatures &&
+    typeof info.classFeatures === 'object' &&
+    !info.classFeatures['1']
+  ) {
+    return Object.entries(info.classFeatures).map(
+      ([featureName, featureData]: [string, any]) => ({
+        name: featureName,
+        description: featureData.description || '',
+        details: featureData.details || featureData.description || '',
+        level: 1,
+        source: 'Class Feature',
+      })
+    );
+  }
+
+  return [];
+};
+
+const getSpellcastingAbility = (name: string) => SPELLCASTING_ABILITIES[name];
+
 export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   data,
-  onUpdate
+  onUpdate,
+  onAdvance
 }) => {
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [previousClass, setPreviousClass] = useState<string | null>(data.selectedClass);
+  const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+  const [activeClass, setActiveClass] = useState<string | null>(data.selectedClass);
   const [apiClasses, setApiClasses] = useState<CharacterClass[]>([]);
   const [_loadingClasses, setLoadingClasses] = useState(true);
   const [_classLoadError, setClassLoadError] = useState<string | null>(null);
 
   // New choice system state
-  const [_loadedClassData, setLoadedClassData] = useState<ClassData | null>(null);
   const [detectedChoices, setDetectedChoices] = useState<ChoicePrompt[]>([]);
+
+  const closeClassModal = () => {
+    setIsClassModalOpen(false);
+  };
+
+  const handleModalConfirm = () => {
+    if (!canConfirmClass()) {
+      return;
+    }
+    setIsClassModalOpen(false);
+    if (onAdvance) {
+      onAdvance();
+    }
+  };
 
   // Load classes from API on mount
   useEffect(() => {
@@ -811,7 +1035,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   // Load class data and detect choices when class is selected
   useEffect(() => {
     if (!data.selectedClass) {
-      setLoadedClassData(null);
       setDetectedChoices([]);
       return;
     }
@@ -819,7 +1042,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     const loadAndDetectChoices = async () => {
       try {
         const classData = await loadClassData(data.selectedClass);
-        setLoadedClassData(classData);
 
         // Detect required choices for level 1
         const detection = detectRequiredChoices(
@@ -859,13 +1081,18 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         setDetectedChoices(promptsWithExternalOptions);
       } catch (error) {
         console.error('Failed to load class data:', error);
-        setLoadedClassData(null);
         setDetectedChoices([]);
       }
     };
 
     loadAndDetectChoices();
   }, [data.selectedClass, data.selectedClassChoices]);
+
+  useEffect(() => {
+    if (data.selectedClass) {
+      setActiveClass(data.selectedClass);
+    }
+  }, [data.selectedClass]);
 
   // Helper function to extract choices from API class data
   const extractChoicesFromAPI = (classData: any) => {
@@ -930,141 +1157,43 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   };
 
   const handleClassClick = (className: string) => {
-    // Directly select the class without modal
+    // Enter the modal workflow for the chosen class
     handleClassSelect(className);
   };
 
   const handleClassSelect = (className: string) => {
-    // Start transition
-    setIsTransitioning(true);
-
-    // Small delay for visual transition
-    setTimeout(() => {
-      const classData = getClassData(className);
-
-      // Extract class proficiencies from API or hardcoded data
-      const extractProficiencies = (classData: any) => {
-        // Handle API format (direct properties on classData)
-        if (classData.armorProficiencies || classData.weaponProficiencies) {
-          return {
-            armor: classData.armorProficiencies || [],
-            weapons: classData.weaponProficiencies || [],
-            tools: classData.toolProficiencies || [],
-            savingThrows: classData.savingThrowProficiencies?.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)) || []
-          };
-        }
-
-        // Handle hardcoded format (proficiencies object)
-        const proficiencies = classData.proficiencies || {};
-        return {
-          armor: proficiencies.armor ? proficiencies.armor.split(', ') : [],
-          weapons: proficiencies.weapons ? proficiencies.weapons.split(', ') : [],
-          tools: proficiencies.tools === 'None' ? [] : (proficiencies.tools?.split(', ') || []),
-          savingThrows: proficiencies.savingThrows ? proficiencies.savingThrows.split(', ') : []
-        };
-      };
-
-      // Extract level 1 class features from API or hardcoded data
-      const extractClassFeatures = (classData: any) => {
-        // Handle API format: classFeatures is an object with level keys like "1", "2", etc.
-        if (classData.classFeatures && classData.classFeatures['1'] && Array.isArray(classData.classFeatures['1'])) {
-          // Get list of choice option names to filter them out
-          const choiceOptionNames = new Set<string>();
-          classData.classFeatures['1'].forEach((feature: any) => {
-            if (feature.entries && Array.isArray(feature.entries)) {
-              feature.entries.forEach((entry: any) => {
-                if (entry.type === 'options' && entry.entries) {
-                  entry.entries.forEach((opt: any) => {
-                    if (opt.type === 'refClassFeature') {
-                      const optionName = opt.classFeature.split('|')[0];
-                      choiceOptionNames.add(optionName);
-                    }
-                  });
-                }
-              });
-            }
-          });
-
-          // Filter out choice options - we only want the parent feature
-          const level1Features = classData.classFeatures['1'].filter(
-            (f: any) => !choiceOptionNames.has(f.name)
-          );
-
-          return level1Features.map((feature: any) => {
-            // Use parseComplexDnDEntry to handle nested objects and template tags
-            const description = parseComplexDnDEntry(feature.entries || feature.description || '');
-
-            return {
-              name: feature.name,
-              description: description,
-              details: description,
-              level: 1,
-              page: feature.page,
-              source: feature.source || 'Class Feature',
-              entries: feature.entries,
-              ...feature
-            };
-          });
-        }
-
-        // Handle hardcoded CLASS_DATA format where classFeatures is an object with feature names as keys
-        if (classData.classFeatures && typeof classData.classFeatures === 'object' && !classData.classFeatures['1']) {
-          return Object.entries(classData.classFeatures).map(([featureName, featureData]: [string, any]) => ({
-            name: featureName,
-            description: featureData.description || '',
-            details: featureData.details || featureData.description || '',
-            level: 1,
-            source: 'Class Feature'
-          }));
-        }
-
-        return [];
-      };
-
-      // Determine if class is a spellcaster
-      const isSpellcaster = ['Bard', 'Cleric', 'Druid', 'Paladin', 'Ranger', 'Sorcerer', 'Warlock', 'Wizard'].includes(className);
-
-      // Get spellcasting ability based on class
-      const getSpellcastingAbility = (className: string) => {
-        const abilities: { [key: string]: string } = {
-          'Bard': 'Charisma',
-          'Cleric': 'Wisdom',
-          'Druid': 'Wisdom',
-          'Paladin': 'Charisma',
-          'Ranger': 'Wisdom',
-          'Sorcerer': 'Charisma',
-          'Warlock': 'Charisma',
-          'Wizard': 'Intelligence'
-        };
-        return abilities[className];
-      };
-
-      onUpdate({
-        selectedClass: className,
-        selectedClassSkills: [], // Reset skills when changing class
-        selectedClassChoices: {}, // Reset class choices when changing class
-        classFeatureData: classData,
-        classStep: 2, // Move to combined skills/features view
-
-        // Extract and store all class data
-        classProficiencies: extractProficiencies(classData),
-        classFeatures: extractClassFeatures(classData),
-        hitDice: `d${classData.hitDie}`,
-        primaryAbility: Array.isArray(classData.primaryAbility) ? classData.primaryAbility : [classData.primaryAbility],
-        spellcaster: isSpellcaster,
-        spellcastingAbility: getSpellcastingAbility(className),
-        classStartingEquipment: [] // TODO: Add starting equipment data
-      });
-
-      // Scroll to top
+    if (data.selectedClass === className) {
+      setActiveClass(className);
+      setIsClassModalOpen(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
-      // End transition after animation
-      setTimeout(() => {
-        setIsTransitioning(false);
-        setPreviousClass(className);
-      }, 500);
-    }, 300);
+    const classData = getClassData(className);
+    const proficiencies = extractProficiencies(classData);
+    const classFeatures = extractClassFeatures(classData);
+    const isSpellcaster = SPELLCASTER_CLASSES.has(className);
+    const spellcastingAbility = getSpellcastingAbility(className);
+
+    onUpdate({
+      selectedClass: className,
+      selectedClassSkills: [],
+      selectedClassChoices: {},
+      classFeatureData: classData,
+      classProficiencies: proficiencies,
+      classFeatures,
+      hitDice: `d${classData.hitDie}`,
+      primaryAbility: Array.isArray(classData.primaryAbility)
+        ? classData.primaryAbility
+        : [classData.primaryAbility],
+      spellcaster: isSpellcaster,
+      spellcastingAbility: spellcastingAbility,
+      classStartingEquipment: [],
+    });
+
+    setActiveClass(className);
+    setIsClassModalOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSkillToggle = (skill: string) => {
@@ -1085,10 +1214,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         selectedClassSkills: [...currentSkills, skill],
       });
     }
-  };
-
-  const handleStepChange = (step: number) => {
-    onUpdate({ classStep: step });
   };
 
   const handleClassChoiceToggle = (choiceGroupId: string, featureId: string, maxSelections?: number) => {
@@ -1145,297 +1270,252 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     return required <= 0 || data.selectedClassSkills.length === required;
   };
 
+  const areClassChoicesComplete = () => {
+    if (detectedChoices.length === 0) {
+      return true;
+    }
 
-  const currentStep = data.classStep || 1;
+    return detectedChoices.every((prompt) => {
+      const currentSelections = data.selectedClassChoices[prompt.choiceGroup] || [];
+      if (prompt.minSelections != null) {
+        return currentSelections.length >= prompt.minSelections;
+      }
+      return currentSelections.length > 0;
+    });
+  };
+
+  const canConfirmClass = () =>
+    isSkillSelectionComplete() && areClassChoicesComplete();
+
+
   const availableSkills = getAvailableSkills();
   const requiredSkillCount = getRequiredSkillCount();
 
-  // Effect to handle when class step changes
-  useEffect(() => {
-    if (data.classStep === 2 && data.selectedClass && data.selectedClass !== previousClass) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      setPreviousClass(data.selectedClass);
+  const renderClassModalContent = () => {
+    if (!activeClass) return null;
+
+    return (
+      <>
+        {renderSkillSelectionSection()}
+        {renderClassChoicesSection()}
+      </>
+    );
+  };
+
+  const renderSkillSelectionSection = () => {
+    if (!data.selectedClass) return null;
+    if (requiredSkillCount <= 0) return null;
+    return (
+      <SkillSelectionContainer>
+        <ClassSelectionInfo>
+          <h4>{data.selectedClass} Skill Selection</h4>
+          <p>
+            {data.selectedClass === 'Bard'
+              ? `Choose ${requiredSkillCount} skills from ANY skill list. Bards are versatile and can learn any skills they desire.`
+              : `Choose ${requiredSkillCount} skills from your class's available skills. These represent your character's training and expertise.`}
+          </p>
+        </ClassSelectionInfo>
+
+        <>
+          <SkillGrid>
+            {availableSkills.map((skill: string) => (
+              <SkillOption
+                key={skill}
+                selected={data.selectedClassSkills.includes(skill)}
+                disabled={
+                  !data.selectedClassSkills.includes(skill) &&
+                  data.selectedClassSkills.length >= requiredSkillCount
+                }
+                onClick={() => handleSkillToggle(skill)}
+              >
+                {skill}
+              </SkillOption>
+            ))}
+          </SkillGrid>
+
+          <div
+            style={{
+              textAlign: 'center',
+              color: isSkillSelectionComplete() ? '#4caf50' : '#d4af37',
+              fontWeight: 600,
+              marginTop: '1rem',
+            }}
+          >
+            Selected: {data.selectedClassSkills.length} / {requiredSkillCount}
+            {isSkillSelectionComplete() && ' ✓ Complete!'}
+          </div>
+        </>
+      </SkillSelectionContainer>
+    );
+  };
+
+  const renderClassChoicesSection = () => {
+    if (!data.selectedClass) return null;
+
+    if (detectedChoices.length === 0) {
+      return null;
     }
-  }, [data.classStep, data.selectedClass, previousClass]);
+
+    return (
+      <SkillSelectionContainer>
+        {detectedChoices.map((prompt) => {
+          const currentSelections = data.selectedClassChoices[prompt.choiceGroup] || [];
+          const maxSelections = prompt.maxSelections || 1;
+          const isComplete = prompt.minSelections
+            ? currentSelections.length >= prompt.minSelections
+            : currentSelections.length > 0;
+
+          return (
+            <div key={prompt.choiceGroup} style={{ marginBottom: '1.5rem' }}>
+              <ClassSelectionInfo>
+                <h4>{prompt.title}</h4>
+                <p>{prompt.description}</p>
+              </ClassSelectionInfo>
+
+              <ChoiceGrid>
+                {prompt.options.map((option) => (
+                  <ModalChoiceCard
+                    key={option.id}
+                    type="button"
+                    $selected={currentSelections.includes(option.id)}
+                    onClick={() =>
+                      handleClassChoiceToggle(prompt.choiceGroup, option.id, maxSelections)
+                    }
+                  >
+                    <ModalChoiceTitle>{option.name}</ModalChoiceTitle>
+                    <ModalChoiceOptionText>
+                      {parseComplexDnDEntry(option.description)}
+                    </ModalChoiceOptionText>
+                  </ModalChoiceCard>
+                ))}
+              </ChoiceGrid>
+
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: isComplete ? '#4caf50' : '#d4af37',
+                  fontWeight: 600,
+                  marginTop: '1rem',
+                }}
+              >
+                Selected: {currentSelections.length} / {maxSelections}
+                {isComplete && ' ✓ Complete!'}
+              </div>
+            </div>
+          );
+        })}
+      </SkillSelectionContainer>
+    );
+  };
+
+  const modalFooter = !activeClass
+    ? null
+    : (
+      <ModalButtonRow>
+        <button type="button" className="btn-secondary" onClick={closeClassModal}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={handleModalConfirm}
+          disabled={!canConfirmClass()}
+        >
+          Confirm Class
+        </button>
+      </ModalButtonRow>
+    );
 
 
   return (
     <>
-      <StepContainer style={{
-        opacity: isTransitioning ? 0.3 : 1,
-        transition: 'opacity 0.3s ease',
-      }}>
-        {/* Transition Screen */}
-        {isTransitioning && (
-          <div style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 999,
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%)',
-            border: '3px solid #d4af37',
-            borderRadius: '12px',
-            padding: '2rem 3rem',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8)',
-            animation: 'fadeInScale 0.3s ease',
-          }}>
-            <h2 style={{
-              color: '#d4af37',
-              fontFamily: 'Cinzel, serif',
-              fontSize: '1.8rem',
-              margin: 0,
-              textAlign: 'center',
-            }}>
-              Configuring {data.selectedClass}...
-            </h2>
-            <p style={{
-              color: '#ccc',
-              marginTop: '0.5rem',
-              textAlign: 'center',
-            }}>
-              Setting up your class features and skills
-            </p>
-          </div>
-        )}
-
+      <StepContainer>
         <div className="step-title">
           Choose Your Class
           {data.selectedClass && ` - ${data.selectedClass}`}
         </div>
         <div className="step-description">
-          {currentStep === 1 &&
-            'Your class is the foundation of your character, determining your capabilities, hit points, and core features.'}
-          {currentStep === 2 &&
-            'Select your class skills and review your level 1 features.'}
+          Your class is the foundation of your character, determining your capabilities, hit points, and core features.
         </div>
 
-      <div className="step-content">
-          {/* Step Navigation - Now only 2 steps */}
-          {data.selectedClass && (
-            <ClassStepNavigation>
-              <StepButton
-                $active={currentStep === 1}
-                onClick={() => handleStepChange(1)}
+        <ClassSelectionInfo>
+          <h4>Class Selection - Following 2024 PHB</h4>
+          <p>
+            Click a class to review its details, then configure skills and feature choices directly inside the modal.
+          </p>
+        </ClassSelectionInfo>
+
+        <ClassGrid>
+          {classOptions.map((className) => {
+            const classInfo = getClassData(className);
+            const isSelected = data.selectedClass === className;
+
+            return (
+              <ClassCard
+                key={className}
+                selected={isSelected}
+                onClick={() => handleClassClick(className)}
               >
-                1. Choose Class
-              </StepButton>
-              <StepButton
-                $active={currentStep === 2}
-                onClick={() => handleStepChange(2)}
-                disabled={!data.selectedClass}
-              >
-                2. Skills & Features
-              </StepButton>
-            </ClassStepNavigation>
-          )}
+                {isSelected && <SelectedIndicator>✓</SelectedIndicator>}
 
-        {/* Step 1: Class Selection */}
-        {currentStep === 1 && (
-          <>
-            <ClassSelectionInfo>
-              <h4>Class Selection - Following 2024 PHB</h4>
-              <p>
-                In D&D 2024, you choose your class first to establish your
-                character's role and abilities. Each class provides a hit die,
-                proficiencies, saving throws, and unique features.
-              </p>
-            </ClassSelectionInfo>
+                <ClassName>{className}</ClassName>
 
-            <ClassGrid>
-              {classOptions.map((className) => {
-                const classInfo = getClassData(className);
-                const isSelected = data.selectedClass === className;
+                <ClassDescription>
+                  {(classInfo as any).description || `A ${className.toLowerCase()} adventurer with unique abilities and skills.`}
+                </ClassDescription>
 
-                return (
-                  <ClassCard
-                    key={className}
-                    selected={isSelected}
-                    onClick={() => handleClassClick(className)}
-                  >
-                    {isSelected && <SelectedIndicator>✓</SelectedIndicator>}
+                <ClassFeatures>
+                  <div className="feature-title">Hit Die:</div>
+                  <div className="feature-list">d{classInfo.hitDie}</div>
 
-                    <ClassName>{className}</ClassName>
-
-                    <ClassDescription>
-                      {(classInfo as any).description || `A ${className.toLowerCase()} adventurer with unique abilities and skills.`}
-                    </ClassDescription>
-
-                    <ClassFeatures>
-                      <div className="feature-title">Hit Die:</div>
-                      <div className="feature-list">d{classInfo.hitDie}</div>
-
-                      <div className="feature-title">Primary Ability:</div>
-                      <div className="feature-list">
-                        {Array.isArray(classInfo.primaryAbility)
-                          ? classInfo.primaryAbility.map((a: string) => a.toUpperCase()).join(', ')
-                          : classInfo.primaryAbility}
-                      </div>
-
-                      <div className="feature-title">Saving Throws:</div>
-                      <div className="feature-list">
-                        {(classInfo as any).savingThrows || ((classInfo as any).savingThrowProficiencies && (classInfo as any).savingThrowProficiencies.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(', '))}
-                      </div>
-
-                      <div className="feature-title">Level 1 Features:</div>
-                      <div className="feature-list">
-                        {(classInfo as any).features
-                          ? (classInfo as any).features.join(', ')
-                          : ((classInfo as any).classFeatures && (classInfo as any).classFeatures['1'])
-                            ? (classInfo as any).classFeatures['1'].map((f: any) => f.name).join(', ')
-                            : 'View details for features'}
-                      </div>
-                    </ClassFeatures>
-                  </ClassCard>
-                );
-              })}
-            </ClassGrid>
-          </>
-        )}
-
-        {/* Step 2: Combined Skills Selection & Class Features */}
-        {currentStep === 2 && data.selectedClass && (
-          <>
-            <SkillSelectionContainer>
-              <ClassSelectionInfo>
-                <h4>{data.selectedClass} Skill Selection</h4>
-              <p>
-                {data.selectedClass === 'Bard'
-                  ? `Choose ${requiredSkillCount} skills from ANY skill list. Bards are versatile and can learn any skills they desire.`
-                  : `Choose ${requiredSkillCount} skills from your class's available skills. These represent your character's training and expertise.`}
-              </p>
-            </ClassSelectionInfo>
-
-            {requiredSkillCount > 0 ? (
-              <>
-                <SkillGrid>
-                  {availableSkills.map((skill: string) => (
-                    <SkillOption
-                      key={skill}
-                      selected={data.selectedClassSkills.includes(skill)}
-                      disabled={
-                        !data.selectedClassSkills.includes(skill) &&
-                        data.selectedClassSkills.length >= requiredSkillCount
-                      }
-                      onClick={() => handleSkillToggle(skill)}
-                    >
-                      {skill}
-                    </SkillOption>
-                  ))}
-                </SkillGrid>
-
-                <div
-                  style={{
-                    textAlign: 'center',
-                    color: isSkillSelectionComplete() ? '#4caf50' : '#d4af37',
-                    fontWeight: 600,
-                    marginTop: '1rem',
-                  }}
-                >
-                  Selected: {data.selectedClassSkills.length} /{' '}
-                  {requiredSkillCount}
-                  {isSkillSelectionComplete() && ' ✓ Complete!'}
-                </div>
-              </>
-            ) : (
-              <div
-                style={{
-                  textAlign: 'center',
-                  color: '#4caf50',
-                  fontWeight: 600,
-                  padding: '2rem',
-                  background: 'rgba(76, 175, 80, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(76, 175, 80, 0.3)',
-                }}
-              >
-                ✓ {data.selectedClass} has no skill choices to make at level 1.
-              </div>
-            )}
-            </SkillSelectionContainer>
-
-            {/* Class Features Section */}
-            <SkillSelectionContainer>
-              <ClassSelectionInfo>
-              <h4>{data.selectedClass} Level 1 Features</h4>
-              <p>
-                Review your class features and make any required choices. These are the special abilities you gain at level 1.
-              </p>
-            </ClassSelectionInfo>
-
-            {(() => {
-              // Use new choice detection system if available
-              if (detectedChoices.length > 0) {
-                return detectedChoices.map((prompt) => {
-                  const currentSelections = data.selectedClassChoices[prompt.choiceGroup] || [];
-                  const isComplete = prompt.minSelections ? currentSelections.length >= prompt.minSelections : currentSelections.length > 0;
-                  const maxSelections = prompt.maxSelections || 1;
-
-                  return (
-                    <div key={prompt.choiceGroup} style={{ marginBottom: '1.5rem' }}>
-                      <ClassSelectionInfo>
-                        <h4>{prompt.title}</h4>
-                        <p>{prompt.description}</p>
-                      </ClassSelectionInfo>
-
-                      <SkillGrid>
-                        {prompt.options.map((option) => (
-                          <SkillOption
-                            key={option.id}
-                            selected={currentSelections.includes(option.id)}
-                            onClick={() => handleClassChoiceToggle(prompt.choiceGroup, option.id, maxSelections)}
-                          >
-                            <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
-                              {option.name}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                              {parseComplexDnDEntry(option.description)}
-                            </div>
-                          </SkillOption>
-                        ))}
-                      </SkillGrid>
-
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          color: isComplete ? '#4caf50' : '#d4af37',
-                          fontWeight: 600,
-                          marginTop: '1rem',
-                        }}
-                      >
-                        Selected: {currentSelections.length} / {maxSelections}
-                        {isComplete && ' ✓ Complete!'}
-                      </div>
-                    </div>
-                  );
-                });
-              } else {
-                return (
-                  <div
-                    style={{
-                      textAlign: 'center',
-                      color: '#4caf50',
-                      fontWeight: 600,
-                      padding: '2rem',
-                      background: 'rgba(76, 175, 80, 0.1)',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(76, 175, 80, 0.3)',
-                    }}
-                  >
-                    ✓ {data.selectedClass} has no feature choices to make at level 1.
-                    <div style={{ marginTop: '1rem', color: '#ccc', fontSize: '0.9rem' }}>
-                      Your {data.selectedClass} automatically gains all level 1 features.
-                    </div>
+                  <div className="feature-title">Primary Ability:</div>
+                  <div className="feature-list">
+                    {Array.isArray(classInfo.primaryAbility)
+                      ? classInfo.primaryAbility.map((a: string) => a.toUpperCase()).join(', ')
+                      : classInfo.primaryAbility}
                   </div>
-                );
-              }
-            })()}
-            </SkillSelectionContainer>
 
-          </>
+                  <div className="feature-title">Saving Throws:</div>
+                  <div className="feature-list">
+                    {(classInfo as any).savingThrows || ((classInfo as any).savingThrowProficiencies && (classInfo as any).savingThrowProficiencies.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(', '))}
+                  </div>
+
+                  <div className="feature-title">Level 1 Features:</div>
+                  <div className="feature-list">
+                    {(classInfo as any).features
+                      ? (classInfo as any).features.join(', ')
+                      : ((classInfo as any).classFeatures && (classInfo as any).classFeatures['1'])
+                        ? (classInfo as any).classFeatures['1'].map((f: any) => f.name).join(', ')
+                        : 'View details for features'}
+                  </div>
+                </ClassFeatures>
+              </ClassCard>
+            );
+          })}
+        </ClassGrid>
+
+        {data.selectedClass && (
+          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+            <ReviewButton
+              type="button"
+              onClick={() => handleClassSelect(data.selectedClass as string)}
+            >
+              Update Skills & Features
+            </ReviewButton>
+          </div>
         )}
-      </div>
-    </StepContainer>
+      </StepContainer>
+
+      <WizardModal
+        isOpen={isClassModalOpen && Boolean(activeClass)}
+        onClose={closeClassModal}
+        title={activeClass ? `${activeClass} Class Details` : 'Class Details'}
+        subtitle="Choose your class skills and resolve any feature choices."
+        maxWidth="960px"
+        footer={modalFooter}
+      >
+        {renderClassModalContent()}
+      </WizardModal>
     </>
   );
 };

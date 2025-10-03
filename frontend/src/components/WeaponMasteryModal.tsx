@@ -4,29 +4,27 @@ import { WEAPON_TO_MASTERY, WEAPON_MASTERY_PROPERTIES } from '../utils/simpleFea
 
 const ModalOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
-  padding: 20px;
+  padding: clamp(2.5rem, 8vh, 4.5rem) 1.5rem 2rem;
+  overflow-y: auto;
 `;
 
 const ModalContent = styled.div`
-  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 800px;
+  background: linear-gradient(135deg, #1c1c1c 0%, #111111 100%);
+  border-radius: 14px;
+  padding: 1.5rem 1.6rem;
+  max-width: 780px;
   width: 100%;
-  max-height: 90vh;
+  max-height: calc(100vh - clamp(5rem, 12vh, 7rem));
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-  border: 2px solid #333;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8);
+  border: 2px solid #3a3a3a;
 `;
 
 const ModalTitle = styled.h2`
@@ -153,6 +151,7 @@ const WeaponMasteryModal: React.FC<WeaponMasteryModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setSelectedWeapons(currentMasteries.map(m => m.weapon));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [isOpen, currentMasteries]);
 

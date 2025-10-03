@@ -383,6 +383,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
 
   const handleSpeciesClick = (speciesData: Species) => {
     setSelectedSpeciesForModal(speciesData);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSpeciesSelect = (speciesData: Species) => {
@@ -599,15 +600,16 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     // Select the species
     handleSpeciesSelect(selectedSpeciesForModal);
 
-    // Check if this species needs choices
-    if (speciesNeedsChoices(selectedSpeciesForModal.name)) {
-      // Initialize choices for this species
-      setCurrentSpeciesChoices(data.speciesChoices || {});
-      setModalPage('choices');
-    } else {
-      // No choices needed, advance
-      setIsTransitioning(true);
-      closeModal();
+      // Check if this species needs choices
+      if (speciesNeedsChoices(selectedSpeciesForModal.name)) {
+        // Initialize choices for this species
+        setCurrentSpeciesChoices(data.speciesChoices || {});
+        setModalPage('choices');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // No choices needed, advance
+        setIsTransitioning(true);
+        closeModal();
 
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -666,6 +668,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   const confirmChoices = () => {
     if (!areChoicesComplete()) return;
 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsTransitioning(true);
     closeModal();
 

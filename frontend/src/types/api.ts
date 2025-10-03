@@ -1,4 +1,5 @@
 import { CharacterSheetData } from './characterSheet';
+import type { Character as PrismaCharacter } from '../../../backend/src/types';
 
 // Common D&D data structures
 export interface DnDTime {
@@ -100,17 +101,10 @@ export interface User {
 }
 
 // Character Types
-export interface Character {
-  id: number;
-  userId: number;
-  name: string;
-  level: number;
-  characterData: Record<string, unknown>; // JSONB data - will be more specific later
-  passwordHash?: string;
-  isPublic: boolean;
-  campaignId?: number;
+export type Character = Omit<PrismaCharacter, 'createdAt' | 'updatedAt' | 'characterData'> & {
   createdAt: string;
   updatedAt: string;
+  characterData: Record<string, unknown>;
   user?: {
     id: number;
     username: string;
@@ -119,7 +113,7 @@ export interface Character {
     id: number;
     name: string;
   };
-}
+};
 
 export interface CreateCharacterRequest {
   userId: number;

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   WizardContainer,
@@ -136,6 +136,12 @@ export default function CharacterGeneratorWizard() {
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showStartOverModal, setShowStartOverModal] = useState(false);
+
+  useEffect(() => {
+    if (showStartOverModal) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [showStartOverModal]);
 
   const {
     currentStep,
@@ -731,6 +737,7 @@ export default function CharacterGeneratorWizard() {
               <Step2ClassSelection
                 data={builderData}
                 onUpdate={updateBuilderData}
+                onAdvance={goNext}
               />
             </>
           )}
