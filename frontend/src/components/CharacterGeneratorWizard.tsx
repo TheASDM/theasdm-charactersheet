@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   WizardContainer,
@@ -16,23 +16,9 @@ import { Step3DOriginFeats } from './wizard-steps/Step3D_OriginFeats';
 import { Step4EquipmentSelection } from './wizard-steps/Step4_EquipmentSelection';
 import { Step5ReviewCreate } from './wizard-steps/Step5_ReviewCreate';
 import { AbilityScoresHeader } from './wizard-steps/AbilityScoresHeader';
-
-// Wizard step types
-export type WizardStep =
-  | 'character-info'
-  | 'ability-scores'
-  | 'class-selection'
-  | 'background-selection'
-  | 'species-selection'
-  | 'origin-feats'
-  | 'equipment-selection'
-  | 'review-create';
-
-export interface WizardState {
-  currentStep: WizardStep;
-  completedSteps: Set<WizardStep>;
-  canProceed: boolean;
-}
+import { useCharacterBuilderStore, WizardStep } from '../store/characterBuilderStore';
+import { shallow } from 'zustand/shallow';
+import WizardModal from './wizard/WizardModal';
 
 export interface CharacterBuilderData {
   // Step 0: Character Info
@@ -145,69 +131,380 @@ const STEP_LABELS = {
   'review-create': 'Review & Create'
 };
 
-// Initial character builder data
-const INITIAL_BUILDER_DATA: CharacterBuilderData = {
-  characterName: '',
-  playerName: '',
-  abilityScoreMethod: 'standard-array',
-  abilityScores: {
-    strength: 0,
-    dexterity: 0,
-    constitution: 0,
-    intelligence: 0,
-    wisdom: 0,
-    charisma: 0
-  },
-  selectedClass: '',
-  selectedClassSkills: [],
-  selectedClassChoices: {},
-  classStep: 1,
-  classFeatureData: null,
-  selectedBackground: '',
-  selectedSpecies: '',
-  isHuman: false,
-  selectedOriginFeats: [],
-  requiredFeatCount: 1,
-  selectedEquipment: {
-    weapons: [],
-    equipment: []
-  }
-};
-
 export default function CharacterGeneratorWizard() {
   const navigate = useNavigate();
-
-  // Wizard navigation state
-  const [wizardState, setWizardState] = useState<WizardState>({
-    currentStep: 'character-info',
-    completedSteps: new Set(),
-    canProceed: false
-  });
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showStartOverModal, setShowStartOverModal] = useState(false);
 
-  // Character builder data
-  const [builderData, setBuilderData] = useState<CharacterBuilderData>(INITIAL_BUILDER_DATA);
+  const {
+    currentStep,
+    completedSteps,
+    basicInfo,
+    abilityScores,
+    classSelection,
+    background,
+    species,
+    feats,
+    equipment,
+    setCurrentStep,
+    markStepComplete,
+    resetBuilder,
+    updateBasicInfo,
+    updateAbilityScores,
+    updateClassSelection,
+    updateBackground,
+    updateSpecies,
+    updateFeats,
+    updateEquipment,
+  } = useCharacterBuilderStore(
+    (state) => ({
+      currentStep: state.currentStep,
+      completedSteps: state.completedSteps,
+      basicInfo: state.basicInfo,
+      abilityScores: state.abilityScores,
+      classSelection: state.classSelection,
+      background: state.background,
+      species: state.species,
+      feats: state.feats,
+      equipment: state.equipment,
+      setCurrentStep: state.setCurrentStep,
+      markStepComplete: state.markStepComplete,
+      resetBuilder: state.resetBuilder,
+      updateBasicInfo: state.updateBasicInfo,
+      updateAbilityScores: state.updateAbilityScores,
+      updateClassSelection: state.updateClassSelection,
+      updateBackground: state.updateBackground,
+      updateSpecies: state.updateSpecies,
+      updateFeats: state.updateFeats,
+      updateEquipment: state.updateEquipment,
+    }),
+    shallow
+  );
 
-  // Update builder data and validate current step
-  const updateBuilderData = useCallback((updates: Partial<CharacterBuilderData>) => {
-    setBuilderData(prev => {
-      const newData = { ...prev, ...updates };
+  const speciesIsHuman = species.isHuman;
+  const currentOriginFeats = feats.selectedOriginFeats;
+  const featsRequiredFeatCount = feats.requiredFeatCount;
 
-      // Auto-detect Human species for feat count
-      if (updates.selectedSpecies) {
-        newData.isHuman = updates.selectedSpecies.toLowerCase() === 'human';
-        newData.requiredFeatCount = newData.isHuman ? 2 : 1;
-        // Reset feat selection if count changed
-        if (newData.requiredFeatCount !== prev.requiredFeatCount) {
-          newData.selectedOriginFeats = [];
+  const builderData = useMemo<CharacterBuilderData>(
+    () => {
+      const selectedEquipment: CharacterBuilderData['selectedEquipment'] = {};
+      if (equipment.armor !== undefined) {
+        selectedEquipment.armor = equipment.armor;
+      }
+      if (equipment.weapons !== undefined) {
+        selectedEquipment.weapons = equipment.weapons;
+      }
+      if (equipment.shield !== undefined) {
+        selectedEquipment.shield = equipment.shield;
+      }
+      if (equipment.equipment !== undefined) {
+        selectedEquipment.equipment = equipment.equipment;
+      }
+
+      const result: CharacterBuilderData = {
+        characterName: basicInfo.characterName,
+        playerName: basicInfo.playerName,
+        abilityScoreMethod: abilityScores.method,
+        abilityScores: abilityScores.scores,
+        selectedClass: classSelection.selectedClass,
+        selectedClassSkills: classSelection.selectedClassSkills,
+        selectedClassChoices: classSelection.selectedClassChoices,
+        classStep: classSelection.classStep,
+        classFeatureData: classSelection.classFeatureData,
+        selectedBackground: background.selectedBackground,
+        selectedSpecies: species.selectedSpecies,
+        isHuman: species.isHuman,
+        selectedOriginFeats: feats.selectedOriginFeats,
+        requiredFeatCount: feats.requiredFeatCount,
+        selectedEquipment,
+      };
+
+      if (classSelection.classProficiencies !== undefined) {
+        result.classProficiencies = classSelection.classProficiencies;
+      }
+      if (classSelection.classStartingEquipment !== undefined) {
+        result.classStartingEquipment = classSelection.classStartingEquipment;
+      }
+      if (classSelection.classFeatures !== undefined) {
+        result.classFeatures = classSelection.classFeatures;
+      }
+      if (classSelection.hitDice !== undefined) {
+        result.hitDice = classSelection.hitDice;
+      }
+      if (classSelection.primaryAbility !== undefined) {
+        result.primaryAbility = classSelection.primaryAbility;
+      }
+      if (classSelection.spellcaster !== undefined) {
+        result.spellcaster = classSelection.spellcaster;
+      }
+      if (classSelection.spellcastingAbility !== undefined) {
+        result.spellcastingAbility = classSelection.spellcastingAbility;
+      }
+
+      if (background.abilityScoreAllocations !== undefined) {
+        result.backgroundAbilityScoreAllocations =
+          background.abilityScoreAllocations;
+      }
+      if (background.selectedLanguages !== undefined) {
+        result.selectedLanguages = background.selectedLanguages;
+      }
+      if (background.skillProficiencies !== undefined) {
+        result.backgroundSkillProficiencies = background.skillProficiencies;
+      }
+      if (background.toolProficiencies !== undefined) {
+        result.backgroundToolProficiencies = background.toolProficiencies;
+      }
+      if (background.startingEquipment !== undefined) {
+        result.backgroundStartingEquipment = background.startingEquipment;
+      }
+      if (background.features !== undefined) {
+        result.backgroundFeatures = background.features;
+      }
+
+      if (species.traits !== undefined) {
+        result.speciesTraits = species.traits;
+      }
+      if (species.spells !== undefined) {
+        result.speciesSpells = species.spells;
+      }
+      if (species.size !== undefined) {
+        result.speciesSize = species.size;
+      }
+      if (species.speed !== undefined) {
+        result.speciesSpeed = species.speed;
+      }
+      if (species.darkvision !== undefined) {
+        result.speciesDarkvision = species.darkvision;
+      }
+      if (species.resistances !== undefined) {
+        result.speciesResistances = species.resistances;
+      }
+      if (species.immunities !== undefined) {
+        result.speciesImmunities = species.immunities;
+      }
+      if (species.choices !== undefined) {
+        result.speciesChoices = species.choices;
+      }
+
+      if (feats.featFeatures !== undefined) {
+        result.featFeatures = feats.featFeatures;
+      }
+      if (feats.featSpells !== undefined) {
+        result.featSpells = feats.featSpells;
+      }
+      if (feats.featChoices !== undefined) {
+        result.featChoices = feats.featChoices;
+      }
+
+      return result;
+    },
+    [
+      basicInfo,
+      abilityScores,
+      classSelection,
+      background,
+      species,
+      feats,
+      equipment,
+    ]
+  );
+
+  const updateBuilderData = useCallback(
+    (updates: Partial<CharacterBuilderData>) => {
+      const basicInfoUpdates: Partial<typeof basicInfo> = {};
+      if (updates.characterName !== undefined) {
+        basicInfoUpdates.characterName = updates.characterName;
+      }
+      if (updates.playerName !== undefined) {
+        basicInfoUpdates.playerName = updates.playerName;
+      }
+      if (Object.keys(basicInfoUpdates).length > 0) {
+        updateBasicInfo(basicInfoUpdates);
+      }
+
+      if (
+        updates.abilityScoreMethod !== undefined ||
+        updates.abilityScores !== undefined
+      ) {
+        const abilityUpdates: Parameters<
+          typeof updateAbilityScores
+        >[0] = {};
+        if (updates.abilityScoreMethod !== undefined) {
+          abilityUpdates.method = updates.abilityScoreMethod;
+        }
+        if (updates.abilityScores !== undefined) {
+          abilityUpdates.scores = updates.abilityScores;
+        }
+        updateAbilityScores(abilityUpdates);
+      }
+
+      const classUpdates: Partial<typeof classSelection> = {};
+      if (updates.selectedClass !== undefined) {
+        classUpdates.selectedClass = updates.selectedClass;
+      }
+      if (updates.selectedClassSkills !== undefined) {
+        classUpdates.selectedClassSkills = updates.selectedClassSkills;
+      }
+      if (updates.selectedClassChoices !== undefined) {
+        classUpdates.selectedClassChoices = updates.selectedClassChoices;
+      }
+      if (updates.classStep !== undefined) {
+        classUpdates.classStep = updates.classStep;
+      }
+      if (updates.classFeatureData !== undefined) {
+        classUpdates.classFeatureData = updates.classFeatureData;
+      }
+      if (updates.classProficiencies !== undefined) {
+        classUpdates.classProficiencies = updates.classProficiencies;
+      }
+      if (updates.classStartingEquipment !== undefined) {
+        classUpdates.classStartingEquipment = updates.classStartingEquipment;
+      }
+      if (updates.classFeatures !== undefined) {
+        classUpdates.classFeatures = updates.classFeatures;
+      }
+      if (updates.hitDice !== undefined) {
+        classUpdates.hitDice = updates.hitDice;
+      }
+      if (updates.primaryAbility !== undefined) {
+        classUpdates.primaryAbility = updates.primaryAbility;
+      }
+      if (updates.spellcaster !== undefined) {
+        classUpdates.spellcaster = updates.spellcaster;
+      }
+      if (updates.spellcastingAbility !== undefined) {
+        classUpdates.spellcastingAbility = updates.spellcastingAbility;
+      }
+      if (Object.keys(classUpdates).length > 0) {
+        updateClassSelection(classUpdates);
+      }
+
+      const backgroundUpdates: Partial<typeof background> = {};
+      if (updates.selectedBackground !== undefined) {
+        backgroundUpdates.selectedBackground = updates.selectedBackground;
+      }
+      if (updates.backgroundAbilityScoreAllocations !== undefined) {
+        backgroundUpdates.abilityScoreAllocations =
+          updates.backgroundAbilityScoreAllocations;
+      }
+      if (updates.selectedLanguages !== undefined) {
+        backgroundUpdates.selectedLanguages = updates.selectedLanguages;
+      }
+      if (updates.backgroundSkillProficiencies !== undefined) {
+        backgroundUpdates.skillProficiencies =
+          updates.backgroundSkillProficiencies;
+      }
+      if (updates.backgroundToolProficiencies !== undefined) {
+        backgroundUpdates.toolProficiencies =
+          updates.backgroundToolProficiencies;
+      }
+      if (updates.backgroundStartingEquipment !== undefined) {
+        backgroundUpdates.startingEquipment =
+          updates.backgroundStartingEquipment;
+      }
+      if (updates.backgroundFeatures !== undefined) {
+        backgroundUpdates.features = updates.backgroundFeatures;
+      }
+      if (Object.keys(backgroundUpdates).length > 0) {
+        updateBackground(backgroundUpdates);
+      }
+
+      const speciesUpdates: Partial<typeof species> = {};
+      const pendingFeatsUpdates: Partial<typeof feats> = {};
+
+      if (updates.selectedSpecies !== undefined) {
+        speciesUpdates.selectedSpecies = updates.selectedSpecies;
+        const nextIsHuman = updates.selectedSpecies
+          ? updates.selectedSpecies.toLowerCase() === 'human'
+          : speciesIsHuman;
+        speciesUpdates.isHuman = nextIsHuman;
+        const nextRequiredCount = nextIsHuman ? 2 : 1;
+        pendingFeatsUpdates.requiredFeatCount = nextRequiredCount;
+        if (nextRequiredCount !== featsRequiredFeatCount) {
+          pendingFeatsUpdates.selectedOriginFeats = [];
         }
       }
 
-      return newData;
-    });
-  }, []);
+      if (updates.isHuman !== undefined) {
+        speciesUpdates.isHuman = updates.isHuman;
+      }
+      if (updates.speciesTraits !== undefined) {
+        speciesUpdates.traits = updates.speciesTraits;
+      }
+      if (updates.speciesSpells !== undefined) {
+        speciesUpdates.spells = updates.speciesSpells;
+      }
+      if (updates.speciesSize !== undefined) {
+        speciesUpdates.size = updates.speciesSize;
+      }
+      if (updates.speciesSpeed !== undefined) {
+        speciesUpdates.speed = updates.speciesSpeed;
+      }
+      if (updates.speciesDarkvision !== undefined) {
+        speciesUpdates.darkvision = updates.speciesDarkvision;
+      }
+      if (updates.speciesResistances !== undefined) {
+        speciesUpdates.resistances = updates.speciesResistances;
+      }
+      if (updates.speciesImmunities !== undefined) {
+        speciesUpdates.immunities = updates.speciesImmunities;
+      }
+      if (updates.speciesChoices !== undefined) {
+        speciesUpdates.choices = updates.speciesChoices;
+      }
+      if (Object.keys(speciesUpdates).length > 0) {
+        updateSpecies(speciesUpdates);
+      }
+
+      if (updates.selectedOriginFeats !== undefined) {
+        pendingFeatsUpdates.selectedOriginFeats = updates.selectedOriginFeats;
+      }
+      if (updates.requiredFeatCount !== undefined) {
+        pendingFeatsUpdates.requiredFeatCount = updates.requiredFeatCount;
+        if (currentOriginFeats.length > updates.requiredFeatCount) {
+          pendingFeatsUpdates.selectedOriginFeats = currentOriginFeats.slice(
+            0,
+            updates.requiredFeatCount
+          );
+        }
+      }
+      if (updates.featFeatures !== undefined) {
+        pendingFeatsUpdates.featFeatures = updates.featFeatures;
+      }
+      if (updates.featSpells !== undefined) {
+        pendingFeatsUpdates.featSpells = updates.featSpells;
+      }
+      if (updates.featChoices !== undefined) {
+        pendingFeatsUpdates.featChoices = updates.featChoices;
+      }
+  if (Object.keys(pendingFeatsUpdates).length > 0) {
+    updateFeats(pendingFeatsUpdates);
+  }
+
+  if (updates.selectedEquipment !== undefined) {
+    updateEquipment(updates.selectedEquipment);
+  }
+},
+[
+  updateBasicInfo,
+  updateAbilityScores,
+  updateClassSelection,
+  updateBackground,
+    updateSpecies,
+    updateFeats,
+    updateEquipment,
+    speciesIsHuman,
+    currentOriginFeats,
+    featsRequiredFeatCount,
+  ]
+  );
+
+  const completedStepsSet = useMemo(
+    () => new Set(completedSteps),
+    [completedSteps]
+  );
+
 
   // Start Over functionality
   const handleStartOver = useCallback(() => {
@@ -215,49 +512,37 @@ export default function CharacterGeneratorWizard() {
   }, []);
 
   const confirmStartOver = useCallback(() => {
-    // Reset all data to initial state
-    setBuilderData(INITIAL_BUILDER_DATA);
-    setWizardState({
-      currentStep: 'character-info',
-      completedSteps: new Set(),
-      canProceed: false
-    });
+    resetBuilder();
     setShowStartOverModal(false);
     setIsTransitioning(false);
-  }, []);
+  }, [resetBuilder]);
 
   const cancelStartOver = useCallback(() => {
     setShowStartOverModal(false);
   }, []);
 
-  // Validate current step - all fields are optional now
-  const validateCurrentStep = useCallback((): boolean => {
-    // All steps are now optional - user can navigate freely
-    return true;
-  }, [wizardState.currentStep, builderData]);
-
-  // Update validation when data changes
-  React.useEffect(() => {
-    const isValid = validateCurrentStep();
-    setWizardState(prev => ({ ...prev, canProceed: isValid }));
-  }, [validateCurrentStep]);
-
   // Navigation functions
-  const getCurrentStepIndex = () => WIZARD_STEPS.indexOf(wizardState.currentStep);
+  const getCurrentStepIndex = useCallback(
+    () => WIZARD_STEPS.indexOf(currentStep),
+    [currentStep]
+  );
 
-  const canGoNext = () => {
+  const canGoNext = useCallback(() => {
     const currentIndex = getCurrentStepIndex();
-    return wizardState.canProceed && currentIndex < WIZARD_STEPS.length - 1;
-  };
+    return currentIndex < WIZARD_STEPS.length - 1;
+  }, [getCurrentStepIndex]);
 
-  const canGoBack = () => getCurrentStepIndex() > 0;
+  const canGoBack = useCallback(
+    () => getCurrentStepIndex() > 0,
+    [getCurrentStepIndex]
+  );
 
-  const goToStep = useCallback((step: WizardStep) => {
-    setWizardState(prev => ({
-      ...prev,
-      currentStep: step
-    }));
-  }, []);
+  const goToStep = useCallback(
+    (step: WizardStep) => {
+      setCurrentStep(step);
+    },
+    [setCurrentStep]
+  );
 
   const goNext = useCallback(() => {
     if (!canGoNext()) return;
@@ -265,38 +550,25 @@ export default function CharacterGeneratorWizard() {
     const currentIndex = getCurrentStepIndex();
     const nextStep = WIZARD_STEPS[currentIndex + 1];
 
-    // Start transition
     setIsTransitioning(true);
 
-    // Small delay for transition effect
     setTimeout(() => {
-      setWizardState(prev => ({
-        ...prev,
-        currentStep: nextStep,
-        completedSteps: new Set([...prev.completedSteps, prev.currentStep])
-      }));
-
-      // Scroll to top
+      markStepComplete(currentStep);
+      setCurrentStep(nextStep);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      // End transition
       setTimeout(() => {
         setIsTransitioning(false);
       }, 500);
     }, 300);
-  }, [wizardState.currentStep, wizardState.canProceed]);
+  }, [canGoNext, currentStep, getCurrentStepIndex, markStepComplete, setCurrentStep]);
 
   const goBack = useCallback(() => {
     if (!canGoBack()) return;
 
     const currentIndex = getCurrentStepIndex();
     const prevStep = WIZARD_STEPS[currentIndex - 1];
-
-    setWizardState(prev => ({
-      ...prev,
-      currentStep: prevStep
-    }));
-  }, [wizardState.currentStep]);
+    setCurrentStep(prevStep);
+  }, [canGoBack, getCurrentStepIndex, setCurrentStep]);
 
 
   // Check if ability scores are complete
@@ -372,7 +644,7 @@ export default function CharacterGeneratorWizard() {
 
   // Check if current step is complete
   const isCurrentStepComplete = (): boolean => {
-    switch (wizardState.currentStep) {
+    switch (currentStep) {
       case 'character-info':
         return isCharacterInfoComplete();
       case 'ability-scores':
@@ -441,19 +713,19 @@ export default function CharacterGeneratorWizard() {
               </p>
             </div>
           )}
-          {wizardState.currentStep === 'character-info' && (
+          {currentStep === 'character-info' && (
             <Step0CharacterInfo
               data={builderData}
               onUpdate={updateBuilderData}
             />
           )}
-          {wizardState.currentStep === 'ability-scores' && (
+          {currentStep === 'ability-scores' && (
             <Step1AbilityScores
               data={builderData}
               onUpdate={updateBuilderData}
             />
           )}
-          {wizardState.currentStep === 'class-selection' && (
+          {currentStep === 'class-selection' && (
             <>
               <AbilityScoresHeader data={builderData} />
               <Step2ClassSelection
@@ -462,7 +734,7 @@ export default function CharacterGeneratorWizard() {
               />
             </>
           )}
-          {wizardState.currentStep === 'background-selection' && (
+          {currentStep === 'background-selection' && (
             <>
               <AbilityScoresHeader data={builderData} />
               <Step3ABackgroundSelection
@@ -472,27 +744,27 @@ export default function CharacterGeneratorWizard() {
               />
             </>
           )}
-          {wizardState.currentStep === 'species-selection' && (
+          {currentStep === 'species-selection' && (
             <Step3BSpeciesSelection
               data={builderData}
               onUpdate={updateBuilderData}
               onAdvance={goNext}
             />
           )}
-          {wizardState.currentStep === 'origin-feats' && (
+          {currentStep === 'origin-feats' && (
             <Step3DOriginFeats
               data={builderData}
               onUpdate={updateBuilderData}
               onAdvance={goNext}
             />
           )}
-          {wizardState.currentStep === 'equipment-selection' && (
+          {currentStep === 'equipment-selection' && (
             <Step4EquipmentSelection
               data={builderData}
               onUpdate={updateBuilderData}
             />
           )}
-          {wizardState.currentStep === 'review-create' && (
+          {currentStep === 'review-create' && (
             <Step5ReviewCreate
               data={builderData}
               onComplete={(characterId: number) => {
@@ -501,9 +773,9 @@ export default function CharacterGeneratorWizard() {
               }}
             />
           )}
-          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'origin-feats', 'equipment-selection', 'review-create'].includes(wizardState.currentStep) && (
+          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'origin-feats', 'equipment-selection', 'review-create'].includes(currentStep) && (
             <div className="step-placeholder">
-              <h2>{STEP_LABELS[wizardState.currentStep]}</h2>
+              <h2>{STEP_LABELS[currentStep]}</h2>
               <p>Step content coming soon...</p>
               <pre>{JSON.stringify(builderData, null, 2)}</pre>
             </div>
@@ -515,9 +787,9 @@ export default function CharacterGeneratorWizard() {
               <div
                 key={step}
                 className={`progress-step ${
-                  step === wizardState.currentStep ? 'current' : ''
+                  step === currentStep ? 'current' : ''
                 } ${
-                  wizardState.completedSteps.has(step) ? 'completed' : ''
+                  completedStepsSet.has(step) ? 'completed' : ''
                 }`}
                 onClick={() => goToStep(step)}
               >
@@ -564,17 +836,16 @@ export default function CharacterGeneratorWizard() {
             </div>
 
             <div className="wizard-controls-right">
-              {wizardState.currentStep !== 'review-create' && (
+              {currentStep !== 'review-create' && (
                 <button
                   onClick={goNext}
-                  disabled={!canGoNext()}
                   className="wizard-btn wizard-btn-primary"
                   style={{
                     background: isCurrentStepComplete() ? 'linear-gradient(145deg, #4caf50, #45a049)' : undefined,
                     borderColor: isCurrentStepComplete() ? '#4caf50' : undefined
                   }}
                 >
-                  Next
+                  Next {!isCurrentStepComplete() && '⚠️'}
                 </button>
               )}
             </div>
@@ -582,87 +853,66 @@ export default function CharacterGeneratorWizard() {
         </WizardContent>
       </div>
 
-      {/* Start Over Confirmation Modal */}
-      {showStartOverModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-            border: '2px solid #dc3545',
-            borderRadius: '12px',
-            padding: '2rem',
-            maxWidth: '500px',
-            width: '100%',
-            color: '#f0f0f0',
-            textAlign: 'center'
-          }}>
-            <h2 style={{
-              fontFamily: 'Cinzel, serif',
-              color: '#dc3545',
-              fontSize: '1.8rem',
-              margin: '0 0 1rem 0'
-            }}>
-              Start Over?
-            </h2>
-            <p style={{
-              color: '#ccc',
-              fontSize: '1rem',
-              lineHeight: '1.4',
-              margin: '0 0 1.5rem 0'
-            }}>
-              Are you sure you want to start over? This will clear all your character data and return you to the beginning. This action cannot be undone.
-            </p>
-            <div style={{
+      <WizardModal
+        isOpen={showStartOverModal}
+        onClose={cancelStartOver}
+        title="Start Over?"
+        subtitle="This action clears all progress in the character generator."
+        maxWidth="480px"
+        footer={
+          <div
+            style={{
               display: 'flex',
               justifyContent: 'space-between',
-              gap: '1rem'
-            }}>
-              <button
-                onClick={cancelStartOver}
-                className="wizard-btn wizard-btn-secondary"
-                style={{
-                  flex: 1,
-                  padding: '12px 24px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmStartOver}
-                className="wizard-btn wizard-btn-danger"
-                style={{
-                  flex: 1,
-                  padding: '12px 24px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  background: 'linear-gradient(145deg, #dc3545, #c82333)',
-                  borderColor: '#dc3545',
-                  color: '#fff'
-                }}
-              >
-                Start Over
-              </button>
-            </div>
+              gap: '1rem',
+            }}
+          >
+            <button
+              onClick={cancelStartOver}
+              className="wizard-btn wizard-btn-secondary"
+              style={{
+                flex: 1,
+                padding: '12px 24px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmStartOver}
+              className="wizard-btn wizard-btn-danger"
+              style={{
+                flex: 1,
+                padding: '12px 24px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                background: 'linear-gradient(145deg, #dc3545, #c82333)',
+                borderColor: '#dc3545',
+                color: '#fff',
+              }}
+            >
+              Start Over
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p
+          style={{
+            color: '#ccc',
+            fontSize: '1rem',
+            lineHeight: '1.4',
+            margin: 0,
+            textAlign: 'center',
+          }}
+        >
+          Are you sure you want to start over? This will clear all character data and return you to the beginning. This action cannot be undone.
+        </p>
+      </WizardModal>
     </WizardContainer>
   );
 }

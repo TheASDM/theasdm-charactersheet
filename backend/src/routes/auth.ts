@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { authLimiter } from '../middleware/rateLimiter';
 import {
   registerSchema,
   loginSchema,
@@ -112,7 +113,7 @@ router.post('/register', async (req: AuthRequest, res: Response) => {
  * Login user
  * POST /api/auth/login
  */
-router.post('/login', async (req: AuthRequest, res: Response) => {
+router.post('/login', authLimiter, async (req: AuthRequest, res: Response) => {
   try {
     // Validate request body
     const { error, value } = loginSchema.validate(req.body);

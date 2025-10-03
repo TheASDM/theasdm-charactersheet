@@ -1,12 +1,20 @@
 import { useCallback } from 'react';
 import { CharacterSheetData } from '../../types/characterSheet';
 import { EquipmentValidator } from '../../utils/equipmentValidator';
+import { useDebouncedCallback } from '../useDebouncedCallback';
 
 export const useAbilityScores = (
   character: CharacterSheetData,
   onUpdate: (updatedCharacter: CharacterSheetData) => void,
   onSave?: (updatedCharacter: CharacterSheetData, options?: { silent?: boolean }) => void | Promise<void>
 ) => {
+  const debouncedSilentSave = useDebouncedCallback(
+    (updated: CharacterSheetData) => {
+      onSave?.(updated, { silent: true });
+    },
+    200
+  );
+
   // Adjust ability score handler
   const adjustAbilityScore = useCallback((
     ability: keyof CharacterSheetData['abilityScores'],
@@ -40,9 +48,9 @@ export const useAbilityScores = (
 
     // Auto-save the changes silently
     if (onSave) {
-      onSave(finalCharacter, { silent: true });
+      debouncedSilentSave(finalCharacter);
     }
-  }, [character, onUpdate, onSave]);
+  }, [character, onUpdate, onSave, debouncedSilentSave]);
 
   return {
     // Handlers

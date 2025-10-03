@@ -6,6 +6,7 @@ import speciesService from '../../services/speciesService';
 import { Species as ApiSpecies } from '../../types/api';
 import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
+import WizardModal from '../wizard/WizardModal';
 
 // Species choice constants (from Step3C)
 const DRAGONBORN_ANCESTRY = [
@@ -166,45 +167,6 @@ const LoadingSpinner = styled.div`
   color: #d4af37;
   padding: 2rem;
   font-size: 1.1rem;
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-`;
-
-const ModalContent = styled.div`
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 2px solid #d4af37;
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 900px;
-  width: 100%;
-  color: #f0f0f0;
-
-  h2 {
-    font-family: 'Cinzel', serif;
-    color: #d4af37;
-    font-size: 1.8rem;
-    margin: 0 0 1rem 0;
-    text-align: center;
-  }
-
-  .species-description {
-    color: #ccc;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    font-size: 1rem;
-  }
 `;
 
 const ModalSection = styled.div`
@@ -983,10 +945,99 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     );
   };
 
-  const getTraitList = (traits?: any[]): any[] => {
-    if (!traits) return [];
-    return traits.slice(0, 6); // Show first 6 traits in modal
-  };
+const getTraitList = (traits?: any[]): any[] => {
+  if (!traits) return [];
+  return traits.slice(0, 6); // Show first 6 traits in modal
+};
+
+const SpeciesDescription = styled.div`
+  color: #ccc;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+`;
+
+const renderSpeciesDetailsContent = (
+  speciesData: any,
+  getSpeciesSizeFn: (size: string | string[]) => string,
+  traitRenderer: (trait: any) => JSX.Element,
+  getTraitListFn: (traits?: any[]) => any[],
+  processDescription: (desc: string) => string,
+) => (
+  <>
+    <SpeciesDescription>
+      {getSpeciesSizeFn(speciesData.size)} {speciesData.creatureType} • {speciesData.speed} ft Speed
+    </SpeciesDescription>
+
+    <TraitsSection>
+      <h3>Species Traits</h3>
+      <div className="traits-grid">
+        {getTraitListFn(speciesData.traits).map((trait: any, index: number) => (
+          <div key={index} className="trait-item">
+            <div className="trait-name">{trait.name || `Trait ${index + 1}`}</div>
+            {traitRenderer(trait)}
+          </div>
+        ))}
+      </div>
+    </TraitsSection>
+
+    {speciesData.skillProficiencies && (
+      <ModalSection>
+        <h3>Skill Proficiencies</h3>
+        <div className="section-content">
+          {Array.isArray(speciesData.skillProficiencies)
+            ? speciesData.skillProficiencies.map((prof: any, idx: number) => {
+                if (typeof prof === 'string') return <div key={idx}>{prof}</div>;
+                if (prof.choose)
+                  return (
+                    <div key={idx}>
+                      Choose {prof.choose.count || 1} from: {prof.choose.from?.join(', ') || 'various skills'}
+                    </div>
+                  );
+                if (prof.any)
+                  return (
+                    <div key={idx}>Choose {prof.any} skill from any skill list</div>
+                  );
+                return <div key={idx}>{JSON.stringify(prof)}</div>;
+              })
+            : (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: processDescription(speciesData.skillProficiencies),
+                  }}
+                />
+              )}
+        </div>
+      </ModalSection>
+    )}
+
+    <div
+      style={{
+        textAlign: 'center',
+        fontSize: '0.7rem',
+        color: '#888',
+        marginTop: '1rem',
+        marginBottom: '1rem',
+      }}
+    >
+      <strong>Source:</strong> {speciesData.contentVersion} Player's Handbook
+      {speciesData.name?.toLowerCase() === 'human' && (
+        <div style={{ color: '#d4af37', marginTop: '0.25rem' }}>
+          🌟 Humans receive 2 Origin Feats instead of 1
+        </div>
+      )}
+    </div>
+  </>
+);
+
+const renderSpeciesChoicesContent = (
+  speciesName: string,
+  choiceRenderers: Record<string, () => JSX.Element>,
+) => {
+  const key = speciesName.toLowerCase();
+  const renderer = choiceRenderers[key];
+  return renderer ? renderer() : null;
+};
 
   if (isLoading) {
     return (
@@ -1102,107 +1153,65 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
         )}
       </div>
 
-      {/* Species Detail/Choice Modal */}
       {selectedSpeciesForModal && (
-        <ModalOverlay onClick={closeModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            {modalPage === 'details' ? (
-              <>
-                <h2>{selectedSpeciesForModal.name}</h2>
-
-                <div className="species-description">
-                  {getSpeciesSize(selectedSpeciesForModal.size)} {selectedSpeciesForModal.creatureType} • {selectedSpeciesForModal.speed} ft Speed
-                </div>
-
-                <TraitsSection>
-                  <h3>Species Traits</h3>
-                  <div className="traits-grid">
-                    {getTraitList(selectedSpeciesForModal.traits).map((trait, index) => (
-                      <div key={index} className="trait-item">
-                        <div className="trait-name">{trait.name || `Trait ${index + 1}`}</div>
-                        {renderTraitContent(trait)}
-                      </div>
-                    ))}
-                  </div>
-                </TraitsSection>
-
-                {selectedSpeciesForModal.skillProficiencies && (
-                  <ModalSection>
-                    <h3>Skill Proficiencies</h3>
-                    <div className="section-content">
-                      {Array.isArray(selectedSpeciesForModal.skillProficiencies)
-                        ? selectedSpeciesForModal.skillProficiencies.map((prof: any, idx: number) => {
-                            if (typeof prof === 'string') return <div key={idx}>{prof}</div>;
-                            if (prof.choose) return <div key={idx}>Choose {prof.choose.count || 1} from: {prof.choose.from?.join(', ') || 'various skills'}</div>;
-                            if (prof.any) return <div key={idx}>Choose {prof.any} skill from any skill list</div>;
-                            return <div key={idx}>{JSON.stringify(prof)}</div>;
-                          })
-                        : (
-                          <div dangerouslySetInnerHTML={{
-                            __html: processTraitDescription(selectedSpeciesForModal.skillProficiencies)
-                          }} />
-                        )}
-                    </div>
-                  </ModalSection>
-                )}
-
-                <div style={{
-                  textAlign: 'center',
-                  fontSize: '0.7rem',
-                  color: '#888',
-                  marginTop: '1rem',
-                  marginBottom: '1rem'
-                }}>
-                  <strong>Source:</strong> {selectedSpeciesForModal.contentVersion} Player's Handbook
-                  {selectedSpeciesForModal.name.toLowerCase() === 'human' && (
-                    <div style={{ color: '#d4af37', marginTop: '0.25rem' }}>
-                      🌟 Humans receive 2 Origin Feats instead of 1
-                    </div>
-                  )}
-                </div>
-
-                <ModalButtons>
-                  <button className="btn-cancel" onClick={closeModal}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn-confirm"
-                    onClick={confirmSpeciesSelection}
-                  >
-                    Select Species
-                  </button>
-                </ModalButtons>
-              </>
+        <WizardModal
+          isOpen={Boolean(selectedSpeciesForModal)}
+          onClose={closeModal}
+          title={
+            modalPage === 'details'
+              ? selectedSpeciesForModal.name
+              : `${selectedSpeciesForModal.name} - Make Choices`
+          }
+          maxWidth="900px"
+          footer={
+            modalPage === 'details' ? (
+              <ModalButtons>
+                <button className="btn-cancel" onClick={closeModal}>
+                  Cancel
+                </button>
+                <button
+                  className="btn-confirm"
+                  onClick={confirmSpeciesSelection}
+                >
+                  Select Species
+                </button>
+              </ModalButtons>
             ) : (
-              <>
-                <h2>{selectedSpeciesForModal.name} - Make Choices</h2>
-
-                {selectedSpeciesForModal.name.toLowerCase() === 'dragonborn' && renderDragonbornChoices()}
-                {selectedSpeciesForModal.name.toLowerCase() === 'elf' && renderElfChoices()}
-                {selectedSpeciesForModal.name.toLowerCase() === 'gnome' && renderGnomeChoices()}
-                {selectedSpeciesForModal.name.toLowerCase() === 'goliath' && renderGoliathChoices()}
-                {selectedSpeciesForModal.name.toLowerCase() === 'tiefling' && renderTieflingChoices()}
-                {selectedSpeciesForModal.name.toLowerCase() === 'human' && renderHumanChoices()}
-
-                <ModalButtons style={{ marginTop: '1.5rem' }}>
-                  <button
-                    className="btn-cancel"
-                    onClick={() => setModalPage('details')}
-                  >
-                    Back
-                  </button>
-                  <button
-                    className="btn-confirm"
-                    onClick={confirmChoices}
-                    disabled={!areChoicesComplete()}
-                  >
-                    Confirm Choices
-                  </button>
-                </ModalButtons>
-              </>
-            )}
-          </ModalContent>
-        </ModalOverlay>
+              <ModalButtons style={{ marginTop: '1.5rem' }}>
+                <button
+                  className="btn-cancel"
+                  onClick={() => setModalPage('details')}
+                >
+                  Back
+                </button>
+                <button
+                  className="btn-confirm"
+                  onClick={confirmChoices}
+                  disabled={!areChoicesComplete()}
+                >
+                  Confirm Choices
+                </button>
+              </ModalButtons>
+            )
+          }
+        >
+          {modalPage === 'details'
+            ? renderSpeciesDetailsContent(
+                selectedSpeciesForModal,
+                getSpeciesSize,
+                renderTraitContent,
+                getTraitList,
+                processTraitDescription,
+              )
+            : renderSpeciesChoicesContent(selectedSpeciesForModal.name, {
+                dragonborn: renderDragonbornChoices,
+                elf: renderElfChoices,
+                gnome: renderGnomeChoices,
+                goliath: renderGoliathChoices,
+                tiefling: renderTieflingChoices,
+                human: renderHumanChoices,
+              })}
+        </WizardModal>
       )}
     </StepContainer>
   );

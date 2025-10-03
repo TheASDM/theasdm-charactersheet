@@ -4,6 +4,7 @@ import { SpellCard } from './';
 import { spellService } from '../services';
 import { Spell } from '../types/api';
 import type { SpellFilters } from '../services/spellService';
+import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 
 // Styled components updated for medieval forest green theme
 const ListContainer = styled.div`
@@ -347,14 +348,14 @@ const SpellList: React.FC<SpellListProps> = ({
   // Debounce search to prevent excessive API calls
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page when search changes
-    }, 300);
+  const debouncedSearchUpdate = useDebouncedCallback((term: string) => {
+    setDebouncedSearchTerm(term);
+    setCurrentPage(1);
+  }, 300);
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  useEffect(() => {
+    debouncedSearchUpdate(searchTerm);
+  }, [searchTerm, debouncedSearchUpdate]);
 
   useEffect(() => {
     loadSpells();

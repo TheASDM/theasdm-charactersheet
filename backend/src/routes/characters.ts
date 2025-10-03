@@ -1,5 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth';
+import { createCharacterLimiter } from '../middleware/rateLimiter';
+import { checkForSQLInjection, sanitizeCharacterInput } from '../middleware/sanitize';
 import { prisma } from '../db';
 
 const router = Router();
@@ -98,7 +100,13 @@ router.get('/:id', optionalAuthenticate, async (req: AuthRequest, res: Response)
  * Requires authentication
  * POST /api/characters
  */
-router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
+router.post(
+  '/',
+  authenticate,
+  createCharacterLimiter,
+  checkForSQLInjection,
+  sanitizeCharacterInput,
+  async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -134,14 +142,20 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     console.error('Error creating character:', error);
     return res.status(500).json({ error: 'Failed to create character' });
   }
-});
+  }
+);
 
 /**
  * Update a character
  * Must be owned by authenticated user
  * PUT /api/characters/:id
  */
-router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.put(
+  '/:id',
+  authenticate,
+  checkForSQLInjection,
+  sanitizeCharacterInput,
+  async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -191,7 +205,8 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     console.error('Error updating character:', error);
     return res.status(500).json({ error: 'Failed to update character' });
   }
-});
+  }
+);
 
 /**
  * Update character class choices

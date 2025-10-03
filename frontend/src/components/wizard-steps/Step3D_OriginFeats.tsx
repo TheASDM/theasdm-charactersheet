@@ -5,6 +5,7 @@ import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import featsService, { Feat } from '../../services/featsService';
 import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
+import WizardModal from '../wizard/WizardModal';
 
 // Constants for feat choices
 const ALL_SKILLS = [
@@ -244,46 +245,6 @@ const ErrorMessage = styled.div`
   color: #ff6b6b;
   padding: 2rem;
   font-size: 1rem;
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-`;
-
-const ModalContent = styled.div`
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 2px solid #d4af37;
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 800px;
-  width: 100%;
-  color: #f0f0f0;
-  max-height: 80vh;
-  overflow-y: auto;
-
-  h2 {
-    font-family: 'Cinzel', serif;
-    color: #d4af37;
-    font-size: 1.8rem;
-    margin: 0 0 1rem 0;
-    text-align: center;
-  }
-
-  .feat-details {
-    color: #ccc;
-    font-size: 0.9rem;
-    line-height: 1.4;
-  }
 `;
 
 const ModalButtons = styled.div`
@@ -815,6 +776,49 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
     return text;
   };
 
+  const renderFeatDetailsContent = (feat: Feat) => (
+    <>
+      {feat.prerequisites && (
+        <FeatPrerequisite>
+          Prerequisite: {JSON.stringify(feat.prerequisites)}
+        </FeatPrerequisite>
+      )}
+
+      <div
+        className="feat-details"
+        dangerouslySetInnerHTML={{ __html: renderFeatDetails(feat) }}
+      />
+
+      <div
+        style={{
+          textAlign: 'center',
+          fontSize: '0.7rem',
+          color: '#888',
+          marginTop: '1rem',
+        }}
+      >
+        <strong>Source:</strong> {feat.sourceBook}
+      </div>
+    </>
+  );
+
+  const renderFeatChoicesContent = (feat: Feat) => {
+    const featName = feat.name.toLowerCase();
+
+    switch (featName) {
+      case 'magic initiate':
+        return renderMagicInitiateChoices();
+      case 'skilled':
+        return renderSkilledChoices();
+      case 'crafter':
+        return renderCrafterChoices();
+      case 'musician':
+        return renderMusicianChoices();
+      default:
+        return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <StepContainer>
@@ -962,75 +966,54 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
         </FeatsContainer>
       </div>
 
-      {/* Feat Detail/Choice Modal */}
       {selectedFeatForModal && (
-        <ModalOverlay onClick={closeModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            {modalPage === 'details' ? (
-              <>
-                <h2>{selectedFeatForModal.name}</h2>
-
-                {selectedFeatForModal.prerequisites && (
-                  <FeatPrerequisite>
-                    Prerequisite: {JSON.stringify(selectedFeatForModal.prerequisites)}
-                  </FeatPrerequisite>
-                )}
-
-                <div
-                  className="feat-details"
-                  dangerouslySetInnerHTML={{ __html: renderFeatDetails(selectedFeatForModal) }}
-                />
-
-                <div style={{
-                  textAlign: 'center',
-                  fontSize: '0.8rem',
-                  color: '#888',
-                  marginTop: '1rem',
-                  marginBottom: '1rem'
-                }}>
-                  <strong>Source:</strong> {selectedFeatForModal.sourceBook}
-                </div>
-
-                <ModalButtons>
-                  <button className="btn-cancel" onClick={closeModal}>
-                    Close
-                  </button>
-                  <button
-                    className="btn-confirm"
-                    onClick={confirmFeatSelection}
-                  >
-                    {selectedFeats.includes(selectedFeatForModal.name) ? 'Remove Feat' : 'Select Feat'}
-                  </button>
-                </ModalButtons>
-              </>
+        <WizardModal
+          isOpen={Boolean(selectedFeatForModal)}
+          onClose={closeModal}
+          title={
+            modalPage === 'details'
+              ? selectedFeatForModal.name
+              : `${selectedFeatForModal.name} - Make Choices`
+          }
+          maxWidth="800px"
+          footer={
+            modalPage === 'details' ? (
+              <ModalButtons>
+                <button className="btn-cancel" onClick={closeModal}>
+                  Close
+                </button>
+                <button
+                  className="btn-confirm"
+                  onClick={confirmFeatSelection}
+                >
+                  {selectedFeats.includes(selectedFeatForModal.name)
+                    ? 'Remove Feat'
+                    : 'Select Feat'}
+                </button>
+              </ModalButtons>
             ) : (
-              <>
-                <h2>{selectedFeatForModal.name} - Make Choices</h2>
-
-                {selectedFeatForModal.name === 'Magic Initiate' && renderMagicInitiateChoices()}
-                {selectedFeatForModal.name === 'Skilled' && renderSkilledChoices()}
-                {selectedFeatForModal.name === 'Crafter' && renderCrafterChoices()}
-                {selectedFeatForModal.name === 'Musician' && renderMusicianChoices()}
-
-                <ModalButtons style={{ marginTop: '1.5rem' }}>
-                  <button
-                    className="btn-cancel"
-                    onClick={() => setModalPage('details')}
-                  >
-                    Back
-                  </button>
-                  <button
-                    className="btn-confirm"
-                    onClick={confirmChoices}
-                    disabled={!areChoicesComplete()}
-                  >
-                    Confirm Choices
-                  </button>
-                </ModalButtons>
-              </>
-            )}
-          </ModalContent>
-        </ModalOverlay>
+              <ModalButtons style={{ marginTop: '1.5rem' }}>
+                <button
+                  className="btn-cancel"
+                  onClick={() => setModalPage('details')}
+                >
+                  Back
+                </button>
+                <button
+                  className="btn-confirm"
+                  onClick={confirmChoices}
+                  disabled={!areChoicesComplete()}
+                >
+                  Confirm Choices
+                </button>
+              </ModalButtons>
+            )
+          }
+        >
+          {modalPage === 'details'
+            ? renderFeatDetailsContent(selectedFeatForModal)
+            : renderFeatChoicesContent(selectedFeatForModal)}
+        </WizardModal>
       )}
     </StepContainer>
   );
