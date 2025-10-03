@@ -94,7 +94,10 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   const proficiencies = {
     armor: builderData.classProficiencies?.armor || [],
     weapons: builderData.classProficiencies?.weapons || [],
-    tools: builderData.classProficiencies?.tools || [],
+    tools: [
+      ...(builderData.classProficiencies?.tools || []),
+      ...(builderData.backgroundToolProficiencies || [])
+    ],
     skills: [
       ...(builderData.selectedClassSkills || []),
       ...(builderData.backgroundSkillProficiencies || [])

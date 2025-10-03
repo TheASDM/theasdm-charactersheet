@@ -78,6 +78,7 @@ export interface CharacterBuilderData {
 
   // Background-derived data
   backgroundSkillProficiencies?: string[];
+  backgroundToolProficiencies?: string[];
   backgroundStartingEquipment?: string[];
   backgroundFeatures?: any[];
 

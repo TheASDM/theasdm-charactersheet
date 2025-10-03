@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
+import { prisma } from '../db';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all backgrounds
 router.get('/', async (req: Request, res: Response) => {

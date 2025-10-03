@@ -14,13 +14,9 @@ interface Step3ABackgroundSelectionProps {
 
 const BackgroundGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
   margin-top: 1rem;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
 
   @media (max-width: 900px) {
     grid-template-columns: repeat(2, 1fr);
@@ -599,18 +595,63 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
         return [];
       };
 
-      // Extract background starting equipment
+      // Extract background starting equipment (using actual equipment structure)
       const extractStartingEquipment = (equipment?: any): string[] => {
-        if (!equipment) return [];
-        if (Array.isArray(equipment)) return equipment;
-        if (typeof equipment === 'object') {
-          // Handle different equipment formats
-          const items: string[] = [];
-          if (equipment.items) items.push(...equipment.items);
-          if (equipment.gold) items.push(`${equipment.gold} gp`);
-          return items;
-        }
-        return [];
+        if (!equipment || !Array.isArray(equipment)) return [];
+
+        const items: string[] = [];
+        equipment.forEach((equip: any) => {
+          if (equip.item && equip.item.A && Array.isArray(equip.item.A)) {
+            equip.item.A.forEach((item: any) => {
+              if (item.value) {
+                // Skip gold values as requested
+                return;
+              }
+              if (item.item && typeof item.item === 'string') {
+                const itemName = item.item.split('|')[0];
+                const displayName = item.displayName || itemName;
+                const quantity = item.quantity ? `${item.quantity}x ` : '';
+                const cleaned = displayName
+                  .replace(/[']/g, "'")
+                  .split(' ')
+                  .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+                items.push(`${quantity}${cleaned}`);
+              }
+            });
+          }
+        });
+
+        return items;
+      };
+
+      // Extract tool proficiencies from equipment
+      const extractToolProficiencies = (equipment?: any): string[] => {
+        if (!equipment || !Array.isArray(equipment)) return [];
+
+        const tools: string[] = [];
+        equipment.forEach((equip: any) => {
+          if (equip.item && equip.item.A && Array.isArray(equip.item.A)) {
+            equip.item.A.forEach((item: any) => {
+              if (item.item && typeof item.item === 'string') {
+                const itemName = item.item.split('|')[0];
+                if (itemName.includes('supplies') ||
+                    itemName.includes('kit') ||
+                    itemName.includes('tools') ||
+                    itemName.includes('instrument')) {
+                  const cleaned = itemName
+                    .replace(/[']/g, "'")
+                    .split(' ')
+                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                  tools.push(cleaned);
+                }
+              }
+            });
+          }
+        });
+
+        return tools;
       };
 
       // Extract background features
@@ -627,6 +668,7 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
 
         // Extract and store all background data
         backgroundSkillProficiencies: extractSkillProficiencies(selectedBackgroundForModal.skillProficiencies),
+        backgroundToolProficiencies: extractToolProficiencies(selectedBackgroundForModal.equipment),
         backgroundStartingEquipment: extractStartingEquipment(selectedBackgroundForModal.equipment),
         backgroundFeatures: extractBackgroundFeatures(selectedBackgroundForModal.feature)
       });
@@ -682,6 +724,64 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
     return languages.join(', ');
   };
 
+  const getToolProficiencies = (equipment?: any): string => {
+    if (!equipment || !Array.isArray(equipment)) return 'None';
+
+    const tools: string[] = [];
+    equipment.forEach((equip: any) => {
+      if (equip.item && equip.item.A && Array.isArray(equip.item.A)) {
+        equip.item.A.forEach((item: any) => {
+          if (item.item && typeof item.item === 'string') {
+            const itemName = item.item.split('|')[0]; // Remove source
+            if (itemName.includes('supplies') ||
+                itemName.includes('kit') ||
+                itemName.includes('tools') ||
+                itemName.includes('instrument')) {
+              // Clean up and format
+              const cleaned = itemName
+                .replace(/[']/g, "'")
+                .split(' ')
+                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+              tools.push(cleaned);
+            }
+          }
+        });
+      }
+    });
+
+    return tools.length > 0 ? tools.join(', ') : 'None';
+  };
+
+  const getStartingEquipment = (equipment?: any): string => {
+    if (!equipment || !Array.isArray(equipment)) return 'None';
+
+    const items: string[] = [];
+    equipment.forEach((equip: any) => {
+      if (equip.item && equip.item.A && Array.isArray(equip.item.A)) {
+        equip.item.A.forEach((item: any) => {
+          if (item.value) {
+            // Skip gold values as requested
+            return;
+          }
+          if (item.item && typeof item.item === 'string') {
+            const itemName = item.item.split('|')[0];
+            const displayName = item.displayName || itemName;
+            const quantity = item.quantity ? `${item.quantity}x ` : '';
+            const cleaned = displayName
+              .replace(/[']/g, "'")
+              .split(' ')
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+            items.push(`${quantity}${cleaned}`);
+          }
+        });
+      }
+    });
+
+    return items.length > 0 ? items.join(', ') : 'None';
+  };
+
   if (isLoading) {
     return (
       <StepContainer>
@@ -734,6 +834,12 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
               <BackgroundFeatures>
                 <div className="feature-title">Skills:</div>
                 <div className="feature-list">{getSkillProficiencyList(background.skillProficiencies)}</div>
+
+                <div className="feature-title">Tool Proficiency:</div>
+                <div className="feature-list">{getToolProficiencies(background.equipment)}</div>
+
+                <div className="feature-title">Starting Equipment:</div>
+                <div className="feature-list">{getStartingEquipment(background.equipment)}</div>
 
                 <div className="feature-title">Languages:</div>
                 <div className="feature-list">{getLanguageInfo(background.languages)}</div>

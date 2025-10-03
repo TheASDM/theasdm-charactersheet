@@ -60,12 +60,14 @@ interface CharacterTraitsSectionProps {
     handleManageTraits: () => void;
   };
   onUpdateCharacter?: (updates: Partial<CharacterSheetData>) => void;
+  onSpellcastingFeatureExtracted?: (feature: SimpleFeature | null) => void;
 }
 
 export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
   character,
   traits,
   onUpdateCharacter,
+  onSpellcastingFeatureExtracted,
 }) => {
   const [isWeaponMasteryModalOpen, setIsWeaponMasteryModalOpen] = useState(false);
   const [generatedFeatures, setGeneratedFeatures] = useState<SimpleFeature[]>([]);
@@ -141,9 +143,27 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
 
   const allFeatures = [...generatedFeatures, ...legacyFeatures];
 
-  // Filter out proficiencies - they're displayed in a separate section now
+  // Extract spellcasting feature and pass it up to parent
+  const spellcastingFeature = useMemo(() => {
+    return allFeatures.find((feature: SimpleFeature) =>
+      feature.name === 'Spellcasting' || feature.name === 'Pact Magic'
+    ) || null;
+  }, [allFeatures]);
+
+  // Notify parent component about spellcasting feature
+  React.useEffect(() => {
+    if (onSpellcastingFeatureExtracted) {
+      onSpellcastingFeatureExtracted(spellcastingFeature);
+    }
+  }, [spellcastingFeature, onSpellcastingFeatureExtracted]);
+
+  // Filter out proficiencies AND spellcasting features - they're displayed in separate sections now
   const regularFeatures = useMemo(() => {
-    return allFeatures.filter((feature: SimpleFeature) => feature.category !== 'Proficiencies');
+    return allFeatures.filter((feature: SimpleFeature) =>
+      feature.category !== 'Proficiencies' &&
+      feature.name !== 'Spellcasting' &&
+      feature.name !== 'Pact Magic'
+    );
   }, [allFeatures]);
 
   // Determine max masteries and restrictions based on class

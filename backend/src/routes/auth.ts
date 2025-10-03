@@ -1,5 +1,4 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authenticate, AuthRequest } from '../middleware/auth';
@@ -9,9 +8,9 @@ import {
   updatePasswordSchema,
   updateProfileSchema,
 } from '../validators/auth.validator';
+import { prisma } from '../db';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * Generate JWT token for user
@@ -356,102 +355,109 @@ router.post('/logout', authenticate, (req: AuthRequest, res: Response) => {
 // Development/Demo Endpoints (keep these for backward compatibility)
 // ============================================================================
 
-/**
- * Create a guest user for demo purposes
- * POST /api/auth/create-guest
- */
-router.post('/create-guest', async (req: AuthRequest, res: Response) => {
-  try {
-    const { username = 'Guest Player' } = req.body;
+if (process.env.NODE_ENV !== 'production') {
+  /**
+   * Create a guest user for demo purposes
+   * POST /api/auth/create-guest
+   */
+  router.post('/create-guest', async (req: AuthRequest, res: Response) => {
+    try {
+      const { username = 'Guest Player' } = req.body;
 
-    // Check if guest user already exists
-    const existingUser = await prisma.user.findFirst({
-      where: { username: username },
-    });
-
-    if (existingUser) {
-      return res.json({
-        user: existingUser,
-        message: 'Guest user already exists',
+      // Check if guest user already exists
+      const existingUser = await prisma.user.findFirst({
+        where: { username: username },
       });
-    }
 
-    // Create new guest user with a random password
-    const randomPassword = Math.random().toString(36).slice(-12);
-    const passwordHash = await bcrypt.hash(randomPassword, 10);
+      if (existingUser) {
+        return res.json({
+          user: existingUser,
+          message: 'Guest user already exists',
+        });
+      }
 
-    const user = await prisma.user.create({
-      data: {
-        username: username,
-        email: `${username.toLowerCase().replace(/\s+/g, '')}@guest.local`,
-        passwordHash,
-        isDm: false,
-      },
-    });
+      // Create new guest user with a random password
+      const randomPassword = Math.random().toString(36).slice(-12);
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
 
-    return res.json({
-      user: user,
-      message: 'Guest user created successfully',
-    });
-  } catch (error) {
-    console.error('Error creating guest user:', error);
-    return res.status(500).json({ error: 'Failed to create guest user' });
-  }
-});
-
-/**
- * Get or create a default user for development
- * GET /api/auth/default-user
- */
-router.get('/default-user', async (req: AuthRequest, res: Response) => {
-  try {
-    let user = await prisma.user.findFirst({
-      where: { username: 'Demo Player' },
-    });
-
-    if (!user) {
-      const passwordHash = await bcrypt.hash('demo1234', 10);
-      user = await prisma.user.create({
+      const user = await prisma.user.create({
         data: {
-          username: 'Demo Player',
-          email: 'demo@example.com',
+          username: username,
+          email: `${username.toLowerCase().replace(/\s+/g, '')}@guest.local`,
           passwordHash,
           isDm: false,
         },
       });
+
+      return res.json({
+        user: user,
+        message: 'Guest user created successfully',
+      });
+    } catch (error) {
+      console.error('Error creating guest user:', error);
+      return res.status(500).json({ error: 'Failed to create guest user' });
     }
+  });
 
-    // Generate token for demo user
-    const token = generateToken(user);
+  /**
+   * Get or create a default user for development
+   * GET /api/auth/default-user
+   */
+  router.get('/default-user', async (req: AuthRequest, res: Response) => {
+    try {
+      let user = await prisma.user.findFirst({
+        where: { username: 'Demo Player' },
+      });
 
-    return res.json({ user, token });
-  } catch (error) {
-    console.error('Error getting default user:', error);
-    return res.status(500).json({ error: 'Failed to get default user' });
-  }
-});
+      if (!user) {
+        const passwordHash = await bcrypt.hash('demo1234', 10);
+        user = await prisma.user.create({
+          data: {
+            username: 'Demo Player',
+            email: 'demo@example.com',
+            passwordHash,
+            isDm: false,
+          },
+        });
+      }
 
-/**
- * List all users (for development only - remove in production!)
- * GET /api/auth/users
- */
-router.get('/users', async (req: AuthRequest, res: Response) => {
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        isDm: true,
-        createdAt: true,
-      },
-    });
+      // Generate token for demo user
+      const token = generateToken(user);
 
-    return res.json({ users });
-  } catch (error) {
-    console.error('Error listing users:', error);
-    return res.status(500).json({ error: 'Failed to list users' });
-  }
-});
+      return res.json({ user, token });
+    } catch (error) {
+      console.error('Error getting default user:', error);
+      return res.status(500).json({ error: 'Failed to get default user' });
+    }
+  });
+
+  /**
+   * List all users (for development only)
+   * GET /api/auth/users
+   */
+  router.get('/users', async (req: AuthRequest, res: Response) => {
+    try {
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          isDm: true,
+          createdAt: true,
+        },
+      });
+
+      return res.json({ users });
+    } catch (error) {
+      console.error('Error listing users:', error);
+      return res.status(500).json({ error: 'Failed to list users' });
+    }
+  });
+} else {
+  // Hardened production behaviour: hide development-only routes
+  router.all(['/create-guest', '/default-user', '/users'], (_req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
+}
 
 export default router;

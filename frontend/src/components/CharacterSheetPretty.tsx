@@ -48,6 +48,8 @@ import { CharacterTraitsSection } from './CharacterTraitsSection';
 import { CharacterProficienciesSection } from './CharacterProficienciesSection';
 import { CharacterStatsSection } from './CharacterStatsSection';
 import WeaponMasterySection from './WeaponMasterySection';
+import SpellcastingBar from './SpellcastingBar';
+import { SimpleFeature } from '../utils/simpleFeatureGenerator';
 
 
 export default function CharacterSheetPretty({
@@ -105,6 +107,9 @@ export default function CharacterSheetPretty({
   const resources = useResourceTracking(character, updateCharacter, onSave);
   const selection = useSelectionModals(character, updateCharacter, onSave);
   const abilities = useAbilityScores(character, onUpdate, onSave);
+
+  // State to hold extracted spellcasting feature
+  const [spellcastingFeature, setSpellcastingFeature] = useState<SimpleFeature | null>(null);
 
   // Get dynamic resources based on character
   const characterResources = useMemo(
@@ -265,22 +270,6 @@ export default function CharacterSheetPretty({
     }
   };
 
-  // Check if character needs mana tracking
-  const needsManaTracking = useMemo(() => {
-    const spellcastingClasses = [
-      'bard',
-      'cleric',
-      'druid',
-      'paladin',
-      'ranger',
-      'sorcerer',
-      'warlock',
-      'wizard',
-    ];
-    const className = character.class.toLowerCase().replace(/\s+/g, '');
-    return spellcastingClasses.includes(className);
-  }, [character.class]);
-
   // Check if character has weapon mastery
   const hasWeaponMastery = useMemo(() => {
     const masteryClasses = ['barbarian', 'fighter', 'paladin', 'ranger', 'rogue'];
@@ -329,13 +318,20 @@ export default function CharacterSheetPretty({
 
         {/* Compact Resources Bar */}
         <CompactResourcesBar
-          character={character}
           characterResources={characterResources}
-          needsManaTracking={needsManaTracking}
-          editingSections={{ mana: editingSections.mana }}
-          updateCharacter={updateCharacter}
           resources={resources}
         />
+
+        {/* Spellcasting Bar - only shown for casters */}
+        {spellcastingFeature && (
+          <SpellcastingBar
+            spellcastingFeature={spellcastingFeature}
+            character={character}
+            editingSections={{ mana: editingSections.mana }}
+            updateCharacter={updateCharacter}
+            resources={resources}
+          />
+        )}
 
         <MainLayout>
           <LeftColumn>
@@ -413,6 +409,7 @@ export default function CharacterSheetPretty({
                 character={character}
                 traits={traits}
                 onUpdateCharacter={updateCharacter}
+                onSpellcastingFeatureExtracted={setSpellcastingFeature}
               />
             </TwoColumnLayout>
           </LeftColumn>

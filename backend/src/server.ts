@@ -7,10 +7,10 @@ import { Server } from 'socket.io';
 import { networkInterfaces } from 'os';
 import dotenv from 'dotenv';
 
-import { PrismaClient } from '@prisma/client';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import logger from './utils/logger';
+import { prisma } from './db';
 
 // Routes
 import authRoutes from './routes/auth';
@@ -28,10 +28,8 @@ import classChoicesRoutes from './routes/classChoices';
 // Load environment variables
 dotenv.config();
 
-// Initialize Prisma
-export const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-});
+// Re-export shared Prisma client for backward compatibility
+export { prisma };
 
 // Create Express app
 const app = express();

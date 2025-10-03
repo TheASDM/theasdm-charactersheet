@@ -1,0 +1,858 @@
+{
+  "frontend/src/App.tsx": [
+    "./components",
+    "./components/ProtectedRoute",
+    "./contexts/AuthContext",
+    "./contexts/UserContext",
+    "./pages",
+    "./pages/CharacterGeneratorPage",
+    "./pages/ClassFullDetailsPage",
+    "./pages/ClassSubclassesPage",
+    "./pages/SpeciesFeaturesTestPage",
+    "./pages/SpellsPage",
+    "./pages/SubclassesPage",
+    "react",
+    "react-helmet-async",
+    "react-router-dom"
+  ],
+  "frontend/src/components/AbilityScoresSection.tsx": [
+    "../styles/components",
+    "../types/characterSheet"
+  ],
+  "frontend/src/components/ActionsManagementModal.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/BackgroundSelectionModal.tsx": [
+    "../services/backgroundService",
+    "../types/api",
+    "../utils/textProcessor",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/CharacterActionsSection.tsx": [
+    "../styles/components",
+    "../types/characterSheet"
+  ],
+  "frontend/src/components/CharacterCard.tsx": [
+    "../types/api",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/CharacterGeneratorWizard.tsx": [
+    "../styles/components/CharacterGeneratorWizard.styles",
+    "./wizard-steps/AbilityScoresHeader",
+    "./wizard-steps/Step0_CharacterInfo",
+    "./wizard-steps/Step1_AbilityScores",
+    "./wizard-steps/Step2_ClassSelection",
+    "./wizard-steps/Step3A_BackgroundSelection",
+    "./wizard-steps/Step3B_SpeciesSelection",
+    "./wizard-steps/Step3D_OriginFeats",
+    "./wizard-steps/Step4_EquipmentSelection",
+    "./wizard-steps/Step5_ReviewCreate",
+    "react",
+    "react-router-dom"
+  ],
+  "frontend/src/components/CharacterHeader.tsx": [
+    "../constants/characterOptions",
+    "../services/characterCalculations",
+    "../styles/components",
+    "../types/characterSheet",
+    "./BackgroundSelectionModal"
+  ],
+  "frontend/src/components/CharacterList.tsx": [
+    "../services",
+    "../types/api",
+    "./CharacterCard",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/CharacterProficienciesSection.tsx": [
+    "../styles/components",
+    "../types/characterSheet",
+    "../utils/simpleFeatureGenerator",
+    "react"
+  ],
+  "frontend/src/components/CharacterSheet.tsx": [
+    "../types/characterSheet",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/CharacterSheetModal.tsx": [
+    "../services/characterService",
+    "../types/api",
+    "../types/characterSheet",
+    "./CharacterSheetPretty",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/CharacterSheetPretty.tsx": [
+    "../hooks/characterSheet",
+    "../services/characterCalculations",
+    "../styles/components",
+    "../types/characterSheet",
+    "../utils/resourceDetection",
+    "../utils/simpleFeatureGenerator",
+    "./AbilityScoresSection",
+    "./ActionsManagementModal",
+    "./BackgroundSelectionModal",
+    "./CharacterActionsSection",
+    "./CharacterHeader",
+    "./CharacterProficienciesSection",
+    "./CharacterSkillsSection",
+    "./CharacterStatsSection",
+    "./CharacterTraitsSection",
+    "./ClassSelectionModal",
+    "./CompactResourcesBar",
+    "./ConsolidatedInventorySection",
+    "./FeatSelectionModal",
+    "./ItemManagementModals",
+    "./SkillsManagementModal",
+    "./SpeciesSelectionModal",
+    "./SpellcastingBar",
+    "./TraitsManagementModal",
+    "./WeaponMasterySection",
+    "react"
+  ],
+  "frontend/src/components/CharacterSkillsSection.tsx": [
+    "../services/characterCalculations",
+    "../styles/components",
+    "../types/characterSheet"
+  ],
+  "frontend/src/components/CharacterStatsSection.tsx": [
+    "../styles/components",
+    "../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/components/CharacterTraitsSection.tsx": [
+    "../styles/components",
+    "../types/characterSheet",
+    "../utils/simpleFeatureGenerator",
+    "./WeaponMasteryModal",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ChoiceSelectionModal.tsx": [
+    "../types/classFeatures",
+    "../utils/classChoiceDetection",
+    "../utils/dndTemplateParser",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ClassCard.tsx": [
+    "../types/api",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/components/ClassChoiceManager.tsx": [
+    "../services/characterApi",
+    "../types/classFeatures",
+    "../utils/classChoiceDetection",
+    "../utils/classDataLoader",
+    "./ChoiceSelectionModal",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ClassList.tsx": [
+    "../services",
+    "../types/api",
+    "./ClassCard",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ClassModal.tsx": [
+    "../types/api",
+    "../utils/dndTemplateParser",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ClassSelectionModal.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/CompactResourcesBar.tsx": [
+    "../types/characterSheet",
+    "styled-components"
+  ],
+  "frontend/src/components/ConsolidatedInventorySection.tsx": [
+    "../types/characterSheet",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/EquipmentItemModal.tsx": [
+    "../services/equipmentService",
+    "../utils/textProcessor",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/FeatSelectionModal.tsx": [
+    "../services/featService",
+    "../types/api",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/Hero.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/InventorySection.tsx": [
+    "../styles/components"
+  ],
+  "frontend/src/components/ItemManagementModals.tsx": [
+    "../services/itemService",
+    "../types/api",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/Navigation.tsx": [
+    "../contexts/AuthContext",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/components/PaginatedInventorySection.tsx": [
+    "../styles/components",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ProtectedRoute.tsx": [
+    "../contexts/AuthContext",
+    "react",
+    "react-router-dom"
+  ],
+  "frontend/src/components/ResourcesAndManaSection.tsx": [
+    "../styles/components",
+    "../types/characterSheet"
+  ],
+  "frontend/src/components/ResponsiveTable.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/SkillsManagementModal.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/SpeciesCard.tsx": [
+    "../types/api",
+    "styled-components"
+  ],
+  "frontend/src/components/SpeciesModal.tsx": [
+    "../types/api",
+    "../utils/dndTemplateParser",
+    "styled-components"
+  ],
+  "frontend/src/components/SpeciesSelectionModal.tsx": [
+    "../services/speciesService",
+    "../types/api",
+    "../utils/textProcessor",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/SpellCard.tsx": [
+    "../types/api",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/SpellList.tsx": [
+    "../services",
+    "../services/spellService",
+    "../types/api",
+    "./",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/SpellModal.tsx": [
+    "../types/api",
+    "../utils/dndTemplateParser",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/SpellcastingBar.tsx": [
+    "../types/characterSheet",
+    "../utils/simpleFeatureGenerator",
+    "styled-components"
+  ],
+  "frontend/src/components/StructuredFeaturesDisplay.tsx": [
+    "../types/features",
+    "../utils/featureTemplateRenderer",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/TraitsManagementModal.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/WeaponMasteryModal.tsx": [
+    "../utils/simpleFeatureGenerator",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/WeaponMasterySection.tsx": [
+    "../types/characterSheet",
+    "../utils/simpleFeatureGenerator",
+    "./WeaponMasteryModal",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/index.ts": [],
+  "frontend/src/components/ui/AbilityScoreMethodModal.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ui/ClassDetailsModal.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ui/ConfirmationPanel.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/ui/SelectionSummary.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/AbilityScoresHeader.tsx": [
+    "../CharacterGeneratorWizard",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step0_CharacterInfo.tsx": [
+    "../../data/names.json",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../CharacterGeneratorWizard",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step1_AbilityScores.tsx": [
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../CharacterGeneratorWizard",
+    "../ui/AbilityScoreMethodModal",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step2_ClassSelection.tsx": [
+    "../../constants/characterOptions",
+    "../../services/classService",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../../types/api",
+    "../../types/classFeatures",
+    "../../utils/classChoiceDetection",
+    "../../utils/classDataLoader",
+    "../../utils/dndTemplateParser",
+    "../../utils/externalChoiceLoader",
+    "../CharacterGeneratorWizard",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step3A_BackgroundSelection.tsx": [
+    "../../services/backgroundService",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../../types/api",
+    "../CharacterGeneratorWizard",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step3B_SpeciesSelection.tsx": [
+    "../../services/speciesService",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../../types/api",
+    "../../utils/textProcessor",
+    "../CharacterGeneratorWizard",
+    "./AbilityScoresHeader",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step3C_SpeciesChoices.tsx": [
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../CharacterGeneratorWizard",
+    "./AbilityScoresHeader",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step3D_OriginFeats.tsx": [
+    "../../services/featsService",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../../utils/textProcessor",
+    "../CharacterGeneratorWizard",
+    "./AbilityScoresHeader",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step3E_FeatChoices.tsx": [
+    "../../services/featsService",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../CharacterGeneratorWizard",
+    "./AbilityScoresHeader",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step4_EquipmentSelection.tsx": [
+    "../../services/equipmentService",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../CharacterGeneratorWizard",
+    "../EquipmentItemModal",
+    "./AbilityScoresHeader",
+    "react",
+    "react-query",
+    "styled-components"
+  ],
+  "frontend/src/components/wizard-steps/Step5_ReviewCreate.tsx": [
+    "../../contexts/UserContext",
+    "../../services/characterService",
+    "../../styles/components/CharacterGeneratorWizard.styles",
+    "../../utils/characterDataMapper",
+    "../../utils/dndTemplateParser",
+    "../CharacterGeneratorWizard",
+    "../StructuredFeaturesDisplay",
+    "./AbilityScoresHeader",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/config/trackableResources.ts": [],
+  "frontend/src/constants/characterOptions.ts": [],
+  "frontend/src/contexts/AuthContext.tsx": [
+    "../services/authService",
+    "react"
+  ],
+  "frontend/src/contexts/UserContext.tsx": [
+    "react"
+  ],
+  "frontend/src/data/lookupTables.ts": [],
+  "frontend/src/hooks/characterSheet/index.ts": [],
+  "frontend/src/hooks/characterSheet/useAbilityScores.ts": [
+    "../../types/characterSheet",
+    "../../utils/equipmentValidator",
+    "react"
+  ],
+  "frontend/src/hooks/characterSheet/useActionsManagement.ts": [
+    "../../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/hooks/characterSheet/useInventoryManagement.ts": [
+    "../../services/itemService",
+    "../../types/api",
+    "../../types/characterSheet",
+    "../../utils/equipmentValidator",
+    "../../utils/specialItemsRegistry",
+    "../../utils/weaponCalculator",
+    "react"
+  ],
+  "frontend/src/hooks/characterSheet/useResourceTracking.ts": [
+    "../../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/hooks/characterSheet/useSelectionModals.ts": [
+    "../../components/BackgroundSelectionModal",
+    "../../components/SpeciesSelectionModal",
+    "../../services/classService",
+    "../../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/hooks/characterSheet/useSkillsManagement.ts": [
+    "../../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/hooks/characterSheet/useTraitsManagement.ts": [
+    "../../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/hooks/useDerivedValues.ts": [
+    "../services/characterCalculations",
+    "../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/hooks/useEditingSections.ts": [
+    "react"
+  ],
+  "frontend/src/hooks/useStatsManagement.ts": [
+    "../types/characterSheet",
+    "react"
+  ],
+  "frontend/src/main.tsx": [
+    "./App",
+    "./styles/GlobalStyles",
+    "react",
+    "react-dom/client",
+    "react-helmet-async",
+    "react-query",
+    "react-router-dom"
+  ],
+  "frontend/src/pages/BackgroundsPage.tsx": [
+    "../services",
+    "../types/api",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/pages/CharacterGeneratorPage.tsx": [
+    "../components/CharacterGeneratorWizard",
+    "react"
+  ],
+  "frontend/src/pages/CharacterSheetTestPage.tsx": [
+    "../components",
+    "../types/characterSheet",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/pages/CharacterViewPage.tsx": [
+    "../components/CharacterSheetPretty",
+    "../services",
+    "../types/api",
+    "../types/characterSheet",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/pages/CharactersPage.tsx": [
+    "../components",
+    "../types/api",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/pages/ClassDetailsPage.tsx": [
+    "../components",
+    "../components/SpellCard",
+    "../components/SpellModal",
+    "../services",
+    "../types/api",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/pages/ClassFullDetailsPage.tsx": [
+    "../services",
+    "../types/api",
+    "../utils/dndTemplateParser",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/pages/ClassLevelsPage.tsx": [
+    "../services",
+    "../types/api",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/pages/ClassSubclassesPage.tsx": [
+    "../services",
+    "../types/api",
+    "../utils/dndTemplateParser",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/pages/ClassesPage.tsx": [
+    "../components",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/pages/EquipmentPage.tsx": [
+    "../components/EquipmentItemModal",
+    "../services/equipmentService",
+    "react",
+    "react-query",
+    "styled-components"
+  ],
+  "frontend/src/pages/FeatsPage.tsx": [
+    "../services",
+    "../types/api",
+    "../utils/dndTemplateParser",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/pages/LoginPage.tsx": [
+    "../contexts/AuthContext",
+    "../styles/authStyles",
+    "react",
+    "react-helmet-async",
+    "react-router-dom"
+  ],
+  "frontend/src/pages/RegisterPage.tsx": [
+    "../contexts/AuthContext",
+    "../styles/authStyles",
+    "react",
+    "react-helmet-async",
+    "react-router-dom"
+  ],
+  "frontend/src/pages/SpeciesFeaturesTestPage.tsx": [
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/pages/SpeciesPage.tsx": [
+    "../components/SpeciesCard",
+    "../components/SpeciesModal",
+    "../services/speciesService",
+    "../types/api",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/pages/SpellsPage.tsx": [
+    "../components",
+    "../services",
+    "../services/spellService",
+    "../types/api",
+    "react",
+    "styled-components"
+  ],
+  "frontend/src/pages/SubclassesPage.tsx": [
+    "../services",
+    "../types/api",
+    "react",
+    "react-router-dom",
+    "styled-components"
+  ],
+  "frontend/src/pages/index.ts": [],
+  "frontend/src/services/api.ts": [
+    "../types/api",
+    "axios"
+  ],
+  "frontend/src/services/authService.ts": [
+    "./api"
+  ],
+  "frontend/src/services/backgroundService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/characterApi.ts": [
+    "../types/characterSheet",
+    "./api"
+  ],
+  "frontend/src/services/characterCalculations.ts": [
+    "../types/characterSheet",
+    "../utils/equipmentValidator",
+    "../utils/resourceDetection"
+  ],
+  "frontend/src/services/characterService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/classChoiceService.ts": [
+    "axios"
+  ],
+  "frontend/src/services/classService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/equipmentService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/featService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/featsService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/featureVariantsService.ts": [
+    "../components/CharacterGeneratorWizard",
+    "../types/characterSheet",
+    "../types/features"
+  ],
+  "frontend/src/services/index.ts": [],
+  "frontend/src/services/itemService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/speciesService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/services/spellService.ts": [
+    "../types/api",
+    "./api"
+  ],
+  "frontend/src/styles/GlobalStyles.tsx": [
+    "styled-components"
+  ],
+  "frontend/src/styles/authStyles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/AbilityScores.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/CharacterGeneratorWizard.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/CharacterHeader.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/Combat.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/Inventory.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/Layout.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/Resources.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/Skills.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/Traits.styles.ts": [
+    "styled-components"
+  ],
+  "frontend/src/styles/components/index.ts": [],
+  "frontend/src/types/api.ts": [
+    "./characterSheet"
+  ],
+  "frontend/src/types/characterSheet.ts": [
+    "./features"
+  ],
+  "frontend/src/types/classFeatures.ts": [],
+  "frontend/src/types/features.ts": [],
+  "frontend/src/utils/characterDataMapper.ts": [
+    "../components/CharacterGeneratorWizard",
+    "../services/featureVariantsService",
+    "../types/characterSheet",
+    "../types/features",
+    "./dndTemplateParser",
+    "./equipmentValidator",
+    "./featureParser",
+    "./featureTemplateRenderer"
+  ],
+  "frontend/src/utils/classChoiceDetection.ts": [
+    "../types/classFeatures",
+    "./externalChoiceLoader"
+  ],
+  "frontend/src/utils/classDataLoader.ts": [
+    "../types/classFeatures"
+  ],
+  "frontend/src/utils/dndTemplateParser.ts": [],
+  "frontend/src/utils/equipmentValidator.ts": [
+    "../types/api",
+    "../types/characterSheet"
+  ],
+  "frontend/src/utils/externalChoiceLoader.ts": [
+    "../types/classFeatures"
+  ],
+  "frontend/src/utils/featureParser.ts": [
+    "../types/features",
+    "./dndTemplateParser"
+  ],
+  "frontend/src/utils/featureTemplateRenderer.ts": [
+    "../data/lookupTables",
+    "../services/featureVariantsService",
+    "../types/features",
+    "./dndTemplateParser"
+  ],
+  "frontend/src/utils/resourceDetection.ts": [
+    "../config/trackableResources",
+    "../types/characterSheet"
+  ],
+  "frontend/src/utils/simpleFeatureGenerator.ts": [
+    "../types/characterSheet",
+    "../types/classFeatures",
+    "./classChoiceDetection",
+    "./classDataLoader",
+    "./dndTemplateParser"
+  ],
+  "frontend/src/utils/specialItemsRegistry.ts": [
+    "../types/characterSheet"
+  ],
+  "frontend/src/utils/textProcessor.ts": [],
+  "frontend/src/utils/weaponCalculator.ts": [
+    "../types/api",
+    "../types/characterSheet"
+  ],
+  "frontend/src/vite-env.d.ts": [],
+  "backend/src/middleware/auth.ts": [
+    "@prisma/client",
+    "express",
+    "jsonwebtoken"
+  ],
+  "backend/src/middleware/errorHandler.ts": [
+    "../utils/logger",
+    "express"
+  ],
+  "backend/src/middleware/requestLogger.ts": [
+    "../utils/logger",
+    "express"
+  ],
+  "backend/src/routes/auth.ts": [
+    "../middleware/auth",
+    "../validators/auth.validator",
+    "@prisma/client",
+    "bcryptjs",
+    "express",
+    "jsonwebtoken"
+  ],
+  "backend/src/routes/backgrounds.ts": [
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/campaigns.ts": [
+    "express"
+  ],
+  "backend/src/routes/characters.ts": [
+    "../middleware/auth",
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/classChoices.ts": [
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/classes.ts": [
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/feats.ts": [
+    "../utils/logger",
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/generator.ts": [
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/items.ts": [
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/races.ts": [
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/routes/spells.ts": [
+    "@prisma/client",
+    "express"
+  ],
+  "backend/src/server.ts": [
+    "./middleware/errorHandler",
+    "./middleware/requestLogger",
+    "./routes/auth",
+    "./routes/backgrounds",
+    "./routes/campaigns",
+    "./routes/characters",
+    "./routes/classChoices",
+    "./routes/classes",
+    "./routes/feats",
+    "./routes/generator",
+    "./routes/items",
+    "./routes/races",
+    "./routes/spells",
+    "./utils/logger",
+    "@prisma/client",
+    "compression",
+    "cors",
+    "dotenv",
+    "express",
+    "helmet",
+    "os",
+    "socket.io"
+  ],
+  "backend/src/types/auth.types.ts": [],
+  "backend/src/utils/logger.ts": [
+    "path",
+    "winston"
+  ],
+  "backend/src/validators/auth.validator.ts": [
+    "joi"
+  ]
+}

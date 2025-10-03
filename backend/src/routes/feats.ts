@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import logger from '../utils/logger';
+import { prisma } from '../db';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all feats
 router.get('/', async (req: Request, res: Response) => {

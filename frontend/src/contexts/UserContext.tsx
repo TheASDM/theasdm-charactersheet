@@ -1,75 +1,34 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type { FC, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
+import type { User as AuthUser } from '../services/authService';
 
-interface User {
-  id: number;
-  username: string;
-  email: string | null;
-  isDm: boolean;
-}
+type User = AuthUser | null;
 
-interface UserContextType {
-  user: User | null;
+type UserContextValue = {
+  user: User;
   loading: boolean;
   error: string | null;
-  setUser: (user: User | null) => void;
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
-
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
+  setUser: (user: User) => void;
 };
 
-interface UserProviderProps {
-  children: ReactNode;
-}
+/**
+ * Temporary bridge while the app transitions away from the legacy UserContext.
+ * It simply proxies data from AuthContext so existing consumers keep working
+ * without hitting the insecure default-user endpoint.
+ */
+export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => (
+  <>{children}</>
+);
 
-export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const useUser = (): UserContextValue => {
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    // Get or create a default user on app load
-    const initializeUser = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch('/api/auth/default-user');
-        if (!response.ok) {
-          throw new Error('Failed to get user');
-        }
-
-        const data = await response.json();
-        setUser(data.user);
-
-
-      } catch (err) {
-        console.error('Failed to initialize user:', err);
-        setError(err instanceof Error ? err.message : 'Failed to initialize user');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeUser();
-  }, []);
-
-  const value: UserContextType = {
+  return {
     user,
-    loading,
-    error,
-    setUser,
+    loading: isLoading,
+    error: null,
+    setUser: () => {
+      console.warn('setUser is deprecated. Use AuthProvider for authentication state.');
+    },
   };
-
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
-  );
 };

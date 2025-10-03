@@ -1,6 +1,4 @@
 import styled from 'styled-components';
-import { CharacterSheetData } from '../types/characterSheet';
-
 interface ResourceData {
   id: string;
   name: string;
@@ -10,14 +8,9 @@ interface ResourceData {
 }
 
 interface CompactResourcesBarProps {
-  character: CharacterSheetData;
   characterResources: ResourceData[];
-  needsManaTracking: boolean;
-  editingSections: { mana: boolean };
-  updateCharacter: (updates: Partial<CharacterSheetData>) => void;
   resources: {
     handleResourceUpdate: (resourceId: string, newValue: number) => void;
-    handleManaUpdate: (type: 'current' | 'max', change: number) => void;
   };
 }
 
@@ -151,87 +144,6 @@ const PoolDisplay = styled.div`
   }
 `;
 
-const ManaDisplay = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: rgba(75, 0, 130, 0.2);
-  border: 1px solid #9932cc;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-
-  .mana-current input {
-    background: transparent;
-    border: none;
-    color: #f0f0f0;
-    width: 30px;
-    text-align: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-
-    &:focus {
-      outline: 1px solid #9932cc;
-      border-radius: 2px;
-    }
-  }
-
-  .mana-separator {
-    color: #9932cc;
-    font-weight: 600;
-  }
-
-  .mana-max {
-    color: #da70d6;
-    font-weight: 600;
-    min-width: 20px;
-    text-align: center;
-
-    input {
-      background: transparent;
-      border: none;
-      color: #da70d6;
-      width: 30px;
-      text-align: center;
-      font-size: 0.8rem;
-      font-weight: 600;
-
-      &:focus {
-        outline: 1px solid #9932cc;
-        border-radius: 2px;
-      }
-    }
-  }
-
-  .mana-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin-left: 0.25rem;
-  }
-
-  .mana-control-btn {
-    background: rgba(153, 50, 204, 0.3);
-    border: 1px solid #9932cc;
-    color: #da70d6;
-    width: 16px;
-    height: 12px;
-    font-size: 8px;
-    line-height: 1;
-    border-radius: 2px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: rgba(153, 50, 204, 0.5);
-      transform: scale(1.1);
-    }
-  }
-`;
-
 const CounterOverflow = styled.span`
   font-size: 0.7rem;
   color: #8b6914;
@@ -240,11 +152,7 @@ const CounterOverflow = styled.span`
 `;
 
 export default function CompactResourcesBar({
-  character,
   characterResources,
-  needsManaTracking,
-  editingSections,
-  updateCharacter,
   resources,
 }: CompactResourcesBarProps) {
   return (
@@ -354,84 +262,6 @@ export default function CompactResourcesBar({
           )}
         </ResourceItem>
       ))}
-
-      {/* Mana Section */}
-      {needsManaTracking && (
-        <ResourceItem>
-          <ResourceLabel>Mana</ResourceLabel>
-          <ManaDisplay>
-            <div className="mana-current">
-              <input
-                type="number"
-                value={character.mana.current}
-                min="0"
-                onChange={(e) =>
-                  updateCharacter({
-                    mana: {
-                      ...character.mana,
-                      current: Math.max(0, parseInt(e.target.value) || 0),
-                    },
-                  })
-                }
-              />
-            </div>
-            <div className="mana-separator">/</div>
-            <div className="mana-max">
-              {editingSections.mana ? (
-                <input
-                  type="number"
-                  value={character.mana.max}
-                  min="0"
-                  onChange={(e) =>
-                    updateCharacter({
-                      mana: {
-                        ...character.mana,
-                        max: Math.max(0, parseInt(e.target.value) || 0),
-                      },
-                    })
-                  }
-                />
-              ) : (
-                character.mana.max
-              )}
-            </div>
-            <div className="mana-controls">
-              <button
-                className="mana-control-btn"
-                onClick={() => resources.handleManaUpdate('current', 1)}
-                title="Increase Current Mana"
-              >
-                ▲
-              </button>
-              <button
-                className="mana-control-btn"
-                onClick={() => resources.handleManaUpdate('current', -1)}
-                title="Decrease Current Mana"
-              >
-                ▼
-              </button>
-            </div>
-            {editingSections.mana && (
-              <div className="mana-controls">
-                <button
-                  className="mana-control-btn"
-                  onClick={() => resources.handleManaUpdate('max', 1)}
-                  title="Increase Max Mana"
-                >
-                  ▲
-                </button>
-                <button
-                  className="mana-control-btn"
-                  onClick={() => resources.handleManaUpdate('max', -1)}
-                  title="Decrease Max Mana"
-                >
-                  ▼
-                </button>
-              </div>
-            )}
-          </ManaDisplay>
-        </ResourceItem>
-      )}
     </ResourcesBarContainer>
   );
 }

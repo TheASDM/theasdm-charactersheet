@@ -9,10 +9,9 @@
  */
 
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 /**
  * GET /api/class-choices/fighting-styles
