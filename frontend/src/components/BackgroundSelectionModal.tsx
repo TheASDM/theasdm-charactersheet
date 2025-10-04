@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import backgroundService from '../services/backgroundService';
-import { Background as ApiBackground } from '../types/api';
+import { listBackgrounds } from '@/services/backgroundService';
+import { Background as ApiBackground, isError } from '../types/api';
 import { processTraitDescription } from '../utils/textProcessor';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { showError } from '@/utils/errorDisplay';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -127,14 +130,6 @@ const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
   }
 `;
 
-// Loading and error states
-const LoadingSpinner = styled.div`
-  text-align: center;
-  color: #d4af37;
-  padding: 2rem;
-  font-size: 1.1rem;
-`;
-
 const ErrorMessage = styled.div`
   text-align: center;
   color: #ff6b6b;
@@ -191,33 +186,26 @@ const BackgroundSelectionModal: React.FC<BackgroundSelectionModalProps> = ({
   onBackgroundSelect,
   onCancel
 }) => {
-  const [backgrounds, setBackgrounds] = useState<ApiBackground[]>([]);
   const [selectedBackground, setSelectedBackground] = useState<ApiBackground | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: backgroundData,
+    error,
+    isLoading,
+    execute: fetchBackgrounds,
+  } = useApiCall(listBackgrounds, {
+    onError: (result) => {
+      if (isError(result)) {
+        showError(result.error ?? 'Failed to load backgrounds', result.statusCode, result.errorCode);
+      }
+    },
+  });
+  const backgrounds = backgroundData ?? [];
 
   useEffect(() => {
     if (isOpen) {
       fetchBackgrounds();
     }
-  }, [isOpen]);
-
-  const fetchBackgrounds = async () => {
-    try {
-      setIsLoading(true);
-      const response = await backgroundService.getAll();
-      if (response.data) {
-        setBackgrounds(response.data);
-      } else {
-        setError(response.error || 'Failed to load backgrounds');
-      }
-    } catch (err) {
-      console.error('Error fetching backgrounds:', err);
-      setError('Failed to load backgrounds');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchBackgrounds, isOpen]);
 
   const handleBackgroundClick = (background: ApiBackground) => {
     setSelectedBackground(background);
@@ -271,17 +259,17 @@ const BackgroundSelectionModal: React.FC<BackgroundSelectionModalProps> = ({
 
   if (!isOpen) return null;
 
-  if (isLoading) {
+  if (isLoading && backgrounds.length === 0) {
     return (
       <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
         <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>
-          <LoadingSpinner>Loading backgrounds...</LoadingSpinner>
+          <LoadingSpinner message="Loading backgrounds..." />
         </BackgroundPopupModal>
       </ModalOverlay>
     );
   }
 
-  if (error) {
+  if (error && backgrounds.length === 0) {
     return (
       <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
         <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>

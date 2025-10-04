@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Species } from '../types/api';
-import { speciesService } from '../services/speciesService';
-import SpeciesCard from '../components/SpeciesCard';
-import SpeciesModal from '../components/SpeciesModal';
+import { listSpecies } from '@/services/speciesService';
+import SpeciesCard from '@/components/SpeciesCard';
+import SpeciesModal from '@/components/SpeciesModal';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 // Main page container matching Generator theme
 const PageContainer = styled.div`
@@ -108,34 +110,17 @@ const NoResultsMessage = styled.div`
 
 const SpeciesPage: React.FC = () => {
   const [species, setSpecies] = useState<Species[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null);
 
+  const { error, isLoading, execute: loadSpecies } = useApiCall(listSpecies, {
+    onSuccess: setSpecies,
+  });
+
   useEffect(() => {
-    const fetchSpecies = async () => {
-      try {
-        setLoading(true);
-        const response = await speciesService.getAll();
-        if (response.data) {
-          setSpecies(response.data);
-        } else {
-          setError(
-            response.error || 'Failed to load species data.'
-          );
-        }
-      } catch (err) {
-        setError('Error loading species data');
-        console.error('Error fetching species:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    loadSpecies();
+  }, [loadSpecies]);
 
-    fetchSpecies();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <PageContainer>
         <ContentContainer>
@@ -145,7 +130,7 @@ const SpeciesPage: React.FC = () => {
           </Header>
           <MainContainer>
             <LoadingMessage>
-              Loading species data...
+              <LoadingSpinner message="Loading species data..." />
             </LoadingMessage>
           </MainContainer>
         </ContentContainer>

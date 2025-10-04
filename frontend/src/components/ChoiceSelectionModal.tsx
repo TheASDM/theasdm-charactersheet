@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { ChoicePrompt } from '../types/classFeatures';
 import { validateChoiceSelection } from '../utils/classChoiceDetection';
 import { parseComplexDnDEntry } from '../utils/dndTemplateParser';
+import { logger } from '../utils/logger';
 
 interface ChoiceSelectionModalProps {
   prompt: ChoicePrompt;
@@ -51,7 +52,7 @@ export const ChoiceSelectionModal: React.FC<ChoiceSelectionModalProps> = ({
     try {
       await onSubmit(selectedIds);
     } catch (error) {
-      console.error('Error submitting choice:', error);
+      logger.error('Error submitting choice:', error);
       setErrors(['Failed to save choice. Please try again.']);
     }
   };

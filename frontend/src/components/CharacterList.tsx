@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import CharacterCard from './CharacterCard';
-import { Character } from '../types/api';
+import { Character, isError } from '../types/api';
 import { characterService } from '../services';
+import { useApiCall } from '@/hooks/useApiCall';
+import { showError } from '@/utils/errorDisplay';
+import { logger } from '../utils/logger';
 
 interface CharacterListProps {
   userId?: number;
@@ -74,13 +77,26 @@ const CharacterList: React.FC<CharacterListProps> = ({
   onCharacterOpenInNewTab,
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedCharacters, setSelectedCharacters] = useState<Set<number>>(new Set());
 
+  const {
+    data,
+    error,
+    isLoading,
+    execute: fetchCharacters,
+  } = useApiCall(characterService.list, {
+    onSuccess: setCharacters,
+  });
+
   useEffect(() => {
-    loadCharacters();
-  }, [userId]);
+    fetchCharacters(userId ? { userId } : {});
+  }, [userId, fetchCharacters]);
+
+  useEffect(() => {
+    if (data) {
+      setCharacters(data);
+    }
+  }, [data]);
 
   // Clear selections when exiting selection mode
   useEffect(() => {
@@ -89,43 +105,15 @@ const CharacterList: React.FC<CharacterListProps> = ({
     }
   }, [selectionMode]);
 
-  const loadCharacters = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await characterService.getAll(userId);
-
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setCharacters(response.data);
-      }
-    } catch (err) {
-      setError('Failed to load characters');
-      console.error('Error loading characters:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async (character: Character) => {
-    try {
-      const response = await characterService.delete(character.id);
-
-      if (response.error) {
-        alert(`Failed to delete character: ${response.error}`);
-      } else {
-        // Remove character from local state
-        setCharacters((prev) => prev.filter((c) => c.id !== character.id));
-        if (onCharacterDelete) {
-          onCharacterDelete(character);
-        }
-      }
-    } catch (err) {
-      alert('Failed to delete character');
-      console.error('Error deleting character:', err);
+    const response = await characterService.delete(character.id);
+    if (isError(response)) {
+      showError(response.error ?? 'Failed to delete character', response.statusCode, response.errorCode);
+      return;
     }
+
+    setCharacters((prev) => prev.filter((c) => c.id !== character.id));
+    onCharacterDelete?.(character);
   };
 
   const handleSelectCharacter = (characterId: number) => {
@@ -157,17 +145,12 @@ const CharacterList: React.FC<CharacterListProps> = ({
     }
 
     const deletePromises = Array.from(selectedCharacters).map(async (characterId) => {
-      try {
-        const response = await characterService.delete(characterId);
-        if (response.error) {
-          console.error(`Failed to delete character ${characterId}:`, response.error);
-          return { success: false, characterId, error: response.error };
-        }
-        return { success: true, characterId };
-      } catch (err) {
-        console.error(`Error deleting character ${characterId}:`, err);
-        return { success: false, characterId, error: 'Network error' };
+      const response = await characterService.delete(characterId);
+      if (isError(response)) {
+        logger.error(`Failed to delete character ${characterId}:`, response.error);
+        return { success: false, characterId, error: response.error };
       }
+      return { success: true, characterId };
     });
 
     const results = await Promise.all(deletePromises);
@@ -179,12 +162,13 @@ const CharacterList: React.FC<CharacterListProps> = ({
     setSelectedCharacters(new Set());
 
     if (failedDeletes.length > 0) {
-      alert(`Failed to delete ${failedDeletes.length} character(s). Check console for details.`);
+      showError(
+        `Failed to delete ${failedDeletes.length} character${failedDeletes.length > 1 ? 's' : ''}. Check console for details.`
+      );
     }
   };
 
-
-  if (loading) {
+  if (isLoading && characters.length === 0) {
     return (
       <div
         style={{
@@ -200,7 +184,7 @@ const CharacterList: React.FC<CharacterListProps> = ({
     );
   }
 
-  if (error) {
+  if (error && characters.length === 0) {
     return (
       <div
         style={{
@@ -214,7 +198,7 @@ const CharacterList: React.FC<CharacterListProps> = ({
       >
         <div>Error: {error}</div>
         <button
-          onClick={loadCharacters}
+          onClick={() => fetchCharacters(userId ? { userId } : {})}
           style={{
             marginTop: '12px',
             backgroundColor: '#2196F3',

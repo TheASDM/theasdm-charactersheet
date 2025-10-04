@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { CharacterClass } from '../types/api';
-import { classService } from '../services';
+import { useApiCall } from '@/hooks/useApiCall';
+import { listClasses } from '@/services/classService';
 
 // Main page container matching Classes page
 const PageContainer = styled.div`
@@ -193,33 +194,28 @@ const ErrorContainer = styled.div`
 
 const SubclassesPage: React.FC = () => {
   const [classes, setClasses] = useState<CharacterClass[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [expandedSubclass, setExpandedSubclass] = useState<string | null>(null);
 
+  const {
+    data: classData,
+    error,
+    isLoading,
+    execute: fetchClasses,
+  } = useApiCall(listClasses, {
+    onSuccess: (loaded) => {
+      setClasses(loaded);
+    },
+  });
+
   useEffect(() => {
-    loadClasses();
-  }, []);
+    fetchClasses();
+  }, [fetchClasses]);
 
-  const loadClasses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await classService.getAll();
-
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setClasses(response.data);
-      }
-    } catch (err) {
-      setError('Failed to load subclasses from the ancient tomes.');
-      console.error('Error loading classes:', err);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (classData) {
+      setClasses(classData);
     }
-  };
+  }, [classData]);
 
   const getSubclassesForClass = (characterClass: CharacterClass) => {
     if (!characterClass.subclassFeatures) return [];
@@ -265,7 +261,7 @@ const SubclassesPage: React.FC = () => {
     return byClass;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <PageContainer>
         <ContentContainer>

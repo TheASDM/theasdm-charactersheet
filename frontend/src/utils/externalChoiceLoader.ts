@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * External Choice Data Loader
  *
@@ -46,7 +47,7 @@ export async function loadExternalChoiceData(
     case 'skills':
       return loadSkillOptions(externalRef);
     default:
-      console.warn(`Unknown external reference type: ${externalRef.type}`);
+      logger.warn(`Unknown external reference type: ${externalRef.type}`);
       return [];
   }
 }
@@ -76,7 +77,7 @@ async function loadInvocations(
     // Convert to ClassFeature format for UI
     return filtered.map((inv) => convertInvocationToFeature(inv));
   } catch (error) {
-    console.error('Failed to load invocations:', error);
+    logger.error('Failed to load invocations:', error);
     return [];
   }
 }
@@ -104,7 +105,7 @@ async function loadFightingStyles(externalRef: ExternalReference): Promise<Class
     // Convert to ClassFeature format for UI
     return options.map((style) => convertFightingStyleToFeature(style));
   } catch (error) {
-    console.error('Failed to load fighting styles:', error);
+    logger.error('Failed to load fighting styles:', error);
     return [];
   }
 }

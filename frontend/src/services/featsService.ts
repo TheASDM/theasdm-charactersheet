@@ -1,54 +1,77 @@
-import { apiClient } from './api';
-import { ApiResponse } from '../types/api';
+import { apiClient, request, withSignal } from './api';
+import { ApiResult, Feat } from '@/types/api';
 
-export interface Feat {
-  id: number;
-  name: string;
-  source: string;
-  page: number;
-  category: string;
-  prerequisites?: any;
-  abilityScoreIncrease?: any;
-  repeatable: boolean;
-  entries: any;
-  additionalSpells?: any;
-  srd52: boolean;
-  basicRules2024: boolean;
-  sourceBook: string;
-  contentVersion: string;
-  isHomebrew: boolean;
-  createdAt: string;
-  updatedAt: string;
+export interface FeatFilters {
+  category?: string;
+  level?: number;
+  source?: string;
+  search?: string;
 }
 
+const buildParams = (filters: FeatFilters = {}) => ({
+  ...(filters.category && { category: filters.category }),
+  ...(filters.level !== undefined && { level: filters.level }),
+  ...(filters.source && { source: filters.source }),
+  ...(filters.search && { search: filters.search }),
+});
+
+const withParams = (filters: FeatFilters = {}, signal?: AbortSignal) => {
+  const params = buildParams(filters);
+  return withSignal(
+    Object.keys(params).length > 0 ? { params } : undefined,
+    signal
+  );
+};
+
+export const listFeats = (
+  filters: FeatFilters = {},
+  signal?: AbortSignal
+): Promise<ApiResult<Feat[]>> =>
+  request<Feat[]>(
+    () => apiClient.get<Feat[]>('/feats', withParams(filters, signal)),
+    { retry: true }
+  );
+
+export const getFeatById = (
+  id: number,
+  signal?: AbortSignal
+): Promise<ApiResult<Feat>> =>
+  request<Feat>(
+    () => apiClient.get<Feat>(`/feats/${id}`, withSignal(undefined, signal)),
+    { retry: true }
+  );
+
+export const getFeatByName = (
+  name: string,
+  signal?: AbortSignal
+): Promise<ApiResult<Feat>> =>
+  request<Feat>(
+    () =>
+      apiClient.get<Feat>(
+        `/feats/name/${encodeURIComponent(name)}`,
+        withSignal(undefined, signal)
+      ),
+    { retry: true }
+  );
+
+export const listFeatsByCategory = (
+  category: string,
+  signal?: AbortSignal
+): Promise<ApiResult<Feat[]>> => listFeats({ category }, signal);
+
 export const featsService = {
-  // Get all feats
-  getAll: async (): Promise<ApiResponse<Feat[]>> => {
-    return apiClient.get<Feat[]>('/feats');
-  },
-
-  // Get a single feat by ID
-  getById: async (id: number): Promise<ApiResponse<Feat>> => {
-    return apiClient.get<Feat>(`/feats/${id}`);
-  },
-
-  // Get a feat by name
-  getByName: async (name: string): Promise<ApiResponse<Feat>> => {
-    return apiClient.get<Feat>(`/feats/name/${encodeURIComponent(name)}`);
-  },
-
-  // Get feats by category
-  getByCategory: async (category: string): Promise<ApiResponse<Feat[]>> => {
-    return apiClient.get<Feat[]>(`/feats?category=${encodeURIComponent(category)}`);
-  },
+  listFeats,
+  getFeatById,
+  getFeatByName,
+  listFeatsByCategory,
 };
 
 // Feat categories for easy reference (D&D 2024)
 export const FEAT_CATEGORIES = {
-  ORIGIN: 'o', // Origin feats (level 1)
-  GENERAL: 'g', // General feats (level 4+)
-  FIGHTING_STYLE: 'fs', // Fighting Style feats
-  EPIC_BOON: 'eb', // Epic Boon feats (level 19+)
+  ORIGIN: 'O', // Origin feats (level 1)
+  GENERAL: 'G', // General feats (level 4+)
+  FIGHTING_STYLE: 'FS', // Fighting Style feats
+  EPIC_BOON: 'EB', // Epic Boon feats (level 19+)
 } as const;
 
 export default featsService;

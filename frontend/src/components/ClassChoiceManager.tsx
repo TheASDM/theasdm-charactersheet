@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 /**
  * ClassChoiceManager Component
  *
@@ -15,7 +16,10 @@ import React, { useState, useEffect } from 'react';
 import { detectRequiredChoices } from '../utils/classChoiceDetection';
 import { loadClassData } from '../utils/classDataLoader';
 import { ChoiceSelectionModal } from './ChoiceSelectionModal';
-import { characterApi, Character } from '../services/characterApi';
+import { characterApi } from '../services/characterApi';
+import type { Character } from '@/types/api';
+import { isError } from '@/types/api';
+import { showError } from '@/utils/errorDisplay';
 import { ChoicePrompt } from '../types/classFeatures';
 import styled from 'styled-components';
 
@@ -52,27 +56,21 @@ export const ClassChoiceManager: React.FC<ClassChoiceManagerProps> = ({
     setIsLoading(true);
     setError(null);
 
-    try {
-      // Load the character
-      const char = await characterApi.getById(characterId);
+    const response = await characterApi.getCharacter(characterId);
 
-      if (!char) {
-        throw new Error('Character not found');
-      }
-
-      setCharacter(char);
-
-      // Check for required choices
-      await checkForRequiredChoices(char);
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to load character';
+    if (isError(response) || !response.data) {
+      const errorMsg = response.error ?? 'Character not found';
+      showError(errorMsg, response.statusCode, response.errorCode);
       setError(errorMsg);
-      if (onError) {
-        onError(errorMsg);
-      }
-    } finally {
+      onError?.(errorMsg);
       setIsLoading(false);
+      return;
     }
+
+    const char = response.data;
+    setCharacter(char);
+    await checkForRequiredChoices(char);
+    setIsLoading(false);
   };
 
   /**
@@ -80,28 +78,37 @@ export const ClassChoiceManager: React.FC<ClassChoiceManagerProps> = ({
    */
   const checkForRequiredChoices = async (char: Character) => {
     try {
-      // Load class data
-      const classData = await loadClassData(char.characterData.class);
+      const sheetData = (char.characterData || {}) as Character['characterData'];
+      const className = typeof sheetData?.class === 'string' ? sheetData.class : undefined;
+      const level = typeof sheetData?.level === 'number' ? sheetData.level : undefined;
+      const selectedChoices = (sheetData?.selectedClassChoices ?? {}) as Record<string, unknown>;
+      const subclass = typeof sheetData?.subclass === 'string' ? sheetData.subclass : undefined;
 
-      // Detect incomplete choices
+      if (!className) {
+        onComplete(char);
+        return;
+      }
+
+      const classData = await loadClassData(className);
+
       const detection = detectRequiredChoices(
         classData,
-        char.characterData.level,
-        char.characterData.selectedClassChoices || {},
-        char.characterData.subclass
+        level ?? 1,
+        selectedChoices as Record<string, string[]>,
+        subclass
       );
 
       if (detection.hasIncompleteChoices) {
-        console.log(`Found ${detection.prompts.length} incomplete choice(s)`);
+        logger.debug(`Found ${detection.prompts.length} incomplete choice(s)`);
         setPendingPrompts(detection.prompts);
         setCurrentPromptIndex(0);
       } else {
         // No choices needed - complete!
-        console.log('All choices complete');
+        logger.debug('All choices complete');
         onComplete(char);
       }
     } catch (err) {
-      console.error('Error checking for choices:', err);
+      logger.error('Error checking for choices:', err);
       // On error, still complete (don't block character creation)
       onComplete(char);
     }
@@ -112,7 +119,7 @@ export const ClassChoiceManager: React.FC<ClassChoiceManagerProps> = ({
    */
   const handleChoiceSubmit = async (selectedIds: string[]) => {
     if (!currentPrompt || !character) {
-      console.error('Missing prompt or character');
+      logger.error('Missing prompt or character');
       return;
     }
 
@@ -120,30 +127,35 @@ export const ClassChoiceManager: React.FC<ClassChoiceManagerProps> = ({
 
     try {
       // Save the choice
-      const result = await characterApi.updateChoices(character.id, {
+      const result = await characterApi.updateCharacterChoices(character.id, {
         choiceGroupId: currentPrompt.choiceGroup,
         selectedFeatureIds: selectedIds
       });
 
-      if (result?.success) {
-        console.log('Choice saved successfully:', result.choiceApplied);
+      if (isError(result)) {
+        const message = result.error ?? 'Failed to save choice. Please try again.';
+        showError(message, result.statusCode, result.errorCode);
+        setError(message);
+        return;
+      }
 
-        // Update local character state
-        setCharacter(result.character);
+      if (!result.data?.success) {
+        const message = 'Failed to save choice. Please try again.';
+        showError(message);
+        setError(message);
+        return;
+      }
 
-        // Check if there are more prompts
-        if (currentPromptIndex < pendingPrompts.length - 1) {
-          // Move to next prompt
-          setCurrentPromptIndex(currentPromptIndex + 1);
-        } else {
-          // All prompts complete - check again in case new choices appeared
-          await checkForRequiredChoices(result.character);
-        }
+      const { character: updatedCharacter } = result.data;
+      setCharacter(updatedCharacter);
+
+      if (currentPromptIndex < pendingPrompts.length - 1) {
+        setCurrentPromptIndex(currentPromptIndex + 1);
       } else {
-        setError('Failed to save choice. Please try again.');
+        await checkForRequiredChoices(updatedCharacter);
       }
     } catch (err) {
-      console.error('Error submitting choice:', err);
+      logger.error('Error submitting choice:', err);
       setError('An error occurred while saving your choice.');
     } finally {
       setIsProcessingChoice(false);

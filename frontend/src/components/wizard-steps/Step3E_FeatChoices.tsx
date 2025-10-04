@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import featsService, { Feat } from '../../services/featsService';
+import { listFeats } from '@/services/featsService';
+import { Feat } from '@/types/api';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface Step3EFeatChoicesProps {
   data: CharacterBuilderData;
@@ -60,6 +63,11 @@ const SPELLCASTING_ABILITIES = {
   'Druid': 'wis',
   'Wizard': 'int'
 };
+
+const CHOICE_FEATS = ['Magic Initiate', 'Skilled', 'Crafter', 'Musician'] as const;
+type ChoiceFeatName = (typeof CHOICE_FEATS)[number];
+const isChoiceFeat = (featName: string): featName is ChoiceFeatName =>
+  CHOICE_FEATS.includes(featName as ChoiceFeatName);
 
 const ChoicesContainer = styled.div`
   .choice-section {
@@ -172,6 +180,32 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
 }) => {
   const [featChoices, setFeatChoices] = useState<{ [featName: string]: any }>({});
   const [featsData, setFeatsData] = useState<{ [name: string]: Feat }>({});
+  const {
+    error: loadError,
+    isLoading: isFeatsLoading,
+    execute: fetchFeats,
+  } = useApiCall(listFeats, {
+    onSuccess: (allFeats) => {
+      setFeatsData((prev) => {
+        const next = { ...prev };
+        allFeats.forEach((feat) => {
+          next[feat.name] = feat;
+        });
+        return next;
+      });
+    },
+  });
+
+  const featsWithChoices = useMemo(
+    () =>
+      (data.selectedOriginFeats ?? []).filter((featName) => isChoiceFeat(featName)),
+    [data.selectedOriginFeats]
+  );
+
+  const missingFeats = useMemo(
+    () => featsWithChoices.filter((featName) => !featsData[featName]),
+    [featsWithChoices, featsData]
+  );
 
   useEffect(() => {
     if (data.featChoices) {
@@ -180,28 +214,9 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
   }, [data.featChoices]);
 
   useEffect(() => {
-    fetchFeatsData();
-  }, [data.selectedOriginFeats]);
-
-  const fetchFeatsData = async () => {
-    if (!data.selectedOriginFeats?.length) return;
-
-    try {
-      const response = await featsService.getAll();
-      if (response.data) {
-        const featsMap: { [name: string]: Feat } = {};
-        data.selectedOriginFeats.forEach(featName => {
-          const feat = response.data!.find(f => f.name === featName);
-          if (feat) {
-            featsMap[featName] = feat;
-          }
-        });
-        setFeatsData(featsMap);
-      }
-    } catch (err) {
-      console.error('Error fetching feats data:', err);
-    }
-  };
+    if (!missingFeats.length) return;
+    fetchFeats();
+  }, [fetchFeats, missingFeats]);
 
   const updateFeatChoice = (featName: string, choiceKey: string, value: any) => {
     const newFeatChoices = {
@@ -471,24 +486,14 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
       case 'Musician':
         return 'You gain proficiency with three Musical Instruments and can inspire allies with encouraging songs during rests.';
       default:
-        return feat?.entries.description?.[0] || 'This feat requires additional choices.';
+        return feat?.entries?.description?.[0] || 'This feat requires additional choices.';
     }
   };
 
-  const needsChoices = data.selectedOriginFeats?.some(featName =>
-    ['Magic Initiate', 'Skilled', 'Crafter', 'Musician'].includes(featName)
-  );
+  const needsChoices = featsWithChoices.length > 0;
 
-  const getFeatsThatNeedChoices = () => {
-    return data.selectedOriginFeats?.filter(featName =>
-      ['Magic Initiate', 'Skilled', 'Crafter', 'Musician'].includes(featName)
-    ) || [];
-  };
-
-  const isComplete = () => {
-    const featsWithChoices = getFeatsThatNeedChoices();
-
-    return featsWithChoices.every(featName => {
+  const isComplete = () =>
+    featsWithChoices.every((featName) => {
       const choices = featChoices[featName];
       if (!choices) return false;
 
@@ -505,7 +510,53 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
           return true;
       }
     });
-  };
+
+  if (needsChoices && missingFeats.length > 0) {
+    if (isFeatsLoading) {
+      return (
+        <StepContainer>
+          <div className="step-title">Feat Choices</div>
+          <AbilityScoresHeader data={data} />
+          <div className="step-content">
+            <LoadingSpinner message="Loading feat details..." />
+          </div>
+        </StepContainer>
+      );
+    }
+
+    if (loadError) {
+      return (
+        <StepContainer>
+          <div className="step-title">Feat Choices</div>
+          <AbilityScoresHeader data={data} />
+          <div className="step-content">
+            <SelectionSummary>
+              <div className="summary-title">Unable to load feat details</div>
+              <div className="summary-text">
+                {loadError}<br />
+                Please retry after adjusting your selections or reloading the page.
+              </div>
+            </SelectionSummary>
+          </div>
+        </StepContainer>
+      );
+    }
+
+    return (
+      <StepContainer>
+        <div className="step-title">Feat Choices</div>
+        <AbilityScoresHeader data={data} />
+        <div className="step-content">
+          <SelectionSummary>
+            <div className="summary-title">Missing feat details</div>
+            <div className="summary-text">
+              We couldn't find complete information for your selected feats. Try selecting different feats or reloading.
+            </div>
+          </SelectionSummary>
+        </div>
+      </StepContainer>
+    );
+  }
 
   if (!needsChoices) {
     return (
@@ -540,7 +591,7 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
 
       <div className="step-content">
         <ChoicesContainer>
-          {getFeatsThatNeedChoices().map((featName) => {
+          {featsWithChoices.map((featName) => {
             const feat = featsData[featName];
 
             return (

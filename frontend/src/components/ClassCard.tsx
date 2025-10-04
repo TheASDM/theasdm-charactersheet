@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import type { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { CharacterClass } from '../types/api';
 
@@ -175,12 +176,12 @@ export default function ClassCardComponent({
     }
   };
 
-  const handleFullDetails = (e: React.MouseEvent) => {
+  const handleFullDetails = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     navigate(`/classes/${characterClass.id}/full-details`);
   };
 
-  const handleSubclasses = (e: React.MouseEvent) => {
+  const handleSubclasses = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     navigate(`/classes/${characterClass.id}/subclasses`);
   };

@@ -37,12 +37,14 @@
   },
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm run guardrails",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "guardrails": "bash ../scripts/guardrails/check-api-usage.sh"
   },
   "browserslist": {
     "production": [

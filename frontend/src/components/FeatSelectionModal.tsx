@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { featService } from '../services/featService';
-import { Feat } from '../types/api';
+import { listFeats } from '../services/featService';
+import { Feat, isError } from '../types/api';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -236,18 +236,15 @@ const FeatSelectionModal: React.FC<FeatSelectionModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await featService.getAll();
+      const result = await listFeats();
 
-      if (response.data) {
-        setFeats(response.data);
-      } else if (response.error) {
-        console.error('❌ API error:', response.error);
-        setError(`API Error: ${response.error}`);
-      } else {
-        setError('No feats data received from server');
+      if (isError(result)) {
+        setError(result.error ?? 'Failed to load feats');
+        return;
       }
+
+      setFeats(result.data);
     } catch (err) {
-      console.error('💥 Fetch error:', err);
       setError('Error fetching feats: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setLoading(false);

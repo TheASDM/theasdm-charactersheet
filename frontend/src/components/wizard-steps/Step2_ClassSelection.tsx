@@ -3,14 +3,16 @@ import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { classOptions } from '../../constants/characterOptions';
-import { CLASS_SKILLS, CLASS_SKILL_CHOICES, classService } from '../../services/classService';
-import { CharacterClass } from '../../types/api';
+import { CLASS_SKILLS, CLASS_SKILL_CHOICES, listClasses } from '../../services/classService';
 import { parseComplexDnDEntry } from '../../utils/dndTemplateParser';
 import { loadClassData } from '../../utils/classDataLoader';
 import { detectRequiredChoices } from '../../utils/classChoiceDetection';
 import { ChoicePrompt } from '../../types/classFeatures';
 import { loadExternalChoiceData } from '../../utils/externalChoiceLoader';
 import WizardModal from '../wizard/WizardModal';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { logger } from '../../utils/logger';
 
 // Complete list of all D&D skills for classes that can choose "any" skill
 const ALL_SKILLS = [
@@ -987,9 +989,12 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 }) => {
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [activeClass, setActiveClass] = useState<string | null>(data.selectedClass);
-  const [apiClasses, setApiClasses] = useState<CharacterClass[]>([]);
-  const [_loadingClasses, setLoadingClasses] = useState(true);
-  const [_classLoadError, setClassLoadError] = useState<string | null>(null);
+  const {
+    data: fetchedClasses,
+    error: classesError,
+    isLoading: isLoadingClasses,
+    execute: fetchClasses,
+  } = useApiCall(listClasses);
 
   // New choice system state
   const [detectedChoices, setDetectedChoices] = useState<ChoicePrompt[]>([]);
@@ -1008,29 +1013,11 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     }
   };
 
-  // Load classes from API on mount
   useEffect(() => {
-    const loadClasses = async () => {
-      try {
-        setLoadingClasses(true);
-        setClassLoadError(null);
-        const response = await classService.getAll();
+    fetchClasses();
+  }, [fetchClasses]);
 
-        if (response.error) {
-          setClassLoadError(response.error);
-        } else if (response.data) {
-          setApiClasses(response.data);
-        }
-      } catch (err) {
-        setClassLoadError('Failed to load class data');
-        console.error('Error loading classes:', err);
-      } finally {
-        setLoadingClasses(false);
-      }
-    };
-
-    loadClasses();
-  }, []);
+  const apiClasses = fetchedClasses ?? [];
 
   // Load class data and detect choices when class is selected
   useEffect(() => {
@@ -1069,7 +1056,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
                   options: externalOptions
                 };
               } catch (error) {
-                console.error(`Failed to load external options for ${prompt.title}:`, error);
+                logger.error(`Failed to load external options for ${prompt.title}:`, error);
                 return prompt; // Return original prompt with empty options
               }
             }
@@ -1080,7 +1067,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
         setDetectedChoices(promptsWithExternalOptions);
       } catch (error) {
-        console.error('Failed to load class data:', error);
+        logger.error('Failed to load class data:', error);
         setDetectedChoices([]);
       }
     };
@@ -1426,6 +1413,28 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
       </ModalButtonRow>
     );
 
+  if (isLoadingClasses) {
+    return (
+      <StepContainer>
+        <div className="step-title">Class</div>
+        <LoadingSpinner message="Loading classes..." />
+      </StepContainer>
+    );
+  }
+
+  if (classesError) {
+    return (
+      <StepContainer>
+        <div className="step-title">Class</div>
+        <div
+          role="alert"
+          style={{ textAlign: 'center', color: '#ff6b6b', padding: '2rem' }}
+        >
+          Unable to load classes: {classesError}
+        </div>
+      </StepContainer>
+    );
+  }
 
   return (
     <>

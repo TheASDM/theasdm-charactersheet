@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
+import { isError } from '@/types/api';
 
 // Import fonts
 const FontImport = styled.div`
@@ -324,7 +325,7 @@ const Navigation: React.FC = () => {
   const [charactersOpen, setCharactersOpen] = useState(false);
   const [referenceOpen, setReferenceOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const autoCloseTimeout = useRef<NodeJS.Timeout | null>(null);
+  const autoCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleLinkClick = () => {
     setMobileMenuOpen(false);
@@ -361,7 +362,10 @@ const Navigation: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
+    const result = await logout();
+    if (isError(result)) {
+      return;
+    }
     setMobileMenuOpen(false);
     setAccountOpen(false);
     navigate('/');

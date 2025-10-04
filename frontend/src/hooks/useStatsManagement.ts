@@ -26,7 +26,7 @@ export function useStatsManagement(
         });
         break;
 
-      case 'maxHP':
+      case 'maxHP': {
         const newMaxHP = Math.max(1, character.hitPoints.max + adjustment);
         updateCharacter({
           hitPoints: {
@@ -36,6 +36,7 @@ export function useStatsManagement(
           },
         });
         break;
+      }
 
       case 'armorClass':
         updateCharacter({

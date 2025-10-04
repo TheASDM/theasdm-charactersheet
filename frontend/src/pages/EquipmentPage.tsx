@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import equipmentService, { Equipment } from '../services/equipmentService';
+import { listEquipment } from '@/services/equipmentService';
+import type { ApiResult, Equipment, PaginatedResponse } from '@/types/api';
+import { ok, isError } from '@/types/api';
 import { EquipmentItemModal } from '../components/EquipmentItemModal';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import type { EquipmentFilters } from '@/services/equipmentService';
+import { logger } from '../utils/logger';
 
 // Main page container matching Generator theme
 const PageContainer = styled.div`
@@ -383,14 +388,6 @@ const PaginationBar = styled.div`
   }
 `;
 
-const LoadingMessage = styled.div`
-  text-align: center;
-  color: #d4af37;
-  padding: 4rem;
-  font-size: 1.3rem;
-  font-weight: 600;
-`;
-
 const ErrorMessage = styled.div`
   text-align: center;
   color: #ff6b6b;
@@ -419,6 +416,76 @@ const TYPE_LABELS: { [key: string]: string } = {
   'adventuring gear': 'Adventuring Gear'
 };
 
+type EquipmentQuery = EquipmentFilters & { loadAll?: boolean };
+
+const normalizePagination = (
+  pagination: PaginatedResponse<Equipment>['pagination'] | undefined,
+  fallbackTotal: number,
+  page: number,
+  limit: number
+): PaginatedResponse<Equipment>['pagination'] => ({
+  page: pagination?.page ?? page,
+  limit: pagination?.limit ?? limit,
+  total: pagination?.total ?? fallbackTotal,
+  pages:
+    pagination?.pages ?? (limit > 0 ? Math.max(1, Math.ceil(fallbackTotal / limit)) : fallbackTotal > 0 ? 1 : 0),
+});
+
+const fetchEquipmentData = async (
+  filters: EquipmentQuery
+): Promise<ApiResult<PaginatedResponse<Equipment>>> => {
+  const { loadAll, ...baseFilters } = filters;
+  const initialFilters: EquipmentFilters = {
+    ...baseFilters,
+    page: baseFilters.page ?? 1,
+  };
+
+  const firstResult = await listEquipment(initialFilters);
+  if (isError(firstResult)) {
+    return firstResult;
+  }
+
+  const firstData = firstResult.data;
+  if (!firstData) {
+    const page = initialFilters.page ?? 1;
+    const limit = initialFilters.limit ?? 50;
+    return ok({
+      items: [],
+      pagination: normalizePagination(undefined, 0, page, limit),
+    });
+  }
+
+  if (!loadAll) {
+    return firstResult;
+  }
+
+  const pagination = firstData.pagination;
+  const totalPages = pagination?.pages ?? 1;
+
+  if (totalPages <= 1) {
+    return ok({ items: firstData.items ?? [], pagination });
+  }
+
+  const items = [...(firstData.items ?? [])];
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    const pageResult = await listEquipment({ ...initialFilters, page });
+    if (isError(pageResult)) {
+      return pageResult;
+    }
+
+    items.push(...(pageResult.data?.items ?? []));
+  }
+
+  const total = pagination?.total ?? items.length;
+  const limit = pagination?.limit ?? (initialFilters.limit ?? 50);
+  const currentPage = initialFilters.page ?? 1;
+  return ok({
+    items,
+    pagination: normalizePagination(pagination, total, currentPage, limit),
+  });
+};
+
 const EquipmentPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -442,7 +509,7 @@ const EquipmentPage: React.FC = () => {
         const itemIds = JSON.parse(savedCheckedItems);
         setCheckedItems(new Set(itemIds));
       } catch (error) {
-        console.error('Error loading checked items:', error);
+        logger.error('Error loading checked items:', error);
       }
     }
   }, []);
@@ -453,53 +520,28 @@ const EquipmentPage: React.FC = () => {
     localStorage.setItem('equipmentCheckedItems', JSON.stringify(itemIds));
   }, [checkedItems]);
 
-  // Fetch equipment data
-  const { data: equipmentResponse, isLoading, error } = useQuery(
-    ['equipment', currentPage, loadAll, searchTerm, typeFilter, rarityFilter],
-    async () => {
-      if (loadAll) {
-        const allItems = [];
-        const firstPage = await equipmentService.getAll({
-          page: 1,
-          limit: 50,
-          ...(searchTerm && { search: searchTerm }),
-          ...(typeFilter !== 'all' && { type: typeFilter }),
-          ...(rarityFilter !== 'all' && { rarity: rarityFilter }),
-        });
-        const totalPages = firstPage.data?.pagination?.pages || 1;
+  const {
+    data: equipmentData,
+    error,
+    isLoading,
+    execute: loadEquipment,
+  } = useApiCall(fetchEquipmentData);
 
-        for (let page = 1; page <= totalPages; page++) {
-          const response = await equipmentService.getAll({
-            page,
-            limit: 50,
-            ...(searchTerm && { search: searchTerm }),
-            ...(typeFilter !== 'all' && { type: typeFilter }),
-            ...(rarityFilter !== 'all' && { rarity: rarityFilter }),
-          });
-          if (response.data?.items) {
-            allItems.push(...response.data.items);
-          }
-        }
+  useEffect(() => {
+    const filters: EquipmentQuery = {
+      page: loadAll ? 1 : currentPage,
+      limit: 50,
+      ...(searchTerm && { search: searchTerm }),
+      ...(typeFilter !== 'all' && { type: typeFilter }),
+      ...(rarityFilter !== 'all' && { rarity: rarityFilter }),
+      ...(loadAll ? { loadAll } : {}),
+    };
 
-        return { data: { items: allItems, pagination: firstPage.data?.pagination } };
-      } else {
-        return equipmentService.getAll({
-          page: currentPage,
-          limit: 50,
-          ...(searchTerm && { search: searchTerm }),
-          ...(typeFilter !== 'all' && { type: typeFilter }),
-          ...(rarityFilter !== 'all' && { rarity: rarityFilter }),
-        });
-      }
-    },
-    {
-      staleTime: 5 * 60 * 1000,
-      keepPreviousData: true,
-    }
-  );
+    loadEquipment(filters);
+  }, [currentPage, loadAll, searchTerm, typeFilter, rarityFilter, loadEquipment]);
 
-  const equipment = equipmentResponse?.data?.items || [];
-  const pagination = equipmentResponse?.data?.pagination;
+  const equipment = equipmentData?.items ?? [];
+  const pagination = equipmentData?.pagination;
 
   // Equipment is already filtered by the backend, no need for client-side filtering
   const filteredEquipment = equipment;
@@ -564,9 +606,7 @@ const EquipmentPage: React.FC = () => {
             <p>Complete D&D 2024 Equipment Collection</p>
           </Header>
           <MainContainer>
-            <LoadingMessage>
-              Loading equipment database...
-            </LoadingMessage>
+            <LoadingSpinner message="Loading equipment database..." />
           </MainContainer>
         </ContentContainer>
       </PageContainer>
@@ -583,7 +623,7 @@ const EquipmentPage: React.FC = () => {
           </Header>
           <MainContainer>
             <ErrorMessage>
-              Error loading equipment: {error instanceof Error ? error.message : 'Unknown error'}
+              Error loading equipment: {error}
             </ErrorMessage>
           </MainContainer>
         </ContentContainer>

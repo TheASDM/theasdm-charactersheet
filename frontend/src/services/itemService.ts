@@ -1,5 +1,5 @@
-import { apiClient } from './api';
-import { Item, ApiResponse, PaginatedResponse } from '../types/api';
+import { apiClient, request, withSignal } from './api';
+import { ApiResult, Item, PaginatedResponse } from '@/types/api';
 
 export interface ItemFilters {
   type?: string;
@@ -9,74 +9,69 @@ export interface ItemFilters {
   limit?: number;
 }
 
+const buildParams = (filters: ItemFilters = {}) => ({
+  ...(filters.type && { type: filters.type }),
+  ...(filters.rarity && { rarity: filters.rarity }),
+  ...(filters.search && { search: filters.search }),
+  page: filters.page ?? 1,
+  limit: filters.limit ?? 50,
+});
+
+export async function listItems(
+  filters: ItemFilters = {},
+  signal?: AbortSignal
+): Promise<ApiResult<PaginatedResponse<Item>>> {
+  const params = buildParams(filters);
+  return request(
+    () => apiClient.get<PaginatedResponse<Item>>('/items', withSignal({ params }, signal)),
+    { retry: true }
+  );
+}
+
+export async function getItem(
+  id: number | string,
+  signal?: AbortSignal
+): Promise<ApiResult<Item>> {
+  return request(
+    () => apiClient.get<Item>(`/items/${id}`, withSignal(undefined, signal)),
+    { retry: true }
+  );
+}
+
+export async function createItem(body: Partial<Item>): Promise<ApiResult<Item>> {
+  return request(() => apiClient.post<Item>('/items', body));
+}
+
+export async function updateItem(
+  id: number | string,
+  patch: Partial<Item>
+): Promise<ApiResult<Item>> {
+  return request(() => apiClient.put<Item>(`/items/${id}`, patch));
+}
+
+export async function deleteItem(id: number | string): Promise<ApiResult<void>> {
+  return request(() => apiClient.delete<void>(`/items/${id}`));
+}
+
+export async function searchItems(
+  query: string,
+  limit = 20,
+  signal?: AbortSignal
+): Promise<ApiResult<PaginatedResponse<Item>>> {
+  return listItems({ search: query, limit }, signal);
+}
+
 export const itemService = {
-  // Get all items with pagination and filtering
-  getAll: async (
-    filters: ItemFilters = {}
-  ): Promise<ApiResponse<PaginatedResponse<Item>>> => {
-    const params = {
-      ...(filters.type && { type: filters.type }),
-      ...(filters.rarity && { rarity: filters.rarity }),
-      ...(filters.search && { search: filters.search }),
-      page: filters.page || 1,
-      limit: filters.limit || 50,
-    };
-    return apiClient.get<PaginatedResponse<Item>>('/items', params);
-  },
-
-  // Get a single item by ID
-  getById: async (id: number): Promise<ApiResponse<Item>> => {
-    return apiClient.get<Item>(`/items/${id}`);
-  },
-
-  // Get items by type
-  getByType: async (
-    type: string
-  ): Promise<ApiResponse<PaginatedResponse<Item>>> => {
-    return itemService.getAll({ type });
-  },
-
-  // Get items by rarity
-  getByRarity: async (
-    rarity: string
-  ): Promise<ApiResponse<PaginatedResponse<Item>>> => {
-    return itemService.getAll({ rarity });
-  },
-
-  // Search items by name
-  search: async (
-    query: string,
-    limit = 20
-  ): Promise<ApiResponse<PaginatedResponse<Item>>> => {
-    return itemService.getAll({ search: query, limit });
-  },
-
-  // Get weapons
-  getWeapons: async (): Promise<ApiResponse<PaginatedResponse<Item>>> => {
-    return itemService.getByType('weapon');
-  },
-
-  // Get armor
-  getArmor: async (): Promise<ApiResponse<PaginatedResponse<Item>>> => {
-    return itemService.getByType('armor');
-  },
-
-  // Get adventuring gear
-  getAdventuringGear: async (): Promise<
-    ApiResponse<PaginatedResponse<Item>>
-  > => {
-    return itemService.getByType('adventuring gear');
-  },
-
-  // Get magic items
-  getMagicItems: async (): Promise<ApiResponse<PaginatedResponse<Item>>> => {
-    return itemService.getAll({
-      rarity: 'uncommon,rare,very rare,legendary,artifact',
-    });
-  },
+  listItems,
+  getItem,
+  createItem,
+  updateItem,
+  deleteItem,
+  search: searchItems,
 };
 
-// Item type constants
+export default itemService;
+
 export const ITEM_TYPES = {
   WEAPON: 'weapon',
   ARMOR: 'armor',
@@ -89,7 +84,6 @@ export const ITEM_TYPES = {
   MAGIC_ITEM: 'wondrous item',
 } as const;
 
-// Rarity constants
 export const ITEM_RARITIES = {
   COMMON: 'common',
   UNCOMMON: 'uncommon',
@@ -99,7 +93,6 @@ export const ITEM_RARITIES = {
   ARTIFACT: 'artifact',
 } as const;
 
-// Weapon properties
 export const WEAPON_PROPERTIES = {
   AMMUNITION: 'ammunition',
   FINESSE: 'finesse',
@@ -114,17 +107,18 @@ export const WEAPON_PROPERTIES = {
   VERSATILE: 'versatile',
 } as const;
 
-// Helper functions for item logic
 export const isWeapon = (item: Item): boolean => {
   return item.type === 'weapon' || item.type === 'M' || item.type === 'R' || !!item.dmg1;
 };
 
 export const isArmor = (item: Item): boolean => {
-  return item.type === 'armor' ||
-         item.type === 'LA' ||
-         item.type === 'MA' ||
-         item.type === 'HA' ||
-         (!!item.ac && item.armorType !== 'shield');
+  return (
+    item.type === 'armor' ||
+    item.type === 'LA' ||
+    item.type === 'MA' ||
+    item.type === 'HA' ||
+    (!!item.ac && item.armorType !== 'shield')
+  );
 };
 
 export const isShield = (item: Item): boolean => {
@@ -134,17 +128,14 @@ export const isShield = (item: Item): boolean => {
 export const getWeaponAttackBonus = (item: Item): string => {
   if (!isWeapon(item)) return '';
 
-  // Check if it has finesse property
   if (item.property?.includes('F') || item.property?.includes('finesse')) {
     return 'STR or DEX';
   }
 
-  // Ranged weapons use DEX
   if (item.range === 'ranged' || item.type === 'R') {
     return 'DEX';
   }
 
-  // Melee weapons typically use STR
   return 'STR';
 };
 
@@ -166,31 +157,25 @@ export const getWeaponDamageString = (item: Item): string => {
 export const calculateArmorClass = (
   dexterityModifier: number,
   equippedArmor?: Item,
-  hasShield: boolean = false
+  hasShield = false
 ): number => {
-  let ac = 10; // Base AC
+  let ac = 10;
 
   if (equippedArmor && isArmor(equippedArmor) && equippedArmor.ac) {
     ac = equippedArmor.ac;
 
-    // Apply dexterity modifier based on armor type
     if (equippedArmor.armorType === 'light') {
-      ac += dexterityModifier; // No limit for light armor
+      ac += dexterityModifier;
     } else if (equippedArmor.armorType === 'medium') {
-      ac += Math.min(dexterityModifier, 2); // Max +2 for medium armor
+      ac += Math.min(dexterityModifier, 2);
     }
-    // Heavy armor gets no dex modifier
   } else {
-    // No armor worn - base AC 10 + Dex modifier
     ac = 10 + dexterityModifier;
   }
 
-  // Add shield bonus
   if (hasShield) {
-    ac += 2; // Standard shield gives +2 AC
+    ac += 2;
   }
 
   return ac;
 };
-
-export default itemService;

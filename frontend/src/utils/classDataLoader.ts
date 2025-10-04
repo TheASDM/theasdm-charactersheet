@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * Class Data Loader
  *
@@ -42,7 +43,7 @@ export async function loadClassData(className: string): Promise<ClassData> {
 
     return classData;
   } catch (error) {
-    console.error(`Failed to load class data for ${className}:`, error);
+    logger.error(`Failed to load class data for ${className}:`, error);
     throw new Error(`Could not load class data for ${className}`);
   }
 }
@@ -69,12 +70,12 @@ export async function preloadCommonClasses(): Promise<void> {
 
   const loadPromises = commonClasses.map((className) =>
     loadClassData(className).catch((err) => {
-      console.warn(`Failed to preload ${className}:`, err);
+      logger.warn(`Failed to preload ${className}:`, err);
     })
   );
 
   await Promise.all(loadPromises);
-  console.log('Class data preloaded');
+  logger.debug('Class data preloaded');
 }
 
 /**

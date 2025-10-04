@@ -1,6 +1,7 @@
 import { CharacterFeature, FeatureSource } from '../types/features';
 import { CharacterBuilderData } from '../components/CharacterGeneratorWizard';
 import { CharacterSheetData } from '../types/characterSheet';
+import { logger } from '../utils/logger';
 
 /**
  * Service for managing feature variants based on character choices
@@ -230,7 +231,7 @@ export function meetsPrerequisites(
   prerequisites: string[],
   characterData: CharacterBuilderData
 ): boolean {
-  console.log('🔍 Character data:', {
+  logger.debug('🔍 Character data:', {
     selectedSpecies: characterData.selectedSpecies,
     selectedClass: characterData.selectedClass,
     speciesChoices: characterData.speciesChoices,
@@ -248,11 +249,12 @@ export function meetsPrerequisites(
       case 'class':
         result = characterData.selectedClass === value;
         break;
-      case 'draconicAncestry':
+      case 'draconicAncestry': {
         const values = value.split('|'); // Support multiple values like "Black Dragon|Copper Dragon"
         const draconicChoice = characterData.speciesChoices?.draconicAncestry || '';
         result = values.includes(draconicChoice);
         break;
+      }
       case 'elfLineage':
         result = characterData.speciesChoices?.elfLineage === value;
         break;
@@ -269,7 +271,7 @@ export function meetsPrerequisites(
         result = characterData.speciesChoices?.humanSkill === value;
         break;
       default:
-        console.warn(`Unknown prerequisite key: ${key}`);
+        logger.warn(`Unknown prerequisite key: ${key}`);
         result = false;
     }
 
@@ -286,7 +288,7 @@ export function selectFeatureVariants(
 ): CharacterFeature[] {
   const variants = FEATURE_VARIANTS[baseFeatureId];
   if (!variants) {
-    console.warn(`No variants found for feature: ${baseFeatureId}`);
+    logger.warn(`No variants found for feature: ${baseFeatureId}`);
     return [];
   }
 
@@ -337,7 +339,7 @@ export function inferSpeciesChoicesFromCharacter(character: CharacterSheetData):
 
   // For Dragonborn, try to infer draconic ancestry from existing features
   if (character.species?.toLowerCase().includes('dragonborn')) {
-    console.log('🔍 Inferring draconic ancestry for dragonborn character');
+    logger.debug('🔍 Inferring draconic ancestry for dragonborn character');
 
     // Look through existing features for clues about dragon type
     const allFeatures = [
@@ -345,71 +347,71 @@ export function inferSpeciesChoicesFromCharacter(character: CharacterSheetData):
       ...(character.speciesTraits || []).map(trait => ({ description: trait }))
     ];
 
-    console.log('🔍 All features to check:', allFeatures);
+    logger.debug('🔍 All features to check:', allFeatures);
 
     for (const feature of allFeatures) {
       const description = (feature.description || '').toLowerCase();
       const name = ((feature as any).name || '').toLowerCase();
 
-      console.log('🔍 Checking feature:', { name: (feature as any).name, description });
+      logger.debug('🔍 Checking feature:', { name: (feature as any).name, description });
 
       // Check for dragon types mentioned in names or descriptions
       if (description.includes('black dragon') || description.includes('acid') ||
           name.includes('black') || name.includes('acid')) {
         choices.draconicAncestry = 'Black Dragon';
-        console.log('✅ Found Black Dragon ancestry');
+        logger.debug('✅ Found Black Dragon ancestry');
         break;
       } else if (description.includes('blue dragon') || description.includes('lightning') ||
                  name.includes('blue') || name.includes('lightning')) {
         choices.draconicAncestry = 'Blue Dragon';
-        console.log('✅ Found Blue Dragon ancestry');
+        logger.debug('✅ Found Blue Dragon ancestry');
         break;
       } else if (description.includes('brass dragon') || name.includes('brass')) {
         choices.draconicAncestry = 'Brass Dragon';
-        console.log('✅ Found Brass Dragon ancestry');
+        logger.debug('✅ Found Brass Dragon ancestry');
         break;
       } else if (description.includes('bronze dragon') || name.includes('bronze')) {
         choices.draconicAncestry = 'Bronze Dragon';
-        console.log('✅ Found Bronze Dragon ancestry');
+        logger.debug('✅ Found Bronze Dragon ancestry');
         break;
       } else if (description.includes('copper dragon') || name.includes('copper')) {
         choices.draconicAncestry = 'Copper Dragon';
-        console.log('✅ Found Copper Dragon ancestry');
+        logger.debug('✅ Found Copper Dragon ancestry');
         break;
       } else if (description.includes('gold dragon') || name.includes('gold')) {
         choices.draconicAncestry = 'Gold Dragon';
-        console.log('✅ Found Gold Dragon ancestry');
+        logger.debug('✅ Found Gold Dragon ancestry');
         break;
       } else if (description.includes('green dragon') || description.includes('poison') ||
                  name.includes('green') || name.includes('poison')) {
         choices.draconicAncestry = 'Green Dragon';
-        console.log('✅ Found Green Dragon ancestry');
+        logger.debug('✅ Found Green Dragon ancestry');
         break;
       } else if (description.includes('red dragon') || description.includes('fire') ||
                  name.includes('red') || name.includes('fire')) {
         choices.draconicAncestry = 'Red Dragon';
-        console.log('✅ Found Red Dragon ancestry');
+        logger.debug('✅ Found Red Dragon ancestry');
         break;
       } else if (description.includes('silver dragon') || name.includes('silver')) {
         choices.draconicAncestry = 'Silver Dragon';
-        console.log('✅ Found Silver Dragon ancestry');
+        logger.debug('✅ Found Silver Dragon ancestry');
         break;
       } else if (description.includes('white dragon') || description.includes('cold') ||
                  name.includes('white') || name.includes('cold')) {
         choices.draconicAncestry = 'White Dragon';
-        console.log('✅ Found White Dragon ancestry');
+        logger.debug('✅ Found White Dragon ancestry');
         break;
       }
     }
 
     // If no ancestry found yet, try some fallback logic based on character name or just default to Red Dragon
     if (!choices.draconicAncestry) {
-      console.log('🔄 No ancestry found in features, defaulting to Red Dragon');
+      logger.debug('🔄 No ancestry found in features, defaulting to Red Dragon');
       choices.draconicAncestry = 'Red Dragon'; // Default fallback
     }
   }
 
-  console.log('🔍 Final inferred choices:', choices);
+  logger.debug('🔍 Final inferred choices:', choices);
   return choices;
 }
 
@@ -439,7 +441,7 @@ export function updateCharacterWithFeatureVariants(character: CharacterSheetData
   // Infer species choices and add them to the character data
   const inferredChoices = inferSpeciesChoicesFromCharacter(character);
   if (Object.keys(inferredChoices).length > 0) {
-    console.log('🐉 Inferred species choices:', inferredChoices);
+    logger.debug('🐉 Inferred species choices:', inferredChoices);
     updatedCharacter.speciesChoices = inferredChoices;
   }
 
@@ -465,9 +467,9 @@ export function updateCharacterWithFeatureVariants(character: CharacterSheetData
 
     // Now resolve the template features with the inferred character context
     if (updatedCharacter.speciesChoices?.draconicAncestry) {
-      console.log('🐉 Resolving templates with draconic ancestry:', updatedCharacter.speciesChoices.draconicAncestry);
+      logger.debug('🐉 Resolving templates with draconic ancestry:', updatedCharacter.speciesChoices.draconicAncestry);
       // Import is handled at module level, we'll need to implement this differently
-      console.log('🔧 Template resolution will happen at display time');
+      logger.debug('🔧 Template resolution will happen at display time');
     }
   }
 

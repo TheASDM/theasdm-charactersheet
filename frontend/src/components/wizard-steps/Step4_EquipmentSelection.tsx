@@ -1,16 +1,80 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
+import { useState, useEffect, useMemo } from 'react';
+import type { FC, MouseEvent } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import equipmentService, { Equipment } from '../../services/equipmentService';
+import { listEquipment } from '@/services/equipmentService';
+import type { Equipment, ApiResult, PaginatedResponse } from '@/types/api';
 import { EquipmentItemModal } from '../EquipmentItemModal';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { ok, isError } from '@/types/api';
+import { logger } from '../../utils/logger';
 
 interface Step4EquipmentSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
 }
+
+const normalizePagination = (
+  pagination: PaginatedResponse<Equipment>['pagination'] | undefined,
+  itemsCount: number,
+  page: number,
+  limit: number
+): PaginatedResponse<Equipment>['pagination'] => ({
+  page: pagination?.page ?? page,
+  limit: pagination?.limit ?? limit,
+  total: pagination?.total ?? itemsCount,
+  pages:
+    pagination?.pages ?? (limit > 0 ? Math.max(1, Math.ceil(itemsCount / limit)) : itemsCount > 0 ? 1 : 0),
+});
+
+const fetchAllEquipment = async (): Promise<ApiResult<PaginatedResponse<Equipment>>> => {
+  const initialPage = 1;
+  const initialLimit = 50;
+  const firstResult = await listEquipment({ page: initialPage, limit: initialLimit });
+  if (isError(firstResult)) {
+    return firstResult;
+  }
+
+  const firstData = firstResult.data;
+  if (!firstData) {
+    return ok({
+      items: [],
+      pagination: normalizePagination(undefined, 0, initialPage, initialLimit),
+    });
+  }
+
+  const pagination = firstData.pagination;
+  const totalPages = pagination?.pages ?? 1;
+
+  if (totalPages <= 1) {
+    const items = firstData.items ?? [];
+    return ok({
+      items,
+      pagination: normalizePagination(pagination, items.length, initialPage, initialLimit),
+    });
+  }
+
+  const items = [...(firstData.items ?? [])];
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    const pageResult = await listEquipment({ page, limit: initialLimit });
+    if (isError(pageResult)) {
+      return pageResult;
+    }
+
+    items.push(...(pageResult.data?.items ?? []));
+  }
+
+  const total = pagination?.total ?? items.length;
+  const limit = pagination?.limit ?? initialLimit;
+  return ok({
+    items,
+    pagination: normalizePagination(pagination, total, initialPage, limit),
+  });
+};
 
 const TableContainer = styled.div`
   background: rgba(26, 26, 26, 0.9);
@@ -428,7 +492,7 @@ const TYPE_LABELS: { [key: string]: string } = {
   '$G|XDMG': 'Gemstone'
 };
 
-export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = ({
+export const Step4EquipmentSelection: FC<Step4EquipmentSelectionProps> = ({
   data,
   onUpdate
 }) => {
@@ -448,7 +512,7 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
         const itemIds = JSON.parse(savedCheckedItems);
         setCheckedItems(new Set(itemIds));
       } catch (error) {
-        console.error('Error loading checked items:', error);
+        logger.error('Error loading checked items:', error);
       }
     }
   }, []);
@@ -459,31 +523,18 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
     localStorage.setItem('wizardEquipmentCheckedItems', JSON.stringify(itemIds));
   }, [checkedItems]);
 
-  // Fetch equipment data - load all items for selection
-  const { data: equipmentResponse, isLoading, error } = useQuery(
-    'equipment-all',
-    async () => {
-      // Fetch all pages of equipment for the selection step
-      const allItems = [];
-      const firstPage = await equipmentService.getAll();
-      const totalPages = firstPage.data?.pagination?.pages || 1;
+  const {
+    data: equipmentData,
+    error,
+    isLoading,
+    execute: loadEquipment,
+  } = useApiCall(fetchAllEquipment);
 
-      for (let page = 1; page <= totalPages; page++) {
-        const response = await fetch(`http://localhost:3001/api/items?page=${page}&limit=50`);
-        const data = await response.json();
-        if (data.items) {
-          allItems.push(...data.items);
-        }
-      }
+  useEffect(() => {
+    loadEquipment();
+  }, [loadEquipment]);
 
-      return { data: { items: allItems, pagination: firstPage.data?.pagination } };
-    },
-    {
-      staleTime: 5 * 60 * 1000,
-    }
-  );
-
-  const equipment = equipmentResponse?.data?.items || [];
+  const equipment = equipmentData?.items ?? [];
 
   // Filter equipment based on search and filters
   const filteredEquipment = equipment.filter((item: Equipment) => {
@@ -512,19 +563,16 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
   const uniqueRarities = [...new Set(equipment.map((item: Equipment) => item.rarity))].filter(Boolean).sort();
 
   // Categorize selected items
-  const categorizeSelectedItems = () => {
+  const categorizedEquipment = useMemo(() => {
     const weapons: string[] = [];
     const armor: string[] = [];
     const shields: string[] = [];
     const otherEquipment: string[] = [];
 
-    // Get full item data for selected items
-    const selectedItemsData = equipment.filter(item => checkedItems.has(item.id));
-
-    selectedItemsData.forEach(item => {
+    equipment.forEach((item) => {
+      if (!checkedItems.has(item.id)) return;
       const itemType = item.type;
 
-      // Categorize based on type
       if (['M', 'R', 'A'].includes(itemType)) {
         weapons.push(item.name);
       } else if (['LA', 'MA', 'HA'].includes(itemType)) {
@@ -538,21 +586,38 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
 
     return {
       weapons,
-      armor: armor[0], // Only one armor piece
-      shield: shields[0], // Only one shield
-      equipment: otherEquipment
+      armor: armor[0],
+      shield: shields[0],
+      equipment: otherEquipment,
     };
-  };
+  }, [checkedItems, equipment]);
 
   useEffect(() => {
-    const categorizedEquipment = categorizeSelectedItems();
-    onUpdate({
-      selectedEquipment: categorizedEquipment
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkedItems]);
+    const currentSelection = data.selectedEquipment ?? {};
 
-  const handleItemClick = (item: Equipment, event: React.MouseEvent) => {
+    const selectionsEqual =
+      Array.isArray(currentSelection.weapons)
+        ? currentSelection.weapons.length === categorizedEquipment.weapons.length &&
+          currentSelection.weapons.every((weapon) => categorizedEquipment.weapons.includes(weapon))
+        : categorizedEquipment.weapons.length === 0;
+
+    const armorEqual = (currentSelection.armor ?? null) === (categorizedEquipment.armor ?? null);
+    const shieldEqual = (currentSelection.shield ?? null) === (categorizedEquipment.shield ?? null);
+    const otherEqual = Array.isArray(currentSelection.equipment)
+      ? currentSelection.equipment.length === categorizedEquipment.equipment.length &&
+        currentSelection.equipment.every((item) => categorizedEquipment.equipment.includes(item))
+      : categorizedEquipment.equipment.length === 0;
+
+    if (selectionsEqual && armorEqual && shieldEqual && otherEqual) {
+      return;
+    }
+
+    onUpdate({
+      selectedEquipment: categorizedEquipment,
+    });
+  }, [categorizedEquipment, data.selectedEquipment, onUpdate]);
+
+  const handleItemClick = (item: Equipment, event: MouseEvent) => {
     // Don't open modal if checkbox was clicked
     if ((event.target as HTMLElement).closest('.checkbox-cell')) {
       return;
@@ -688,9 +753,7 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
     return (
       <StepContainer>
         <div className="step-title">Equipment Selection</div>
-        <div style={{ textAlign: 'center', color: '#d4af37', padding: '2rem' }}>
-          Loading equipment...
-        </div>
+        <LoadingSpinner message="Loading equipment..." />
       </StepContainer>
     );
   }
@@ -700,7 +763,7 @@ export const Step4EquipmentSelection: React.FC<Step4EquipmentSelectionProps> = (
       <StepContainer>
         <div className="step-title">Equipment Selection</div>
         <div style={{ textAlign: 'center', color: '#ff6b6b', padding: '2rem' }}>
-          Error loading equipment: {error instanceof Error ? error.message : 'Unknown error'}
+          Error loading equipment: {error}
         </div>
       </StepContainer>
     );

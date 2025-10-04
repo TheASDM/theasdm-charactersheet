@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * Feature template renderer for resolving dynamic values in features
  */
@@ -130,7 +131,7 @@ function resolveTemplate(
 
   let result = template;
 
-  console.log('🔍 Template Resolution Debug:', {
+  logger.debug('🔍 Template Resolution Debug:', {
     template,
     draconicAncestry: characterContext.draconicAncestry,
     availableVariables: Object.keys(resolvedVariables)
@@ -139,7 +140,7 @@ function resolveTemplate(
   // Replace ${variable} patterns
   result = result.replace(/\$\{([^}]+)\}/g, (match, variableName) => {
     if (resolvedVariables[variableName] !== undefined) {
-      console.log(`✅ Resolved ${variableName} = ${resolvedVariables[variableName]}`);
+      logger.debug(`✅ Resolved ${variableName} = ${resolvedVariables[variableName]}`);
       return String(resolvedVariables[variableName]);
     }
 
@@ -148,10 +149,10 @@ function resolveTemplate(
       const [parent, child] = variableName.split('.');
       if (parent === 'draconicAncestry' && characterContext.draconicAncestry) {
         const draconicData = getDraconicAncestryData(characterContext.draconicAncestry);
-        console.log(`🐉 Draconic Data Lookup for ${characterContext.draconicAncestry}:`, draconicData);
+        logger.debug(`🐉 Draconic Data Lookup for ${characterContext.draconicAncestry}:`, draconicData);
         if (draconicData && (draconicData as any)[child]) {
           const resolvedValue = String((draconicData as any)[child]);
-          console.log(`✅ Resolved ${variableName} = ${resolvedValue}`);
+          logger.debug(`✅ Resolved ${variableName} = ${resolvedValue}`);
           return resolvedValue;
         }
       }
@@ -161,7 +162,7 @@ function resolveTemplate(
     if (variableName === 'currentDamage') {
       const damage = getCurrentDamage({ damageByLevel: resolvedVariables.damageByLevel }, characterContext);
       if (damage) {
-        console.log(`✅ Resolved currentDamage = ${damage}`);
+        logger.debug(`✅ Resolved currentDamage = ${damage}`);
         return damage;
       }
     }
@@ -169,19 +170,19 @@ function resolveTemplate(
     if (variableName === 'saveDC') {
       const dc = getCurrentSaveDC({ saveDC: resolvedVariables.saveDC }, characterContext);
       if (dc) {
-        console.log(`✅ Resolved saveDC = ${dc}`);
+        logger.debug(`✅ Resolved saveDC = ${dc}`);
         return String(dc);
       }
     }
 
-    console.warn(`❌ Unresolved template variable: ${variableName}`, {
+    logger.warn(`❌ Unresolved template variable: ${variableName}`, {
       availableVariables: Object.keys(resolvedVariables),
       characterContext: characterContext.draconicAncestry
     });
     return match;
   });
 
-  console.log('🎯 Final template result:', result);
+  logger.debug('🎯 Final template result:', result);
 
   // Parse D&D template tags like {@condition Incapacitated|XPHB}
   result = parseDnDTemplateTag(result);
@@ -359,11 +360,11 @@ function evaluateExpression(expression: string, characterContext: CharacterConte
     if (/^[0-9+\-*/() ]+$/.test(evaluableExpression)) {
       return eval(evaluableExpression);
     } else {
-      console.warn(`Invalid expression: ${expression}`);
+      logger.warn(`Invalid expression: ${expression}`);
       return 0;
     }
   } catch (error) {
-    console.warn(`Error evaluating expression: ${expression}`, error);
+    logger.warn(`Error evaluating expression: ${expression}`, error);
     return 0;
   }
 }
@@ -402,7 +403,7 @@ export function createCharacterContext(characterData: any): CharacterContext {
 
   // Map partial dragon names to full names if needed
   if (draconicAncestry && DRAGON_NAME_MAPPING[draconicAncestry]) {
-    console.log(`🐉 Mapping partial dragon name "${draconicAncestry}" to full name "${DRAGON_NAME_MAPPING[draconicAncestry]}"`);
+    logger.debug(`🐉 Mapping partial dragon name "${draconicAncestry}" to full name "${DRAGON_NAME_MAPPING[draconicAncestry]}"`);
     draconicAncestry = DRAGON_NAME_MAPPING[draconicAncestry];
   }
 
@@ -437,7 +438,7 @@ export function createCharacterContext(characterData: any): CharacterContext {
   };
 
   // Debug logging for template resolution
-  console.log('🐉 Character Context Debug:', {
+  logger.debug('🐉 Character Context Debug:', {
     species: characterData.species,
     draconicAncestry: context.draconicAncestry,
     speciesChoices: characterData.speciesChoices,

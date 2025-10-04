@@ -1,51 +1,5 @@
-import { apiClient } from './api';
-import { ApiResponse } from '../types/api';
-
-export interface Equipment {
-  id: number;
-  name: string;
-  source: string;
-  page: number;
-  type: string;
-  typeAlt?: string;
-  rarity: string;
-  weight?: number;
-  value?: number;
-  valueCurrency?: string;
-  entries?: any;
-  additionalEntries?: any;
-
-  // Weapon properties
-  weaponCategory?: string;
-  property?: string[];
-  range?: string;
-  dmg1?: string;
-  dmg2?: string;
-  dmgType?: string;
-
-  // Armor properties
-  ac?: number;
-  strength?: number;
-  stealth?: boolean;
-  armorType?: string;
-
-  // Magic item properties
-  reqAttune?: string | boolean;
-  charges?: number;
-  recharge?: string;
-  bonusWeapon?: string;
-  bonusAc?: number;
-  bonusSpellAttack?: number;
-  bonusSpellSaveDc?: number;
-  spells?: any;
-
-  // Metadata
-  sourceBook: string;
-  contentVersion: string;
-  isHomebrew: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { apiClient, request, withSignal } from './api';
+import { ApiResult, Equipment, PaginatedResponse } from '@/types/api';
 
 export interface EquipmentFilters {
   page?: number;
@@ -53,50 +7,85 @@ export interface EquipmentFilters {
   type?: string;
   rarity?: string;
   search?: string;
+  category?: string;
 }
 
+const buildParams = (filters: EquipmentFilters = {}) => ({
+  ...(filters.page !== undefined && { page: filters.page }),
+  ...(filters.limit !== undefined && { limit: filters.limit }),
+  ...(filters.type && { type: filters.type }),
+  ...(filters.rarity && { rarity: filters.rarity }),
+  ...(filters.search && { search: filters.search }),
+  ...(filters.category && { category: filters.category }),
+});
+
+const withParams = (filters: EquipmentFilters = {}, signal?: AbortSignal) => {
+  const params = buildParams(filters);
+  return withSignal(
+    Object.keys(params).length > 0 ? { params } : undefined,
+    signal
+  );
+};
+
+export const listEquipment = (
+  filters: EquipmentFilters = {},
+  signal?: AbortSignal
+): Promise<ApiResult<PaginatedResponse<Equipment>>> =>
+  request(
+    () =>
+      apiClient.get<PaginatedResponse<Equipment>>(
+        '/items',
+        withParams(filters, signal)
+      ),
+    { retry: true }
+  );
+
+export const getEquipmentById = (
+  id: number,
+  signal?: AbortSignal
+): Promise<ApiResult<Equipment>> =>
+  request(
+    () => apiClient.get<Equipment>(`/items/${id}`, withSignal(undefined, signal)),
+    { retry: true }
+  );
+
+export const getEquipmentByName = (
+  name: string,
+  signal?: AbortSignal
+): Promise<ApiResult<Equipment>> =>
+  request(
+    () =>
+      apiClient.get<Equipment>(
+        `/items/name/${encodeURIComponent(name)}`,
+        withSignal(undefined, signal)
+      ),
+    { retry: true }
+  );
+
+export const listEquipmentByType = (
+  type: string,
+  signal?: AbortSignal
+): Promise<ApiResult<PaginatedResponse<Equipment>>> =>
+  listEquipment({ type }, signal);
+
+export const listWeapons = (signal?: AbortSignal): Promise<ApiResult<PaginatedResponse<Equipment>>> =>
+  listEquipment({ category: 'weapon' }, signal);
+
+export const listArmor = (signal?: AbortSignal): Promise<ApiResult<PaginatedResponse<Equipment>>> =>
+  listEquipment({ category: 'armor' }, signal);
+
+export const listAdventuringGear = (
+  signal?: AbortSignal
+): Promise<ApiResult<PaginatedResponse<Equipment>>> => listEquipment({ category: 'gear' }, signal);
+
 export const equipmentService = {
-  // Get all equipment with optional filters and pagination
-  getAll: async (filters: EquipmentFilters = {}): Promise<ApiResponse<{ items: Equipment[], pagination?: any }>> => {
-    const params = {
-      ...(filters.page && { page: filters.page }),
-      ...(filters.limit && { limit: filters.limit }),
-      ...(filters.type && { type: filters.type }),
-      ...(filters.rarity && { rarity: filters.rarity }),
-      ...(filters.search && { search: filters.search }),
-    };
-    return apiClient.get<{ items: Equipment[], pagination?: any }>('/items', params);
-  },
-
-  // Get equipment by ID
-  getById: async (id: number): Promise<ApiResponse<Equipment>> => {
-    return apiClient.get<Equipment>(`/items/${id}`);
-  },
-
-  // Get equipment by name
-  getByName: async (name: string): Promise<ApiResponse<Equipment>> => {
-    return apiClient.get<Equipment>(`/items/name/${encodeURIComponent(name)}`);
-  },
-
-  // Get equipment by type
-  getByType: async (type: string): Promise<ApiResponse<Equipment[]>> => {
-    return apiClient.get<Equipment[]>(`/items?type=${encodeURIComponent(type)}`);
-  },
-
-  // Get weapons
-  getWeapons: async (): Promise<ApiResponse<Equipment[]>> => {
-    return apiClient.get<Equipment[]>('/items?category=weapon');
-  },
-
-  // Get armor
-  getArmor: async (): Promise<ApiResponse<Equipment[]>> => {
-    return apiClient.get<Equipment[]>('/items?category=armor');
-  },
-
-  // Get adventuring gear
-  getAdventuringGear: async (): Promise<ApiResponse<Equipment[]>> => {
-    return apiClient.get<Equipment[]>('/items?category=gear');
-  },
+  listEquipment,
+  getEquipmentById,
+  getEquipmentByName,
+  listEquipmentByType,
+  listWeapons,
+  listArmor,
+  listAdventuringGear,
 };
 
 // Equipment categories for easy reference

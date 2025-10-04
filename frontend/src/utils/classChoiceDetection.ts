@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * Class Choice Detection System
  *
@@ -240,7 +241,7 @@ function inferChoiceConstraints(
   }
 
   // Default to single choice if uncertain
-  console.warn(`Unknown choice group pattern: ${choiceGroupId}, defaulting to single choice`);
+  logger.warn(`Unknown choice group pattern: ${choiceGroupId}, defaulting to single choice`);
   return {
     selectionMode: 'single',
     minSelections: 1,
@@ -444,7 +445,7 @@ export async function getDisplayableFeatures(
         }
       }
     } catch (error) {
-      console.error(`Failed to load external choice data for ${externalFeature.name}:`, error);
+      logger.error(`Failed to load external choice data for ${externalFeature.name}:`, error);
       // Fallback: create basic features from IDs
       for (const selectedId of selectedIds) {
         const featureName = selectedId

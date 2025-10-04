@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import featsService, { Feat } from '../../services/featsService';
+import { listFeats, FEAT_CATEGORIES } from '@/services/featsService';
+import { Feat } from '@/types/api';
 import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
 import WizardModal from '../wizard/WizardModal';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 // Constants for feat choices
 const ALL_SKILLS = [
@@ -233,11 +236,10 @@ const SelectedFeatsSection = styled.div`
   }
 `;
 
-const LoadingSpinner = styled.div`
-  text-align: center;
-  color: #d4af37;
-  padding: 3rem;
-  font-size: 1.1rem;
+const LoadingState = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
 `;
 
 const ErrorMessage = styled.div`
@@ -295,63 +297,50 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
 }) => {
   const [feats, setFeats] = useState<Feat[]>([]);
   const [filteredFeats, setFilteredFeats] = useState<Feat[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFeatForModal, setSelectedFeatForModal] = useState<Feat | null>(null);
   const [modalPage, setModalPage] = useState<'details' | 'choices'>('details');
   const [currentFeatChoices, setCurrentFeatChoices] = useState<any>({});
+  const {
+    error: loadError,
+    isLoading,
+    execute: loadFeats,
+  } = useApiCall(listFeats, {
+    onSuccess: (allFeats) => {
+      const originFeats = allFeats.filter(
+        (feat) => (feat.category ?? '').toUpperCase() === FEAT_CATEGORIES.ORIGIN
+      );
+      setFeats(originFeats);
+      setFilteredFeats(originFeats);
+    },
+  });
 
   useEffect(() => {
-    fetchOriginFeats();
-  }, []);
+    loadFeats({ category: FEAT_CATEGORIES.ORIGIN });
+  }, [loadFeats]);
 
   useEffect(() => {
     // Filter feats based on search term
-    if (searchTerm.trim() === '') {
+    const trimmed = searchTerm.trim();
+    if (trimmed === '') {
       setFilteredFeats(feats);
     } else {
-      const filtered = feats.filter(feat => {
-        const nameMatch = feat.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-        // Check in feat description and benefits
-        let contentMatch = false;
-        if (feat.entries.description) {
-          contentMatch = feat.entries.description.some((entry: any) =>
-            typeof entry === 'string' && entry.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-        }
-        if (!contentMatch && feat.entries.benefits) {
-          contentMatch = feat.entries.benefits.some((entry: any) =>
-            typeof entry === 'string' && entry.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-        }
+      const searchLower = trimmed.toLowerCase();
+      const filtered = feats.filter((feat) => {
+        const nameMatch = feat.name.toLowerCase().includes(searchLower);
+        const entries = feat.entries ?? {};
+        const description = Array.isArray(entries.description) ? entries.description : [];
+        const benefits = Array.isArray(entries.benefits) ? entries.benefits : [];
+        const contentMatch = [...description, ...benefits].some(
+          (entry: unknown) =>
+            typeof entry === 'string' && entry.toLowerCase().includes(searchLower)
+        );
 
         return nameMatch || contentMatch;
       });
       setFilteredFeats(filtered);
     }
   }, [feats, searchTerm]);
-
-  const fetchOriginFeats = async () => {
-    try {
-      setIsLoading(true);
-      const response = await featsService.getAll();
-      if (response.data) {
-        // Filter for Origin feats (category "O")
-        const originFeats = response.data.filter(feat => feat.category === 'O');
-        setFeats(originFeats);
-        setFilteredFeats(originFeats);
-      } else {
-        setError(response.error || 'Failed to load origin feats');
-      }
-    } catch (err) {
-      console.error('Error fetching origin feats:', err);
-      setError('Failed to load origin feats');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleFeatClick = (feat: Feat) => {
     setSelectedFeatForModal(feat);
@@ -798,7 +787,7 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
           marginTop: '1rem',
         }}
       >
-        <strong>Source:</strong> {feat.sourceBook}
+        <strong>Source:</strong> {feat.sourceBook ?? feat.source ?? 'Unknown'}
       </div>
     </>
   );
@@ -824,16 +813,18 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
     return (
       <StepContainer>
         <div className="step-title">Origin Feats</div>
-        <LoadingSpinner>Loading origin feats...</LoadingSpinner>
+        <LoadingState>
+          <LoadingSpinner message="Loading origin feats..." />
+        </LoadingState>
       </StepContainer>
     );
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <StepContainer>
         <div className="step-title">Origin Feats</div>
-        <ErrorMessage>Error: {error}</ErrorMessage>
+        <ErrorMessage>Error: {loadError}</ErrorMessage>
       </StepContainer>
     );
   }

@@ -1,19 +1,14 @@
-/**
- * Class Choice Service
- *
- * Fetches D&D 2024 class choice data from the backend API
- */
+import { apiClient, request, withSignal } from './api';
+import type { ApiResult } from '@/types/api';
 
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+type Params = Record<string, unknown> | undefined;
 
 export interface FightingStyle {
   id: number;
   name: string;
   description: string;
   detailedText?: string;
-  effects?: any;
+  effects?: unknown;
   availableToClasses: string[];
 }
 
@@ -22,8 +17,8 @@ export interface DivineOrder {
   name: string;
   description: string;
   detailedText?: string;
-  proficienciesGranted?: any;
-  featuresGranted?: any;
+  proficienciesGranted?: unknown;
+  featuresGranted?: unknown;
   spellsGranted: string[];
 }
 
@@ -32,8 +27,8 @@ export interface EldritchInvocation {
   name: string;
   description: string;
   detailedText?: string;
-  prerequisites?: any;
-  effects?: any;
+  prerequisites?: unknown;
+  effects?: unknown;
   spellsGranted: string[];
   atWillSpells: string[];
   levelRequirement?: number;
@@ -42,7 +37,7 @@ export interface EldritchInvocation {
 }
 
 export interface ClassChoicesResponse {
-  class: any;
+  class: unknown;
   choices: {
     fightingStyles?: FightingStyle[];
     divineOrders?: DivineOrder[];
@@ -50,76 +45,68 @@ export interface ClassChoicesResponse {
   };
 }
 
-class ClassChoiceService {
-  /**
-   * Get all fighting styles for a specific class
-   */
-  async getFightingStyles(className?: string): Promise<FightingStyle[]> {
-    try {
-      const params = className ? { className } : {};
-      const response = await axios.get(`${API_BASE_URL}/class-choices/fighting-styles`, { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching fighting styles:', error);
-      return [];
-    }
-  }
+const withParams = (params: Params, signal?: AbortSignal) => withSignal(params ? { params } : undefined, signal);
 
-  /**
-   * Get all divine orders
-   */
-  async getDivineOrders(): Promise<DivineOrder[]> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/class-choices/divine-orders`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching divine orders:', error);
-      return [];
-    }
-  }
+export const getFightingStyles = (
+  className?: string,
+  signal?: AbortSignal
+): Promise<ApiResult<FightingStyle[]>> =>
+  request<FightingStyle[]>(
+    () =>
+      apiClient.get<FightingStyle[]>(
+        '/class-choices/fighting-styles',
+        withParams(className ? { className } : undefined, signal)
+      ),
+    { retry: true }
+  );
 
-  /**
-   * Get eldritch invocations for a specific warlock level
-   */
-  async getEldritchInvocations(level: number = 1): Promise<EldritchInvocation[]> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/class-choices/eldritch-invocations`, {
-        params: { level }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching eldritch invocations:', error);
-      return [];
-    }
-  }
+export const getDivineOrders = (signal?: AbortSignal): Promise<ApiResult<DivineOrder[]>> =>
+  request<DivineOrder[]>(
+    () => apiClient.get<DivineOrder[]>('/class-choices/divine-orders', withSignal(undefined, signal)),
+    { retry: true }
+  );
 
-  /**
-   * Get basic class data including features and proficiencies
-   */
-  async getClassData(className: string): Promise<any> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/class-choices/class-data/${className}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching class data:', error);
-      return null;
-    }
-  }
+export const getEldritchInvocations = (
+  level = 1,
+  signal?: AbortSignal
+): Promise<ApiResult<EldritchInvocation[]>> =>
+  request<EldritchInvocation[]>(
+    () =>
+      apiClient.get<EldritchInvocation[]>(
+        '/class-choices/eldritch-invocations',
+        withParams({ level }, signal)
+      ),
+    { retry: true }
+  );
 
-  /**
-   * Get all class choices for a specific class and level
-   */
-  async getClassChoices(className: string, level: number = 1): Promise<ClassChoicesResponse> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/class-choices/${className}`, {
-        params: { level }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching class choices:', error);
-      return { class: null, choices: {} };
-    }
-  }
-}
+export const getClassData = (
+  className: string,
+  signal?: AbortSignal
+): Promise<ApiResult<unknown>> =>
+  request<unknown>(() => apiClient.get(`/class-choices/class-data/${className}`, withSignal(undefined, signal)), {
+    retry: true,
+  });
 
-export default new ClassChoiceService();
+export const getClassChoices = (
+  className: string,
+  level = 1,
+  signal?: AbortSignal
+): Promise<ApiResult<ClassChoicesResponse>> =>
+  request<ClassChoicesResponse>(
+    () =>
+      apiClient.get<ClassChoicesResponse>(
+        `/class-choices/${className}`,
+        withParams({ level }, signal)
+      ),
+    { retry: true }
+  );
+
+export const classChoiceService = {
+  getFightingStyles,
+  getDivineOrders,
+  getEldritchInvocations,
+  getClassData,
+  getClassChoices,
+};
+
+export default classChoiceService;

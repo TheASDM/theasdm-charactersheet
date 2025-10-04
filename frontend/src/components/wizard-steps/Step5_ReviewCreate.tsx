@@ -8,6 +8,9 @@ import { characterService } from '../../services/characterService';
 import { StructuredFeaturesDisplay } from '../StructuredFeaturesDisplay';
 import { useUser } from '../../contexts/UserContext';
 import { parseDnDTemplateTag } from '../../utils/dndTemplateParser';
+import { isError } from '@/types/api';
+import { showError } from '@/utils/errorDisplay';
+import { logger } from '../../utils/logger';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
@@ -223,54 +226,29 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     setIsCreating(true);
     setCreateStatus(null);
 
-    try {
-      // Convert generator data to character sheet format
-      const characterSheetData = mapGeneratorDataToCharacterSheet(data);
+    const characterSheetData = mapGeneratorDataToCharacterSheet(data);
 
-      // Log the converted data for debugging (safely)
-      console.log('Generated Character Sheet Data:', {
-        ...characterSheetData,
-        features: 'Features object (see next log)'
-      });
+    const response = await characterService.create({
+      userId: user?.id || 1,
+      name: characterSheetData.name,
+      level: characterSheetData.level,
+      characterData: characterSheetData,
+      isPublic: false,
+    });
 
-      // Safely log features
-      try {
-      } catch (featuresError) {
-      }
-
-      // Create character using the API
-      const response = await characterService.create({
-        userId: user?.id || 1, // Use actual user ID from auth context, fallback to 1
-        name: characterSheetData.name,
-        level: characterSheetData.level,
-        characterData: characterSheetData,
-        isPublic: false,
-      });
-
-      if (response.error) {
-        console.error('❌ API Error:', response.error);
-        setCreateStatus('error');
-        return;
-      }
-
-      if (!response.data) {
-        console.error('❌ No character data returned from server');
-        setCreateStatus('error');
-        return;
-      }
-
-      setCreateStatus('success');
-
-      // Wait a moment to show success message, then pass character ID to trigger choice detection
-      setTimeout(() => {
-        onComplete(response.data!.id);
-      }, 1500);
-    } catch (error) {
-      console.error('❌ Error creating character:', error);
+    if (isError(response) || !response.data) {
+      showError(response.error ?? 'Failed to create character', response.statusCode, response.errorCode);
       setCreateStatus('error');
-    } finally {
       setIsCreating(false);
+      return;
     }
+
+    setCreateStatus('success');
+    setIsCreating(false);
+
+    setTimeout(() => {
+      onComplete(response.data!.id);
+    }, 1500);
   };
 
   const formatList = (items: string[] | undefined): string => {
@@ -285,13 +263,13 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     if (typeof value === 'number') return String(value);
     if (typeof value === 'boolean') return String(value);
     if (typeof value === 'object') {
-      console.warn('🚨 FOUND OBJECT IN SAFE RENDER:', { value, keys: Object.keys(value) });
+      logger.warn('🚨 FOUND OBJECT IN SAFE RENDER:', { value, keys: Object.keys(value) });
       // Check if this is the {A, B} object we're looking for
       const keys = Object.keys(value);
       if (keys.length === 2 && keys.includes('A') && keys.includes('B')) {
-        console.error('🔥 FOUND THE {A, B} OBJECT:', value);
-        console.error('🔥 A array contents:', value.A);
-        console.error('🔥 B array contents:', value.B);
+        logger.error('🔥 FOUND THE {A, B} OBJECT:', value);
+        logger.error('🔥 A array contents:', value.A);
+        logger.error('🔥 B array contents:', value.B);
       }
       return JSON.stringify(value);
     }
@@ -323,7 +301,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
       // Handle the {A, B} object structure (equipment choices)
       if (typeof item === 'object' && item?.A && item?.B) {
-        console.warn('🎯 Found {A, B} equipment object:', item);
+        logger.warn('🎯 Found {A, B} equipment object:', item);
 
         // Helper to extract from nested arrays
         const extractFromArray = (arr: any[]): string => {
@@ -537,7 +515,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
                 />
               );
             } catch (error) {
-              console.error('Error rendering features:', error);
+              logger.error('Error rendering features:', error);
               return (
                 <div style={{ color: '#ff6b6b', padding: '1rem', textAlign: 'center' }}>
                   Error loading features. Check console for details.

@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { SpellCard } from './';
-import { spellService } from '../services';
 import { Spell } from '../types/api';
-import type { SpellFilters } from '../services/spellService';
+import { listSpells, SpellFilters } from '@/services/spellService';
+import { useApiCall } from '@/hooks/useApiCall';
+import { showError } from '@/utils/errorDisplay';
+import { isError } from '@/types/api';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 
 // Styled components updated for medieval forest green theme
@@ -339,13 +342,9 @@ const SpellList: React.FC<SpellListProps> = ({
   showSearch = false,
 }) => {
   const [spells, setSpells] = useState<Spell[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // Debounce search to prevent excessive API calls
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   const debouncedSearchUpdate = useDebouncedCallback((term: string) => {
@@ -357,79 +356,79 @@ const SpellList: React.FC<SpellListProps> = ({
     debouncedSearchUpdate(searchTerm);
   }, [searchTerm, debouncedSearchUpdate]);
 
-  useEffect(() => {
-    loadSpells();
-  }, [filters, debouncedSearchTerm, currentPage]);
-
-  const loadSpells = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const searchFilters: SpellFilters = {
-        ...filters,
-        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
-        page: currentPage,
-      };
-
-      const response = await spellService.getAll(searchFilters);
-
-      if (response.error) {
-        setError(response.error);
-        setSpells([]);
-        setTotalPages(1);
-      } else if (response.data) {
-        const spellsData = response.data.spells || [];
-        setSpells(spellsData);
-
-        // Simple pagination logic - if we get fewer than 20 spells, assume last page
-        const pageSize = 20;
-        if (spellsData.length < pageSize && currentPage > 1) {
-          setTotalPages(currentPage);
-        } else if (spellsData.length === pageSize) {
-          // If we got a full page, assume there might be more
-          setTotalPages(Math.max(currentPage + 1, totalPages));
-        } else {
-          // First page with less than full results
-          setTotalPages(Math.max(1, currentPage));
-        }
+  const {
+    error,
+    isLoading,
+    execute: fetchSpells,
+  } = useApiCall(listSpells, {
+    showErrorToast: false,
+    onSuccess: (payload) => {
+      const results = payload.spells ?? payload.items ?? [];
+      setSpells(results);
+      if (payload.pagination) {
+        setTotalPages(payload.pagination.pages);
+      } else {
+        setTotalPages(Math.max(1, latestFiltersRef.current.page ?? 1));
       }
-    } catch (err) {
-      setError('Failed to load spells from the magical archives.');
+    },
+    onError: (result) => {
+      if (isError(result)) {
+        showError(result.error ?? 'Failed to load spells from the magical archives.', result.statusCode, result.errorCode);
+      }
       setSpells([]);
       setTotalPages(1);
-      console.error('Error loading spells:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
+
+  const latestFiltersRef = useRef<SpellFilters>({ page: 1 });
+
+  const searchFilters = useMemo<SpellFilters>(
+    () => ({
+      ...filters,
+      ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
+      page: currentPage,
+    }),
+    [filters, debouncedSearchTerm, currentPage]
+  );
+
+  const runSearch = useCallback(
+    (nextFilters: SpellFilters) => {
+      latestFiltersRef.current = nextFilters;
+      void fetchSpells(nextFilters);
+    },
+    [fetchSpells]
+  );
+
+  useEffect(() => {
+    runSearch(searchFilters);
+  }, [runSearch, searchFilters]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages && !loading) {
+    if (newPage >= 1 && newPage <= totalPages && !isLoading) {
       setCurrentPage(newPage);
       // Scroll to top when changing pages
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  if (loading) {
+  if (isLoading && spells.length === 0) {
     return (
       <LoadingContainer>
-        ✨ Summoning Spells from the Arcane Library...
+        <LoadingSpinner message="Summoning spells from the arcane library..." />
       </LoadingContainer>
     );
   }
 
-  if (error) {
+  if (error && spells.length === 0) {
     return (
       <ErrorContainer>
         <div className="error-title">🔮 Magical Interference Detected</div>
         <div className="error-message">{error}</div>
-        <button onClick={loadSpells}>Retry Incantation</button>
+        <button onClick={() => runSearch(latestFiltersRef.current)}>Retry Incantation</button>
       </ErrorContainer>
     );
   }
@@ -475,7 +474,7 @@ const SpellList: React.FC<SpellListProps> = ({
             <PaginationContainer>
               <PaginationButton
                 onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage <= 1 || loading}
+                disabled={currentPage <= 1 || isLoading}
               >
                 ← Previous
               </PaginationButton>
@@ -488,7 +487,7 @@ const SpellList: React.FC<SpellListProps> = ({
                   <>
                     <PaginationButton
                       onClick={() => handlePageChange(1)}
-                      disabled={loading}
+                      disabled={isLoading}
                     >
                       1
                     </PaginationButton>
@@ -515,7 +514,7 @@ const SpellList: React.FC<SpellListProps> = ({
                       key={pageNum}
                       active={pageNum === currentPage}
                       onClick={() => handlePageChange(pageNum)}
-                      disabled={loading}
+                      disabled={isLoading}
                     >
                       {pageNum}
                     </PaginationButton>
@@ -532,7 +531,7 @@ const SpellList: React.FC<SpellListProps> = ({
                     )}
                     <PaginationButton
                       onClick={() => handlePageChange(totalPages)}
-                      disabled={loading}
+                      disabled={isLoading}
                     >
                       {totalPages}
                     </PaginationButton>
@@ -546,7 +545,7 @@ const SpellList: React.FC<SpellListProps> = ({
 
               <PaginationButton
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages || loading}
+                disabled={currentPage >= totalPages || isLoading}
               >
                 Next →
               </PaginationButton>

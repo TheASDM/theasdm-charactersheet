@@ -1,10 +1,11 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Navigation } from './components';
 import { UserProvider } from './contexts/UserContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { setSessionToken } from '@/services/session';
 import {
   CharactersPage,
   CharacterViewPage,
@@ -295,6 +296,18 @@ const HomePage: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setSessionToken(null);
+      navigate('/login');
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, [navigate]);
+
   return (
     <>
       <Helmet>

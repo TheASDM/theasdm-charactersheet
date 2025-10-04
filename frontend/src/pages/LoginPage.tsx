@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
+import { isError } from '@/types/api';
 import {
   AuthContainer,
   AuthCard,
@@ -46,10 +47,12 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await login(formData);
+      const result = await login(formData);
+      if (isError(result)) {
+        setError(result.error ?? 'Login failed. Please try again.');
+        return;
+      }
       navigate('/characters'); // Redirect to characters page after login
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { CharacterSheetData } from '../../types/characterSheet';
 import { classService, CLASS_SKILL_CHOICES } from '../../services/classService';
+import { isError } from '@/types/api';
+import { logger } from '../../utils/logger';
 // import { speciesChoices } from '../../components/SpeciesSelectionModal'; // Removed - now uses API
 // import { backgroundsData } from '../../components/BackgroundSelectionModal'; // Removed - now uses API
 
@@ -46,7 +48,7 @@ export const useSelectionModals = (
 
   const handleSpeciesConfirm = useCallback(async () => {
     // TODO: Replace with API-based species selection - function temporarily disabled
-    console.warn('handleSpeciesConfirm temporarily disabled - needs API refactor');
+    logger.warn('handleSpeciesConfirm temporarily disabled - needs API refactor');
 
     // Close modal for now
     setShowSpeciesPopup(false);
@@ -68,14 +70,12 @@ export const useSelectionModals = (
     setClassChoicesStep(1);
     setCurrentClassData(null);
 
-    try {
-      const response = await classService.getByName(className);
-      if (response.data) {
-        setCurrentClassData(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching class data:', error);
+    const response = await classService.getClassByName(className);
+    if (isError(response)) {
+      logger.error('Error fetching class data:', response.error);
+      return;
     }
+    setCurrentClassData(response.data);
 
     setShowClassPopup(true);
   }, []);
@@ -229,7 +229,7 @@ export const useSelectionModals = (
 
   const handleBackgroundConfirm = useCallback(() => {
     // TODO: Replace with API-based background selection - function temporarily disabled
-    console.warn('handleBackgroundConfirm temporarily disabled - needs API refactor');
+    logger.warn('handleBackgroundConfirm temporarily disabled - needs API refactor');
 
     // Close modal for now
     setShowBackgroundPopup(false);

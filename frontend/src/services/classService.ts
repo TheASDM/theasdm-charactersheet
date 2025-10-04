@@ -1,24 +1,35 @@
-import { apiClient } from './api';
-import { CharacterClass, ApiResponse } from '../types/api';
+import { apiClient, request, withSignal } from './api';
+import { ApiResult, CharacterClass } from '@/types/api';
 
-export const classService = {
-  // Get all character classes
-  getAll: async (): Promise<ApiResponse<CharacterClass[]>> => {
-    return apiClient.get<CharacterClass[]>('/classes');
-  },
+export const listClasses = (
+  signal?: AbortSignal
+): Promise<ApiResult<CharacterClass[]>> =>
+  request<CharacterClass[]>(
+    () => apiClient.get<CharacterClass[]>('/classes', withSignal(undefined, signal)),
+    { retry: true }
+  );
 
-  // Get a single class by ID
-  getById: async (id: number): Promise<ApiResponse<CharacterClass>> => {
-    return apiClient.get<CharacterClass>(`/classes/${id}`);
-  },
+export const getClassById = (
+  id: string,
+  signal?: AbortSignal
+): Promise<ApiResult<CharacterClass>> =>
+  request<CharacterClass>(
+    () => apiClient.get<CharacterClass>(`/classes/${id}`, withSignal(undefined, signal)),
+    { retry: true }
+  );
 
-  // Get a class by name
-  getByName: async (name: string): Promise<ApiResponse<CharacterClass>> => {
-    return apiClient.get<CharacterClass>(
-      `/classes/name/${encodeURIComponent(name)}`
-    );
-  },
-};
+export const getClassByName = (
+  name: string,
+  signal?: AbortSignal
+): Promise<ApiResult<CharacterClass>> =>
+  request<CharacterClass>(
+    () =>
+      apiClient.get<CharacterClass>(
+        `/classes/name/${encodeURIComponent(name)}`,
+        withSignal(undefined, signal)
+      ),
+    { retry: true }
+  );
 
 // Character class constants for easy reference
 export const CHARACTER_CLASSES = [
@@ -36,21 +47,31 @@ export const CHARACTER_CLASSES = [
   'Wizard',
 ] as const;
 
-// Class skills and skill choice counts for character generator wizard
-// These are essential for the wizard workflow and provide immediate feedback
 export const CLASS_SKILLS: Record<string, string[]> = {
   Barbarian: ['Animal Handling', 'Athletics', 'Intimidation', 'Nature', 'Perception', 'Survival'],
-  Bard: ['any'], // Special case - bards can choose any skills
+  Bard: ['any'],
   Cleric: ['History', 'Insight', 'Medicine', 'Persuasion', 'Religion'],
   Druid: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'],
   Fighter: ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Perception', 'Survival'],
   Monk: ['Acrobatics', 'Athletics', 'History', 'Insight', 'Religion', 'Stealth'],
   Paladin: ['Athletics', 'Insight', 'Intimidation', 'Medicine', 'Persuasion', 'Religion'],
   Ranger: ['Animal Handling', 'Athletics', 'Insight', 'Investigation', 'Nature', 'Perception', 'Stealth', 'Survival'],
-  Rogue: ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'],
+  Rogue: [
+    'Acrobatics',
+    'Athletics',
+    'Deception',
+    'Insight',
+    'Intimidation',
+    'Investigation',
+    'Perception',
+    'Performance',
+    'Persuasion',
+    'Sleight of Hand',
+    'Stealth',
+  ],
   Sorcerer: ['Arcana', 'Deception', 'Insight', 'Intimidation', 'Persuasion', 'Religion'],
   Warlock: ['Arcana', 'Deception', 'History', 'Intimidation', 'Investigation', 'Nature', 'Religion'],
-  Wizard: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion']
+  Wizard: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion'],
 };
 
 export const CLASS_SKILL_CHOICES: Record<string, number> = {
@@ -65,7 +86,16 @@ export const CLASS_SKILL_CHOICES: Record<string, number> = {
   Rogue: 4,
   Sorcerer: 2,
   Warlock: 2,
-  Wizard: 2
+  Wizard: 2,
+};
+
+export const classService = {
+  listClasses,
+  getClassById,
+  getClassByName,
+  CLASS_SKILLS,
+  CLASS_SKILL_CHOICES,
+  CHARACTER_CLASSES,
 };
 
 export default classService;

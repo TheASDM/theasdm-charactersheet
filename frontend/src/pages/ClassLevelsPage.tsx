@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { CharacterClass } from '../types/api';
+import { CharacterClass, isError } from '../types/api';
 import { classService } from '../services';
+import { logger } from '../utils/logger';
 
 // Styled components for clean D&D styling
 const PageContainer = styled.div`
@@ -219,18 +220,16 @@ const ClassLevelsPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await classService.getById(parseInt(classId));
+      const response = await classService.getClassById(classId);
 
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setCharacterClass(response.data);
+      if (isError(response)) {
+        setError(response.error ?? 'Class not found');
       } else {
-        setError('Class not found');
+        setCharacterClass(response.data);
       }
     } catch (err) {
       setError('Failed to load class data');
-      console.error('Error loading class:', err);
+      logger.error('Error loading class:', err);
     } finally {
       setLoading(false);
     }

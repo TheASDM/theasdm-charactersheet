@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { backgroundService } from '../services';
-import { Background } from '../types/api';
+import { Background, isError } from '../types/api';
+import { listBackgrounds } from '@/services/backgroundService';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { showError } from '@/utils/errorDisplay';
 
 // Main page container matching Generator theme
 const PageContainer = styled.div`
@@ -165,26 +168,29 @@ const ErrorContainer = styled.div`
 
 const BackgroundsPage: React.FC = () => {
   const [backgrounds, setBackgrounds] = useState<Background[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: backgroundData,
+    error,
+    isLoading,
+    execute: fetchBackgrounds,
+  } = useApiCall(listBackgrounds, {
+    onSuccess: setBackgrounds,
+    onError: (result) => {
+      if (isError(result)) {
+        showError(result.error ?? 'Failed to load backgrounds from the chronicles of old.', result.statusCode, result.errorCode);
+      }
+    },
+  });
 
   useEffect(() => {
-    const fetchBackgrounds = async () => {
-      try {
-        setLoading(true);
-        const response = await backgroundService.getAll();
-        const backgroundsData = response.data || [];
-        setBackgrounds(backgroundsData);
-      } catch (err) {
-        console.error('Error fetching backgrounds:', err);
-        setError('Failed to load backgrounds from the chronicles of old.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBackgrounds();
-  }, []);
+  }, [fetchBackgrounds]);
+
+  useEffect(() => {
+    if (backgroundData) {
+      setBackgrounds(backgroundData);
+    }
+  }, [backgroundData]);
 
   // Helper functions
   const getSkillProficiencyList = (skillProfs?: { [key: string]: boolean }): string => {
@@ -235,7 +241,7 @@ const BackgroundsPage: React.FC = () => {
     return 'Choose 2 languages';
   };
 
-  if (loading) {
+  if (isLoading && backgrounds.length === 0) {
     return (
       <PageContainer>
         <ContentContainer>
@@ -244,14 +250,16 @@ const BackgroundsPage: React.FC = () => {
             <p>Forge Your Past</p>
           </Header>
           <MainContainer>
-            <LoadingContainer>Loading backgrounds data...</LoadingContainer>
+            <LoadingContainer>
+              <LoadingSpinner message="Loading background data..." />
+            </LoadingContainer>
           </MainContainer>
         </ContentContainer>
       </PageContainer>
     );
   }
 
-  if (error) {
+  if (error && backgrounds.length === 0) {
     return (
       <PageContainer>
         <ContentContainer>

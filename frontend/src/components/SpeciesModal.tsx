@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import type { MouseEvent } from 'react';
 import { Species } from '../types/api';
 import { parseComplexDnDEntry } from '../utils/dndTemplateParser';
 
@@ -413,7 +414,7 @@ export default function SpeciesModal({ species, onClose }: SpeciesModalProps) {
 
   const traits = parseTraits(species.traits);
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
+  const handleOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
     }

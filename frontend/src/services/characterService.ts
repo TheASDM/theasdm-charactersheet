@@ -1,67 +1,95 @@
-import { apiClient } from './api';
+import { apiClient, request, withSignal } from './api';
 import {
+  ApiResult,
   Character,
   CreateCharacterRequest,
   UpdateCharacterRequest,
-  ApiResponse,
-} from '../types/api';
+} from '@/types/api';
+import type { CharacterSheetData } from '@/types/characterSheet';
+
+type ListCharactersParams = {
+  userId?: number;
+  includePublic?: boolean;
+};
+
+const withQuery = (params?: Record<string, unknown>, signal?: AbortSignal) =>
+  withSignal(params ? { params } : undefined, signal);
+
+export async function list(
+  params: ListCharactersParams = {},
+  signal?: AbortSignal
+): Promise<ApiResult<Character[]>> {
+  const query: Record<string, unknown> = {};
+  if (typeof params.userId === 'number') {
+    query.userId = params.userId;
+  }
+  if (params.includePublic) {
+    query.public = 'true';
+  }
+
+  return request<Character[]>(
+    () =>
+      apiClient.get<Character[]>(
+        '/characters',
+        Object.keys(query).length > 0 ? withQuery(query, signal) : withSignal(undefined, signal)
+      ),
+    { retry: true }
+  );
+}
+
+export async function getById(
+  id: number | string,
+  signal?: AbortSignal
+): Promise<ApiResult<Character>> {
+  return request<Character>(
+    () => apiClient.get<Character>(`/characters/${id}`, withSignal(undefined, signal)),
+    { retry: true }
+  );
+}
+
+export async function create(
+  input: CreateCharacterRequest
+): Promise<ApiResult<Character>> {
+  return request<Character>(() => apiClient.post<Character>('/characters', input));
+}
+
+export async function remove(id: number | string): Promise<ApiResult<void>> {
+  return request<void>(() => apiClient.delete<void>(`/characters/${id}`));
+}
+
+export async function update(
+  id: number | string,
+  patch: UpdateCharacterRequest,
+  signal?: AbortSignal
+): Promise<ApiResult<Character>> {
+  return request<Character>(() =>
+    apiClient.put<Character>(`/characters/${id}`, patch, withSignal(undefined, signal))
+  );
+}
+
+export async function updateCharacterSheet(
+  id: number,
+  characterSheetData: CharacterSheetData
+): Promise<ApiResult<Character>> {
+  return update(id, {
+    characterData: characterSheetData,
+    name: characterSheetData.name,
+    level: characterSheetData.level,
+  });
+}
 
 export const characterService = {
-  // Get all characters, optionally filtered by user
-  getAll: async (userId?: number): Promise<ApiResponse<Character[]>> => {
-    const params = userId ? { userId } : undefined;
-    return apiClient.get<Character[]>('/characters', params);
-  },
-
-  // Get a single character by ID
-  getById: async (id: number): Promise<ApiResponse<Character>> => {
-    return apiClient.get<Character>(`/characters/${id}`);
-  },
-
-  // Create a new character
-  create: async (
-    characterData: CreateCharacterRequest
-  ): Promise<ApiResponse<Character>> => {
-    return apiClient.post<Character>('/characters', characterData);
-  },
-
-  // Update an existing character
-  update: async (
-    id: number,
-    characterData: UpdateCharacterRequest
-  ): Promise<ApiResponse<Character>> => {
-    return apiClient.put<Character>(`/characters/${id}`, characterData);
-  },
-
-  // Delete a character
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    return apiClient.delete<void>(`/characters/${id}`);
-  },
-
-  // Get characters for a specific user
-  getByUser: async (userId: number): Promise<ApiResponse<Character[]>> => {
-    return characterService.getAll(userId);
-  },
-
-  // Get public characters
-  getPublic: async (): Promise<ApiResponse<Character[]>> => {
-    return apiClient.get<Character[]>('/characters?public=true');
-  },
-
-  // Update just the character sheet data
-  updateCharacterSheet: async (
-    id: number,
-    characterSheetData: any
-  ): Promise<ApiResponse<Character>> => {
-
-    const result = await characterService.update(id, {
-      characterData: characterSheetData,
-      name: characterSheetData.name, // Also update the character name
-      level: characterSheetData.level, // Also update the character level
-    });
-
-    return result;
-  },
+  list,
+  getAll: (userId?: number, signal?: AbortSignal) =>
+    list(typeof userId === 'number' ? { userId } : {}, signal),
+  getById,
+  create,
+  update,
+  delete: remove,
+  remove,
+  getByUser: (userId: number, signal?: AbortSignal) => list({ userId }, signal),
+  getPublic: (signal?: AbortSignal) => list({ includePublic: true }, signal),
+  updateCharacterSheet,
 };
 
 export default characterService;

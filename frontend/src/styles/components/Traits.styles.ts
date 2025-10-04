@@ -227,7 +227,7 @@ export const TraitName = styled.h3`
   line-height: 1.2;
 `;
 
-export const TraitDescription = styled.p`
+export const TraitDescription = styled.div`
   color: #e0e0e0;
   font-size: 0.7rem;
   line-height: 1.3;

@@ -1,3 +1,4 @@
+import { logger } from './logger';
 // Parse complex D&D data structures (tables, lists, etc.)
 export const parseComplexDnDEntry = (entry: any): string => {
   if (typeof entry === 'string') {
@@ -220,7 +221,7 @@ export const parseDnDTemplateTag = (text: string): string => {
 
         // Fallback - return the content without the tag
         default:
-          console.warn('❓ Unknown tag type:', { tagType, content });
+          logger.warn('❓ Unknown tag type:', { tagType, content });
           return name || '';
       }
     });

@@ -50,7 +50,6 @@ import { CharacterStatsSection } from './CharacterStatsSection';
 import WeaponMasterySection from './WeaponMasterySection';
 import SpellcastingBar from './SpellcastingBar';
 import { SimpleFeature } from '../utils/simpleFeatureGenerator';
-import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 
 
 export default function CharacterSheetPretty({
@@ -59,13 +58,6 @@ export default function CharacterSheetPretty({
   onSave,
   initialEditMode,
 }: CharacterSheetProps) {
-  const debouncedSilentSave = useDebouncedCallback(
-    (updated: CharacterSheetData) => {
-      onSave?.(updated, { silent: true });
-    },
-    250
-  );
-
   // Custom updateCharacter function
   const updateCharacter = useCallback(
     (updates: Partial<CharacterSheetData>) => {
@@ -73,10 +65,10 @@ export default function CharacterSheetPretty({
       onUpdate(updatedCharacter);
 
       if (onSave) {
-        debouncedSilentSave(updatedCharacter);
+        void onSave(updatedCharacter, { silent: true });
       }
     },
-    [character, onUpdate, onSave, debouncedSilentSave]
+    [character, onUpdate, onSave]
   );
 
   const [editingSections, setEditingSections] = useState<{
@@ -137,9 +129,7 @@ export default function CharacterSheetPretty({
 
     if (isCurrentlyEditing) {
       // Exiting edit mode - auto-save
-      if (onSave) {
-        onSave(character);
-      }
+      void onSave?.(character);
       // Clear stored original values for this section
       setOriginalValues((prev) => ({
         ...prev,
@@ -269,9 +259,7 @@ export default function CharacterSheetPretty({
 
     // Silent auto-save the changes (no notification)
     if (onSave && updatedCharacter) {
-      setTimeout(() => {
-        onSave(updatedCharacter, { silent: true });
-      }, 100);
+      void onSave(updatedCharacter, { silent: true });
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
-import { CharacterSheetData } from '../types/characterSheet';
+import { CharacterSheetData, InventoryItem } from '../types/characterSheet';
 import { WEAPON_MASTERY_PROPERTIES } from '../utils/simpleFeatureGenerator';
 import WeaponMasteryModal from './WeaponMasteryModal';
 
@@ -120,6 +120,13 @@ const WeaponMasterySection: React.FC<WeaponMasterySectionProps> = ({
 
   const activeMasteries = character.weaponMasteries?.active || [];
 
+  const ownedWeaponNames = useMemo(() => {
+    if (!Array.isArray(character.inventory)) return [] as string[];
+    return character.inventory
+      .map((item: InventoryItem) => item?.name?.trim())
+      .filter((name): name is string => Boolean(name));
+  }, [character.inventory]);
+
   const handleConfirm = (masteries: Array<{ weapon: string; property: string }>) => {
     onUpdateCharacter({
       weaponMasteries: {
@@ -169,6 +176,7 @@ const WeaponMasterySection: React.FC<WeaponMasterySectionProps> = ({
         onConfirm={handleConfirm}
         onCancel={() => setIsModalOpen(false)}
         classRestrictions={masteryConfig.restriction}
+        ownedWeapons={ownedWeaponNames}
       />
     </>
   );

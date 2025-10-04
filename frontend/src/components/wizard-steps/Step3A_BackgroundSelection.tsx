@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import backgroundService from '../../services/backgroundService';
+import { listBackgrounds } from '@/services/backgroundService';
 import { Background } from '../../types/api';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface Step3ABackgroundSelectionProps {
   data: CharacterBuilderData;
@@ -113,13 +115,6 @@ const BackgroundSelectionInfo = styled.div`
     margin: 0;
     font-size: 0.85rem;
   }
-`;
-
-const LoadingSpinner = styled.div`
-  text-align: center;
-  color: #d4af37;
-  padding: 2rem;
-  font-size: 1.1rem;
 `;
 
 const ModalOverlay = styled.div`
@@ -375,33 +370,21 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   onUpdate,
   onAdvance
 }) => {
-  const [backgrounds, setBackgrounds] = useState<Background[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: fetchedBackgrounds,
+    error,
+    isLoading,
+    execute: fetchBackgrounds,
+  } = useApiCall(listBackgrounds);
   const [selectedBackgroundForModal, setSelectedBackgroundForModal] = useState<Background | null>(null);
   const [abilityScoreAllocations, setAbilityScoreAllocations] = useState<{ [ability: string]: number }>({});
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
   useEffect(() => {
     fetchBackgrounds();
-  }, []);
+  }, [fetchBackgrounds]);
 
-  const fetchBackgrounds = async () => {
-    try {
-      setIsLoading(true);
-      const response = await backgroundService.getAll();
-      if (response.data) {
-        setBackgrounds(response.data);
-      } else {
-        setError(response.error || 'Failed to load backgrounds');
-      }
-    } catch (err) {
-      console.error('Error fetching backgrounds:', err);
-      setError('Failed to load backgrounds');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const backgrounds = fetchedBackgrounds ?? [];
 
 
   const handleBackgroundClick = (background: Background) => {
@@ -785,16 +768,16 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
     return items.length > 0 ? items.join(', ') : 'None';
   };
 
-  if (isLoading) {
+  if (isLoading && backgrounds.length === 0) {
     return (
       <StepContainer>
         <div className="step-title">Background</div>
-        <LoadingSpinner>Loading backgrounds...</LoadingSpinner>
+        <LoadingSpinner message="Loading backgrounds..." />
       </StepContainer>
     );
   }
 
-  if (error) {
+  if (error && backgrounds.length === 0) {
     return (
       <StepContainer>
         <div className="step-title">Background</div>

@@ -5,6 +5,9 @@ import { itemService } from '../../services/itemService';
 import { EquipmentValidator } from '../../utils/equipmentValidator';
 import { SpecialItemsRegistry } from '../../utils/specialItemsRegistry';
 import { calculateWeaponStats } from '../../utils/weaponCalculator';
+import { isError } from '@/types/api';
+import { showError } from '@/utils/errorDisplay';
+import { logger } from '../../utils/logger';
 
 interface InventoryOperationResult {
   success: boolean;
@@ -113,23 +116,21 @@ export const useInventoryManagement = (
     }
 
     setIsSearching(true);
-    try {
-      const response = await itemService.search(term, 20);
-      if (response.data) {
-        setSearchResults(response.data.items || []);
-      } else {
-        setSearchResults([]);
-      }
-    } catch (error) {
-      console.error('Error searching items:', error);
+    const response = await itemService.search(term, 20);
+
+    if (isError(response)) {
+      showError(response.error ?? 'Failed to search items', response.statusCode, response.errorCode);
       setSearchResults([]);
       setOperationResult({
         success: false,
-        message: 'Failed to search items. Please try again.'
+        message: response.error ?? 'Failed to search items. Please try again.'
       });
-    } finally {
       setIsSearching(false);
+      return;
     }
+
+    setSearchResults(response.data?.items ?? []);
+    setIsSearching(false);
   }, []);
 
   // Helper function to add items to inventory
@@ -244,7 +245,7 @@ export const useInventoryManagement = (
       });
 
     } catch (error) {
-      console.error('Error adding item:', error);
+      logger.error('Error adding item:', error);
       setOperationResult({
         success: false,
         message: 'Failed to add item to inventory'
@@ -309,7 +310,7 @@ export const useInventoryManagement = (
       });
 
     } catch (error) {
-      console.error('Error adding custom item:', error);
+      logger.error('Error adding custom item:', error);
       setOperationResult({
         success: false,
         message: 'Failed to add custom item'
@@ -362,7 +363,7 @@ export const useInventoryManagement = (
       });
 
     } catch (error) {
-      console.error('Error deleting item:', error);
+      logger.error('Error deleting item:', error);
       setOperationResult({
         success: false,
         message: 'Failed to remove item from inventory'
@@ -397,7 +398,7 @@ export const useInventoryManagement = (
       }
 
     } catch (error) {
-      console.error('Error updating quantity:', error);
+      logger.error('Error updating quantity:', error);
       setOperationResult({
         success: false,
         message: 'Failed to update item quantity'
@@ -507,7 +508,7 @@ export const useInventoryManagement = (
       });
 
     } catch (error) {
-      console.error('Error toggling equipment:', error);
+      logger.error('Error toggling equipment:', error);
       setOperationResult({
         success: false,
         message: 'Failed to update equipment status'
@@ -598,27 +599,25 @@ export const useInventoryManagement = (
     handleInventoryItemClick: async (itemName: string) => {
       if (!itemName?.trim()) return;
 
-      try {
-        const response = await itemService.search(itemName, 10);
-        if (response.data?.items) {
-          let foundItem = response.data.items.find(item =>
-            item.name.toLowerCase() === itemName.toLowerCase()
-          );
+      const response = await itemService.search(itemName, 10);
+      if (isError(response)) {
+        showError(response.error ?? 'Failed to load item details', response.statusCode, response.errorCode);
+        return;
+      }
 
-          if (!foundItem) {
-            foundItem = response.data.items.find(item =>
-              item.name.toLowerCase().includes(itemName.toLowerCase()) ||
-              itemName.toLowerCase().includes(item.name.toLowerCase())
-            );
-          }
+      const items = response.data?.items ?? [];
+      let foundItem = items.find(item => item.name.toLowerCase() === itemName.toLowerCase());
 
-          if (foundItem) {
-            setSelectedItemForDetails(foundItem);
-            setShowItemDetails(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error looking up item details:', error);
+      if (!foundItem) {
+        foundItem = items.find(item =>
+          item.name.toLowerCase().includes(itemName.toLowerCase()) ||
+          itemName.toLowerCase().includes(item.name.toLowerCase())
+        );
+      }
+
+      if (foundItem) {
+        setSelectedItemForDetails(foundItem);
+        setShowItemDetails(true);
       }
     },
     handleQuantityChange,

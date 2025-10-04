@@ -1,3 +1,4 @@
+import { logger } from './logger';
 import {
   CharacterFeature,
   FeatureType,
@@ -61,7 +62,7 @@ export function parseClassFeatures(
       }
     }
   } catch (error) {
-    console.warn('Error parsing class features:', error);
+    logger.warn('Error parsing class features:', error);
   }
 
   return features;
@@ -90,7 +91,7 @@ export function parseSpeciesTraits(
       });
     }
   } catch (error) {
-    console.warn('Error parsing species traits:', error);
+    logger.warn('Error parsing species traits:', error);
   }
 
   return traits;
@@ -130,7 +131,7 @@ export function parseFeatFeatures(
       if (parsed) features.push(parsed);
     }
   } catch (error) {
-    console.warn('Error parsing feat features:', error);
+    logger.warn('Error parsing feat features:', error);
   }
 
   return features;
@@ -152,7 +153,7 @@ export function parseBackgroundFeatures(
   try {
     const featuresData = backgroundData.features || backgroundData.backgroundFeatures || [];
 
-    console.log('🎯 BACKGROUND PROCESSING:', {
+    logger.debug('🎯 BACKGROUND PROCESSING:', {
       backgroundName,
       featuresDataType: typeof featuresData,
       isArray: Array.isArray(featuresData),
@@ -166,7 +167,7 @@ export function parseBackgroundFeatures(
       });
     }
   } catch (error) {
-    console.warn('Error parsing background features:', error);
+    logger.warn('Error parsing background features:', error);
   }
 
   return features;
@@ -205,7 +206,7 @@ function parseFeatureFromData(
 
     return null;
   } catch (error) {
-    console.warn('Error parsing feature data:', error);
+    logger.warn('Error parsing feature data:', error);
     return null;
   }
 }
@@ -318,7 +319,7 @@ function extractDescription(data: any): string {
 
   // Safeguard: if description is an object, convert to string
   if (typeof data.description === 'object' && data.description !== null) {
-    console.warn('Found object description, converting to string:', data.description);
+    logger.warn('Found object description, converting to string:', data.description);
     return JSON.stringify(data.description);
   }
 
@@ -332,7 +333,7 @@ function processEntries(entries: any[]): string {
   if (!Array.isArray(entries)) {
     if (typeof entries === 'string') return parseDnDTemplateTag(entries);
     if (typeof entries === 'object' && entries !== null) {
-      console.warn('processEntries received non-array object, converting:', entries);
+      logger.warn('processEntries received non-array object, converting:', entries);
       return parseComplexDnDEntry(entries);
     }
     return '';
@@ -348,7 +349,7 @@ function processEntries(entries: any[]): string {
 
     // Ensure we always return a string
     if (typeof result !== 'string') {
-      console.warn('parseComplexDnDEntry returned non-string:', result);
+      logger.warn('parseComplexDnDEntry returned non-string:', result);
       return JSON.stringify(result);
     }
 

@@ -1,20 +1,9 @@
-import { apiClient } from './api';
+import { apiClient, request, withSignal } from './api';
+import { ApiResult, User, ok, isError } from '@/types/api';
+import { getSessionToken } from './session';
 
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  isDm: boolean;
-  createdAt: string;
-  updatedAt?: string;
-  _count?: {
-    characters: number;
-    campaigns: number;
-  };
-}
-
-export interface AuthResponse {
-  message: string;
+export interface AuthSession {
+  message?: string;
   user: User;
   token: string;
 }
@@ -42,103 +31,71 @@ export interface UpdatePasswordData {
   confirmNewPassword: string;
 }
 
+interface AuthMeResponse {
+  user: User;
+}
+
+interface SuccessMessage {
+  message: string;
+}
+
+export async function register(data: RegisterData): Promise<ApiResult<AuthSession>> {
+  return request<AuthSession>(() => apiClient.post<AuthSession>('/auth/register', data));
+}
+
+export async function login(data: LoginData): Promise<ApiResult<AuthSession>> {
+  return request<AuthSession>(() => apiClient.post<AuthSession>('/auth/login', data));
+}
+
+export async function logout(signal?: AbortSignal): Promise<ApiResult<void>> {
+  return request<void>(() => apiClient.post('/auth/logout', undefined, withSignal(undefined, signal)));
+}
+
+export async function me(signal?: AbortSignal): Promise<ApiResult<User>> {
+  const result = await request<AuthMeResponse>(
+    () => apiClient.get<AuthMeResponse>('/auth/me', withSignal(undefined, signal)),
+    { retry: true }
+  );
+
+  if (isError(result)) {
+    return result;
+  }
+
+  return ok(result.data.user, result.statusCode);
+}
+
+export async function getCurrentUser(signal?: AbortSignal): Promise<ApiResult<User>> {
+  return me(signal);
+}
+
+export async function updateProfile(
+  data: UpdateProfileData
+): Promise<ApiResult<AuthSession>> {
+  return request<AuthSession>(() => apiClient.patch<AuthSession>('/auth/profile', data));
+}
+
+export async function updatePassword(
+  data: UpdatePasswordData
+): Promise<ApiResult<SuccessMessage>> {
+  return request<SuccessMessage>(() => apiClient.patch<SuccessMessage>('/auth/password', data));
+}
+
+export const isAuthenticated = (): boolean => !!getSessionToken();
+
+export const getToken = (): string | null => getSessionToken();
+
 export const authService = {
-  /**
-   * Register a new user
-   */
-  register: async (data: RegisterData) => {
-    const response = await apiClient.post<AuthResponse>('/auth/register', data);
-
-    if (response.data) {
-      // Store token in localStorage
-      localStorage.setItem('authToken', response.data.token);
-      return response.data;
-    }
-
-    throw new Error(response.error || 'Registration failed');
-  },
-
-  /**
-   * Login user
-   */
-  login: async (data: LoginData) => {
-    const response = await apiClient.post<AuthResponse>('/auth/login', data);
-
-    if (response.data) {
-      // Store token in localStorage
-      localStorage.setItem('authToken', response.data.token);
-      return response.data;
-    }
-
-    throw new Error(response.error || 'Login failed');
-  },
-
-  /**
-   * Logout user
-   */
-  logout: async () => {
-    try {
-      await apiClient.post('/auth/logout');
-    } finally {
-      // Always remove token, even if API call fails
-      localStorage.removeItem('authToken');
-    }
-  },
-
-  /**
-   * Get current user profile
-   */
-  getCurrentUser: async () => {
-    const response = await apiClient.get<{ user: User }>('/auth/me');
-
-    if (response.data) {
-      return response.data.user;
-    }
-
-    throw new Error(response.error || 'Failed to fetch user profile');
-  },
-
-  /**
-   * Update user profile
-   */
-  updateProfile: async (data: UpdateProfileData) => {
-    const response = await apiClient.patch<AuthResponse>('/auth/profile', data);
-
-    if (response.data) {
-      // Update token with new user info
-      localStorage.setItem('authToken', response.data.token);
-      return response.data;
-    }
-
-    throw new Error(response.error || 'Failed to update profile');
-  },
-
-  /**
-   * Update password
-   */
-  updatePassword: async (data: UpdatePasswordData) => {
-    const response = await apiClient.patch<{ message: string }>('/auth/password', data);
-
-    if (response.data) {
-      return response.data;
-    }
-
-    throw new Error(response.error || 'Failed to update password');
-  },
-
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated: () => {
-    return !!localStorage.getItem('authToken');
-  },
-
-  /**
-   * Get stored token
-   */
-  getToken: () => {
-    return localStorage.getItem('authToken');
-  },
+  register,
+  login,
+  logout,
+  me,
+  getCurrentUser,
+  updateProfile,
+  updatePassword,
+  isAuthenticated,
+  getToken,
 };
+
+export type { User };
 
 export default authService;

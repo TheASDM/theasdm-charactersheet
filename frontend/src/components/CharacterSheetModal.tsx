@@ -1,12 +1,13 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type MouseEvent } from 'react';
 import styled from 'styled-components';
 import CharacterSheetPretty from './CharacterSheetPretty';
 import {
   CharacterSheetData,
   createDefaultCharacterSheet,
 } from '../types/characterSheet';
-import { Character } from '../types/api';
+import { Character, isError } from '@/types/api';
 import { characterService } from '../services/characterService';
+import { showError } from '@/utils/errorDisplay';
 
 interface CharacterSheetModalProps {
   isOpen: boolean;
@@ -133,22 +134,16 @@ export default function CharacterSheetModal({
       let newData: CharacterSheetData;
 
       if (character.id > 0) {
-        // For existing characters, fetch fresh data from server
-        try {
-          const response = await characterService.getById(character.id);
-          if (response.data && response.data.characterData) {
-            newData = { ...createDefaultCharacterSheet(), ...response.data.characterData };
-          } else {
-            newData = character.characterData && typeof character.characterData === 'object'
-              ? { ...createDefaultCharacterSheet(), ...character.characterData }
-              : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
+        const response = await characterService.getById(character.id);
+        if (isError(response) || !response.data?.characterData) {
+          if (isError(response)) {
+            showError(response.error ?? 'Failed to load character', response.statusCode, response.errorCode);
           }
-        } catch (error) {
-          console.error('❌ Modal: Failed to fetch fresh character data:', error);
-          // Fallback to prop data
           newData = character.characterData && typeof character.characterData === 'object'
             ? { ...createDefaultCharacterSheet(), ...character.characterData }
             : { ...createDefaultCharacterSheet(), name: character.name || '', level: character.level || 1 };
+        } else {
+          newData = { ...createDefaultCharacterSheet(), ...response.data.characterData };
         }
       } else if (character.id === -1) {
         // For newly created characters from generator, always use the provided data
@@ -198,63 +193,57 @@ export default function CharacterSheetModal({
       }
 
       try {
-        let response;
+        let savedCharacter: Character | null = null;
 
         if (character.id === 0) {
-          // New character - create it
-          response = await characterService.create({
+          const response = await characterService.create({
             userId: character.userId || 1, // TODO: Get from auth context
             name: data.name || 'Unnamed Character',
             level: data.level || 1,
             characterData: data,
             isPublic: character.isPublic || false,
           });
+
+          if (isError(response)) {
+            showError(response.error ?? 'Failed to create character', response.statusCode, response.errorCode);
+            if (!isSilent) {
+              setError(response.error ?? 'Failed to create character. Please try again.');
+            }
+            return;
+          }
+
+          savedCharacter = response.data ?? null;
         } else {
-          // Existing character - update it
-          response = await characterService.updateCharacterSheet(
-            character.id,
-            data
-          );
+          const response = await characterService.updateCharacterSheet(character.id, data);
+
+          if (isError(response)) {
+            showError(response.error ?? 'Failed to save character', response.statusCode, response.errorCode);
+            if (!isSilent) {
+              setError(response.error ?? 'Failed to save character sheet. Please try again.');
+            }
+            return;
+          }
+
+          savedCharacter = response.data ?? null;
         }
 
-
-        if (response.error) {
-          console.error('❌ Modal: API Error:', response.error);
-          if (!isSilent) {
-            setError(response.error);
-          }
+        if (!savedCharacter) {
+          setError('Save completed but no data returned');
           return;
         }
 
-        if (response.data) {
-
-          // Only show notification for non-silent saves
-          if (!isSilent) {
-            setSuccess('Saved');
-            // Clear success message after 1 second for brief notification
-            setTimeout(() => {
-              setSuccess(null);
-            }, 1000);
-          }
-
-          // Update the character state to reflect the new/updated character
-          // This is especially important for new characters to get their ID
-          if (character.id === 0 && response.data.id) {
-            // For new characters, update the character with the new ID
-            character.id = response.data.id;
-          }
-
-          if (onSave) {
-            onSave(response.data);
-          }
-        } else {
-          setError('Save completed but no data returned');
-        }
-      } catch (err) {
-        console.error('❌ Modal: Exception saving character sheet:', err);
         if (!isSilent) {
-          setError('Failed to save character sheet. Please try again.');
+          setSuccess('Saved');
+          setTimeout(() => {
+            setSuccess(null);
+          }, 1000);
         }
+
+        if (character.id === 0 && savedCharacter.id) {
+          character.id = savedCharacter.id;
+        }
+
+        onSave?.(savedCharacter);
       } finally {
         setIsSaving(false);
       }
@@ -268,7 +257,7 @@ export default function CharacterSheetModal({
     onClose();
   }, [onClose]);
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
+  const handleOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       handleClose();
     }

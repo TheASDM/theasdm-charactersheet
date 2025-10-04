@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { CharacterClass, Spell } from '../types/api';
+import { CharacterClass, Spell, isError } from '../types/api';
 import { classService, spellService } from '../services';
+import { showError } from '@/utils/errorDisplay';
 import { Hero } from '../components';
 import SpellCard from '../components/SpellCard';
 import SpellModal from '../components/SpellModal';
+import { logger } from '../utils/logger';
 
 // Import medieval fonts
 const FontImport = styled.div`
@@ -514,18 +516,16 @@ const ClassDetailsPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await classService.getById(parseInt(classId));
+      const response = await classService.getClassById(classId);
 
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setCharacterClass(response.data);
+      if (isError(response)) {
+        setError(response.error ?? 'Failed to load class data from the ancient tomes.');
       } else {
-        setError('Class not found');
+        setCharacterClass(response.data);
       }
     } catch (err) {
       setError('Failed to load class data from the ancient tomes.');
-      console.error('Error loading class:', err);
+      logger.error('Error loading class:', err);
     } finally {
       setLoading(false);
     }
@@ -537,14 +537,16 @@ const ClassDetailsPage: React.FC = () => {
 
     setSpellsLoading(true);
     try {
-      const response = await spellService.getByClass(characterClass.name);
-      if (response.data && response.data.spells) {
-        setSpells(response.data.spells);
-      } else if (response.data && response.data.items) {
-        setSpells(response.data.items);
+      const response = await spellService.listSpellsByClass(characterClass.name);
+      if (isError(response)) {
+        showError(response.error ?? 'Failed to load spells for this class.', response.statusCode, response.errorCode);
+        setSpells([]);
+      } else {
+        const payload = response.data;
+        setSpells(payload.spells ?? payload.items ?? []);
       }
     } catch (err) {
-      console.error('Error loading spells:', err);
+      logger.error('Error loading spells:', err);
     } finally {
       setSpellsLoading(false);
     }

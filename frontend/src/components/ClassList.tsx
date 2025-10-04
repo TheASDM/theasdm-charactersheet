@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ClassCard from './ClassCard';
 import { CharacterClass } from '../types/api';
-import { classService } from '../services';
+import { useApiCall } from '@/hooks/useApiCall';
+import { listClasses } from '@/services/classService';
 
 // Search and filter section
 const FilterSection = styled.div`
@@ -121,13 +122,22 @@ const ClassList: React.FC<ClassListProps> = ({
 }) => {
   const [classes, setClasses] = useState<CharacterClass[]>([]);
   const [filteredClasses, setFilteredClasses] = useState<CharacterClass[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const {
+    data: classData,
+    error,
+    isLoading,
+    execute: fetchClasses,
+  } = useApiCall(listClasses, {
+    onSuccess: (fetched) => {
+      setClasses(fetched);
+    },
+  });
+
   useEffect(() => {
-    loadClasses();
-  }, []);
+    fetchClasses();
+  }, [fetchClasses]);
 
   useEffect(() => {
     // Filter classes based on search term
@@ -149,28 +159,13 @@ const ClassList: React.FC<ClassListProps> = ({
     }
   }, [searchTerm, classes]);
 
-  const loadClasses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await classService.getAll();
-
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setClasses(response.data);
-        setFilteredClasses(response.data);
-      }
-    } catch (err) {
-      setError('Failed to load classes from the ancient tomes.');
-      console.error('Error loading classes:', err);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (classData) {
+      setClasses(classData);
     }
-  };
+  }, [classData]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <LoadingContainer>
         Loading classes...

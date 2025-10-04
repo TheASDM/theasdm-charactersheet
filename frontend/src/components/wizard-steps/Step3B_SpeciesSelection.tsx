@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import type { JSX } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import speciesService from '../../services/speciesService';
-import { Species as ApiSpecies } from '../../types/api';
-import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
+import { listSpecies } from '@/services/speciesService';
+import { Species as ApiSpecies } from '@/types/api';
+import { processTraitDescriptionWithTables, processTraitDescription } from '@/utils/textProcessor';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
 import WizardModal from '../wizard/WizardModal';
+import { logger } from '../../utils/logger';
 
 // Species choice constants (from Step3C)
 const DRAGONBORN_ANCESTRY = [
@@ -162,13 +166,6 @@ const SpeciesSelectionInfo = styled.div`
   }
 `;
 
-const LoadingSpinner = styled.div`
-  text-align: center;
-  color: #d4af37;
-  padding: 2rem;
-  font-size: 1.1rem;
-`;
-
 const ModalSection = styled.div`
   margin-bottom: 1.5rem;
 
@@ -267,6 +264,25 @@ const ModalButtons = styled.div`
   }
 `;
 
+const ChoiceWarning = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(145deg, rgba(127, 29, 29, 0.85), rgba(239, 68, 68, 0.12));
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+  color: #fecaca;
+  font-size: 0.9rem;
+  box-shadow: 0 12px 24px rgba(239, 68, 68, 0.15);
+  margin-bottom: 1.25rem;
+
+  span {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+`;
+
 const TraitTable = styled.table`
   width: 100%;
   margin: 0.75rem 0;
@@ -352,34 +368,21 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   onUpdate,
   onAdvance
 }) => {
-  const [species, setSpecies] = useState<Species[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedSpeciesForModal, setSelectedSpeciesForModal] = useState<Species | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [modalPage, setModalPage] = useState<'details' | 'choices'>('details');
   const [currentSpeciesChoices, setCurrentSpeciesChoices] = useState<any>({});
+  const {
+    data: speciesData,
+    error,
+    isLoading,
+    execute: loadSpecies,
+  } = useApiCall(listSpecies);
+  const species = speciesData ?? [];
 
   useEffect(() => {
-    fetchSpecies();
-  }, []);
-
-  const fetchSpecies = async () => {
-    try {
-      setIsLoading(true);
-      const response = await speciesService.getAll();
-      if (response.data) {
-        setSpecies(response.data);
-      } else {
-        setError(response.error || 'Failed to load species');
-      }
-    } catch (err) {
-      console.error('Error fetching species:', err);
-      setError('Failed to load species');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    loadSpecies();
+  }, [loadSpecies]);
 
   const handleSpeciesClick = (speciesData: Species) => {
     setSelectedSpeciesForModal(speciesData);
@@ -434,7 +437,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
             };
           });
         } catch (error) {
-          console.error('Error extracting traits:', error);
+          logger.error('Error extracting traits:', error);
           return [];
         }
       };
@@ -444,7 +447,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
           if (Array.isArray(size)) return size[0] || 'Medium';
           return size || 'Medium';
         } catch (error) {
-          console.error('Error getting size:', error);
+          logger.error('Error getting size:', error);
           return 'Medium';
         }
       };
@@ -455,18 +458,23 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
           if (typeof speed === 'object' && speed.walk) return speed.walk;
           return 30; // Default speed
         } catch (error) {
-          console.error('Error getting speed:', error);
+          logger.error('Error getting speed:', error);
           return 30;
         }
       };
 
       const extractDarkvision = (speciesData: any): number => {
         try {
-          console.log('🔍 Extracting darkvision for:', speciesData.name);
+          logger.debug('🔍 Extracting darkvision for:', speciesData.name);
+
+          if (speciesData.name && speciesData.name.toLowerCase() === 'orc') {
+            logger.debug('⚙️ Forcing orc darkvision to 60 feet to match 2024 rules.');
+            return 60;
+          }
 
           // Check if darkvision is a direct property
           if (speciesData.darkvision && typeof speciesData.darkvision === 'number') {
-            console.log('✅ Found direct darkvision property:', speciesData.darkvision);
+            logger.debug('✅ Found direct darkvision property:', speciesData.darkvision);
             return speciesData.darkvision;
           }
 
@@ -475,7 +483,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
             const traits = Array.isArray(speciesData.traits) ? speciesData.traits : [speciesData.traits];
             for (const trait of traits) {
               if (trait.name && trait.name.toLowerCase().includes('darkvision')) {
-                console.log('✅ Found darkvision trait:', trait);
+                logger.debug('✅ Found darkvision trait:', trait);
 
                 // Convert description to string (it might be an array or object)
                 let desc = '';
@@ -490,20 +498,20 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
                 // Try to extract the range from the description
                 const match = desc.match(/(\d+)\s*feet?/i);
                 if (match) {
-                  console.log('✅ Extracted darkvision range:', parseInt(match[1]));
+                  logger.debug('✅ Extracted darkvision range:', parseInt(match[1]));
                   return parseInt(match[1]);
                 }
                 // Default darkvision is usually 60 feet
-                console.log('✅ Using default darkvision: 60');
+                logger.debug('✅ Using default darkvision: 60');
                 return 60;
               }
             }
           }
 
-          console.log('❌ No darkvision found');
+          logger.debug('❌ No darkvision found');
           return 0; // No darkvision
         } catch (error) {
-          console.error('Error extracting darkvision:', error);
+          logger.error('Error extracting darkvision:', error);
           return 0;
         }
       };
@@ -549,7 +557,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
 
           return resistances;
         } catch (error) {
-          console.error('Error extracting resistances:', error);
+          logger.error('Error extracting resistances:', error);
           return [];
         }
       };
@@ -574,12 +582,12 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
         speciesImmunities: [] // TODO: Extract immunities if needed
       };
 
-      console.log('📦 Update data being sent:', updateData);
-      console.log('Darkvision value:', darkvision);
+      logger.debug('📦 Update data being sent:', updateData);
+      logger.debug('Darkvision value:', darkvision);
       onUpdate(updateData);
 
     } catch (error) {
-      console.error('Error in handleSpeciesSelect:', error);
+      logger.error('Error in handleSpeciesSelect:', error);
       // Fallback to basic update
       onUpdate({
         selectedSpecies: speciesData.name,
@@ -878,10 +886,6 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   const renderTraitContent = (trait: any) => {
     const { text, tables, lists } = processTraitDescriptionWithTables(trait.description);
 
-    // Debug logging
-    if (trait.name === 'Celestial Revelation') {
-    }
-
     const renderListItem = (item: any, index: number) => {
       if (typeof item === 'string') {
         return (
@@ -1046,7 +1050,7 @@ const renderSpeciesChoicesContent = (
     return (
       <StepContainer>
         <div className="step-title">Species</div>
-        <LoadingSpinner>Loading species...</LoadingSpinner>
+        <LoadingSpinner message="Loading species..." />
       </StepContainer>
     );
   }
@@ -1055,8 +1059,11 @@ const renderSpeciesChoicesContent = (
     return (
       <StepContainer>
         <div className="step-title">Species</div>
-        <div style={{ textAlign: 'center', color: '#ff6b6b', padding: '2rem' }}>
-          Error: {error}
+        <div
+          role="alert"
+          style={{ textAlign: 'center', color: '#ff6b6b', padding: '2rem' }}
+        >
+          Unable to load species: {error}
         </div>
       </StepContainer>
     );
@@ -1206,14 +1213,26 @@ const renderSpeciesChoicesContent = (
                 getTraitList,
                 processTraitDescription,
               )
-            : renderSpeciesChoicesContent(selectedSpeciesForModal.name, {
-                dragonborn: renderDragonbornChoices,
-                elf: renderElfChoices,
-                gnome: renderGnomeChoices,
-                goliath: renderGoliathChoices,
-                tiefling: renderTieflingChoices,
-                human: renderHumanChoices,
-              })}
+            : (
+                <>
+                  {!areChoicesComplete() && (
+                    <ChoiceWarning role="status" aria-live="polite">
+                      <span>⚠️</span>
+                      <div>
+                        Complete all required choices below to continue.
+                      </div>
+                    </ChoiceWarning>
+                  )}
+                  {renderSpeciesChoicesContent(selectedSpeciesForModal.name, {
+                    dragonborn: renderDragonbornChoices,
+                    elf: renderElfChoices,
+                    gnome: renderGnomeChoices,
+                    goliath: renderGoliathChoices,
+                    tiefling: renderTieflingChoices,
+                    human: renderHumanChoices,
+                  })}
+                </>
+              )}
         </WizardModal>
       )}
     </StepContainer>

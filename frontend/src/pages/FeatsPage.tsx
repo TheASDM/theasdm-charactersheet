@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { featService } from '../services';
-import { Feat } from '../types/api';
-import { parseDnDTemplateTag } from '../utils/dndTemplateParser';
+import { listFeats } from '@/services/featsService';
+import { Feat } from '@/types/api';
+import { parseDnDTemplateTag } from '@/utils/dndTemplateParser';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { isError } from '@/types/api';
+import { logger } from '../utils/logger';
 
 // Main page container matching Generator theme
 const PageContainer = styled.div`
@@ -241,17 +245,6 @@ const FeatSource = styled.div`
 `;
 
 // Loading and error states
-const LoadingContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  color: #d4af37;
-  font-size: 1.4rem;
-  font-weight: 600;
-  font-family: 'Cinzel', serif;
-`;
-
 const ErrorContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -344,31 +337,30 @@ const PageInfo = styled.span`
 const FeatsPage: React.FC = () => {
   const [feats, setFeats] = useState<Feat[]>([]);
   const [filteredFeats, setFilteredFeats] = useState<Feat[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const featsPerPage = 12;
 
-  useEffect(() => {
-    const fetchFeats = async () => {
-      try {
-        setLoading(true);
-        const response = await featService.getAll();
-        const featsData = response.data || [];
-        setFeats(featsData);
-        setFilteredFeats(featsData);
-      } catch (err) {
-        console.error('Error fetching feats:', err);
-        setError('Failed to load feats from the ancient tomes.');
-      } finally {
-        setLoading(false);
+  const {
+    error,
+    isLoading,
+    execute: fetchFeats,
+  } = useApiCall(listFeats, {
+    onSuccess: (featList) => {
+      setFeats(featList);
+      setFilteredFeats(featList);
+    },
+    onError: (result) => {
+      if (isError(result)) {
+        logger.error('Failed to load feats:', result.error);
       }
-    };
+    },
+  });
 
+  useEffect(() => {
     fetchFeats();
-  }, []);
+  }, [fetchFeats]);
 
   // Filter feats based on search and category
   useEffect(() => {
@@ -432,7 +424,7 @@ const FeatsPage: React.FC = () => {
 
       return parts.join(', ') || 'None';
     } catch (error) {
-      console.error('Error parsing prerequisites:', error);
+      logger.error('Error parsing prerequisites:', error);
       return 'Complex prerequisites';
     }
   };
@@ -534,7 +526,7 @@ const FeatsPage: React.FC = () => {
     return pages;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <PageContainer>
         <ContentContainer>
@@ -543,9 +535,7 @@ const FeatsPage: React.FC = () => {
             <p>Unlock Your Potential</p>
           </Header>
           <MainContainer>
-            <LoadingContainer>
-              Loading feats data...
-            </LoadingContainer>
+            <LoadingSpinner message="Loading feats data..." />
           </MainContainer>
         </ContentContainer>
       </PageContainer>

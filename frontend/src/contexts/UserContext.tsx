@@ -1,6 +1,7 @@
 import type { FC, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import type { User as AuthUser } from '../services/authService';
+import { logger } from '../utils/logger';
 
 type User = AuthUser | null;
 
@@ -28,7 +29,7 @@ export const useUser = (): UserContextValue => {
     loading: isLoading,
     error: null,
     setUser: () => {
-      console.warn('setUser is deprecated. Use AuthProvider for authentication state.');
+      logger.warn('setUser is deprecated. Use AuthProvider for authentication state.');
     },
   };
 };

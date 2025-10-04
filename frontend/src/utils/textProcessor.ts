@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * Text processor for D&D Beyond markup tokens
  * Converts tokens like {@variantrule Resistance|XPHB} to readable text
@@ -68,7 +69,7 @@ export function processDbMarkup(text: string, _options?: TextProcessorOptions): 
   processedText = processedText.replace(/\b(\d+)\s*(gp|sp|cp|pp)\b/g, '<span style="color: #d4af37; font-weight: 600;">$1 $2</span>');
 
   // Style dice notation that wasn't caught by markup
-  processedText = processedText.replace(/\b(\d+d\d+(?:\s*[+\-]\s*\d+)?)\b/g, '<strong style="color: #10b981;">$1</strong>');
+  processedText = processedText.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?)\b/g, '<strong style="color: #10b981;">$1</strong>');
 
   return processedText;
 }
@@ -131,7 +132,7 @@ export function extractTablesFromText(text: string): { text: string; tables: any
       tables.push(table);
       return ''; // Remove table marker from text
     } catch (e) {
-      console.warn('Failed to parse table JSON:', e, tableJson);
+      logger.warn('Failed to parse table JSON:', e, tableJson);
       return match; // Keep original if parsing fails
     }
   });

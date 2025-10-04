@@ -13,14 +13,14 @@ import {
   InventoryActionButton,
 } from '../styles/components';
 
-interface InventoryItem {
+interface InventoryEntry {
   name: string;
   quantity: number;
 }
 
 interface InventorySectionProps {
   inventory: {
-    localInventory: InventoryItem[];
+    localInventory: InventoryEntry[];
     pendingInventoryChanges: boolean;
     handleInventoryItemClick: (itemName: string) => void;
     handleQuantityChange: (index: number, quantity: number) => void;

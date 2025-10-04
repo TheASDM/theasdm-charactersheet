@@ -1,19 +1,11 @@
 import { useCallback } from 'react';
 import { CharacterSheetData } from '../../types/characterSheet';
-import { useDebouncedCallback } from '../useDebouncedCallback';
 
 export const useResourceTracking = (
   character: CharacterSheetData,
   updateCharacter: (updates: Partial<CharacterSheetData>) => void,
   onSave?: (updatedCharacter: CharacterSheetData, options?: { silent?: boolean }) => void | Promise<void>
 ) => {
-  const debouncedSilentSave = useDebouncedCallback(
-    (updated: CharacterSheetData) => {
-      onSave?.(updated, { silent: true });
-    },
-    200
-  );
-
   // Resource update handler
   const handleResourceUpdate = useCallback((resourceId: string, newValue: number) => {
     let updatedCharacter;
@@ -36,9 +28,9 @@ export const useResourceTracking = (
 
     // Silent auto-save the changes (no notification)
     if (onSave) {
-      debouncedSilentSave(updatedCharacter);
+      void onSave(updatedCharacter, { silent: true });
     }
-  }, [character, updateCharacter, onSave, debouncedSilentSave]);
+  }, [character, updateCharacter, onSave]);
 
   // Mana update handler
   const handleManaUpdate = useCallback((type: 'current' | 'max', delta: number) => {
@@ -55,9 +47,9 @@ export const useResourceTracking = (
 
     // Silent auto-save the changes (no notification)
     if (onSave) {
-      debouncedSilentSave(updatedCharacter);
+      void onSave(updatedCharacter, { silent: true });
     }
-  }, [character, updateCharacter, onSave, debouncedSilentSave]);
+  }, [character, updateCharacter, onSave]);
 
   return {
     // Handlers

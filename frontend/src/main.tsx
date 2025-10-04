@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 
 import App from './App';
 import { GlobalStyles } from './styles/GlobalStyles';
+import { ToastProvider } from './contexts/ToastContext';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -28,11 +29,12 @@ root.render(
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>
         <BrowserRouter>
-          <GlobalStyles />
-          <App />
+          <ToastProvider>
+            <GlobalStyles />
+            <App />
+          </ToastProvider>
         </BrowserRouter>
       </HelmetProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );
-

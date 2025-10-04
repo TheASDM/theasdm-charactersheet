@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * Simple feature generator that creates features based on character data
  * No templates, no complex resolution - just direct data-to-feature conversion
@@ -103,7 +104,7 @@ export async function generateFeaturesForCharacter(character: CharacterSheetData
       features.push(...classFeatures);
     }
   } catch (error) {
-    console.warn('Failed to load class data, falling back to old system:', error);
+    logger.warn('Failed to load class data, falling back to old system:', error);
     features.push(...generateClassFeatures(character));
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import CharacterSheetPretty from '../components/CharacterSheetPretty';
@@ -6,8 +6,11 @@ import {
   CharacterSheetData,
   createDefaultCharacterSheet,
 } from '../types/characterSheet';
-import { Character } from '../types/api';
+import { Character, isError } from '@/types/api';
 import { characterService } from '../services';
+import { showError } from '@/utils/errorDisplay';
+import { useCharacterAutosave } from '@/hooks/useCharacterAutosave';
+import { useApiCall } from '@/hooks/useApiCall';
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -109,75 +112,90 @@ const CharacterViewPage: React.FC = () => {
   const navigate = useNavigate();
   const [character, setCharacter] = useState<CharacterSheetData | null>(null);
   const [originalCharacter, setOriginalCharacter] = useState<Character | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { save: scheduleAutosave, flush: flushAutosave } = useCharacterAutosave(originalCharacter?.id ?? null);
+  const {
+    data: fetchedCharacter,
+    error: fetchError,
+    isLoading,
+    execute: fetchCharacter,
+  } = useApiCall(
+    (id: number, signal?: AbortSignal) => characterService.getById(id, signal),
+    { showErrorToast: true }
+  );
 
   useEffect(() => {
-    if (characterId) {
-      loadCharacter(parseInt(characterId));
-    } else {
+    if (!characterId) {
       setError('No character ID provided');
-      setLoading(false);
+      return;
     }
-  }, [characterId]);
 
-  const loadCharacter = async (id: number) => {
-    try {
-      setLoading(true);
-      setError(null);
+    setError(null);
+    void fetchCharacter(parseInt(characterId, 10));
+  }, [characterId, fetchCharacter]);
 
-      const response = await characterService.getById(id);
-
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setOriginalCharacter(response.data);
-        // Convert the character data to CharacterSheetData format
-        const characterSheetData: CharacterSheetData = {
-          ...createDefaultCharacterSheet(),
-          ...response.data.characterData,
-          name: response.data.name,
-          level: response.data.level,
-        };
-        setCharacter(characterSheetData);
-      }
-    } catch (err) {
-      setError('Failed to load character');
-      console.error('Error loading character:', err);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (fetchError) {
+      setError(fetchError);
     }
-  };
+  }, [fetchError]);
+
+  useEffect(() => {
+    if (!fetchedCharacter) {
+      return;
+    }
+
+    setOriginalCharacter(fetchedCharacter);
+    const characterSheetData: CharacterSheetData = {
+      ...createDefaultCharacterSheet(),
+      ...fetchedCharacter.characterData,
+      name: fetchedCharacter.name,
+      level: fetchedCharacter.level,
+    };
+    setCharacter(characterSheetData);
+  }, [fetchedCharacter]);
 
   const handleCharacterUpdate = (updatedCharacter: CharacterSheetData) => {
     setCharacter(updatedCharacter);
   };
 
-  const handleCharacterSave = async (updatedCharacter: CharacterSheetData) => {
-    if (!originalCharacter) return;
+  const handleCharacterSave = useCallback(
+    async (updatedCharacter: CharacterSheetData, options?: { silent?: boolean }) => {
+      if (!originalCharacter) return;
 
-    try {
-      const response = await characterService.update(originalCharacter.id, {
+      const patch = {
         name: updatedCharacter.name,
         level: updatedCharacter.level,
         characterData: updatedCharacter,
-      });
+      };
 
-      if (response.error) {
-        alert(`Failed to save character: ${response.error}`);
-      } else {
+      if (options?.silent) {
+        await scheduleAutosave(patch);
+        return;
       }
-    } catch (err) {
-      alert('Failed to save character');
-      console.error('Error saving character:', err);
-    }
-  };
+
+      await flushAutosave();
+      const response = await characterService.update(originalCharacter.id, patch);
+      if (isError(response)) {
+        showError(response.error ?? 'Failed to save character', response.statusCode, response.errorCode);
+        return;
+      }
+
+      const updated = response.data;
+      if (updated) {
+        setOriginalCharacter((prev) => (prev ? { ...prev, ...updated } : updated));
+      }
+    },
+    [flushAutosave, originalCharacter, scheduleAutosave]
+  );
 
   const handleBackClick = () => {
     navigate('/characters');
   };
 
-  if (loading) {
+  const isInitialLoading = isLoading && !character && !error;
+
+  if (isInitialLoading) {
     return (
       <PageContainer>
         <ContentContainer>
@@ -189,7 +207,7 @@ const CharacterViewPage: React.FC = () => {
     );
   }
 
-  if (error || !character) {
+  if ((error && !character) || (!character && !isLoading)) {
     return (
       <PageContainer>
         <ContentContainer>
@@ -203,6 +221,10 @@ const CharacterViewPage: React.FC = () => {
         </ContentContainer>
       </PageContainer>
     );
+  }
+
+  if (!character) {
+    return null;
   }
 
   return (

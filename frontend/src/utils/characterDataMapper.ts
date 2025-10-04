@@ -1,6 +1,7 @@
 import { CharacterBuilderData } from '../components/CharacterGeneratorWizard';
 import { CharacterSheetData, calculateProficiencyBonus, calculateModifier, InventoryItem } from '../types/characterSheet';
 import { CharacterFeatures, CharacterFeature } from '../types/features';
+import { logger } from './logger';
 import {
   parseClassFeatures,
   parseSpeciesTraits,
@@ -273,7 +274,7 @@ function extractStructuredFeatures(builderData: CharacterBuilderData): Character
     }
 
   } catch (error) {
-    console.error('❌ Error extracting structured features:', error);
+    logger.error('❌ Error extracting structured features:', error);
   }
 
   return features;

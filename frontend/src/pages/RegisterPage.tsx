@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
+import { isError } from '@/types/api';
 import {
   AuthContainer,
   AuthCard,
@@ -75,10 +76,12 @@ export const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await register(formData);
+      const result = await register(formData);
+      if (isError(result)) {
+        setError(result.error ?? 'Registration failed. Please try again.');
+        return;
+      }
       navigate('/characters'); // Redirect to characters page after registration
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

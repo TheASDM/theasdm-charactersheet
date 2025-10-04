@@ -1,6 +1,56 @@
 import { CharacterSheetData } from './characterSheet';
 import type { Character as PrismaCharacter } from '../../../backend/src/types';
 
+export type ApiErrorCode =
+  | 'validation'
+  | 'auth'
+  | 'not_found'
+  | 'network_error'
+  | 'timeout'
+  | 'rate_limited'
+  | 'server_error'
+  | 'unknown';
+
+export type ApiSuccess<T> = {
+  ok: true;
+  data: T;
+  statusCode?: number | undefined;
+};
+
+export type ApiFailure = {
+  ok: false;
+  data?: undefined;
+  error: string;
+  statusCode?: number | undefined;
+  errorCode?: ApiErrorCode | undefined;
+  cause?: unknown;
+};
+
+export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
+
+export const ok = <T>(data: T, statusCode?: number): ApiSuccess<T> => ({
+  ok: true,
+  data,
+  ...(statusCode !== undefined && { statusCode }),
+});
+
+export const fail = (
+  message: string,
+  options: {
+    statusCode?: number;
+    errorCode?: ApiErrorCode;
+    cause?: unknown;
+  } = {}
+): ApiFailure => ({
+  ok: false,
+  error: message,
+  ...(options.statusCode !== undefined && { statusCode: options.statusCode }),
+  ...(options.errorCode !== undefined && { errorCode: options.errorCode }),
+  ...(options.cause !== undefined && { cause: options.cause }),
+});
+
+export const isError = <T>(result: ApiResult<T>): result is ApiFailure => !result.ok;
+
 // Common D&D data structures
 export interface DnDTime {
   number: number;
@@ -72,10 +122,16 @@ export interface AbilityScoreIncrease {
 }
 
 // API Response Types
+/**
+ * @deprecated Prefer using ApiResult via request() helpers instead.
+ */
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  statusCode?: number | undefined;
+  errorCode?: ApiErrorCode | undefined;
+  raw?: unknown;
 }
 
 export interface PaginatedResponse<T> {
@@ -251,7 +307,7 @@ export interface Item {
   entries?: any[]; // JSONB
   additionalEntries?: any[]; // JSONB
   weaponCategory?: string;
-  property: string[];
+  property?: string[];
   range?: string;
   dmg1?: string;
   dmg2?: string;
@@ -277,6 +333,45 @@ export interface Item {
   updatedAt: string;
 }
 
+// Equipment Types (API v2)
+export interface Equipment {
+  id: number;
+  name: string;
+  source?: string;
+  sourceBook?: string;
+  page?: number;
+  type: string;
+  typeAlt?: string;
+  rarity?: string;
+  weight?: number;
+  value?: number;
+  valueCurrency?: string;
+  entries?: unknown;
+  additionalEntries?: unknown;
+  weaponCategory?: string;
+  property?: string[];
+  range?: string;
+  dmg1?: string;
+  dmg2?: string;
+  dmgType?: string;
+  ac?: number;
+  strength?: number;
+  stealth?: boolean;
+  armorType?: string;
+  reqAttune?: string | boolean;
+  charges?: number;
+  recharge?: string;
+  bonusWeapon?: string;
+  bonusAc?: number;
+  bonusSpellAttack?: number;
+  bonusSpellSaveDc?: number;
+  spells?: Record<string, unknown>;
+  contentVersion: string;
+  isHomebrew: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Feat Types
 export interface Feat {
   id: number;
@@ -290,6 +385,7 @@ export interface Feat {
   repeatable?: boolean;
   entries?: any; // JSONB for feat description and benefits
   additionalSpells?: Record<string, unknown>; // JSONB for spells granted by feat
+  sourceBook?: string;
   contentVersion: string;
   isHomebrew: boolean;
   createdAt: string;

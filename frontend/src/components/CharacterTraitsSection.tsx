@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CharacterSheetData } from '../types/characterSheet';
+import { CharacterSheetData, InventoryItem } from '../types/characterSheet';
 import {
   TraitsSection,
   TraitsTitle,
@@ -184,6 +184,13 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
 
   const masteryConfig = getMasteryConfig();
 
+  const ownedWeaponNames = useMemo(() => {
+    if (!Array.isArray(character.inventory)) return [] as string[];
+    return character.inventory
+      .map((item: InventoryItem) => item?.name?.trim())
+      .filter((name): name is string => Boolean(name));
+  }, [character.inventory]);
+
   const handleWeaponMasteryConfirm = (masteries: Array<{ weapon: string; property: string }>) => {
     if (onUpdateCharacter) {
       onUpdateCharacter({
@@ -263,6 +270,7 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
           onConfirm={handleWeaponMasteryConfirm}
           onCancel={() => setIsWeaponMasteryModalOpen(false)}
           classRestrictions={masteryConfig.restriction}
+          ownedWeapons={ownedWeaponNames}
         />
       )}
     </TraitsSection>

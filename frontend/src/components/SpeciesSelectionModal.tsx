@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import speciesService from '../services/speciesService';
 import { Species as ApiSpecies } from '../types/api';
 import { processTraitDescription } from '../utils/textProcessor';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { logger } from '../utils/logger';
 
 // Import modal shared styles - we'll create these later
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -133,14 +135,14 @@ const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
 `;
 
 // Loading and error states
-const LoadingSpinner = styled.div`
+const ModalLoadingWrapper = styled.div`
   text-align: center;
   color: #d4af37;
   padding: 2rem;
   font-size: 1.1rem;
 `;
 
-const ErrorMessage = styled.div`
+const ModalErrorMessage = styled.div`
   text-align: center;
   color: #ff6b6b;
   padding: 2rem;
@@ -206,7 +208,7 @@ const SpeciesSelectionModal: React.FC<SpeciesSelectionModalProps> = ({
         setError(response.error || 'Failed to load species');
       }
     } catch (err) {
-      console.error('Error fetching species:', err);
+      logger.error('Error fetching species:', err);
       setError('Failed to load species');
     } finally {
       setIsLoading(false);
@@ -262,7 +264,9 @@ const SpeciesSelectionModal: React.FC<SpeciesSelectionModalProps> = ({
     return (
       <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
         <SpeciesPopupModal onClick={(e) => e.stopPropagation()}>
-          <LoadingSpinner>Loading species...</LoadingSpinner>
+          <ModalLoadingWrapper>
+            <LoadingSpinner message="Loading species..." />
+          </ModalLoadingWrapper>
         </SpeciesPopupModal>
       </ModalOverlay>
     );
@@ -272,7 +276,7 @@ const SpeciesSelectionModal: React.FC<SpeciesSelectionModalProps> = ({
     return (
       <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
         <SpeciesPopupModal onClick={(e) => e.stopPropagation()}>
-          <ErrorMessage>Error: {error}</ErrorMessage>
+          <ModalErrorMessage>Error: {error}</ModalErrorMessage>
           <SpeciesButtonsContainer>
             <CancelButton onClick={handleCancel}>Close</CancelButton>
           </SpeciesButtonsContainer>

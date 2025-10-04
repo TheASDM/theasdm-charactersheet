@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Equipment } from '../services/equipmentService';
+import type { Equipment } from '@/types/api';
 import { processDbMarkup } from '../utils/textProcessor';
 
 interface EquipmentItemModalProps {

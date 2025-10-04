@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SpellCard, SpellModal } from '../components';
-import { spellService, SPELL_LEVELS, CHARACTER_CLASSES } from '../services';
-import { Spell } from '../types/api';
-import type { SpellFilters } from '../services/spellService';
+import { CHARACTER_CLASSES, SPELL_LEVELS } from '../services';
+import { Spell, isError } from '../types/api';
+import { listSpells, SpellFilters } from '@/services/spellService';
+import { useApiCall } from '@/hooks/useApiCall';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { showError } from '@/utils/errorDisplay';
 
 // Main page container matching Generator theme
 const PageContainer = styled.div`
@@ -229,8 +232,6 @@ const NoResultsMessage = styled.div`
 
 const SpellsPageNew: React.FC = () => {
   const [spells, setSpells] = useState<Spell[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<number | undefined>(
@@ -246,40 +247,47 @@ const SpellsPageNew: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage] = useState(12);
 
-  useEffect(() => {
-    loadSpells();
-  }, [searchTerm, selectedLevel, selectedSchool, selectedClass, currentPage]);
-
-  const loadSpells = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const filters: SpellFilters = {
-        ...(selectedLevel !== undefined && { level: selectedLevel }),
-        ...(selectedSchool && { school: selectedSchool }),
-        ...(selectedClass && { className: selectedClass }),
-        ...(searchTerm && { search: searchTerm }),
-        page: currentPage,
-        limit: itemsPerPage,
-      };
-
-      const response = await spellService.getAll(filters);
-
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setSpells(response.data.spells || []);
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.pages);
+  const {
+    error,
+    isLoading,
+    execute: fetchSpells,
+  } = useApiCall(listSpells, {
+    onSuccess: (payload) => {
+      const spellResults = payload.spells ?? payload.items ?? [];
+      setSpells(spellResults);
+      if (payload.pagination) {
+        setTotalPages(payload.pagination.pages);
+        if (payload.pagination.page && payload.pagination.page !== currentPage) {
+          setCurrentPage(payload.pagination.page);
         }
+      } else {
+        setTotalPages(1);
       }
-    } catch (err) {
-      setError('Failed to load spells from the magical archives.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: (result) => {
+      if (isError(result)) {
+        showError(result.error ?? 'Failed to load spells from the magical archives.', result.statusCode, result.errorCode);
+      }
+      setSpells([]);
+      setTotalPages(1);
+    },
+  });
+
+  const filters = useMemo<SpellFilters>(
+    () => ({
+      ...(selectedLevel !== undefined && { level: selectedLevel }),
+      ...(selectedSchool && { school: selectedSchool }),
+      ...(selectedClass && { className: selectedClass }),
+      ...(searchTerm && { search: searchTerm }),
+      page: currentPage,
+      limit: itemsPerPage,
+    }),
+    [selectedLevel, selectedSchool, selectedClass, searchTerm, currentPage, itemsPerPage]
+  );
+
+  useEffect(() => {
+    void fetchSpells(filters);
+  }, [fetchSpells, filters]);
 
   const handleSpellClick = (spell: Spell) => {
     setSelectedSpell(spell);
@@ -374,20 +382,21 @@ const SpellsPageNew: React.FC = () => {
           </SearchSection>
 
           {/* Content */}
-          {loading && (
+          {isLoading && spells.length === 0 && (
             <LoadingContainer>
-              Loading spells...
+              <LoadingSpinner message="Loading spells..." />
             </LoadingContainer>
           )}
 
-          {error && (
+          {error && spells.length === 0 && (
             <ErrorContainer>
               <div className="error-title">Error Loading Spells</div>
               <div className="error-message">{error}</div>
+              <button onClick={() => fetchSpells(filters)}>Retry Incantation</button>
             </ErrorContainer>
           )}
 
-          {!loading && !error && spells.length === 0 && (
+          {!isLoading && !error && spells.length === 0 && (
             <NoResultsMessage>
               <div className="title">No Spells Found</div>
               <div className="subtitle">
@@ -396,7 +405,7 @@ const SpellsPageNew: React.FC = () => {
             </NoResultsMessage>
           )}
 
-          {!loading && !error && spells.length > 0 && (
+          {spells.length > 0 && (
                 <>
                   <SpellsGrid>
                     {spells.map((spell, index) => (

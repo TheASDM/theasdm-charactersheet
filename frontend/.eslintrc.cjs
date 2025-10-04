@@ -11,7 +11,7 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
-    'no-console': 'warn',
+    'no-console': ['error', { allow: ['warn', 'error'] }],
     'no-unused-vars': 'off', // Disabled for TS files
     'no-debugger': 'error',
   },
