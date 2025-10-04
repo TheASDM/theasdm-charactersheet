@@ -209,15 +209,6 @@ npm run test:coverage
 npm test -- characters.test.ts
 ```
 
-## 🐳 Docker Support
-
-```bash
-# Build image
-docker build -t dnd-backend .
-
-# Run container
-docker run -p 3001:3001 --env-file .env dnd-backend
-```
 
 ## 🔄 Migrations and Seeding
 

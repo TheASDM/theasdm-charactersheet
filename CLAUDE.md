@@ -13,7 +13,6 @@ This is a D&D 2024 Character Sheet Generator featuring complete D&D 2024 rules c
 - `discord-bot/` - Discord.js bot for character lookup and dice rolling (planned)
 - `database/` - Database import data and scripts
 - `docs/` - Project documentation
-- `docker/` - Docker configuration files
 
 ## Common Development Commands
 
@@ -62,14 +61,6 @@ npx prisma db seed      # Run database seed script
 npx prisma migrate reset # Reset database (development only)
 ```
 
-### Docker Operations
-```bash
-docker-compose up -d            # Start all services
-docker-compose down             # Stop all services
-docker-compose logs backend     # View backend logs
-docker-compose exec backend sh  # Shell into backend container
-```
-
 ## Architecture Details
 
 ### Database Schema
@@ -116,7 +107,6 @@ Backend follows RESTful conventions with planned endpoints:
 - `backend/prisma/schema.prisma` - Database schema definition
 - `backend/src/server.ts` - Express server entry point
 - `frontend/src/main.tsx` - React application entry point
-- `docker-compose.yml` - Complete containerized deployment setup
 - `.env.example` - Environment variables template
 
 ## Important Development Notes

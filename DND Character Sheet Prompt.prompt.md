@@ -12,14 +12,13 @@ You are an expert full-stack developer specializing in D&D character sheet appli
 - Character password protection with DM override permissions based on Discord roles [Discord](https://support.discord.com/hc/en-us/articles/206029707-Setting-Up-Permissions-FAQ)
 - CSV import system for game content with version control [Roll20](https://app.roll20.net/forum/post/760149/import-abilities-and-attributes-from-csv)[Miroz](http://miroz.com.hr/random/monsters.html) and character data migration [ProjectPro](https://www.projectpro.io/article/etl-projects-ideas-for-practice/563)[EN World](https://www.enworld.org/threads/csv-and-excel-spell-list.685947/)
 - Mobile-responsive React frontend with progressive web app capabilities [Short Rest Studios +2](https://shortreststudios.com/nimble-rpg/)
-- Docker containerization with Nginx Proxy Manager for SSL/homelab deployment [Dungeons and Dragons Fan +2](https://dungeonsanddragonsfan.com/new-2024-players-handbook/)
 
 **Technical Stack:**
 
 - Backend: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL [DEV Community +2](https://dev.to/approachingapathy/day-7-d-d-character-sheet-56j2)
 - Frontend: React, TypeScript, Progressive Web App [Foundry Virtual Tabletop](https://foundryvtt.com/article/intro-development/)
 - Discord: Discord.js with slash commands [Read the Docs](https://avrae.readthedocs.io/en/latest/ddb.html)[5e.tools](https://5e.tools/)
-- Deployment: Docker Compose, Nginx Proxy Manager, Let's Encrypt SSL [ProjectPro](https://www.projectpro.io/article/etl-projects-ideas-for-practice/563)[Foundry Virtual Tabletop](https://foundryvtt.com/)
+- Deployment: bare-metal or VM hosting with reverse proxy support
 - Authentication: JWT tokens, bcrypt password hashing, Discord OAuth
 
 **Key Implementation Details:**

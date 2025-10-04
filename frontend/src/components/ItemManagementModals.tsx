@@ -2,6 +2,85 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Item } from '../types/api';
 import { isWeapon, isArmor, isShield } from '../services/itemService';
+import { processDbMarkup } from '../utils/textProcessor';
+import { parseComplexDnDEntry } from '../utils/dndTemplateParser';
+
+const renderItemEntries = (entries: any): React.ReactNode => {
+  if (!entries) {
+    return null;
+  }
+
+  if (Array.isArray(entries)) {
+    return entries.map((entry, index) => {
+      if (typeof entry === 'string') {
+        return (
+          <p
+            key={`entry-${index}`}
+            style={{ marginBottom: '0.75rem', lineHeight: 1.6 }}
+            dangerouslySetInnerHTML={{ __html: processDbMarkup(entry) }}
+          />
+        );
+      }
+
+      if (entry && typeof entry === 'object') {
+        if (entry.name && entry.entries) {
+          return (
+            <div key={`entry-${index}`} style={{ marginBottom: '1rem' }}>
+              <h4
+                style={{
+                  color: '#d4af37',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  marginBottom: '0.5rem',
+                  fontFamily: 'Cinzel, serif',
+                }}
+              >
+                {entry.name}
+              </h4>
+              <div>{renderItemEntries(entry.entries)}</div>
+            </div>
+          );
+        }
+
+        if (entry.entries) {
+          return (
+            <div key={`entry-${index}`} style={{ marginBottom: '0.75rem' }}>
+              {renderItemEntries(entry.entries)}
+            </div>
+          );
+        }
+
+        const parsed = parseComplexDnDEntry(entry);
+        return (
+          <p
+            key={`entry-${index}`}
+            style={{ marginBottom: '0.75rem', lineHeight: 1.6 }}
+            dangerouslySetInnerHTML={{ __html: processDbMarkup(parsed) }}
+          />
+        );
+      }
+
+      return null;
+    });
+  }
+
+  if (typeof entries === 'string') {
+    return (
+      <p
+        style={{ marginBottom: '0.75rem', lineHeight: 1.6 }}
+        dangerouslySetInnerHTML={{ __html: processDbMarkup(entries) }}
+      />
+    );
+  }
+
+  const parsed = parseComplexDnDEntry(entries);
+  return (
+    <p
+      style={{ marginBottom: '0.75rem', lineHeight: 1.6 }}
+      dangerouslySetInnerHTML={{ __html: processDbMarkup(parsed) }}
+    />
+  );
+};
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
@@ -621,11 +700,7 @@ export const ItemDetailsModalComponent: React.FC<ItemDetailsModalProps> = ({
             <ItemDescription>
               <strong>Description:</strong>
               <div style={{ marginTop: '8px' }}>
-                {item.entries.map((entry: any, index: number) => (
-                  <div key={index} style={{ marginBottom: '8px' }}>
-                    {typeof entry === 'string' ? entry : JSON.stringify(entry)}
-                  </div>
-                ))}
+                {renderItemEntries(item.entries)}
               </div>
             </ItemDescription>
           )}

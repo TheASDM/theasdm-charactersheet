@@ -114,15 +114,17 @@ const CharacterViewPage: React.FC = () => {
   const [originalCharacter, setOriginalCharacter] = useState<Character | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { save: scheduleAutosave, flush: flushAutosave } = useCharacterAutosave(originalCharacter?.id ?? null);
+  const getCharacterById = useCallback(
+    (id: number, signal?: AbortSignal) => characterService.getById(id, signal),
+    []
+  );
+
   const {
     data: fetchedCharacter,
     error: fetchError,
     isLoading,
     execute: fetchCharacter,
-  } = useApiCall(
-    (id: number, signal?: AbortSignal) => characterService.getById(id, signal),
-    { showErrorToast: true }
-  );
+  } = useApiCall(getCharacterById, { showErrorToast: true });
 
   useEffect(() => {
     if (!characterId) {

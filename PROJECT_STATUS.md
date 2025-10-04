@@ -30,7 +30,7 @@
 ### 4. Project Infrastructure
 
 - ✅ **Backend**: Node.js/Express/TypeScript with Prisma ORM and PostgreSQL
-- ✅ **Docker Configuration**: Complete containerized setup with Nginx reverse proxy
+- ⚠️ **Self-hosted Deployment**: Bare-metal deployment scripts need to be reworked after removing the container stack
 - ✅ **Development Environment**: TypeScript configurations, ESLint, VS Code workspace
 - ⚠️ **Frontend**: React/TypeScript PWA scaffolded but needs integration work
 - ⚠️ **Discord Bot**: Discord.js v14 framework configured but features not implemented

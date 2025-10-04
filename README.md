@@ -1,279 +1,133 @@
-# D&D 2024 Character Sheet Generator
+# The ASDM Character Sheet
 
-A comprehensive web-based D&D character sheet generator featuring complete D&D 2024 rules compliance with integrated Nimble TTRPG homebrew mechanics. Designed for homelab deployment supporting up to 15 users with full Discord bot integration.
+The ASDM Character Sheet is a full-stack web application for managing Dungeons & Dragons 2024 characters with curated data imports and optional Nimble 2.0-inspired homebrew hooks. The project delivers a modern React interface backed by a TypeScript/Express API and Prisma/PostgreSQL schema that tracks characters, rule content, and supporting metadata.
 
-## 🎯 Features
+## Current Feature Set
+- D&D 2024 content browser covering spells, classes, subclasses, backgrounds, feats, species, equipment, and class feature choices
+- JWT-secured character management API with create/read/update/delete operations and validation for ownership and visibility
+- Random character generator that assembles characters from the database (manual or fully random draws)
+- React 18 + Vite frontend with character sheet layouts, modal editor, generator workflow, and data exploration pages
+- Socket.IO server scaffolded for real-time character rooms (frontend subscription hooks are planned but not yet wired up)
+- Prisma schema for 2024 rules data, user accounts, campaigns, class feature options, and version history tables with seed scripts
 
-### Core Functionality
+## Homebrew & Rules Coverage
+- Character sheet data models include fields for heroic actions, mana-style spell resources, wound tracking, and other Nimble-inspired mechanics
+- Database content and UI copy use 2024 terminology (species, origin feats, standardized subclass level progression)
+- Import scripts and seed data target 2024 Player's Handbook and Dungeon Master's Guide sources while leaving extension points for custom material
 
-- ✅ **Complete D&D 2024 Dataset**: Full database with **705 items**, **391 spells**, **77 feats**, **16 backgrounds**, **12 classes**, and **10 species** from Player's Handbook and Dungeon Master's Guide
-- 🎲 **Random Character Generator**: Both truly random and manual modes for character creation with comprehensive data showcase
-- 🗄️ **Robust Database**: PostgreSQL with Prisma ORM, complete import system for D&D 2024 content with 97.4% success rate
-- 📊 **Import Scripts**: Automated data import from 5etools JSON format with smart parsing and validation
-- 🔐 **Character Protection**: Password-protected characters with DM override capabilities (planned)
-- 📱 **Mobile Responsive**: Optimized for tablet gameplay with PWA support (in development)
-- ⚡ **Real-time Updates**: Live character synchronization for campaign play (planned)
-- 🎮 **Discord Integration**: Bot for character lookup, dice rolling, and spell reference (planned)
+## Tech Stack
+- Backend: Node.js 18+, Express 4, TypeScript 5, Prisma 6, PostgreSQL 15+
+- Frontend: React 18, Vite 4, TypeScript 5, Zustand, Styled Components, Vite PWA plugin
+- Tooling: ESLint, Vitest, Jest, ts-node-dev, Socket.IO, Axios
 
-### Technical Features
+## Prerequisites
+- Node.js 18 or later and npm 9+
+- PostgreSQL 15 (or compatible)
+- A `.env` file for both `backend` and `frontend` apps (see environment variables below)
 
-- 🐳 **Docker Deployment**: Complete containerized setup with Nginx reverse proxy (configured)
-- 🗄️ **PostgreSQL Database**: Robust data storage with JSONB, complete D&D 2024 schema with 705 items
-- 🚀 **Modern Stack**: Node.js/Express backend, React/TypeScript frontend
-- 📊 **JSON Data Import**: Smart parsing system for 5etools format with validation and error handling
-- 🔒 **Security**: JWT authentication, rate limiting, SSL/TLS support (configured)
-- ♿ **Accessibility**: WCAG 2.1 AA compliant (planned)
-
-## 🏗️ Architecture
-
-```mermaid
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend API   │    │   Discord Bot   │
-│   React/TS      │◄──►│   Node.js/TS    │◄──►│   Discord.js    │
-│   Port: 3000    │    │   Port: 3001    │    │   (planned)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Nginx Proxy   │    │   PostgreSQL    │    │   File Storage  │
-│   Port: 80/443  │    │   Port: 5432    │    │   Uploads/Logs  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-- PostgreSQL 15+ (if not using Docker)
-
-### Docker Deployment (Recommended)
-
-1. **Clone and Setup**
-
+## Installation & Setup
+1. Clone the repository and install dependencies in each workspace:
    ```bash
-   git clone <your-repo-url>
+   git clone <repository-url>
    cd theasdm-charactersheet
-   cp .env.example .env
+   (cd backend && npm install)
+   (cd frontend && npm install)
    ```
-
-2. **Configure Environment**
-   Edit `.env` file with your settings:
-
-   ```env
-   POSTGRES_PASSWORD=your-secure-password
-   JWT_SECRET=your-secret-key-min-32-chars
-   DISCORD_TOKEN=your-bot-token
-   DOMAIN_NAME=yourdomain.com
-   ```
-
-3. **Deploy**
-
+2. Configure PostgreSQL and create a database:
    ```bash
-   docker-compose up -d
+   createdb dnd_character_sheet
    ```
-
-4. **Initialize Database**
-
+3. Copy environment templates and update values:
    ```bash
-   docker-compose exec backend npx prisma migrate deploy
-   docker-compose exec backend npx prisma db seed
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
    ```
-
-5. **Import D&D 2024 Content** (Optional - database includes sample data)
-
-   ```bash
-   # Import all D&D 2024 content
-   docker-compose exec backend node scripts/import-spells.js
-   docker-compose exec backend node scripts/import-species.js
-   docker-compose exec backend node scripts/import-classes.js
-   docker-compose exec backend node scripts/import-backgrounds.js
-   docker-compose exec backend node scripts/import-feats.js
-   docker-compose exec backend node scripts/import-items.js
-
-   # Generate random characters to test dataset
-   docker-compose exec backend node scripts/generate-random-character.js
-   ```
-
-### Local Development
-
-1. **Backend Setup**
-
+4. Apply Prisma migrations and generate the client:
    ```bash
    cd backend
-   npm install
-   cp .env.example .env
    npx prisma migrate dev
-   npm run dev
+   npm run prisma:generate
    ```
+5. Seed content if needed (review scripts in `database/` and `backend/prisma/seed.ts`).
 
-2. **Frontend Setup**
+## Environment Variables
+### Backend (`backend/.env`)
+- `DATABASE_URL` – PostgreSQL connection string (include database name and schema)
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` – optional convenience values for local scripts
+- `JWT_SECRET`, `JWT_EXPIRES_IN` – authentication token settings
+- `PORT`, `HOST` – API server binding (defaults to `3001` / `0.0.0.0`)
+- `FRONTEND_URL` – allowed origin for CORS/socket connections
+- `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID` – optional Discord integration hooks (not required for local dev)
+- `MAX_FILE_SIZE`, `UPLOAD_PATH`, `RATE_LIMIT_*`, `LOG_LEVEL`, `LOG_FILE` – operational tuning knobs
 
+### Frontend (`frontend/.env`)
+- `VITE_API_URL` – explicit API base URL; omit in development to use the Vite proxy (`/api` → `http://localhost:3001`)
+- `VITE_SOCKET_URL` – socket endpoint if different from API host
+- `VITE_APP_NAME`, `VITE_VERSION` – display metadata
+- `VITE_ENABLE_PWA`, `VITE_ENABLE_SOCKET`, `VITE_ENABLE_ANALYTICS`, `VITE_DEBUG` – feature flags
+
+## Running the Project
+### Development
+In separate terminals:
+```bash
+cd backend
+npm run dev
+```
+```bash
+cd frontend
+npm run dev
+```
+The frontend dev server proxies `/api` requests to `http://localhost:3001` and hot-reloads React components.
+
+### Production Preview
+1. Build the backend and frontend bundles:
    ```bash
-   cd frontend
-   npm install
-   cp .env.example .env
-   npm start
+   (cd backend && npm run build)
+   (cd frontend && npm run build)
    ```
+2. Serve the backend (`npm start`) and host the frontend build via a static file server of your choice.
 
-3. **Discord Bot Setup** (Optional - bot features planned)
+## Database Schema Overview
+Key Prisma models live in `backend/prisma/schema.prisma`:
+- `User`, `Campaign`, `Character`, and `CharacterVersionHistory` manage accounts, shared tables, and audit history
+- `Spell`, `Class`, `Subclass`, `ClassFeatureChoice`, `Species`, `Background`, `Feat`, and `Item` capture 2024 content with JSONB fields for complex metadata
+- Reference tables (`SpellSchool`, `DamageType`, `Condition`, `CreatureType`) normalize tagging for advanced filtering
 
-   ```bash
-   cd discord-bot
-   npm install
-   cp .env.example .env
-   npm run dev
-   ```
+Use `npx prisma studio` to explore live data during development.
 
-## 📚 Documentation
+## API Surface Area
+All routes are mounted under `/api`:
+- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `PATCH /api/auth/profile`, `PATCH /api/auth/password`, `POST /api/auth/logout`
+- `GET /api/characters`, `GET /api/characters/:id`, `POST /api/characters`, `PUT /api/characters/:id`, `DELETE /api/characters/:id`
+- `GET /api/spells`, `GET /api/spells/:id` and similar list/detail endpoints for classes, subclasses, backgrounds, feats, items, and species (see `backend/src/routes/*.ts`)
+- `GET /api/class-choices/...` provides fighting styles, divine orders, eldritch invocations, full class data, and level-filtered feature options
+- `POST /api/generator/random` builds a character from curated random selections
+- `GET /api/campaigns` currently returns `501 Not Implemented` as a placeholder for future campaign management routes
+- Health check available at `GET /health`
 
-- [📖 API Documentation](docs/api/README.md)
-- [🚀 Deployment Guide](docs/deployment/README.md)
-- [🛠️ Development Setup](docs/development/README.md)
-- [🎯 Character Creation Guide](docs/character-creation.md)
-- [🎲 Discord Bot Commands](docs/discord-bot.md)
-- [⚙️ Configuration Guide](docs/configuration.md)
+Refer to the route files for validation rules, rate limits, and response shapes.
 
-## 📊 Current Status
+## Frontend Directory Highlights
+- `frontend/src/pages/` – top-level screens (character generator, sheet view, spell browser, login/register)
+- `frontend/src/components/` – reusable UI elements including `CharacterSheet`, `CharacterSheetModal`, and supporting inputs
+- `frontend/src/store/` – Zustand stores for UI and session state
+- `frontend/src/services/` – API client and data-fetching utilities
+- `frontend/src/utils/` – formatting helpers, derived calculations, and generators
 
-### ✅ Completed Features
+## Project Structure
+```
+backend/          Express API, Prisma schema, auth, content routes
+frontend/         React application and UI assets
+database/         SQL seeds, import utilities
+scripts/          Guardrails and maintenance scripts
+docs/             Supplemental documentation and guides
+```
 
-- **Complete D&D 2024 Database**: 705 items, 391 spells, 77 feats, 16 backgrounds, 12 classes, 10 species
-- **Import System**: Automated scripts with 97.4% success rate importing from 5etools JSON format
-- **Character Generator**: Both random and manual modes for comprehensive character creation
-- **Database Testing**: Full validation scripts ensuring data integrity
-- **Docker Configuration**: Complete containerized setup ready for deployment
-- **Backend Architecture**: Node.js/TypeScript/Prisma/PostgreSQL fully configured
+## Contributing
+- Open an issue or discussion describing the improvement you want to make
+- Create a feature branch (`git checkout -b feature/<short-description>`)
+- Add or update tests where possible (`npm test` in each workspace)
+- Submit a pull request describing the change and any schema or migration impact
 
-### 🚧 In Development
-
-- **Frontend Implementation**: React/TypeScript PWA with character sheet interface
-- **API Endpoints**: RESTful API for character and content management
-- **Authentication System**: JWT-based user authentication with Discord integration
-
-### 📋 Planned Features
-
-- **Discord Bot Integration**: Character lookup, dice rolling, spell reference
-- **Real-time Character Updates**: Live synchronization for campaign play
-- **Character Protection**: Password-protected characters with DM override
-- **Mobile Optimization**: Tablet-optimized interface for gameplay
-
-## 🎮 Discord Bot Commands (Planned)
-
-| Command                    | Description                       |
-| -------------------------- | --------------------------------- |
-| `/character lookup <name>` | Find and display character info   |
-| `/roll <dice>`             | Roll dice (e.g., `/roll 1d20+5`)  |
-| `/spell <name>`            | Look up spell details             |
-| `/class <name>`            | Display class information         |
-| `/dm override <character>` | DM override for locked characters |
-
-## 🗄️ Database Schema
-
-The database contains a complete D&D 2024 dataset with the following content:
-
-### Content Tables
-
-- **spells**: 391 spells from XPHB with full metadata (components, duration, damage, etc.)
-- **species**: 10 playable species with traits and abilities
-- **items**: 705 items from XPHB & XDMG (weapons, armor, magic items, adventuring gear)
-- **classes**: 12 character classes with subclass information
-- **backgrounds**: 16 character backgrounds with skill proficiencies
-- **feats**: 77 feats including general, epic, and fighting style feats
-
-### User & Character Tables (Planned)
-
-- **users**: User accounts and Discord integration
-- **characters**: Character data with JSONB flexibility
-- **campaigns**: Campaign management
-
-### Import Scripts
-
-All content imported using automated scripts with smart data parsing:
-
-- `scripts/import-spells.js` - Spell data with filtering and validation
-- `scripts/import-species.js` - Species/race data with traits
-- `scripts/import-items.js` - Items from both XPHB and XDMG sources
-- `scripts/import-classes.js` - Class and subclass data
-- `scripts/import-backgrounds.js` - Background and proficiency data
-- `scripts/import-feats.js` - Feat data with prerequisites
-- `scripts/generate-random-character.js` - Character generation tool
-
-See the Prisma schema at `backend/prisma/schema.prisma` for detailed field definitions.
-
-## 🔧 Technology Stack
-
-### Backend
-
-- **Node.js** with **TypeScript**
-- **Express.js** for REST API
-- **Prisma** ORM with PostgreSQL
-- **Socket.io** for real-time updates
-- **JWT** authentication
-- **Winston** logging
-
-### Frontend
-
-- **React 18** with **TypeScript**
-- **React Router** for navigation
-- **Styled Components** for styling
-- **React Query** for state management
-- **Framer Motion** for animations
-- **PWA** support
-
-### Infrastructure
-
-- **Docker** containerization
-- **Nginx** reverse proxy
-- **PostgreSQL 15** database
-- **Let's Encrypt** SSL certificates
-- **Discord.js v14** bot framework
-
-## 🛡️ Security Features
-
-- JWT token authentication
-- Password hashing with bcrypt
-- Rate limiting on API endpoints
-- CORS protection
-- Helmet.js security headers
-- SQL injection protection via Prisma
-- Input validation with Joi
-
-## 📱 Mobile Support
-
-- Responsive design optimized for tablets
-- Progressive Web App (PWA) capabilities
-- Touch-friendly interface
-- Offline support for character sheets
-- App-like experience on mobile devices
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Nimble TTRPG](https://shortreststudios.com/nimble-rpg/) for homebrew mechanics inspiration
-- [D&D Beyond](https://www.dndbeyond.com/) for rule reference
-- [5e.tools](https://5e.tools/) for comprehensive D&D data
-- Open source community for the amazing tools and libraries
-
-## 📞 Support
-
-- 📧 Email: [your-email@example.com]
-- 💬 Discord: [Your Discord Server]
-- 🐛 Issues: [GitHub Issues](link-to-issues)
-- 📖 Wiki: [Project Wiki](link-to-wiki)
-
----
-
-Made with ❤️ for the D&D community
+## Status & Support
+The project is actively evolving. See `PROJECT_STATUS.md` for roadmap details. For questions, open a GitHub issue or reach out through the project Discord once published.
