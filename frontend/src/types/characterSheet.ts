@@ -77,6 +77,11 @@ export interface CharacterSheetData {
     [choiceGroupId: string]: string[]; // Array of selected feature IDs (supports single or multiple selections)
   };
 
+  spellbook?: {
+    known: string[];
+    prepared?: string[];
+  };
+
   // Weapon Mastery tracking
   weaponMasteries?: {
     available: number; // How many weapon masteries the character can have active

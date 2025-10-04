@@ -186,6 +186,14 @@ export interface UpdateCharacterRequest {
   characterData?: CharacterSheetData | Record<string, unknown>;
   isPublic?: boolean;
   campaignId?: number;
+  spellbook?: {
+    known?: string[];
+    prepared?: string[];
+  };
+  resources?: {
+    manaCurrent?: number;
+    manaMax?: number;
+  };
 }
 
 // Spell Types

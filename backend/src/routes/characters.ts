@@ -162,7 +162,7 @@ router.put(
     }
 
     const { id } = req.params;
-    const { name, level, characterData, isPublic, campaignId } = req.body;
+    const { name, level, characterData, isPublic, campaignId, spellbook, resources } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: 'Character ID is required' });
@@ -181,15 +181,116 @@ router.put(
       return res.status(403).json({ error: 'You do not have permission to update this character' });
     }
 
+    if (spellbook !== undefined) {
+      if (!spellbook || typeof spellbook !== 'object' || Array.isArray(spellbook)) {
+        return res.status(400).json({ error: 'Invalid spellbook payload' });
+      }
+
+      const { known, prepared } = spellbook as { known?: unknown; prepared?: unknown };
+      if (known !== undefined && (!Array.isArray(known) || !known.every((item) => typeof item === 'string'))) {
+        return res.status(400).json({ error: 'spellbook.known must be an array of strings' });
+      }
+      if (prepared !== undefined && (!Array.isArray(prepared) || !prepared.every((item) => typeof item === 'string'))) {
+        return res.status(400).json({ error: 'spellbook.prepared must be an array of strings' });
+      }
+    }
+
+    if (resources !== undefined) {
+      if (!resources || typeof resources !== 'object' || Array.isArray(resources)) {
+        return res.status(400).json({ error: 'Invalid resources payload' });
+      }
+
+      const { manaCurrent, manaMax } = resources as { manaCurrent?: unknown; manaMax?: unknown };
+      if (manaCurrent !== undefined && typeof manaCurrent !== 'number') {
+        return res.status(400).json({ error: 'resources.manaCurrent must be a number' });
+      }
+      if (manaMax !== undefined && typeof manaMax !== 'number') {
+        return res.status(400).json({ error: 'resources.manaMax must be a number' });
+      }
+    }
+
+    const dataToUpdate: Record<string, unknown> = {};
+
+    if (name) {
+      dataToUpdate.name = name;
+    }
+
+    if (level) {
+      dataToUpdate.level = parseInt(level);
+    }
+
+    if (typeof isPublic === 'boolean') {
+      dataToUpdate.isPublic = isPublic;
+    }
+
+    if (campaignId !== undefined) {
+      dataToUpdate.campaignId = campaignId ? parseInt(campaignId) : null;
+    }
+
+    let updatedCharacterData: unknown = characterData !== undefined
+      ? characterData
+      : existingCharacter.characterData;
+
+    if (spellbook !== undefined || resources !== undefined) {
+      const baseFromRequest = (
+        updatedCharacterData &&
+        typeof updatedCharacterData === 'object' &&
+        !Array.isArray(updatedCharacterData)
+      )
+        ? { ...(updatedCharacterData as Record<string, unknown>) }
+        : {};
+
+      const baseFromExisting = (
+        typeof existingCharacter.characterData === 'object' &&
+        existingCharacter.characterData !== null &&
+        !Array.isArray(existingCharacter.characterData)
+      )
+        ? existingCharacter.characterData as Record<string, unknown>
+        : {};
+
+      const combinedBase = {
+        ...baseFromExisting,
+        ...baseFromRequest,
+      };
+
+      if (spellbook !== undefined) {
+        const incomingSpellbook = spellbook as Record<string, unknown>;
+        combinedBase.spellbook = {
+          ...(typeof combinedBase.spellbook === 'object' && !Array.isArray(combinedBase.spellbook)
+            ? combinedBase.spellbook as Record<string, unknown>
+            : {}),
+          ...incomingSpellbook,
+        };
+      }
+
+      if (resources !== undefined) {
+        const incomingResources = resources as Record<string, unknown>;
+        combinedBase.resources = {
+          ...(typeof combinedBase.resources === 'object' && !Array.isArray(combinedBase.resources)
+            ? combinedBase.resources as Record<string, unknown>
+            : {}),
+          ...incomingResources,
+        };
+      }
+
+      updatedCharacterData = combinedBase;
+    }
+
+    if (
+      characterData !== undefined ||
+      spellbook !== undefined ||
+      resources !== undefined
+    ) {
+      dataToUpdate.characterData = updatedCharacterData;
+    }
+
+    if (Object.keys(dataToUpdate).length === 0) {
+      return res.json(existingCharacter);
+    }
+
     const character = await prisma.character.update({
       where: { id: parseInt(id) },
-      data: {
-        ...(name && { name }),
-        ...(level && { level: parseInt(level) }),
-        ...(characterData && { characterData }),
-        ...(typeof isPublic === 'boolean' && { isPublic }),
-        ...(campaignId !== undefined && { campaignId: campaignId ? parseInt(campaignId) : null })
-      },
+      data: dataToUpdate,
       include: {
         user: {
           select: { id: true, username: true }

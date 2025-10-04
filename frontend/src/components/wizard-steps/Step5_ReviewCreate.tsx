@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
@@ -11,6 +11,9 @@ import { parseDnDTemplateTag } from '../../utils/dndTemplateParser';
 import { isError } from '@/types/api';
 import { showError } from '@/utils/errorDisplay';
 import { logger } from '../../utils/logger';
+import { getCasterProgressionMeta } from '@/helpers/spellRules';
+import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
+import { getSpellById } from '@/services/spellService';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
@@ -94,6 +97,48 @@ const Section = styled.div`
     margin: 0.25rem 0;
     font-size: 0.8rem;
   }
+`;
+
+const SpellSummaryHeader = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+`;
+
+const SpellCountBadge = styled.span<{ $invalid?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  background: ${({ $invalid }) =>
+    $invalid ? 'rgba(182, 55, 55, 0.2)' : 'rgba(26, 26, 26, 0.75)'};
+  border: 1px solid ${({ $invalid }) =>
+    $invalid ? 'rgba(255, 120, 120, 0.6)' : 'rgba(212, 175, 55, 0.35)'};
+  color: ${({ $invalid }) => ($invalid ? '#ff9c9c' : '#d4af37')};
+`;
+
+const SpellList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.4rem;
+`;
+
+const SpellListItem = styled.li<{ $granted?: boolean }>`
+  background: ${({ $granted }) => ($granted ? 'rgba(54, 126, 89, 0.2)' : 'rgba(35, 35, 35, 0.7)')};
+  border: 1px solid ${({ $granted }) =>
+    $granted ? 'rgba(92, 224, 163, 0.45)' : 'rgba(212, 175, 55, 0.3)'};
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+  color: ${({ $granted }) => ($granted ? '#cfffe7' : '#f0f0f0')};
 `;
 
 const ProficienciesGrid = styled.div`
@@ -200,6 +245,166 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [createStatus, setCreateStatus] = useState<'success' | 'error' | null>(null);
 
+  const spellcastingAbilityScore = useMemo(() => {
+    if (!data.spellcastingAbility) {
+      return undefined;
+    }
+    const key = data.spellcastingAbility.toLowerCase() as keyof CharacterBuilderData['abilityScores'];
+    return data.abilityScores?.[key];
+  }, [data.spellcastingAbility, data.abilityScores]);
+
+  const spellProgressionMeta = useMemo(() => {
+    if (!data.selectedClass) {
+      return null;
+    }
+    const params = {
+      classId: data.selectedClass,
+      level: 1,
+      ...(spellcastingAbilityScore !== undefined
+        ? { spellcastingAbilityScore }
+        : {}),
+    } as const;
+    return getCasterProgressionMeta(params);
+  }, [data.selectedClass, spellcastingAbilityScore]);
+
+  const knownIds = useMemo(() => (data.spellbook?.known ?? []).map((id) => String(id)), [data.spellbook]);
+  const preparedIds = useMemo(
+    () => (data.spellbook?.prepared ?? []).map((id) => String(id)),
+    [data.spellbook]
+  );
+
+  const speciesSource = useMemo(() => {
+    if (!data.speciesSpells) {
+      return undefined;
+    }
+    const aggregated = Object.values(data.speciesSpells)
+      .flat()
+      .filter((spellId): spellId is string => Boolean(spellId));
+    return aggregated.length > 0 ? { grantedSpells: aggregated } : undefined;
+  }, [data.speciesSpells]);
+
+  const featSources = useMemo(() => {
+    if (!data.featSpells) {
+      return undefined;
+    }
+    const mapped = Object.values(data.featSpells)
+      .map((spells) => ({ grantedSpells: spells }))
+      .filter((entry) => Array.isArray(entry.grantedSpells) && entry.grantedSpells.length > 0);
+    return mapped.length > 0 ? mapped : undefined;
+  }, [data.featSpells]);
+
+  const classFeatureSources = useMemo(() => {
+    if (!Array.isArray(data.classFeatures)) {
+      return undefined;
+    }
+    const mapped = data.classFeatures
+      .filter((feature: unknown): feature is { grantedSpells?: string[] } =>
+        Boolean(feature && typeof feature === 'object' && 'grantedSpells' in (feature as Record<string, unknown>))
+      )
+      .map((feature) => ({ grantedSpells: feature.grantedSpells }))
+      .filter((entry) => Array.isArray(entry.grantedSpells) && entry.grantedSpells.length > 0);
+    return mapped.length > 0 ? mapped : undefined;
+  }, [data.classFeatures]);
+
+  const grantedIds = useMemo(() => {
+    const options: Parameters<typeof deriveGrantedSpells>[1] = {};
+    if (speciesSource) {
+      options.species = speciesSource;
+    }
+    if (featSources) {
+      options.feats = featSources;
+    }
+    if (classFeatureSources) {
+      options.classFeatures = classFeatureSources;
+    }
+    return deriveGrantedSpells(null, options).map((id) => String(id));
+  }, [speciesSource, featSources, classFeatureSources]);
+
+  const grantedSet = useMemo(() => new Set(grantedIds), [grantedIds]);
+  const knownTracked = useMemo(
+    () => knownIds.filter((id) => !grantedSet.has(id)),
+    [knownIds, grantedSet]
+  );
+  const preparedTracked = useMemo(
+    () => preparedIds.filter((id) => !grantedSet.has(id)),
+    [preparedIds, grantedSet]
+  );
+
+  const knownMax = spellProgressionMeta?.knownMax ?? null;
+  const preparedMax = spellProgressionMeta?.preparedMax ?? null;
+  const knownOverflow = knownMax !== null && knownTracked.length > knownMax;
+  const preparedOverflow = preparedMax !== null && preparedTracked.length > preparedMax;
+  const spellSummaryValid = !(knownOverflow || preparedOverflow);
+
+  const [spellNameLookup, setSpellNameLookup] = useState<Record<string, string>>({});
+  const [isLoadingSpellNames, setIsLoadingSpellNames] = useState(false);
+
+  const uniqueSpellIds = useMemo(
+    () => Array.from(new Set([...knownIds, ...preparedIds, ...grantedIds])).filter(Boolean),
+    [knownIds, preparedIds, grantedIds]
+  );
+
+  useEffect(() => {
+    if (uniqueSpellIds.length === 0) {
+      setSpellNameLookup({});
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const load = async () => {
+      setIsLoadingSpellNames(true);
+      const entries = await Promise.all(
+        uniqueSpellIds.map(async (spellId) => {
+          const response = await getSpellById(spellId, controller.signal);
+          if (isError(response) || !response.data) {
+            if (isError(response)) {
+              logger.warn('Failed to resolve spell name for review', {
+                spellId,
+                error: response.error,
+              });
+            }
+            return [spellId, `Spell #${spellId}`] as const;
+          }
+          return [spellId, response.data.name] as const;
+        })
+      );
+
+      if (!cancelled) {
+        setSpellNameLookup(Object.fromEntries(entries));
+        setIsLoadingSpellNames(false);
+      }
+    };
+
+    load().catch((error) => {
+      if (!cancelled) {
+        logger.error('Unexpected error loading spell summaries:', error);
+        setIsLoadingSpellNames(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [uniqueSpellIds]);
+
+  const grantedSpellNames = useMemo(
+    () => grantedIds.map((id) => spellNameLookup[id] ?? `Spell #${id}`),
+    [grantedIds, spellNameLookup]
+  );
+  const knownSpellNames = useMemo(
+    () => knownTracked.map((id) => spellNameLookup[id] ?? `Spell #${id}`),
+    [knownTracked, spellNameLookup]
+  );
+  const preparedSpellNames = useMemo(
+    () => preparedTracked.map((id) => spellNameLookup[id] ?? `Spell #${id}`),
+    [preparedTracked, spellNameLookup]
+  );
+
+  const hasManaResource = data.resources?.manaMax !== undefined || data.resources?.manaCurrent !== undefined;
+
   // Calculate final ability scores including background bonuses (unused in this component - handled by AbilityScoresHeader)
   // const calculateFinalAbilityScores = () => {
   //   const baseScores = data.abilityScores;
@@ -223,6 +428,12 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   // const finalScores = calculateFinalAbilityScores();
 
   const handleCreateCharacter = async () => {
+    if (!spellSummaryValid) {
+      showError('Resolve spell limits before finalizing the character.');
+      setCreateStatus('error');
+      return;
+    }
+
     setIsCreating(true);
     setCreateStatus(null);
 
@@ -386,27 +597,6 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     return equipment.filter(Boolean); // Remove empty values
   };
 
-  const getAllSpells = (): { cantrips: string[], spells: string[] } => {
-    const cantrips: string[] = [];
-    const spells: string[] = [];
-
-    // Species spells
-    if (data.speciesSpells?.cantrips) cantrips.push(...data.speciesSpells.cantrips);
-    if (data.speciesSpells?.level1) spells.push(...data.speciesSpells.level1);
-
-    // Feat spells
-    if (data.featSpells) {
-      Object.values(data.featSpells).forEach(featSpells => {
-        if (featSpells) spells.push(...featSpells);
-      });
-    }
-
-    return {
-      cantrips: [...new Set(cantrips)],
-      spells: [...new Set(spells)]
-    };
-  };
-
   return (
     <StepContainer>
       <div className="step-title">Review & Create Character</div>
@@ -499,6 +689,84 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         </CharacterCard>
       </ReviewContainer>
 
+      <ReviewContainer>
+        <CharacterCard>
+          <h3>Spell Summary</h3>
+          <SpellSummaryHeader>
+            <SpellCountBadge $invalid={knownOverflow}>
+              Known: {knownTracked.length}
+              {knownMax !== null && ` / ${knownMax}`}
+            </SpellCountBadge>
+            {spellProgressionMeta?.preparedCaster && (
+              <SpellCountBadge $invalid={preparedOverflow}>
+                Prepared: {preparedTracked.length}
+                {preparedMax !== null && ` / ${preparedMax}`}
+              </SpellCountBadge>
+            )}
+            {isLoadingSpellNames && <SpellCountBadge>Loading spell names…</SpellCountBadge>}
+          </SpellSummaryHeader>
+
+          {!spellSummaryValid && (
+            <StatusMessage type="error">
+              Spell limits exceeded. Adjust your selections before continuing.
+            </StatusMessage>
+          )}
+
+          {grantedSpellNames.length > 0 && (
+            <Section>
+              <div className="section-title">Granted Spells</div>
+              <SpellList>
+                {grantedSpellNames.map((name, index) => (
+                  <SpellListItem key={`granted-${index}`} $granted>
+                    {name}
+                  </SpellListItem>
+                ))}
+              </SpellList>
+            </Section>
+          )}
+
+          {knownSpellNames.length > 0 && (
+            <Section>
+              <div className="section-title">Known Spells</div>
+              <SpellList>
+                {knownSpellNames.map((name, index) => (
+                  <SpellListItem key={`known-${index}`}>{name}</SpellListItem>
+                ))}
+              </SpellList>
+            </Section>
+          )}
+
+          {spellProgressionMeta?.preparedCaster && (
+            <Section>
+              <div className="section-title">Prepared Spells</div>
+              {preparedSpellNames.length > 0 ? (
+                <SpellList>
+                  {preparedSpellNames.map((name, index) => (
+                    <SpellListItem key={`prepared-${index}`}>{name}</SpellListItem>
+                  ))}
+                </SpellList>
+              ) : (
+                <div className="section-content">No prepared spells selected.</div>
+              )}
+            </Section>
+          )}
+        </CharacterCard>
+
+        {hasManaResource && (
+          <CharacterCard>
+            <h3>Mana Resources</h3>
+            <Section>
+              <div className="section-title">Mana Pool</div>
+              <div className="section-content">
+                Current: {data.resources?.manaCurrent ?? 0}
+                <br />
+                Maximum: {data.resources?.manaMax ?? 0}
+              </div>
+            </Section>
+          </CharacterCard>
+        )}
+      </ReviewContainer>
+
       {/* Features & Abilities - New Structured Display */}
       <ReviewContainer>
         <CharacterCard style={{ gridColumn: '1 / -1' }}>
@@ -526,7 +794,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         </CharacterCard>
 
         <CharacterCard>
-          <h3>Equipment & Spells</h3>
+          <h3>Equipment</h3>
 
           <Section>
             <div className="section-title">Starting Equipment</div>
@@ -540,36 +808,6 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
               )}
             </div>
           </Section>
-
-          {data.spellcaster && (
-            <>
-              <Section>
-                <div className="section-title">Cantrips</div>
-                <div className="section-content">
-                  {getAllSpells().cantrips.length > 0 ? (
-                    getAllSpells().cantrips.map((cantrip, index) => (
-                      <div key={index} className="list-item">{cantrip}</div>
-                    ))
-                  ) : (
-                    <div>No cantrips known</div>
-                  )}
-                </div>
-              </Section>
-
-              <Section>
-                <div className="section-title">1st Level Spells</div>
-                <div className="section-content">
-                  {getAllSpells().spells.length > 0 ? (
-                    getAllSpells().spells.map((spell, index) => (
-                      <div key={index} className="list-item">{spell}</div>
-                    ))
-                  ) : (
-                    <div>No spells known</div>
-                  )}
-                </div>
-              </Section>
-            </>
-          )}
 
           {data.speciesDarkvision && data.speciesDarkvision > 0 && (
             <Section>
@@ -614,7 +852,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         <button
           className="btn-create"
           onClick={handleCreateCharacter}
-          disabled={isCreating || !data.characterName || !data.selectedClass}
+          disabled={isCreating || !data.characterName || !data.selectedClass || !spellSummaryValid}
         >
           {isCreating ? 'Creating Character...' : 'Create Character'}
         </button>

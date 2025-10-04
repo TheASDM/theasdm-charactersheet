@@ -5,45 +5,132 @@ import { prisma } from '../db';
 const router = Router();
 
 // Get all spells with optional filtering
+const TRUE_QUERY_VALUES = new Set(['true', '1', 'yes', 'y', 'on', 'ritual', 'concentration']);
+const FALSE_QUERY_VALUES = new Set(['false', '0', 'no', 'n', 'off', 'non']);
+
+const parseBooleanQuery = (value: unknown): boolean | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const raw = Array.isArray(value) ? value[value.length - 1] : value;
+  if (typeof raw !== 'string') {
+    return null;
+  }
+
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'any' || normalized === 'all') {
+    return null;
+  }
+
+  if (TRUE_QUERY_VALUES.has(normalized)) {
+    return true;
+  }
+
+  if (FALSE_QUERY_VALUES.has(normalized)) {
+    return false;
+  }
+
+  return null;
+};
+
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { level, school, search, className, page = '1', limit = '50' } = req.query;
+    const {
+      level,
+      school,
+      search,
+      q,
+      className,
+      classId,
+      ritual,
+      concentration,
+      page = '1',
+      limit = '50'
+    } = req.query;
 
     const pageNum = parseInt(page as string);
     const limitNum = Math.min(parseInt(limit as string), 100); // Cap at 100
     const offset = (pageNum - 1) * limitNum;
 
-    // Build where clause
-    const whereClause: any = {};
+    const andConditions: any[] = [];
 
     if (level !== undefined) {
-      whereClause.level = parseInt(level as string);
+      const parsedLevel = parseInt(level as string);
+      if (!Number.isNaN(parsedLevel)) {
+        andConditions.push({ level: parsedLevel });
+      }
     }
 
-    if (school) {
-      whereClause.school = school as string;
+    if (school && typeof school === 'string') {
+      andConditions.push({ school });
     }
 
-    if (search) {
-      whereClause.name = {
-        contains: search as string,
-        mode: 'insensitive'
-      };
+    const searchTerm = (typeof q === 'string' && q.trim().length > 0)
+      ? q
+      : (typeof search === 'string' ? search : undefined);
+
+    if (searchTerm) {
+      andConditions.push({
+        name: {
+          contains: searchTerm,
+          mode: 'insensitive'
+        }
+      });
     }
 
-    // Filter by class if provided
-    if (className) {
-      whereClause.classSpells = {
-        some: {
-          class: {
-            name: {
-              equals: className as string,
-              mode: 'insensitive'
-            }
-          }
+    const classSpellFilter: any = {};
+    if (classId !== undefined) {
+      const parsedClassId = parseInt(classId as string);
+      if (!Number.isNaN(parsedClassId)) {
+        classSpellFilter.classId = parsedClassId;
+      }
+    }
+
+    if (className && typeof className === 'string') {
+      classSpellFilter.class = {
+        name: {
+          equals: className,
+          mode: 'insensitive'
         }
       };
     }
+
+    if (Object.keys(classSpellFilter).length > 0) {
+      andConditions.push({
+        classSpells: {
+          some: classSpellFilter
+        }
+      });
+    }
+
+    const ritualFilter = parseBooleanQuery(ritual);
+    if (ritualFilter !== null) {
+      andConditions.push({ isRitual: ritualFilter });
+    }
+
+    const concentrationFilter = parseBooleanQuery(concentration);
+    if (concentrationFilter !== null) {
+      if (concentrationFilter) {
+        andConditions.push({
+          duration: {
+            path: ['0', 'concentration'],
+            equals: true
+          }
+        });
+      } else {
+        andConditions.push({
+          NOT: {
+            duration: {
+              path: ['0', 'concentration'],
+              equals: true
+            }
+          }
+        });
+      }
+    }
+
+    const whereClause = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const [spells, total] = await Promise.all([
       prisma.spell.findMany({

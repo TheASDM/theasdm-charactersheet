@@ -7,6 +7,7 @@ export type WizardStep =
   | 'background-selection'
   | 'species-selection'
   | 'origin-feats'
+  | 'spell-selection'
   | 'equipment-selection'
   | 'review-create';
 
@@ -92,6 +93,16 @@ export interface EquipmentState {
   equipment?: string[];
 }
 
+export interface SpellbookState {
+  known: string[];
+  prepared?: string[];
+}
+
+export interface ResourcesState {
+  manaCurrent?: number;
+  manaMax?: number;
+}
+
 const defaultAbilityScores = (): AbilityScoreValue => ({
   strength: 0,
   dexterity: 0,
@@ -132,6 +143,11 @@ const createDefaultSections = () => ({
     weapons: [],
     equipment: [],
   } as EquipmentState,
+  spells: {
+    known: [],
+    prepared: [],
+  } as SpellbookState,
+  resources: {} as ResourcesState,
 });
 
 export interface CharacterBuilderStore {
@@ -144,6 +160,11 @@ export interface CharacterBuilderStore {
   species: SpeciesState;
   feats: FeatsState;
   equipment: EquipmentState;
+  spells: SpellbookState;
+  resources: ResourcesState;
+  setKnownSpells: (ids: string[]) => void;
+  setPreparedSpells: (ids: string[]) => void;
+  setMana: (values: Partial<{ manaCurrent: number; manaMax: number }>) => void;
   setCurrentStep: (step: WizardStep) => void;
   markStepComplete: (step: WizardStep) => void;
   resetProgress: () => void;
@@ -154,6 +175,8 @@ export interface CharacterBuilderStore {
   updateSpecies: (updates: Partial<SpeciesState>) => void;
   updateFeats: (updates: Partial<FeatsState>) => void;
   updateEquipment: (updates: Partial<EquipmentState>) => void;
+  updateSpellbook: (updates: Partial<SpellbookState>) => void;
+  updateResources: (updates: Partial<ResourcesState>) => void;
   resetBuilder: () => void;
 }
 
@@ -161,6 +184,27 @@ export const useCharacterBuilderStore = create<CharacterBuilderStore>((set) => (
   currentStep: 'character-info',
   completedSteps: [],
   ...createDefaultSections(),
+  setKnownSpells: (ids) =>
+    set((state) => ({
+      spells: {
+        ...state.spells,
+        known: [...ids],
+      },
+    })),
+  setPreparedSpells: (ids) =>
+    set((state) => ({
+      spells: {
+        ...state.spells,
+        prepared: [...ids],
+      },
+    })),
+  setMana: (values) =>
+    set((state) => ({
+      resources: {
+        ...state.resources,
+        ...values,
+      },
+    })),
   setCurrentStep: (step) => set({ currentStep: step }),
   markStepComplete: (step) =>
     set((state) =>
@@ -226,6 +270,20 @@ export const useCharacterBuilderStore = create<CharacterBuilderStore>((set) => (
     set((state) => ({
       equipment: {
         ...state.equipment,
+        ...updates,
+      },
+    })),
+  updateSpellbook: (updates) =>
+    set((state) => ({
+      spells: {
+        ...state.spells,
+        ...updates,
+      },
+    })),
+  updateResources: (updates) =>
+    set((state) => ({
+      resources: {
+        ...state.resources,
         ...updates,
       },
     })),

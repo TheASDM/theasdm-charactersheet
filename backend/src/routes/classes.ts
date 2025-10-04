@@ -67,10 +67,39 @@ router.get('/name/:name', async (req: Request, res: Response) => {
 });
 
 // Get spells for a specific class
+const TRUE_QUERY_VALUES = new Set(['true', '1', 'yes', 'y', 'on', 'ritual', 'concentration']);
+const FALSE_QUERY_VALUES = new Set(['false', '0', 'no', 'n', 'off', 'non']);
+
+const parseBooleanQuery = (value: unknown): boolean | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const raw = Array.isArray(value) ? value[value.length - 1] : value;
+  if (typeof raw !== 'string') {
+    return null;
+  }
+
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'any' || normalized === 'all') {
+    return null;
+  }
+
+  if (TRUE_QUERY_VALUES.has(normalized)) {
+    return true;
+  }
+
+  if (FALSE_QUERY_VALUES.has(normalized)) {
+    return false;
+  }
+
+  return null;
+};
+
 router.get('/:id/spells', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { level, search, page = '1', limit = '50' } = req.query;
+    const { level, search, q, ritual, concentration, page = '1', limit = '50' } = req.query;
 
     if (!id) {
       return res.status(400).json({ error: 'Class ID is required' });
@@ -81,24 +110,64 @@ router.get('/:id/spells', async (req: Request, res: Response) => {
     const offset = (pageNum - 1) * limitNum;
 
     // Build where clause for spells
-    const whereClause: any = {
-      classSpells: {
-        some: {
-          classId: parseInt(id)
+    const classIdNum = parseInt(id);
+    const andConditions: any[] = [
+      {
+        classSpells: {
+          some: {
+            classId: classIdNum
+          }
         }
       }
-    };
+    ];
 
     if (level !== undefined) {
-      whereClause.level = parseInt(level as string);
+      const parsedLevel = parseInt(level as string);
+      if (!Number.isNaN(parsedLevel)) {
+        andConditions.push({ level: parsedLevel });
+      }
     }
 
-    if (search) {
-      whereClause.name = {
-        contains: search as string,
-        mode: 'insensitive'
-      };
+    const searchTerm = (typeof q === 'string' && q.trim().length > 0)
+      ? q
+      : (typeof search === 'string' ? search : undefined);
+
+    if (searchTerm) {
+      andConditions.push({
+        name: {
+          contains: searchTerm,
+          mode: 'insensitive'
+        }
+      });
     }
+
+    const ritualFilter = parseBooleanQuery(ritual);
+    if (ritualFilter !== null) {
+      andConditions.push({ isRitual: ritualFilter });
+    }
+
+    const concentrationFilter = parseBooleanQuery(concentration);
+    if (concentrationFilter !== null) {
+      if (concentrationFilter) {
+        andConditions.push({
+          duration: {
+            path: ['0', 'concentration'],
+            equals: true
+          }
+        });
+      } else {
+        andConditions.push({
+          NOT: {
+            duration: {
+              path: ['0', 'concentration'],
+              equals: true
+            }
+          }
+        });
+      }
+    }
+
+    const whereClause = andConditions.length > 1 ? { AND: andConditions } : andConditions[0];
 
     const [spells, total] = await Promise.all([
       prisma.spell.findMany({

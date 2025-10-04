@@ -17,6 +17,8 @@ const fieldsToSkipDeepScan = new Set([
   'speciesSpells',
   'featFeatures',
   'featChoices',
+  'spellbook',
+  'resources',
 ]);
 
 export const checkForSQLInjection = (req: Request, res: Response, next: NextFunction): void => {
@@ -72,6 +74,12 @@ export const sanitizeCharacterInput = [
   body('features').optional().isArray({ max: 1000 }),
   body('equipment').optional().isArray({ max: 1000 }),
   body('spells').optional().isArray({ max: 1000 }),
+  body('spellbook').optional().isObject(),
+  body('spellbook.known').optional().isArray({ max: 500 }),
+  body('spellbook.prepared').optional().isArray({ max: 500 }),
+  body('resources').optional().isObject(),
+  body('resources.manaCurrent').optional().isInt({ min: -99999, max: 999999 }),
+  body('resources.manaMax').optional().isInt({ min: 0, max: 999999 }),
 
   // Sanitize nested text fields if they exist
   body('*.name').optional().trim().escape().isLength({ max: 200 }),

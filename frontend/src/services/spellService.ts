@@ -4,20 +4,61 @@ import { Spell, ApiResult, PaginatedResponse } from '@/types/api';
 export interface SpellFilters {
   level?: number;
   school?: string;
+  /** Preferred search term; falls back to `search` for legacy calls. */
+  q?: string;
+  /** @deprecated Use `q` instead. */
   search?: string;
+  classId?: number | string;
+  /** @deprecated Prefer `classId` when possible. */
   className?: string;
+  ritual?: boolean;
+  concentration?: boolean;
   page?: number;
   limit?: number;
 }
 
-const buildSpellParams = (filters: SpellFilters = {}) => ({
-  ...(filters.level !== undefined && { level: filters.level }),
-  ...(filters.school && { school: filters.school }),
-  ...(filters.search && { search: filters.search }),
-  ...(filters.className && { className: filters.className }),
-  page: filters.page ?? 1,
-  limit: filters.limit ?? 50,
-});
+const coerceBooleanQueryParam = (value: boolean | undefined) =>
+  value === undefined ? undefined : value ? 'true' : 'false';
+
+const buildSpellParams = (filters: SpellFilters = {}) => {
+  const params: Record<string, unknown> = {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 50,
+  };
+
+  if (filters.level !== undefined) {
+    params.level = filters.level;
+  }
+
+  if (filters.school) {
+    params.school = filters.school;
+  }
+
+  const searchTerm = filters.q ?? filters.search;
+  if (searchTerm) {
+    params.q = searchTerm;
+  }
+
+  if (filters.classId !== undefined) {
+    params.classId = filters.classId;
+  }
+
+  if (filters.className) {
+    params.className = filters.className;
+  }
+
+  const ritual = coerceBooleanQueryParam(filters.ritual);
+  if (ritual !== undefined) {
+    params.ritual = ritual;
+  }
+
+  const concentration = coerceBooleanQueryParam(filters.concentration);
+  if (concentration !== undefined) {
+    params.concentration = concentration;
+  }
+
+  return params;
+};
 
 export const listSpells = (
   filters: SpellFilters = {},
@@ -69,9 +110,37 @@ export const searchSpells = (
 export const listCantrips = (signal?: AbortSignal): Promise<ApiResult<Spell[]>> =>
   listSpellsByLevel(0, signal);
 
+const buildClassSpellParams = (
+  filters: Omit<SpellFilters, 'classId' | 'className'> = {}
+) => {
+  const params: Record<string, unknown> = {
+    ...(filters.level !== undefined && { level: filters.level }),
+    ...(filters.school && { school: filters.school }),
+    ...(filters.page !== undefined && { page: filters.page }),
+    ...(filters.limit !== undefined && { limit: filters.limit }),
+  };
+
+  const searchTerm = filters.q ?? filters.search;
+  if (searchTerm) {
+    params.q = searchTerm;
+  }
+
+  const ritual = coerceBooleanQueryParam(filters.ritual);
+  if (ritual !== undefined) {
+    params.ritual = ritual;
+  }
+
+  const concentration = coerceBooleanQueryParam(filters.concentration);
+  if (concentration !== undefined) {
+    params.concentration = concentration;
+  }
+
+  return params;
+};
+
 export const listSpellsByClass = (
   className: string,
-  filters: Omit<SpellFilters, 'className'> = {},
+  filters: Omit<SpellFilters, 'classId' | 'className'> = {},
   signal?: AbortSignal
 ): Promise<ApiResult<PaginatedResponse<Spell>>> =>
   listSpells({ ...filters, className }, signal);
@@ -88,10 +157,7 @@ export const listSpellsByClassId = (
         withSignal(
           {
             params: {
-              ...(filters.level !== undefined && { level: filters.level }),
-              ...(filters.search && { search: filters.search }),
-              page: filters.page ?? 1,
-              limit: filters.limit ?? 200,
+              ...buildClassSpellParams({ ...filters, limit: filters.limit ?? 200, page: filters.page ?? 1 }),
             },
           },
           signal

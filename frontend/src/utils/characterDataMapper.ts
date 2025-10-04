@@ -179,11 +179,15 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     },
     heroicInspiration: false,
     wounds: 0,
-    mana: {
-      current: 0,
-      max: 0,
+    spellbook: {
+      known: [...(builderData.spellbook?.known ?? [])],
+      ...(builderData.spellbook?.prepared ? { prepared: [...builderData.spellbook.prepared] } : {}),
     },
-    resources: {},
+    mana: {
+      current: builderData.resources?.manaCurrent ?? 0,
+      max: builderData.resources?.manaMax ?? 0,
+    },
+    resources: builderData.resources ? { ...builderData.resources } : {},
     inventory,
     equipment,
 
