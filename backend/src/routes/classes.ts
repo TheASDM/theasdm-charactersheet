@@ -203,14 +203,6 @@ router.get('/:id/spell-stats', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Class ID is required' });
     }
 
-    // Get count of spells by level
-    const spellsByLevel = await prisma.classSpell.groupBy({
-      by: ['spellId'],
-      where: {
-        classId: parseInt(id)
-      }
-    });
-
     // Get all spell details for this class
     const spells = await prisma.spell.findMany({
       where: {
@@ -226,8 +218,9 @@ router.get('/:id/spell-stats', async (req: Request, res: Response) => {
     });
 
     // Count by level
-    const levelCounts = spells.reduce((acc: Record<number, number>, spell) => {
-      acc[spell.level] = (acc[spell.level] || 0) + 1;
+    const levelCounts = spells.reduce<Record<number, number>>((acc, spell) => {
+      const level = spell.level ?? 0;
+      acc[level] = (acc[level] || 0) + 1;
       return acc;
     }, {});
 
