@@ -100,7 +100,7 @@ app.use('/api/feats', featRoutes);
 app.use('/api/generator', generatorRoutes);
 app.use('/api/class-choices', classChoicesRoutes);
 
-const frontendDistPath = path.resolve(__dirname, '../../public');
+const frontendDistPath = path.resolve(__dirname, '../public');
 
 app.use(express.static(frontendDistPath));
 
