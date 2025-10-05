@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   abilityMod,
   canCastLeveledThisTurn,
+  getCantripMax,
   getCasterProgressionMeta,
   getKnownMax,
   getPreparedMax,
@@ -41,12 +42,19 @@ describe('spellRules helpers', () => {
     expect(getKnownMax('Bard', 0)).toBe(0);
     expect(getKnownMax('Bard', 30)).toBe(22); // clamps to last progression entry
     expect(getKnownMax('Cleric', 5)).toBeNull();
+    expect(getKnownMax('Paladin', 1)).toBe(0);
   });
 
   it('computes prepared spell maxima for prepared casters', () => {
     expect(getPreparedMax('Cleric', 5, 3)).toBeGreaterThanOrEqual(1);
     expect(getPreparedMax('Cleric', 1, -1)).toBe(1);
     expect(getPreparedMax('Ranger', 5, 2)).toBeNull();
+  });
+
+  it('computes cantrip limits per class', () => {
+    expect(getCantripMax('Wizard', 1)).toBeGreaterThanOrEqual(3);
+    expect(getCantripMax('Paladin', 5)).toBe(0);
+    expect(getCantripMax('Barbarian', 3)).toBeNull();
   });
 
   it('identifies whether spells belong to a class', () => {
@@ -117,6 +125,7 @@ describe('spellRules helpers', () => {
     });
     expect(wizardMeta.knownMax).toBeGreaterThan(0);
     expect(wizardMeta.preparedMax).toBeGreaterThanOrEqual(1);
+    expect(wizardMeta.cantripMax).toBeGreaterThan(0);
 
     const barbarianMeta = getCasterProgressionMeta({ classId: 'Barbarian', level: 5 });
     expect(barbarianMeta).toMatchObject({

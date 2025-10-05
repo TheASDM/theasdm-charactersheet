@@ -24,6 +24,11 @@ const iconForCode = (code?: ApiErrorCode) => {
 };
 
 export const showError = (message: string, statusCode?: number, code?: ApiErrorCode) => {
+  // Don't show toasts for cancelled requests (499 = client closed request)
+  if (statusCode === 499) {
+    return;
+  }
+
   const payload: ToastPayload = { type: 'error', message };
   if (statusCode !== undefined) {
     payload.statusCode = statusCode;

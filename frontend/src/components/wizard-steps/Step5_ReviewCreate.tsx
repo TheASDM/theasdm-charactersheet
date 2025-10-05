@@ -9,6 +9,7 @@ import { StructuredFeaturesDisplay } from '../StructuredFeaturesDisplay';
 import { useUser } from '../../contexts/UserContext';
 import { parseDnDTemplateTag } from '../../utils/dndTemplateParser';
 import { isError } from '@/types/api';
+import type { Spell } from '@/types/api';
 import { showError } from '@/utils/errorDisplay';
 import { logger } from '../../utils/logger';
 import { getCasterProgressionMeta } from '@/helpers/spellRules';
@@ -31,6 +32,13 @@ const ReviewContainer = styled.div`
     gap: 1rem;
   }
 `;
+
+type SpellFlowMode = 'known' | 'prepared' | 'scribe' | 'none';
+
+const KNOWN_FLOW_CLASSES = new Set(['bard', 'paladin', 'sorcerer', 'warlock', 'ranger']);
+const PREPARED_FLOW_CLASSES = new Set(['cleric', 'druid']);
+const SCRIBE_FLOW_CLASSES = new Set(['wizard']);
+const CANTRIP_ELIGIBLE_CLASSES = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'warlock', 'wizard']);
 
 const CharacterCard = styled.div`
   background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
@@ -217,18 +225,21 @@ const ActionButtons = styled.div`
   }
 `;
 
-const StatusMessage = styled.div<{ type: 'success' | 'error' | 'info' }>`
+const StatusMessage = styled.div<{ type: 'success' | 'error' | 'info' | 'warning' }>`
   background: ${props =>
     props.type === 'success' ? 'rgba(76, 175, 80, 0.1)' :
     props.type === 'error' ? 'rgba(244, 67, 54, 0.1)' :
+    props.type === 'warning' ? 'rgba(255, 193, 7, 0.12)' :
     'rgba(33, 150, 243, 0.1)'};
   border: 1px solid ${props =>
     props.type === 'success' ? 'rgba(76, 175, 80, 0.3)' :
     props.type === 'error' ? 'rgba(244, 67, 54, 0.3)' :
+    props.type === 'warning' ? 'rgba(255, 193, 7, 0.35)' :
     'rgba(33, 150, 243, 0.3)'};
   color: ${props =>
     props.type === 'success' ? '#4caf50' :
     props.type === 'error' ? '#f44336' :
+    props.type === 'warning' ? '#ffc107' :
     '#2196f3'};
   border-radius: 8px;
   padding: 1rem;
@@ -306,6 +317,16 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     return mapped.length > 0 ? mapped : undefined;
   }, [data.classFeatures]);
 
+  const backgroundFeatureSources = useMemo(() => {
+    if (!Array.isArray(data.backgroundFeatures)) {
+      return undefined;
+    }
+    const objectsOnly = data.backgroundFeatures.filter((feature): feature is Record<string, unknown> =>
+      Boolean(feature && typeof feature === 'object')
+    );
+    return objectsOnly.length > 0 ? objectsOnly : undefined;
+  }, [data.backgroundFeatures]);
+
   const grantedIds = useMemo(() => {
     const options: Parameters<typeof deriveGrantedSpells>[1] = {};
     if (speciesSource) {
@@ -317,8 +338,11 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     if (classFeatureSources) {
       options.classFeatures = classFeatureSources;
     }
+    if (backgroundFeatureSources) {
+      options.backgroundFeatures = backgroundFeatureSources;
+    }
     return deriveGrantedSpells(null, options).map((id) => String(id));
-  }, [speciesSource, featSources, classFeatureSources]);
+  }, [speciesSource, featSources, classFeatureSources, backgroundFeatureSources]);
 
   const grantedSet = useMemo(() => new Set(grantedIds), [grantedIds]);
   const knownTracked = useMemo(
@@ -330,14 +354,79 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     [preparedIds, grantedSet]
   );
 
-  const knownMax = spellProgressionMeta?.knownMax ?? null;
-  const preparedMax = spellProgressionMeta?.preparedMax ?? null;
-  const knownOverflow = knownMax !== null && knownTracked.length > knownMax;
-  const preparedOverflow = preparedMax !== null && preparedTracked.length > preparedMax;
-  const spellSummaryValid = !(knownOverflow || preparedOverflow);
+  const normalizedClassId = (data.selectedClass ?? '').trim().toLowerCase();
+  const flowMode: SpellFlowMode = useMemo(() => {
+    if (!normalizedClassId) {
+      return 'none';
+    }
+    if (SCRIBE_FLOW_CLASSES.has(normalizedClassId)) {
+      return 'scribe';
+    }
+    if (PREPARED_FLOW_CLASSES.has(normalizedClassId)) {
+      return 'prepared';
+    }
+    if (KNOWN_FLOW_CLASSES.has(normalizedClassId)) {
+      return 'known';
+    }
+    return 'none';
+  }, [normalizedClassId]);
 
-  const [spellNameLookup, setSpellNameLookup] = useState<Record<string, string>>({});
+  const cantripSelectionEnabled = normalizedClassId
+    ? CANTRIP_ELIGIBLE_CLASSES.has(normalizedClassId)
+    : false;
+
+  const [spellLookup, setSpellLookup] = useState<Record<string, Spell | null>>({});
   const [isLoadingSpellNames, setIsLoadingSpellNames] = useState(false);
+
+  const knownBreakdown = useMemo(() => {
+    const cantrips: string[] = [];
+    const leveled: string[] = [];
+
+    knownTracked.forEach((id) => {
+      const spell = spellLookup[id];
+      if (spell?.level === 0) {
+        cantrips.push(id);
+      } else if (spell && typeof spell.level === 'number') {
+        leveled.push(id);
+      } else {
+        // Unknown details count as leveled for conservative caps
+        leveled.push(id);
+      }
+    });
+
+    return { cantrips, leveled };
+  }, [knownTracked, spellLookup]);
+
+  const cantripKnownCount = knownBreakdown.cantrips.length;
+  const leveledKnownCount = knownBreakdown.leveled.length;
+
+  const cantripMax = spellProgressionMeta?.cantripMax ?? null;
+  const leveledMax = flowMode === 'prepared' ? null : spellProgressionMeta?.knownMax ?? null;
+  const preparedMax = flowMode === 'prepared' ? spellProgressionMeta?.preparedMax ?? null : null;
+
+  const cantripOverflow =
+    cantripSelectionEnabled && cantripMax !== null && cantripKnownCount > cantripMax;
+  const leveledOverflow = leveledMax !== null && leveledKnownCount > leveledMax;
+  const preparedOverflow =
+    flowMode === 'prepared' && preparedMax !== null && preparedTracked.length > preparedMax;
+
+  const spellLimitWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    if (cantripOverflow) {
+      warnings.push('Too many cantrips selected.');
+    }
+    if (leveledOverflow) {
+      warnings.push(
+        flowMode === 'scribe'
+          ? 'Too many spells scribed into the spellbook.'
+          : 'Too many leveled spells known.'
+      );
+    }
+    if (preparedOverflow) {
+      warnings.push('Too many spells prepared.');
+    }
+    return warnings;
+  }, [cantripOverflow, leveledOverflow, preparedOverflow, flowMode]);
 
   const uniqueSpellIds = useMemo(
     () => Array.from(new Set([...knownIds, ...preparedIds, ...grantedIds])).filter(Boolean),
@@ -346,61 +435,74 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
   useEffect(() => {
     if (uniqueSpellIds.length === 0) {
-      setSpellNameLookup({});
+      setSpellLookup({});
       return;
     }
 
     let cancelled = false;
     const controller = new AbortController();
 
-    const load = async () => {
-      setIsLoadingSpellNames(true);
-      const entries = await Promise.all(
-        uniqueSpellIds.map(async (spellId) => {
-          const response = await getSpellById(spellId, controller.signal);
-          if (isError(response) || !response.data) {
-            if (isError(response)) {
-              logger.warn('Failed to resolve spell name for review', {
-                spellId,
-                error: response.error,
-              });
+    // Debounce to avoid rapid re-fetches during wizard state changes
+    const timeoutId = setTimeout(() => {
+      const load = async () => {
+        setIsLoadingSpellNames(true);
+        const entries = await Promise.all(
+          uniqueSpellIds.map(async (spellId) => {
+            const response = await getSpellById(spellId, controller.signal);
+            if (isError(response) || !response.data) {
+              // Only log non-cancellation errors
+              if (isError(response) && response.errorCode !== 'timeout') {
+                logger.warn('Failed to resolve spell name for review', {
+                  spellId,
+                  error: response.error,
+                });
+              }
+              return [spellId, null] as const;
             }
-            return [spellId, `Spell #${spellId}`] as const;
-          }
-          return [spellId, response.data.name] as const;
-        })
-      );
+            return [spellId, response.data] as const;
+          })
+        );
 
-      if (!cancelled) {
-        setSpellNameLookup(Object.fromEntries(entries));
-        setIsLoadingSpellNames(false);
-      }
-    };
+        if (!cancelled) {
+          setSpellLookup(Object.fromEntries(entries));
+          setIsLoadingSpellNames(false);
+        }
+      };
 
-    load().catch((error) => {
-      if (!cancelled) {
-        logger.error('Unexpected error loading spell summaries:', error);
-        setIsLoadingSpellNames(false);
-      }
-    });
+      load().catch((error) => {
+        if (!cancelled) {
+          logger.error('Unexpected error loading spell summaries:', error);
+          setIsLoadingSpellNames(false);
+        }
+      });
+    }, 300); // 300ms debounce
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
       controller.abort();
     };
   }, [uniqueSpellIds]);
 
+  const getSpellLabel = (id: string): string => {
+    const spell = spellLookup[id];
+    if (spell && typeof spell.name === 'string') {
+      return spell.name;
+    }
+    return `Spell #${id}`;
+  };
+
   const grantedSpellNames = useMemo(
-    () => grantedIds.map((id) => spellNameLookup[id] ?? `Spell #${id}`),
-    [grantedIds, spellNameLookup]
+    () => grantedIds.map((id) => getSpellLabel(id)),
+    [grantedIds, spellLookup]
   );
   const knownSpellNames = useMemo(
-    () => knownTracked.map((id) => spellNameLookup[id] ?? `Spell #${id}`),
-    [knownTracked, spellNameLookup]
+    () => knownTracked.map((id) => getSpellLabel(id)),
+    [knownTracked, spellLookup]
   );
   const preparedSpellNames = useMemo(
-    () => preparedTracked.map((id) => spellNameLookup[id] ?? `Spell #${id}`),
-    [preparedTracked, spellNameLookup]
+    () => preparedTracked.map((id) => getSpellLabel(id)),
+    [preparedTracked, spellLookup]
   );
 
   const hasManaResource = data.resources?.manaMax !== undefined || data.resources?.manaCurrent !== undefined;
@@ -428,12 +530,6 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   // const finalScores = calculateFinalAbilityScores();
 
   const handleCreateCharacter = async () => {
-    if (!spellSummaryValid) {
-      showError('Resolve spell limits before finalizing the character.');
-      setCreateStatus('error');
-      return;
-    }
-
     setIsCreating(true);
     setCreateStatus(null);
 
@@ -693,11 +789,19 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         <CharacterCard>
           <h3>Spell Summary</h3>
           <SpellSummaryHeader>
-            <SpellCountBadge $invalid={knownOverflow}>
-              Known: {knownTracked.length}
-              {knownMax !== null && ` / ${knownMax}`}
-            </SpellCountBadge>
-            {spellProgressionMeta?.preparedCaster && (
+            {cantripSelectionEnabled && (
+              <SpellCountBadge $invalid={cantripOverflow}>
+                Cantrips: {cantripKnownCount}
+                {cantripMax !== null && ` / ${cantripMax}`}
+              </SpellCountBadge>
+            )}
+            {flowMode !== 'prepared' && (
+              <SpellCountBadge $invalid={leveledOverflow}>
+                {flowMode === 'scribe' ? 'Spellbook' : 'Known'}: {leveledKnownCount}
+                {leveledMax !== null && ` / ${leveledMax}`}
+              </SpellCountBadge>
+            )}
+            {flowMode === 'prepared' && (
               <SpellCountBadge $invalid={preparedOverflow}>
                 Prepared: {preparedTracked.length}
                 {preparedMax !== null && ` / ${preparedMax}`}
@@ -706,9 +810,11 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
             {isLoadingSpellNames && <SpellCountBadge>Loading spell names…</SpellCountBadge>}
           </SpellSummaryHeader>
 
-          {!spellSummaryValid && (
-            <StatusMessage type="error">
-              Spell limits exceeded. Adjust your selections before continuing.
+          {spellLimitWarnings.length > 0 && (
+            <StatusMessage type="warning">
+              {spellLimitWarnings.map((warning) => (
+                <div key={warning}>• {warning}</div>
+              ))}
             </StatusMessage>
           )}
 
@@ -736,7 +842,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
             </Section>
           )}
 
-          {spellProgressionMeta?.preparedCaster && (
+          {flowMode === 'prepared' && (
             <Section>
               <div className="section-title">Prepared Spells</div>
               {preparedSpellNames.length > 0 ? (
@@ -852,7 +958,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         <button
           className="btn-create"
           onClick={handleCreateCharacter}
-          disabled={isCreating || !data.characterName || !data.selectedClass || !spellSummaryValid}
+          disabled={isCreating || !data.characterName || !data.selectedClass}
         >
           {isCreating ? 'Creating Character...' : 'Create Character'}
         </button>

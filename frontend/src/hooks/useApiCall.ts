@@ -34,7 +34,12 @@ export function useApiCall<T, Args extends unknown[]>(
 
       setState({ data: null, error: null, isLoading: true });
 
-      const response = await apiFn(...args);
+      const response = await (apiFn as unknown as (
+        ...allArgs: [...Args, AbortSignal?]
+      ) => Promise<ApiResult<T>>)(
+        ...args,
+        controller.signal
+      );
 
       if (isError(response)) {
         setState({ data: null, error: response.error ?? null, isLoading: false });

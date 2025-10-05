@@ -30,13 +30,24 @@ const CLASS_NAME_ALIASES: Record<string, string> = {
 const FULL_CASTER_CLASSES = new Set(['Bard', 'Cleric', 'Druid', 'Sorcerer', 'Warlock', 'Wizard']);
 const HALF_CASTER_CLASSES = new Set(['Artificer', 'Paladin', 'Ranger']);
 const THIRD_CASTER_CLASSES = new Set(['Fighter', 'Rogue']);
-const PREPARED_CASTER_CLASSES = new Set(['Artificer', 'Cleric', 'Druid', 'Paladin', 'Wizard']);
+const PREPARED_CASTER_CLASSES = new Set(['Artificer', 'Cleric', 'Druid', 'Wizard']);
 
 const KNOWN_SPELLS_PROGRESSIONS: Record<string, number[]> = {
   Bard: [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22],
+  Paladin: [0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11],
   Ranger: [0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11],
   Sorcerer: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15],
   Warlock: [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15],
+};
+
+const CANTRIP_PROGRESSIONS: Record<string, number[]> = {
+  Artificer: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+  Bard: [2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4],
+  Cleric: [3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+  Druid: [2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+  Sorcerer: [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+  Warlock: [2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+  Wizard: [3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5],
 };
 
 /** Spell shape that includes optional class metadata. */
@@ -127,6 +138,22 @@ export function getKnownMax(classId: string, level: number): number | null {
   }
 
   const index = Math.min(table.length - 1, Math.max(0, effectiveLevel - 1));
+  return table[index];
+}
+
+/**
+ * Maximum number of cantrips a class can know at a given level. Returns 0 when the class lacks cantrip progression.
+ */
+export function getCantripMax(classId: string, level: number): number | null {
+  const id = normalizeClassId(classId);
+  const table = CANTRIP_PROGRESSIONS[id];
+
+  if (!table) {
+    return ['Paladin', 'Ranger'].includes(id) ? 0 : null;
+  }
+
+  const effectiveLevel = Math.max(1, Math.floor(level));
+  const index = Math.min(table.length - 1, effectiveLevel - 1);
   return table[index];
 }
 
@@ -228,6 +255,7 @@ export function getCasterProgressionMeta(params: {
     preparedCaster,
     knownMax: getKnownMax(params.classId, params.level),
     preparedMax: getPreparedMax(params.classId, params.level, mod),
+    cantripMax: getCantripMax(params.classId, params.level),
     abilityMod: mod,
   };
 }

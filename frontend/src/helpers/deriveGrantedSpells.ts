@@ -1,4 +1,4 @@
-import type { Character, Feat, Species } from '@/types/api';
+import type { Background, Character, Feat, Species } from '@/types/api';
 import type { ClassFeature } from '@/types/classFeatures';
 
 type MaybeGranted = {
@@ -61,12 +61,53 @@ const ingestGranted = (source: unknown, bucket: Set<string>): void => {
   }
 };
 
+const ingestFeatureLike = (value: unknown, bucket: Set<string>): void => {
+  if (value === null || value === undefined) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry) => ingestFeatureLike(entry, bucket));
+    return;
+  }
+
+  if (typeof value === 'object') {
+    ingestGranted(value, bucket);
+    return;
+  }
+
+  const id = normaliseSpellId(value);
+  if (id) {
+    bucket.add(id);
+  }
+};
+
+const ingestFeatureCollection = (collection: unknown, bucket: Set<string>): void => {
+  if (!collection) {
+    return;
+  }
+
+  if (Array.isArray(collection)) {
+    collection.forEach((entry) => ingestFeatureLike(entry, bucket));
+    return;
+  }
+
+  if (typeof collection === 'object') {
+    Object.values(collection as Record<string, unknown>).forEach((entry) =>
+      ingestFeatureLike(entry, bucket)
+    );
+  }
+};
+
 export function deriveGrantedSpells(
   character: Partial<Character> | null,
   opts: {
     species?: (Partial<Species> & MaybeGranted) | null;
     feats?: Array<Partial<Feat> & MaybeGranted>;
     classFeatures?: Array<Partial<ClassFeature> & MaybeGranted>;
+    subclassFeatures?: Array<Partial<ClassFeature> & MaybeGranted>;
+    background?: (Partial<Background> & MaybeGranted) | null;
+    backgroundFeatures?: Array<MaybeGranted | Record<string, unknown>>;
   } = {}
 ): string[] {
   const granted = new Set<string>();
@@ -83,7 +124,48 @@ export function deriveGrantedSpells(
     }
   }
 
-  const { species, feats, classFeatures } = opts;
+  const { species, feats, classFeatures, subclassFeatures, background, backgroundFeatures } = opts;
+
+  if (fromCharacter) {
+    const reportedSpecies = fromCharacter.speciesTraits;
+    if (reportedSpecies) {
+      ingestFeatureCollection(reportedSpecies, granted);
+    }
+
+    const reportedFeatSpells = fromCharacter.featSpells;
+    if (reportedFeatSpells) {
+      ingestFeatureCollection(reportedFeatSpells, granted);
+    }
+
+    const reportedFeatFeatures = fromCharacter.featFeatures;
+    if (reportedFeatFeatures) {
+      ingestFeatureCollection(reportedFeatFeatures, granted);
+    }
+
+    const reportedClassFeatures = fromCharacter.classFeatures;
+    if (reportedClassFeatures) {
+      ingestFeatureCollection(reportedClassFeatures, granted);
+    }
+
+    const reportedSubclassFeatures = fromCharacter.subclassFeatures;
+    if (reportedSubclassFeatures) {
+      ingestFeatureCollection(reportedSubclassFeatures, granted);
+    }
+
+    const reportedBackgroundFeatures = fromCharacter.backgroundFeatures;
+    if (reportedBackgroundFeatures) {
+      ingestFeatureCollection(reportedBackgroundFeatures, granted);
+    }
+
+    const structuredFeatures = fromCharacter.features as Record<string, unknown> | undefined;
+    if (structuredFeatures && typeof structuredFeatures === 'object') {
+      ingestFeatureCollection(structuredFeatures.classFeatures, granted);
+      ingestFeatureCollection(structuredFeatures.subclassFeatures, granted);
+      ingestFeatureCollection(structuredFeatures.backgroundFeatures, granted);
+      ingestFeatureCollection(structuredFeatures.speciesTraits, granted);
+      ingestFeatureCollection(structuredFeatures.feats, granted);
+    }
+  }
 
   if (species) {
     ingestGranted((species as MaybeGranted).grantedSpells, granted);
@@ -107,6 +189,26 @@ export function deriveGrantedSpells(
     if (mechanics && typeof mechanics === 'object') {
       ingestGranted((mechanics as MaybeGranted).grantedSpells, granted);
     }
+  });
+
+  subclassFeatures?.forEach((feature) => {
+    ingestGranted((feature as MaybeGranted).grantedSpells, granted);
+    const mechanics = (feature as Record<string, unknown>).mechanics;
+    if (mechanics && typeof mechanics === 'object') {
+      ingestGranted((mechanics as MaybeGranted).grantedSpells, granted);
+    }
+  });
+
+  if (background) {
+    ingestGranted((background as MaybeGranted).grantedSpells, granted);
+    const backgroundRecord = background as Record<string, unknown>;
+    ingestFeatureCollection(backgroundRecord.feature, granted);
+    ingestFeatureCollection(backgroundRecord.features, granted);
+    ingestFeatureCollection(backgroundRecord.spells, granted);
+  }
+
+  backgroundFeatures?.forEach((feature) => {
+    ingestFeatureLike(feature, granted);
   });
 
   return Array.from(granted);
