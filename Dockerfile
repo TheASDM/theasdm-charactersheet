@@ -25,6 +25,10 @@ FROM node:20-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+RUN apt-get update \
+ && apt-get install -y openssl \
+ && rm -rf /var/lib/apt/lists/*
+
 # Copy node modules and built assets
 COPY --from=build /app/backend/node_modules backend/node_modules
 COPY --from=build /app/backend/dist backend/dist
