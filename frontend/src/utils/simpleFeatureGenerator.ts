@@ -7,7 +7,7 @@ import { logger } from './logger';
  */
 
 import { CharacterSheetData } from '../types/characterSheet';
-import { parseComplexDnDEntry } from './dndTemplateParser';
+import { parseComplexDnDEntry, normaliseDisplayString } from './dndTemplateParser';
 import { getDisplayableFeatures } from './classChoiceDetection';
 import { ClassData } from '../types/classFeatures';
 
@@ -1625,16 +1625,28 @@ function extractFeatFeatureDescription(featFeature: any): string {
  * Generate proficiencies feature (always displayed last)
  */
 function generateProficienciesFeature(character: CharacterSheetData): SimpleFeature[] {
+  const formatEntries = (values?: string[]): string[] => {
+    if (!values || values.length === 0) {
+      return [];
+    }
+    const cleaned = values
+      .map((value) => normaliseDisplayString(value, { titleCase: true }))
+      .filter((value) => value.length > 0);
+    return [...new Set(cleaned)];
+  };
+
   const proficiencySections: string[] = [];
 
   // Weapons
-  if (character.proficiencies?.weapons && character.proficiencies.weapons.length > 0) {
-    proficiencySections.push(`**Weapons:** ${character.proficiencies.weapons.join(', ')}`);
+  const weapons = formatEntries(character.proficiencies?.weapons);
+  if (weapons.length > 0) {
+    proficiencySections.push(`**Weapons:** ${weapons.join(', ')}`);
   }
 
   // Armor
-  if (character.proficiencies?.armor && character.proficiencies.armor.length > 0) {
-    proficiencySections.push(`**Armor:** ${character.proficiencies.armor.join(', ')}`);
+  const armor = formatEntries(character.proficiencies?.armor);
+  if (armor.length > 0) {
+    proficiencySections.push(`**Armor:** ${armor.join(', ')}`);
   }
 
   // Languages
@@ -1642,13 +1654,15 @@ function generateProficienciesFeature(character: CharacterSheetData): SimpleFeat
     ...(character.selectedLanguages || []),
     // Add any other language sources here
   ];
-  if (allLanguages.length > 0) {
-    proficiencySections.push(`**Languages:** ${allLanguages.join(', ')}`);
+  const languages = formatEntries(allLanguages);
+  if (languages.length > 0) {
+    proficiencySections.push(`**Languages:** ${languages.join(', ')}`);
   }
 
   // Tools
-  if (character.proficiencies?.tools && character.proficiencies.tools.length > 0) {
-    proficiencySections.push(`**Tools:** ${character.proficiencies.tools.join(', ')}`);
+  const tools = formatEntries(character.proficiencies?.tools);
+  if (tools.length > 0) {
+    proficiencySections.push(`**Tools:** ${tools.join(', ')}`);
   }
 
   // Vehicles (if we add this later)
@@ -1657,13 +1671,15 @@ function generateProficienciesFeature(character: CharacterSheetData): SimpleFeat
   // }
 
   // Saving Throws
-  if (character.proficiencies?.savingThrows && character.proficiencies.savingThrows.length > 0) {
-    proficiencySections.push(`**Saving Throws:** ${character.proficiencies.savingThrows.join(', ')}`);
+  const savingThrows = formatEntries(character.proficiencies?.savingThrows);
+  if (savingThrows.length > 0) {
+    proficiencySections.push(`**Saving Throws:** ${savingThrows.join(', ')}`);
   }
 
   // Skills
-  if (character.proficiencies?.skills && character.proficiencies.skills.length > 0) {
-    proficiencySections.push(`**Skills:** ${character.proficiencies.skills.join(', ')}`);
+  const skills = formatEntries(character.proficiencies?.skills);
+  if (skills.length > 0) {
+    proficiencySections.push(`**Skills:** ${skills.join(', ')}`);
   }
 
   // Musical Instruments (from feat choices or other sources)
@@ -1675,8 +1691,9 @@ function generateProficienciesFeature(character: CharacterSheetData): SimpleFeat
       }
     });
   }
-  if (instruments.length > 0) {
-    proficiencySections.push(`**Instruments:** ${instruments.join(', ')}`);
+  const instrumentList = formatEntries(instruments);
+  if (instrumentList.length > 0) {
+    proficiencySections.push(`**Instruments:** ${instrumentList.join(', ')}`);
   }
 
   // Only create the proficiencies feature if there are any proficiencies to show
