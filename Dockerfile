@@ -7,9 +7,9 @@ COPY package.json ./
 COPY backend/package*.json backend/
 COPY frontend/package*.json frontend/
 
-RUN npm install --prefix backend \
- && npm install --prefix frontend \
- && npm run prisma:generate --prefix backend
+RUN cd backend && npm install
+RUN cd frontend && npm install
+RUN cd backend && npx prisma generate --schema prisma/schema.prisma
 
 COPY . .
 
