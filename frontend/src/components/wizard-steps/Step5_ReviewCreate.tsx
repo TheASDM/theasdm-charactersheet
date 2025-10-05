@@ -15,6 +15,7 @@ import { logger } from '../../utils/logger';
 import { getCasterProgressionMeta } from '@/helpers/spellRules';
 import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
 import { getSpellById } from '@/services/spellService';
+import { normaliseDisplayString } from '@/utils/dndTemplateParser';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
@@ -560,7 +561,10 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
   const formatList = (items: string[] | undefined): string => {
     if (!items || items.length === 0) return 'None';
-    return items.join(', ');
+    const cleaned = items
+      .map((item) => normaliseDisplayString(item, { titleCase: true }))
+      .filter((item) => item.length > 0);
+    return cleaned.length > 0 ? [...new Set(cleaned)].join(', ') : 'None';
   };
 
   // Safe rendering function for any value that might be an object
@@ -587,7 +591,10 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     const skills: string[] = [];
     if (data.selectedClassSkills) skills.push(...data.selectedClassSkills);
     if (data.backgroundSkillProficiencies) skills.push(...data.backgroundSkillProficiencies);
-    return [...new Set(skills)]; // Remove duplicates
+    const unique = [...new Set(skills)];
+    return unique
+      .map((skill) => normaliseDisplayString(skill, { titleCase: true }))
+      .filter((skill) => skill.length > 0);
   };
 
   const getAllEquipment = (): string[] => {

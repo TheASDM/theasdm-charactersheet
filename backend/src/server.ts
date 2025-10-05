@@ -6,6 +6,8 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { networkInterfaces } from 'os';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
@@ -100,6 +102,23 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/feats', featRoutes);
 app.use('/api/generator', generatorRoutes);
 app.use('/api/class-choices', classChoicesRoutes);
+
+const frontendDistPath = path.resolve(__dirname, '../public');
+
+app.use(express.static(frontendDistPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+    return next();
+  }
+
+  const indexFile = path.join(frontendDistPath, 'index.html');
+  if (!fs.existsSync(indexFile)) {
+    return res.status(404).send('Frontend build not found');
+  }
+
+  res.sendFile(indexFile);
+});
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: wtforge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wtforge
+      POSTGRES_USER: wtforge
+      POSTGRES_PASSWORD: wtforge
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U wtforge -d wtforge" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: wtforge-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.image
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: "postgresql://wtforge:wtforge@postgres:5432/wtforge?schema=public"
+    # Uncomment to mount extra config/data if needed
+    # volumes:
+    #   - ./docker/seed:/app/docker/seed:ro
+
+volumes:
+  postgres_data:

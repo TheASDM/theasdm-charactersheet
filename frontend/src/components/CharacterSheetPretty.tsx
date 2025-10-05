@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import styled from 'styled-components';
 import {
   CharacterSheetData,
   CharacterSheetProps,
@@ -50,6 +51,39 @@ import { CharacterStatsSection } from './CharacterStatsSection';
 import WeaponMasterySection from './WeaponMasterySection';
 import SpellcastingBar from './SpellcastingBar';
 import { SimpleFeature } from '../utils/simpleFeatureGenerator';
+import CharacterSpellsSection from './CharacterSpellsSection';
+
+const TabBar = styled.div`
+  margin: 1.75rem 0 1.25rem;
+  display: inline-flex;
+  gap: 0.75rem;
+  padding: 0.35rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 999px;
+`;
+
+const TabButton = styled.button<{ $active: boolean }>`
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 1.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: ${({ $active }) =>
+    $active ? 'rgba(212, 175, 55, 0.18)' : 'transparent'};
+  color: ${({ $active }) => ($active ? '#f8f4e1' : 'rgba(248, 244, 225, 0.75)')};
+  border: ${({ $active }) =>
+    $active ? '1px solid rgba(212, 175, 55, 0.55)' : '1px solid transparent'};
+
+  &:hover {
+    background: rgba(212, 175, 55, 0.15);
+    color: #f8f4e1;
+  }
+`;
 
 
 export default function CharacterSheetPretty({
@@ -107,6 +141,7 @@ export default function CharacterSheetPretty({
 
   // State to hold extracted spellcasting feature
   const [spellcastingFeature, setSpellcastingFeature] = useState<SimpleFeature | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'spells'>('overview');
 
   // Get dynamic resources based on character
   const characterResources = useMemo(
@@ -326,9 +361,27 @@ export default function CharacterSheetPretty({
           />
         )}
 
-        <MainLayout>
-          <LeftColumn>
-            <ThreeColumnContainer>
+        <TabBar role="tablist" aria-label="Character Sheet Sections">
+          <TabButton
+            type="button"
+            $active={activeTab === 'overview'}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </TabButton>
+          <TabButton
+            type="button"
+            $active={activeTab === 'spells'}
+            onClick={() => setActiveTab('spells')}
+          >
+            Spells
+          </TabButton>
+        </TabBar>
+
+        {activeTab === 'overview' ? (
+          <MainLayout>
+            <LeftColumn>
+              <ThreeColumnContainer>
               {/* Ability Scores */}
               <CharacterAbilityScores
                 character={character}
@@ -357,11 +410,24 @@ export default function CharacterSheetPretty({
                 cancelSectionEdit={cancelSectionEdit}
                 skills={skills}
               />
-            </ThreeColumnContainer>
+              </ThreeColumnContainer>
 
-            {/* Actions Section - Conditional Layout */}
-            {hasWeaponMastery ? (
-              <TwoColumnLayout style={{ gridTemplateColumns: '2fr 1fr' }}>
+              {/* Actions Section - Conditional Layout */}
+              {hasWeaponMastery ? (
+                <TwoColumnLayout style={{ gridTemplateColumns: '2fr 1fr' }}>
+                  <CharacterActionsSection
+                    character={character}
+                    editingSections={{ actions: editingSections.actions }}
+                    toggleSectionEdit={toggleSectionEdit}
+                    cancelSectionEdit={cancelSectionEdit}
+                    actions={actions}
+                  />
+                  <WeaponMasterySection
+                    character={character}
+                    onUpdateCharacter={updateCharacter}
+                  />
+                </TwoColumnLayout>
+              ) : (
                 <CharacterActionsSection
                   character={character}
                   editingSections={{ actions: editingSections.actions }}
@@ -369,44 +435,34 @@ export default function CharacterSheetPretty({
                   cancelSectionEdit={cancelSectionEdit}
                   actions={actions}
                 />
-                <WeaponMasterySection
+              )}
+
+              {/* Inventory/Proficiencies and Traits Side-by-Side Layout */}
+              <TwoColumnLayout>
+                {/* Left Column: Inventory and Proficiencies stacked */}
+                <div>
+                  <ConsolidatedInventorySection
+                    inventory={inventory}
+                    mode="scroll"
+                    maxHeight="900px"
+                    showEquipToggle={true}
+                  />
+                  <CharacterProficienciesSection character={character} />
+                </div>
+
+                {/* Right Column: Features & Traits */}
+                <CharacterTraitsSection
                   character={character}
+                  traits={traits}
                   onUpdateCharacter={updateCharacter}
+                  onSpellcastingFeatureExtracted={setSpellcastingFeature}
                 />
               </TwoColumnLayout>
-            ) : (
-              <CharacterActionsSection
-                character={character}
-                editingSections={{ actions: editingSections.actions }}
-                toggleSectionEdit={toggleSectionEdit}
-                cancelSectionEdit={cancelSectionEdit}
-                actions={actions}
-              />
-            )}
-
-            {/* Inventory/Proficiencies and Traits Side-by-Side Layout */}
-            <TwoColumnLayout>
-              {/* Left Column: Inventory and Proficiencies stacked */}
-              <div>
-                <ConsolidatedInventorySection
-                  inventory={inventory}
-                  mode="scroll"
-                  maxHeight="900px"
-                  showEquipToggle={true}
-                />
-                <CharacterProficienciesSection character={character} />
-              </div>
-
-              {/* Right Column: Features & Traits */}
-              <CharacterTraitsSection
-                character={character}
-                traits={traits}
-                onUpdateCharacter={updateCharacter}
-                onSpellcastingFeatureExtracted={setSpellcastingFeature}
-              />
-            </TwoColumnLayout>
-          </LeftColumn>
-        </MainLayout>
+            </LeftColumn>
+          </MainLayout>
+        ) : (
+          <CharacterSpellsSection character={character} />
+        )}
 
         {/* All Modals */}
         <AddItemModal

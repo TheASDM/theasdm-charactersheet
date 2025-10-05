@@ -101,6 +101,51 @@ The frontend dev server proxies `/api` requests to `http://localhost:3001` and h
    ```
 2. Serve the backend (`npm start`) and host the frontend build via a static file server of your choice.
 
+## Docker Image (SQLite bundle)
+
+The repository now includes a single-image packaging flow that compiles the API and frontend together and persists data in an on-disk SQLite file. The image is defined by the root `Dockerfile`.
+
+### 1. Prepare an env file
+
+Copy `.env.image` and adjust secrets before building:
+
+```bash
+cp .env.image .env.production
+```
+
+Key defaults:
+
+- `DATABASE_URL="file:./data/wtforge.sqlite"` stores the Prisma database inside the container (mount `/app/data` to persist).
+- `VITE_API_URL=/api` points the built frontend at the colocated API.
+- `SEED_REFERENCE` / `SEED_REFERENCE_SKIP_SPELLS` control the reference-only seed script.
+
+### 2. Build & run
+
+```bash
+docker build -t wtforge-character-generator:latest .
+
+docker run -d \
+  --name wtforge \
+  -p 8080:8080 \
+  --env-file .env.production \
+  -v wtforge_data:/app/data \
+  wtforge-character-generator:latest
+```
+
+On boot, the container will:
+
+1. run Prisma migrations (`prisma migrate deploy`),
+2. execute `backend/dist/src/scripts/seed-reference.js` to load reference content when the target tables are empty,
+3. start the Express server (`http://localhost:8080`) which serves both the API (`/api`) and the built frontend.
+
+For local development or self-hosting via Docker Compose you can start both the app and a Postgres instance together:
+
+```bash
+docker compose up -d --build
+```
+
+This uses the `postgres` service defined in `docker-compose.yml` (credentials `wtforge` / `wtforge`) and the `.env.image` file for app configuration. The Postgres data folder is persisted in the `postgres_data` volume.
+
 ## Database Schema Overview
 
 Key Prisma models live in `backend/prisma/schema.prisma`:

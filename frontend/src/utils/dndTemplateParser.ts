@@ -144,17 +144,15 @@ export const parseDnDTemplateTag = (text: string): string => {
       }
     })
     .replace(/\{@([^}]+)\}/g, (_fullMatch, content) => {
-
       // Split on first space to get tag type and content
       const parts = content.split(' ');
       const tagType = parts[0];
       const tagContent = parts.slice(1).join(' ');
 
-      // Handle pipe-separated content (name|source)
-      const [name] = tagContent.includes('|')
-        ? tagContent.split('|')
-        : [tagContent, null];
-
+      const segments = tagContent.split('|').filter((segment: string) => segment.length > 0);
+      const fallback = segments[0] ?? '';
+      const altDisplay = segments.length > 2 ? segments[segments.length - 1] : fallback;
+      const name = altDisplay || fallback;
 
       switch (tagType) {
         // Formatting
@@ -227,6 +225,40 @@ export const parseDnDTemplateTag = (text: string): string => {
     });
 
   return result.replace(/\s+/g, ' ').trim();
+};
+
+const shouldPreserveWord = (word: string) => {
+  if (!word) return true;
+  if (word.length <= 2 && word === word.toUpperCase()) return true; // Abbreviations like DC
+  if (/^[A-Z]/.test(word)) return true; // Already capitalised
+  return false;
+};
+
+const titleiseWords = (text: string): string => {
+  const parts = text.split(/([\s-/]+)/);
+  return parts
+    .map((part) => {
+      if (/^[\s-/]+$/.test(part)) {
+        return part;
+      }
+      if (shouldPreserveWord(part)) {
+        return part;
+      }
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join('');
+};
+
+export const normaliseDisplayString = (
+  value: string,
+  options: { titleCase?: boolean } = {}
+): string => {
+  const parsed = parseDnDTemplateTag(value);
+  const cleaned = parsed.replace(/\s+/g, ' ').trim();
+  if (!options.titleCase) {
+    return cleaned;
+  }
+  return titleiseWords(cleaned);
 };
 
 // Clean text by removing D&D template tags (simpler version for basic cleaning)
