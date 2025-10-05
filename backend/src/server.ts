@@ -35,6 +35,9 @@ export { prisma };
 const app = express();
 const server = createServer(app);
 
+// Trust first proxy (e.g., Nginx Proxy Manager) so rate limiting/IP detection works
+app.set('trust proxy', 1);
+
 // Initialize Socket.IO for real-time updates
 const io = new Server(server, {
   cors: {
