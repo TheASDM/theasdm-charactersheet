@@ -1,6 +1,16 @@
 # --- Build stage ---
+# Allow overriding frontend build-time settings (defaults support local Docker runs)
+ARG VITE_API_URL=/api
+ARG VITE_ENABLE_PWA=true
+
 FROM node:20-bullseye AS build
 WORKDIR /app
+
+# Expose build-time env so Vite picks them up even when frontend/.env defines other values
+ARG VITE_API_URL
+ARG VITE_ENABLE_PWA
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_ENABLE_PWA=${VITE_ENABLE_PWA}
 
 # Install dependencies with caching
 COPY package.json ./
