@@ -10,6 +10,7 @@ export const GlobalStyles = createGlobalStyle`
   html {
     font-size: 16px;
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
@@ -21,6 +22,7 @@ export const GlobalStyles = createGlobalStyle`
     line-height: 1.6;
     color: #333;
     background-color: #f8f9fa;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
