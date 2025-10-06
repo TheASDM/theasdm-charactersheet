@@ -48,7 +48,13 @@ router.get('/', async (req: Request, res: Response) => {
     return res.json(feats);
   } catch (error) {
     logger.error('Error fetching feats:', error);
-    return res.status(500).json({ error: 'Failed to fetch feats' });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return res.status(500).json({
+      statusCode: 500,
+      code: 'server_error',
+      error: 'Failed to fetch feats',
+      details: errorMessage
+    });
   }
 });
 
