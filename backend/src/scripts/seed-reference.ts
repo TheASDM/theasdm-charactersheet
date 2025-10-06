@@ -59,6 +59,7 @@ async function main() {
     feats?: Record<string, unknown>[];
     equipment?: Record<string, unknown>[];
     spells?: Record<string, unknown>[];
+    classSpells?: Record<string, unknown>[];
   };
 
   await seedCollection('classes', seedData.classes, (args) => prisma.class.createMany(args as any), () => prisma.class.count());
@@ -72,6 +73,9 @@ async function main() {
   } else {
     await seedCollection('spells', seedData.spells, (args) => prisma.spell.createMany(args as any), () => prisma.spell.count());
   }
+
+  // Seed class-spell relationships (must be after classes and spells)
+  await seedCollection('class-spells', seedData.classSpells, (args) => prisma.classSpell.createMany(args as any), () => prisma.classSpell.count());
 }
 
 main()

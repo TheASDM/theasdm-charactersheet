@@ -1,140 +1,156 @@
+#!/usr/bin/env node
+
+/**
+ * Import Class-Spell Relationships from 5etools
+ *
+ * This script populates the class_spells junction table using ONLY D&D 2024 (XPHB) data.
+ * It reads from the gendata-spell-source-lookup.json file which contains spell-to-class mappings.
+ */
+
+const fs = require('fs');
+const path = require('path');
 const { PrismaClient } = require('@prisma/client');
-const classSpellsData = require('./class-spells-data');
 
 const prisma = new PrismaClient();
 
+const LOOKUP_FILE = '/Users/dustinamodeo/Documents/dnd/5etools-src/data/generated/gendata-spell-source-lookup.json';
+
 async function importClassSpells() {
-  console.log('Starting import of class spell relationships...\n');
+  console.log('📚 Starting XPHB class-spell relationship import...\n');
 
-  try {
-    // Get all classes from database
-    const classes = await prisma.class.findMany({
-      select: { id: true, name: true }
-    });
+  // Read the lookup file
+  if (!fs.existsSync(LOOKUP_FILE)) {
+    throw new Error(`Lookup file not found: ${LOOKUP_FILE}`);
+  }
 
-    if (classes.length === 0) {
-      throw new Error('No classes found in database. Please import classes first.');
-    }
+  const lookupData = JSON.parse(fs.readFileSync(LOOKUP_FILE, 'utf8'));
 
-    console.log(`Found ${classes.length} classes in database:`);
-    classes.forEach(c => console.log(`  - ${c.name}`));
-    console.log('');
+  // Get all classes and spells from database
+  const [classes, spells] = await Promise.all([
+    prisma.class.findMany(),
+    prisma.spell.findMany({ where: { source: 'XPHB' } })
+  ]);
 
-    // Get all spells from database
-    const allSpells = await prisma.spell.findMany({
-      select: { id: true, name: true }
-    });
+  console.log(`Found ${classes.length} classes in database`);
+  console.log(`Found ${spells.length} XPHB spells in database\n`);
 
-    console.log(`Found ${allSpells.length} spells in database\n`);
+  // Create lookup maps (case-insensitive for spells)
+  const classNameToId = new Map(classes.map(c => [c.name, c.id]));
+  const spellNameToId = new Map(spells.map(s => [s.name.toLowerCase(), s.id]));
 
-    // Create a map for quick spell lookup (case-insensitive)
-    const spellMap = new Map();
-    allSpells.forEach(spell => {
-      spellMap.set(spell.name.toLowerCase(), spell);
-    });
+  let relationships = [];
+  let spellsProcessed = 0;
+  let spellsWithXPHBClasses = 0;
 
-    let totalRelationships = 0;
-    const unmatchedSpells = new Set();
-    const stats = {};
+  // Process each source
+  for (const [source, sourceSpells] of Object.entries(lookupData)) {
+    for (const [spellName, spellData] of Object.entries(sourceSpells)) {
+      spellsProcessed++;
 
-    // Process each class
-    for (const classData of classes) {
-      const className = classData.name;
-      const spellList = classSpellsData[className];
-
-      if (!spellList) {
-        console.log(`⚠️  No spell list found for ${className}, skipping...`);
+      // Check if spell has XPHB class data
+      if (!spellData.class || !spellData.class.XPHB) {
         continue;
       }
 
-      console.log(`\nProcessing ${className}...`);
-      console.log(`  Spell list contains ${spellList.length} spells`);
+      spellsWithXPHBClasses++;
 
-      let matched = 0;
-      let unmatched = 0;
-      const classUnmatched = [];
+      const xphbClasses = spellData.class.XPHB;
+      const spellId = spellNameToId.get(spellName.toLowerCase());
 
-      for (const spellName of spellList) {
-        const spell = spellMap.get(spellName.toLowerCase());
+      if (!spellId) {
+        // Spell not in our database (probably not from XPHB source)
+        continue;
+      }
 
-        if (spell) {
-          // Create the relationship
-          try {
-            await prisma.classSpell.create({
-              data: {
-                classId: classData.id,
-                spellId: spell.id
-              }
-            });
-            matched++;
-            totalRelationships++;
-          } catch (error) {
-            if (error.code === 'P2002') {
-              // Unique constraint violation - relationship already exists
-              console.log(`    ⚠️  Relationship already exists for ${spellName}`);
-            } else {
-              throw error;
-            }
-          }
-        } else {
-          unmatched++;
-          unmatchedSpells.add(spellName);
-          classUnmatched.push(spellName);
+      // Add relationship for each class
+      for (const className of Object.keys(xphbClasses)) {
+        const classId = classNameToId.get(className);
+
+        if (!classId) {
+          console.log(`⚠️  Warning: Class "${className}" not found for spell "${spellName}"`);
+          continue;
         }
-      }
 
-      stats[className] = {
-        total: spellList.length,
-        matched,
-        unmatched,
-        percentage: ((matched / spellList.length) * 100).toFixed(1)
-      };
-
-      console.log(`  ✅ Matched: ${matched}`);
-      console.log(`  ❌ Unmatched: ${unmatched}`);
-      console.log(`  📊 Success rate: ${stats[className].percentage}%`);
-
-      if (classUnmatched.length > 0 && classUnmatched.length <= 10) {
-        console.log(`  Unmatched spells for ${className}:`);
-        classUnmatched.forEach(spell => console.log(`    - ${spell}`));
+        relationships.push({
+          classId,
+          spellId,
+        });
       }
     }
+  }
 
-    // Summary
-    console.log('\n' + '='.repeat(60));
-    console.log('IMPORT SUMMARY');
-    console.log('='.repeat(60));
-    console.log(`\nTotal relationships created: ${totalRelationships}`);
-    console.log('\nPer-class statistics:');
-    Object.entries(stats).forEach(([className, stat]) => {
-      console.log(`  ${className.padEnd(12)} ${stat.matched}/${stat.total} (${stat.percentage}%)`);
-    });
+  console.log(`📊 Processing statistics:`);
+  console.log(`   Total spells in lookup: ${spellsProcessed}`);
+  console.log(`   Spells with XPHB classes: ${spellsWithXPHBClasses}`);
+  console.log(`   Class-spell relationships to create: ${relationships.length}\n`);
 
-    if (unmatchedSpells.size > 0) {
-      console.log(`\n⚠️  ${unmatchedSpells.size} unique spells could not be matched:`);
-      const sortedUnmatched = Array.from(unmatchedSpells).sort();
-      sortedUnmatched.forEach(spell => {
-        console.log(`  - ${spell}`);
+  // Remove duplicates
+  const uniqueRelationships = relationships.filter((rel, index, self) =>
+    index === self.findIndex(r => r.classId === rel.classId && r.spellId === rel.spellId)
+  );
+
+  console.log(`   After removing duplicates: ${uniqueRelationships.length}\n`);
+
+  // Insert in batches
+  const BATCH_SIZE = 500;
+  let inserted = 0;
+
+  for (let i = 0; i < uniqueRelationships.length; i += BATCH_SIZE) {
+    const batch = uniqueRelationships.slice(i, i + BATCH_SIZE);
+
+    try {
+      await prisma.classSpell.createMany({
+        data: batch,
+        skipDuplicates: true,
       });
-      console.log('\nThese spells may:');
-      console.log('  1. Not be imported yet');
-      console.log('  2. Have slightly different names in the database');
-      console.log('  3. Be from sourcebooks not yet imported');
+      inserted += batch.length;
+      console.log(`✅ Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} relationships`);
+    } catch (error) {
+      console.error(`❌ Error inserting batch: ${error.message}`);
     }
+  }
 
-    console.log('\n✅ Class spell import complete!');
+  console.log(`\n🎉 Import complete!`);
+  console.log(`   Total class-spell relationships created: ${inserted}`);
 
+  // Verify some sample data
+  const sampleCounts = await Promise.all([
+    prisma.classSpell.count({
+      where: {
+        class: { name: 'Wizard' }
+      }
+    }),
+    prisma.classSpell.count({
+      where: {
+        class: { name: 'Cleric' }
+      }
+    }),
+    prisma.classSpell.count({
+      where: {
+        class: { name: 'Fighter' }
+      }
+    }),
+  ]);
+
+  console.log(`\n📊 Sample counts by class:`);
+  console.log(`   Wizard: ${sampleCounts[0]} spells`);
+  console.log(`   Cleric: ${sampleCounts[1]} spells`);
+  console.log(`   Fighter: ${sampleCounts[2]} spells`);
+}
+
+async function main() {
+  try {
+    await importClassSpells();
   } catch (error) {
-    console.error('❌ Error during import:', error);
-    throw error;
+    console.error('\n💥 Import failed:', error.message);
+    process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// Run the import
-importClassSpells()
-  .catch(error => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
+if (require.main === module) {
+  main();
+}
+
+module.exports = { importClassSpells };
