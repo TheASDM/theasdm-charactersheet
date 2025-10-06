@@ -5,6 +5,8 @@ services:
     image: postgres:15
     container_name: wtforge-postgres
     restart: unless-stopped
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_DB: wtforge
       POSTGRES_USER: wtforge
