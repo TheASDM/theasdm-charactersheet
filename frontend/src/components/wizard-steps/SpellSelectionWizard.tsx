@@ -12,6 +12,7 @@ import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
 import { computeManaPool } from '@/helpers/manaRules';
 import type { getCasterProgressionMeta } from '@/helpers/spellRules';
 import { characterService } from '@/services/characterService';
+import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
 
 type LevelFilter = 'all' | 0 | 1 | 2 | 3 | 4 | 5;
 type RitualFilter = 'any' | 'ritual' | 'non';
@@ -355,35 +356,43 @@ const ManaPanel = styled.div`
 const ModalBackdrop = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 1.5rem;
   z-index: 1000;
+  overflow-y: auto;
 `;
 
 const ModalCard = styled.div`
-  background: rgba(20, 20, 20, 0.95);
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
+  border: 3px solid #d4af37;
   border-radius: 12px;
-  max-width: min(720px, 90vw);
-  width: 100%;
+  max-width: 720px;
+  width: 90%;
   max-height: 85vh;
-  overflow: auto;
-  padding: 2rem 1.5rem;
-  color: #f8f4e1;
+  overflow-y: auto;
+  padding: 2rem;
+  color: #f4e7d1;
   position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  margin: 2rem auto;
 
   h2 {
     margin-top: 0;
     margin-bottom: 0.75rem;
+    color: #d4af37;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.5px;
   }
 
   p {
-    line-height: 1.5;
+    line-height: 1.6;
     font-size: 0.95rem;
+    color: #c4b49d;
+    font-family: 'Crimson Text', serif;
   }
 `;
 
@@ -396,6 +405,14 @@ const ModalClose = styled.button`
   color: #d4af37;
   font-size: 1.5rem;
   cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(212, 175, 55, 0.2);
+    transform: scale(1.1);
+  }
 `;
 
 const SpellSection = styled.section`
@@ -411,6 +428,45 @@ const SectionHeading = styled.h2`
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: #d4af37;
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1rem;
+`;
+
+const PaginationButton = styled.button<{ $disabled?: boolean }>`
+  background: ${({ $disabled }) =>
+    $disabled ? 'rgba(60, 60, 60, 0.5)' : 'linear-gradient(135deg, #d4af37, #b8941f)'};
+  color: ${({ $disabled }) => ($disabled ? '#666' : '#1a1a1a')};
+  border: 1px solid ${({ $disabled }) => ($disabled ? '#444' : '#d4af37')};
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: ${({ $disabled }) => ($disabled ? 'not-allowed' : 'pointer')};
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+`;
+
+const PageInfo = styled.span`
+  color: #d4af37;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 120px;
+  text-align: center;
 `;
 
 const SCHOOL_OPTIONS: Array<{ label: string; value: string }> = [
@@ -499,10 +555,12 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
   const normalizedSelectedClass = useMemo(() => normalizeClassName(data.selectedClass), [data.selectedClass]);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [level, setLevel] = useState<LevelFilter>('all');
+  const [level, setLevel] = useState<LevelFilter>(1);
   const [school, setSchool] = useState<string>('all');
   const [ritual, setRitual] = useState<RitualFilter>('any');
   const [concentration, setConcentration] = useState<ConcentrationFilter>('any');
+  const [currentPage, setCurrentPage] = useState(1);
+  const spellsPerPage = 20;
 
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -1247,13 +1305,21 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     );
   };
 
-  const cantripCards = sortedSpells
-    .filter((spell) => spell.level === 0)
-    .map((spell) => renderSpellCard(spell));
+  const cantripSpells = sortedSpells.filter((spell) => spell.level === 0);
+  const leveledSpells = sortedSpells.filter((spell) => spell.level > 0);
 
-  const leveledCards = sortedSpells
-    .filter((spell) => spell.level > 0)
-    .map((spell) => renderSpellCard(spell));
+  const totalPages = Math.max(1, Math.ceil(leveledSpells.length / spellsPerPage));
+  const paginatedLeveledSpells = leveledSpells.slice(
+    (currentPage - 1) * spellsPerPage,
+    currentPage * spellsPerPage
+  );
+
+  const cantripCards = cantripSpells.map((spell) => renderSpellCard(spell));
+  const leveledCards = paginatedLeveledSpells.map((spell) => renderSpellCard(spell));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [level, school, ritual, concentration, searchTerm]);
 
   return (
     <StepContainer>
@@ -1468,29 +1534,50 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
           )}
           {leveledCards.length > 0 && (
             <SpellSection>
-              <SectionHeading>Leveled Spells</SectionHeading>
+              <SectionHeading>
+                Leveled Spells ({leveledSpells.length} total)
+              </SectionHeading>
               <SpellGrid>{leveledCards}</SpellGrid>
+              {totalPages > 1 && (
+                <PaginationContainer>
+                  <PaginationButton
+                    $disabled={currentPage === 1}
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    ← Previous
+                  </PaginationButton>
+                  <PageInfo>
+                    Page {currentPage} of {totalPages}
+                  </PageInfo>
+                  <PaginationButton
+                    $disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  >
+                    Next →
+                  </PaginationButton>
+                </PaginationContainer>
+              )}
             </SpellSection>
           )}
         </>
       )}
 
       {selectedSpell && (
-        <ModalBackdrop role="dialog" aria-modal="true">
-          <ModalCard>
+        <ModalBackdrop role="dialog" aria-modal="true" onClick={() => setSelectedSpell(null)}>
+          <ModalCard onClick={(e) => e.stopPropagation()}>
             <ModalClose aria-label="Close" onClick={() => setSelectedSpell(null)}>
               ×
             </ModalClose>
             <h2>{selectedSpell.name}</h2>
-            <p>
+            <p style={{ color: '#c0aa70', marginBottom: '1rem' }}>
               {formatLevel(selectedSpell.level)} &bull; {getSchoolLabel(selectedSpell.school)}
               {selectedSpell.isRitual ? ' • Ritual' : ''}
               {selectedSpell.miscTags?.includes('Concentration') ? ' • Concentration' : ''}
             </p>
             {Array.isArray(selectedSpell.entries) && selectedSpell.entries.length > 0 ? (
-              selectedSpell.entries.map((entry, index) => (
-                <p key={index}>{typeof entry === 'string' ? entry : JSON.stringify(entry)}</p>
-              ))
+              <div dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(selectedSpell.entries) }} />
             ) : (
               <p>No additional description available.</p>
             )}

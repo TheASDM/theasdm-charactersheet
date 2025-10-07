@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Spell } from '../types/api';
-import { parseDnDTemplateTag } from '../utils/dndTemplateParser';
+import { parseComplexDnDEntry } from '../utils/dndTemplateParser';
 
 interface SpellModalProps {
   spell: Spell | null;
@@ -11,68 +11,75 @@ interface SpellModalProps {
 
 const ModalOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
   z-index: 1000;
-  padding: 20px;
+  overflow-y: auto;
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
+  border: 3px solid #d4af37;
   border-radius: 12px;
-  padding: 24px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
+  padding: 2rem;
+  max-width: 720px;
+  width: 90%;
+  max-height: 85vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  color: #f4e7d1;
+  margin: 2rem auto;
 `;
 
 const CloseButton = styled.button`
   position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
   border: none;
-  font-size: 24px;
+  font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
-  padding: 4px;
+  color: #d4af37;
+  padding: 0.25rem;
   border-radius: 4px;
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: #f0f0f0;
+    background-color: rgba(212, 175, 55, 0.2);
+    transform: scale(1.1);
   }
 `;
 
 const SpellTitle = styled.h2`
-  margin: 0 0 16px 0;
-  color: #333;
-  font-size: 24px;
+  margin: 0 0 1rem 0;
+  color: #d4af37;
+  font-size: 1.5rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.5px;
 `;
 
 const SpellMeta = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-  padding: 16px;
-  background-color: #f8f9fa;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background-color: rgba(35, 35, 35, 0.5);
   border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 `;
 
 const MetaItem = styled.div`
   h4 {
-    margin: 0 0 4px 0;
-    color: #666;
-    font-size: 12px;
+    margin: 0 0 0.35rem 0;
+    color: #d4af37;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -80,67 +87,82 @@ const MetaItem = styled.div`
 
   p {
     margin: 0;
-    color: #333;
+    color: #f4e7d1;
     font-weight: 500;
+    font-size: 0.9rem;
   }
 `;
 
 const SpellDescription = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 
   h3 {
-    color: #333;
-    font-size: 18px;
-    margin: 0 0 12px 0;
+    color: #d4af37;
+    font-size: 1.1rem;
+    margin: 0 0 0.75rem 0;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.5px;
   }
 
   p {
-    margin: 8px 0;
+    margin: 0.75rem 0;
     line-height: 1.6;
-    color: #444;
+    color: #c4b49d;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.95rem;
   }
 `;
 
 const HigherLevelSection = styled.div`
-  margin-top: 16px;
-  padding: 16px;
-  background-color: #e8f4fd;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(54, 126, 89, 0.15);
   border-radius: 8px;
-  border-left: 4px solid #2196f3;
+  border-left: 4px solid #5ce0a3;
 
   h4 {
-    color: #1976d2;
-    margin: 0 0 8px 0;
+    color: #5ce0a3;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   p {
-    margin: 4px 0;
-    color: #333;
+    margin: 0.5rem 0;
+    color: #d7fff0;
+    line-height: 1.5;
+    font-family: 'Crimson Text', serif;
   }
 `;
 
 const TagsSection = styled.div`
-  margin-top: 16px;
+  margin-top: 1rem;
 
   h4 {
-    color: #333;
-    margin: 0 0 8px 0;
-    font-size: 14px;
+    color: #d4af37;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 `;
 
 const Tags = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.5rem;
 `;
 
 const Tag = styled.span`
-  background-color: #e3f2fd;
-  color: #1976d2;
-  padding: 4px 8px;
+  background-color: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 0.35rem 0.65rem;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
 `;
 
@@ -247,15 +269,17 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
     return `${suffixes[level] || `${level}th`} Level`;
   };
 
-  const parseSpellText = (text: string): string => {
-    return parseDnDTemplateTag(text);
-  };
-
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
+
+  // Parse entries properly
+  const parsedEntries = spell.entries ? parseComplexDnDEntry(spell.entries) : '';
+  const parsedHigherLevel = spell.entriesHigherLevel
+    ? parseComplexDnDEntry(spell.entriesHigherLevel)
+    : '';
 
   return (
     <ModalOverlay onClick={handleOverlayClick}>
@@ -315,20 +339,12 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
 
         <SpellDescription>
           <h3>Description</h3>
-          {spell.entries?.map((entry: any, index: number) => (
-            <p key={index}>{parseSpellText(entry)}</p>
-          ))}
+          <div dangerouslySetInnerHTML={{ __html: parsedEntries }} />
 
-          {spell.entriesHigherLevel && spell.entriesHigherLevel.length > 0 && (
+          {parsedHigherLevel && (
             <HigherLevelSection>
               <h4>At Higher Levels</h4>
-              {spell.entriesHigherLevel.map((entry: any, index: number) => (
-                <div key={index}>
-                  {entry.entries?.map((subEntry: string, subIndex: number) => (
-                    <p key={subIndex}>{parseSpellText(subEntry)}</p>
-                  ))}
-                </div>
-              ))}
+              <div dangerouslySetInnerHTML={{ __html: parsedHigherLevel }} />
             </HigherLevelSection>
           )}
         </SpellDescription>
@@ -339,14 +355,11 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
           spell.savingThrow?.length) && (
           <TagsSection>
             {spell.damageInflict && spell.damageInflict.length > 0 && (
-              <div style={{ marginBottom: '12px' }}>
+              <div style={{ marginBottom: '0.75rem' }}>
                 <h4>Damage Types</h4>
                 <Tags>
                   {spell.damageInflict.map((damage, index) => (
-                    <Tag
-                      key={index}
-                      style={{ backgroundColor: '#ffebee', color: '#c62828' }}
-                    >
+                    <Tag key={index}>
                       {damage.charAt(0).toUpperCase() + damage.slice(1)}
                     </Tag>
                   ))}
@@ -355,14 +368,11 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
             )}
 
             {spell.conditionInflict && spell.conditionInflict.length > 0 && (
-              <div style={{ marginBottom: '12px' }}>
+              <div style={{ marginBottom: '0.75rem' }}>
                 <h4>Conditions</h4>
                 <Tags>
                   {spell.conditionInflict.map((condition, index) => (
-                    <Tag
-                      key={index}
-                      style={{ backgroundColor: '#fff3e0', color: '#ef6c00' }}
-                    >
+                    <Tag key={index}>
                       {condition.charAt(0).toUpperCase() + condition.slice(1)}
                     </Tag>
                   ))}
@@ -371,14 +381,11 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
             )}
 
             {spell.savingThrow && spell.savingThrow.length > 0 && (
-              <div style={{ marginBottom: '12px' }}>
+              <div style={{ marginBottom: '0.75rem' }}>
                 <h4>Saving Throws</h4>
                 <Tags>
                   {spell.savingThrow.map((save, index) => (
-                    <Tag
-                      key={index}
-                      style={{ backgroundColor: '#e8f5e8', color: '#2e7d32' }}
-                    >
+                    <Tag key={index}>
                       {save.charAt(0).toUpperCase() + save.slice(1)}
                     </Tag>
                   ))}
