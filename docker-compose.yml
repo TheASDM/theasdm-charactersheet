@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: wtforge-postgres
     restart: unless-stopped
     ports:
@@ -11,6 +11,21 @@ services:
       POSTGRES_DB: wtforge
       POSTGRES_USER: wtforge
       POSTGRES_PASSWORD: wtforge
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c max_connections=200
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=1310kB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
