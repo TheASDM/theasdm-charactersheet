@@ -1,5 +1,6 @@
 {
   "name": "wtforge-monorepo",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "build": "npm run build:server && npm run build:client",

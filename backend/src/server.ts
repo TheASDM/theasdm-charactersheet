@@ -69,16 +69,28 @@ const allowedOrigins = [
 ];
 
 // Middleware
-// Temporarily disable CSP to test styled-components
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Required for Vite in production
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'], // unsafe-inline required for styled-components
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+      },
+    },
   })
 );
 app.use(compression());
 app.use(
   cors({
-    origin: true, // Allow all origins for now (serving same-origin static files)
+    origin: process.env.NODE_ENV === 'production'
+      ? [process.env.FRONTEND_URL, 'https://dnd.raptornet.dev'].filter(Boolean)
+      : true,
     credentials: true,
   })
 );
