@@ -38,6 +38,9 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/',
     plugins,
+    define: {
+      'process.env': {},
+    },
     resolve: {
       alias: {
         '@': resolve(projectDir, './src'),
