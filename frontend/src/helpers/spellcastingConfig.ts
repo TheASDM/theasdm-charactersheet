@@ -1,14 +1,137 @@
-export type AbilityId = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
-export type CasterType = 'none' | 'full' | 'half' | 'third';
+import type { AbilityId, ClassCastingConfig, SubclassSpellConfig } from '../types/spells';
+
+/**
+ * D&D 2024 Class Spellcasting Configuration
+ *
+ * This defines spellcasting behavior for all classes at each level.
+ * - Flexible Prepared Casters: Can change entire prepared list after long rest
+ * - Semi-Prepared Casters: Can only replace one spell at level up
+ */
+export const CLASS_CONFIG: Record<string, ClassCastingConfig> = {
+  // ===== FLEXIBLE PREPARED CASTERS =====
+  // Can change entire prepared list after long rest
+
+  Cleric: {
+    casterType: 'flexiblePrepared',
+    spellcastingAbility: 'wis',
+    cantripsAtLevel: { 1: 3, 4: 4, 10: 5 },
+    preparedAtLevel: { 1: 1 }, // + WIS mod
+    usesSpellbook: false,
+  },
+
+  Druid: {
+    casterType: 'flexiblePrepared',
+    spellcastingAbility: 'wis',
+    cantripsAtLevel: { 1: 2, 4: 3 },
+    preparedAtLevel: { 1: 1 }, // + WIS mod
+    usesSpellbook: false,
+  },
+
+  Paladin: {
+    casterType: 'flexiblePrepared',
+    spellcastingAbility: 'cha',
+    cantripsAtLevel: { 1: 0 }, // No cantrips at level 1
+    preparedAtLevel: { 1: 1 }, // + CHA mod (has spells at level 1 in 2024)
+    usesSpellbook: false,
+  },
+
+  Ranger: {
+    casterType: 'flexiblePrepared',
+    spellcastingAbility: 'wis',
+    cantripsAtLevel: { 1: 0 }, // No cantrips at level 1 (unless subclass grants)
+    preparedAtLevel: { 1: 1 }, // + WIS mod (has spells at level 1 in 2024)
+    usesSpellbook: false,
+  },
+
+  Wizard: {
+    casterType: 'flexiblePrepared',
+    spellcastingAbility: 'int',
+    cantripsAtLevel: { 1: 3, 4: 4, 10: 5 },
+    preparedAtLevel: { 1: 1 }, // + INT mod (from spellbook)
+    usesSpellbook: true,
+  },
+
+  // ===== SEMI-PREPARED CASTERS =====
+  // Can only replace one spell when gaining a level
+
+  Bard: {
+    casterType: 'semiPrepared',
+    spellcastingAbility: 'cha',
+    cantripsAtLevel: { 1: 2, 4: 3, 10: 4 },
+    preparedAtLevel: { 1: 4, 2: 5, 3: 6, 4: 7, 5: 8, 6: 9, 7: 10, 8: 11, 9: 12, 10: 14, 11: 15, 14: 16, 17: 18, 18: 19, 20: 22 },
+    usesSpellbook: false,
+  },
+
+  Sorcerer: {
+    casterType: 'semiPrepared',
+    spellcastingAbility: 'cha',
+    cantripsAtLevel: { 1: 4, 10: 5 },
+    preparedAtLevel: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11, 11: 12, 13: 13, 15: 14, 17: 15 },
+    usesSpellbook: false,
+  },
+
+  Warlock: {
+    casterType: 'semiPrepared',
+    spellcastingAbility: 'cha',
+    cantripsAtLevel: { 1: 2, 4: 3 },
+    preparedAtLevel: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 11: 11, 13: 12, 15: 13, 17: 14, 19: 15 },
+    pactMagic: true,
+    usesSpellbook: false,
+  },
+
+  // ===== THIRD-CASTERS =====
+  // No spellcasting until level 3
+
+  Fighter: {
+    casterType: 'none', // Until level 3 (Eldritch Knight)
+    spellcastingAbility: 'int',
+    cantripsAtLevel: {},
+    preparedAtLevel: {},
+  },
+
+  Rogue: {
+    casterType: 'none', // Until level 3 (Arcane Trickster)
+    spellcastingAbility: 'int',
+    cantripsAtLevel: {},
+    preparedAtLevel: {},
+    requiresMageHandAtL3: true,
+  },
+
+  // ===== NON-CASTERS =====
+
+  Barbarian: {
+    casterType: 'none',
+    cantripsAtLevel: {},
+    preparedAtLevel: {},
+  },
+
+  Monk: {
+    casterType: 'none',
+    cantripsAtLevel: {},
+    preparedAtLevel: {},
+  },
+};
+
+/**
+ * Future: Subclass-specific spell configuration
+ * For domain spells (Cleric), oath spells (Paladin), etc.
+ * Currently empty - will be populated in future sprints.
+ */
+export const SUBCLASS_CONFIG: Record<string, SubclassSpellConfig> = {};
+
+/**
+ * DEPRECATED: Old configuration structure - kept for backward compatibility
+ * TODO: Remove once all code is migrated to CLASS_CONFIG
+ */
+export type OldCasterType = 'none' | 'full' | 'half' | 'third';
 
 export interface PreparedFormulaConfig {
   type: 'level-plus-mod' | 'half-level-plus-mod';
-  /** Minimum prepared spells allowed after applying the formula. */
   min?: number;
 }
 
 export interface SpellcastingClassConfig {
-  casterType: CasterType;
+  casterType: OldCasterType;
   spellcastingAbility?: AbilityId;
   preparedFormula?: PreparedFormulaConfig;
   knownProgression?: number[];

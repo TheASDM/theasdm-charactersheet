@@ -928,7 +928,6 @@ export default function CharacterGeneratorWizard() {
               data={builderData}
               onUpdate={updateBuilderData}
               onValidityChange={setIsSpellStepValid}
-              spellMeta={spellProgressionMeta}
             />
           )}
           {currentStep === 'equipment-selection' && (
