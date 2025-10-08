@@ -10,7 +10,21 @@ export default defineConfig(({ mode }) => {
   // Change process.cwd() to projectDir
   const env = loadEnv(mode, projectDir, '');
   const enablePwa = env.VITE_ENABLE_PWA !== 'false';
-  const plugins = [react()];
+  const plugins = [
+    react({
+      babel: {
+        plugins: [
+          [
+            'babel-plugin-styled-components',
+            {
+              displayName: true,
+              fileName: true,
+            },
+          ],
+        ],
+      },
+    }),
+  ];
 
   if (enablePwa) {
     plugins.push(
