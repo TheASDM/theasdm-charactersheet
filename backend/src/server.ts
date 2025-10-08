@@ -89,7 +89,7 @@ app.use(compression());
 app.use(
   cors({
     origin: process.env.NODE_ENV === 'production'
-      ? [process.env.FRONTEND_URL, 'https://dnd.raptornet.dev'].filter(Boolean)
+      ? [process.env.FRONTEND_URL, 'https://dnd.raptornet.dev'].filter((url): url is string => Boolean(url))
       : true,
     credentials: true,
   })

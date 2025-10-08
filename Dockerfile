@@ -18,6 +18,9 @@ COPY backend/package*.json backend/
 COPY frontend/package*.json frontend/
 COPY backend/prisma backend/prisma
 
+# Update npm to latest to avoid warnings
+RUN npm install -g npm@latest
+
 RUN cd backend && npm install
 RUN cd frontend && npm install
 RUN cd backend && npx prisma generate --schema prisma/schema.prisma
