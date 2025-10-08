@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { StyleSheetManager } from 'styled-components';
 
 import App from './App';
 import { GlobalStyles } from './styles/GlobalStyles';
@@ -18,13 +19,15 @@ const root = createRoot(container);
 
 root.render(
   <React.StrictMode>
-    <HelmetProvider>
-      <BrowserRouter>
-        <ToastProvider>
-          <GlobalStyles />
-          <App />
-        </ToastProvider>
-      </BrowserRouter>
-    </HelmetProvider>
+    <StyleSheetManager target={document.head}>
+      <HelmetProvider>
+        <BrowserRouter>
+          <ToastProvider>
+            <GlobalStyles />
+            <App />
+          </ToastProvider>
+        </BrowserRouter>
+      </HelmetProvider>
+    </StyleSheetManager>
   </React.StrictMode>
 );
