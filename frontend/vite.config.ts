@@ -7,10 +7,11 @@ import { fileURLToPath } from 'url';
 const projectDir = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  // Change process.cwd() to projectDir
+  const env = loadEnv(mode, projectDir, '');
   const enablePwa = env.VITE_ENABLE_PWA !== 'false';
-
   const plugins = [react()];
+
   if (enablePwa) {
     plugins.push(
       VitePWA({
@@ -35,6 +36,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    base: '/',
     plugins,
     resolve: {
       alias: {
@@ -42,7 +44,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      allowedHosts: ['beta.vanyas.quest', 'localhost', '.localhost'],
+      allowedHosts: [
+        'beta.vanyas.quest',
+        'dnd.raptornet.dev',
+        'localhost',
+        '.localhost',
+      ],
       host: true,
       port: 3000,
       proxy: {
