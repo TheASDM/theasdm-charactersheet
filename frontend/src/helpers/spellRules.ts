@@ -259,3 +259,94 @@ export function getCasterProgressionMeta(params: {
     abilityMod: mod,
   };
 }
+
+/**
+ * NEW D&D 2024 HELPERS
+ * These work with the new CLASS_CONFIG structure
+ */
+
+import { CLASS_CONFIG } from './spellcastingConfig';
+import type { CasterType as NewCasterType } from '../types/spells';
+
+/**
+ * Get the number of cantrips for a class at a given level (D&D 2024).
+ */
+export function getCantripCount(classId: string, level: number): number {
+  const config = CLASS_CONFIG[classId];
+  if (!config) return 0;
+
+  const cantripsAtLevel = config.cantripsAtLevel;
+  if (!cantripsAtLevel || Object.keys(cantripsAtLevel).length === 0) return 0;
+
+  // Find the highest level threshold <= current level
+  const levels = Object.keys(cantripsAtLevel).map(Number).sort((a, b) => a - b);
+  let result = 0;
+  for (const threshold of levels) {
+    if (threshold <= level) {
+      result = cantripsAtLevel[threshold];
+    } else {
+      break;
+    }
+  }
+  return result;
+}
+
+/**
+ * Get the base number of prepared spells for a class at a given level (D&D 2024).
+ * This is BEFORE adding the ability modifier.
+ */
+export function getPreparedCount(classId: string, level: number, abilityMod: number = 0): number {
+  const config = CLASS_CONFIG[classId];
+  if (!config) return 0;
+
+  const preparedAtLevel = config.preparedAtLevel;
+  if (!preparedAtLevel || Object.keys(preparedAtLevel).length === 0) return 0;
+
+  // Find the highest level threshold <= current level
+  const levels = Object.keys(preparedAtLevel).map(Number).sort((a, b) => a - b);
+  let base = 0;
+  for (const threshold of levels) {
+    if (threshold <= level) {
+      base = preparedAtLevel[threshold];
+    } else {
+      break;
+    }
+  }
+
+  // For flexible prepared casters, add ability modifier
+  if (config.casterType === 'flexiblePrepared') {
+    return Math.max(1, base + abilityMod);
+  }
+
+  // For semi-prepared casters, the table value is the total
+  return base;
+}
+
+/**
+ * Get the new caster type (D&D 2024).
+ */
+export function getNewCasterType(classId: string): NewCasterType {
+  const config = CLASS_CONFIG[classId];
+  return config?.casterType ?? 'none';
+}
+
+/**
+ * Check if this class uses a spellbook (Wizard).
+ */
+export function usesSpellbook(classId: string): boolean {
+  return CLASS_CONFIG[classId]?.usesSpellbook ?? false;
+}
+
+/**
+ * Check if this class uses Pact Magic (Warlock).
+ */
+export function hasPactMagic(classId: string): boolean {
+  return CLASS_CONFIG[classId]?.pactMagic ?? false;
+}
+
+/**
+ * Get spellcasting ability for a class.
+ */
+export function getSpellcastingAbility(classId: string): string | undefined {
+  return CLASS_CONFIG[classId]?.spellcastingAbility;
+}

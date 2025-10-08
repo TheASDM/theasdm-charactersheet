@@ -213,3 +213,49 @@ export function deriveGrantedSpells(
 
   return Array.from(granted);
 }
+
+/**
+ * D&D 2024: Returns spells that are always prepared for a given class/subclass/level.
+ * These spells don't count against the prepared spell limit.
+ *
+ * At level 1, this returns [] (subclass integration is deferred to future sprints).
+ * Future: Will return domain spells (Cleric), oath spells (Paladin), etc.
+ *
+ * @param classId - The class identifier (e.g., 'Cleric', 'Paladin')
+ * @param level - Character level
+ * @param subclassId - Optional subclass identifier (e.g., 'Life Domain', 'Oath of Devotion')
+ * @returns Array of spell IDs that are always prepared
+ */
+export function deriveAlwaysPreparedSpells(
+  _classId: string,
+  _level: number,
+  _subclassId?: string
+): string[] {
+  // Level 1: No subclass spells implemented yet
+  // Future implementation:
+  // import { SUBCLASS_CONFIG } from './spellcastingConfig';
+  // if (!_subclassId) return [];
+  // const config = SUBCLASS_CONFIG[_subclassId];
+  // return config?.alwaysPrepared?.[_level] ?? [];
+
+  return [];
+}
+
+/**
+ * Helper to check if a spell is always prepared (doesn't count against limit).
+ *
+ * @param spellId - The spell identifier
+ * @param classId - The class identifier
+ * @param level - Character level
+ * @param subclassId - Optional subclass identifier
+ * @returns True if the spell is always prepared
+ */
+export function isAlwaysPrepared(
+  spellId: string,
+  classId: string,
+  level: number,
+  subclassId?: string
+): boolean {
+  const alwaysPrepared = deriveAlwaysPreparedSpells(classId, level, subclassId);
+  return alwaysPrepared.includes(spellId);
+}
