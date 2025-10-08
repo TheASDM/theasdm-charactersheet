@@ -28,13 +28,11 @@ const logger = winston.createLogger({
   ],
 });
 
-// If we're not in production, log to console as well
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new winston.transports.Console({
-      format: combine(colorize(), timestamp(), consoleFormat),
-    })
-  );
-}
+// Always log to console for Docker container visibility
+logger.add(
+  new winston.transports.Console({
+    format: combine(colorize(), timestamp(), consoleFormat),
+  })
+);
 
 export default logger;
