@@ -78,17 +78,7 @@ app.use(
 app.use(compression());
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (same-origin, mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-
-      // Allow any origin in the allowed list
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      callback(new Error('Not allowed by CORS'));
-    },
+    origin: true, // Allow all origins for now (serving same-origin static files)
     credentials: true,
   })
 );
