@@ -7,6 +7,10 @@ import App from './App';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { ToastProvider } from './contexts/ToastContext';
 
+// Clear any existing styled-components style tags to prevent conflicts
+const existingStyleTags = document.querySelectorAll('style[data-styled]');
+existingStyleTags.forEach(tag => tag.remove());
+
 const container = document.getElementById('root');
 if (!container) throw new Error('Failed to find the root element');
 
