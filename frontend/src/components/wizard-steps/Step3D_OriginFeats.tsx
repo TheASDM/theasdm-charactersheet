@@ -43,7 +43,6 @@ const SPELL_CLASSES = ['Cleric', 'Druid', 'Wizard'];
 interface Step3DOriginFeatsProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
-  onAdvance?: () => void;
 }
 
 const FeatsContainer = styled.div`
@@ -293,7 +292,6 @@ const ModalButtons = styled.div`
 export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
   data,
   onUpdate,
-  onAdvance
 }) => {
   const [feats, setFeats] = useState<Feat[]>([]);
   const [filteredFeats, setFilteredFeats] = useState<Feat[]>([]);
@@ -344,7 +342,6 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
 
   const handleFeatClick = (feat: Feat) => {
     setSelectedFeatForModal(feat);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleFeatSelect = (featName: string) => {
@@ -456,14 +453,8 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
         setCurrentFeatChoices(data.featChoices?.[featName] || {});
         setModalPage('choices');
       } else {
-        // No choices needed, check if we should advance
-        const newFeatCount = (data.selectedOriginFeats || []).length + 1;
+        // No choices needed
         closeModal();
-
-        // If we've selected all required feats and none need choices, advance
-        if (newFeatCount >= data.requiredFeatCount && onAdvance) {
-          setTimeout(() => onAdvance(), 300);
-        }
       }
     }
   };
@@ -513,22 +504,11 @@ export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
     }
   };
 
-  // Complete choices and move forward
+  // Complete choices
   const confirmChoices = () => {
     if (!areChoicesComplete()) return;
 
-    const allFeatsSelected = data.selectedOriginFeats.length >= data.requiredFeatCount;
-    const allFeatChoicesComplete = data.selectedOriginFeats.every(featName => {
-      if (!featNeedsChoices(featName)) return true;
-      return !!data.featChoices?.[featName];
-    });
-
     closeModal();
-
-    // If all feats selected and all choices made, advance
-    if (allFeatsSelected && allFeatChoicesComplete && onAdvance) {
-      setTimeout(() => onAdvance(), 300);
-    }
   };
 
   const removeFeat = (featName: string) => {

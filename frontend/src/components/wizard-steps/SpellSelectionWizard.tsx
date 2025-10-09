@@ -8,7 +8,7 @@
  * - Warlock Pact Magic
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import type { Spell } from '@/types/api';
 import type { CharacterBuilderData } from '../CharacterGeneratorWizard';
@@ -18,10 +18,9 @@ import { listSpells, SpellFilters } from '@/services/spellService';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { SpellFiltersBar } from '@/components/spells/SpellFiltersBar';
 import { SpellCounterBar } from '@/components/spells/SpellCounterBar';
-import { SpellCard } from '@/components/spells/SpellCard';
 import { SpellDetailModal } from '@/components/spells/SpellDetailModal';
+import { CompactSpellList } from '@/components/spells/CompactSpellList';
 import { SpellbookStep } from '@/components/spells/SpellbookStep';
-import { PreparedSpellsStep } from '@/components/spells/PreparedSpellsStep';
 import { SpellWizardProvider } from '@/contexts/SpellWizardContext';
 import { LevelFilter, RitualFilter, ConcentrationFilter } from '@/utils/spellConstants';
 import { normaliseSpellId } from '@/utils/spellUtils';
@@ -34,6 +33,7 @@ interface SpellSelectionWizardProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
   onValidityChange: (isValid: boolean) => void;
+  onCustomNext?: () => boolean; // Return true if handled internally, false to let wizard proceed
 }
 
 const InfoPanel = styled.div<{ $variant?: 'info' | 'warning' | 'special' }>`
@@ -59,13 +59,6 @@ const InfoPanel = styled.div<{ $variant?: 'info' | 'warning' | 'special' }>`
   }
 `;
 
-const SpellGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
-`;
-
 const EmptyState = styled.div`
   text-align: center;
   padding: 3rem 1rem;
@@ -77,6 +70,7 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
   data,
   onUpdate,
   onValidityChange,
+  onCustomNext,
 }) => {
   const classId = data.selectedClass ?? '';
   const level = 1; // For now, always level 1
@@ -112,10 +106,20 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
   // For other casters with cantrips: cantrips → prepared
   // For Paladin/Ranger: prepared only (no cantrips)
   const [spellStep, setSpellStep] = useState<'cantrips' | 'spellbook' | 'prepared'>(() => {
+    // Restore from saved data if available
+    if (data.spellWizardStep) return data.spellWizardStep;
+
+    // Otherwise determine initial step
     if (cantripMax > 0) return 'cantrips';
     if (usesSpellbook(classId)) return 'spellbook';
     return 'prepared';
   });
+
+  // Use ref to track current step for the handler
+  const spellStepRef = useRef(spellStep);
+  useEffect(() => {
+    spellStepRef.current = spellStep;
+  }, [spellStep]);
 
   // ===== STATE =====
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,11 +129,10 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
   const [concentrationFilter, setConcentrationFilter] = useState<ConcentrationFilter>('any');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
 
-  // Spell selections
-  const [cantrips, setCantrips] = useState<string[]>([]);
+  // Spell selections - Initialize directly from saved data
+  const [cantrips, setCantrips] = useState<string[]>(data.spellbook?.cantrips ?? []);
   const [preparedSpells, setPreparedSpells] = useState<string[]>(data.spellbook?.prepared ?? []);
-  // Wizard spellbook should start empty (cantrips are separate)
-  const [wizardSpellbook, setWizardSpellbook] = useState<string[]>([]);
+  const [wizardSpellbook, setWizardSpellbook] = useState<string[]>(data.spellbook?.wizardSpellbook ?? []);
 
   // Get ability modifier
   const spellcastingAbility = useMemo(() => getSpellcastingAbility(classId), [classId]);
@@ -209,37 +212,95 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     });
   }, []);
 
+  // ===== CUSTOM NEXT HANDLER =====
+  useEffect(() => {
+    if (onCustomNext) {
+      // Provide handler that returns true if we handle Next internally
+      const handler = () => {
+        const currentStep = spellStepRef.current;
+        console.log('[SpellWizard] Next clicked. Current step:', currentStep, 'Class:', classId);
+
+        // Cantrips step
+        if (currentStep === 'cantrips') {
+          if (usesSpellbook(classId)) {
+            // Wizard: cantrips → spellbook
+            console.log('[SpellWizard] Wizard: cantrips → spellbook');
+            setSpellStep('spellbook');
+          } else {
+            // Non-Wizard: cantrips → prepared
+            console.log('[SpellWizard] Non-Wizard: cantrips → prepared');
+            setSpellStep('prepared');
+          }
+          return true; // Handled internally
+        }
+
+        // Spellbook step (Wizard only)
+        if (currentStep === 'spellbook') {
+          // Wizard: spellbook → prepared
+          console.log('[SpellWizard] Wizard: spellbook → prepared');
+          setSpellStep('prepared');
+          return true; // Handled internally
+        }
+
+        // Prepared step: let wizard proceed to next step (equipment)
+        console.log('[SpellWizard] Prepared step: letting wizard proceed to equipment');
+        return false;
+      };
+      // Store handler reference
+      (window as any).__spellWizardNext = handler;
+
+      // Back handler
+      const backHandler = () => {
+        const currentStep = spellStepRef.current;
+        console.log('[SpellWizard] Back clicked. Current step:', currentStep, 'Class:', classId);
+
+        // Prepared step
+        if (currentStep === 'prepared') {
+          if (usesSpellbook(classId)) {
+            // Wizard: prepared → spellbook
+            console.log('[SpellWizard] Wizard: prepared → spellbook');
+            setSpellStep('spellbook');
+          } else if (cantripMax > 0) {
+            // Non-Wizard with cantrips: prepared → cantrips
+            console.log('[SpellWizard] Non-Wizard: prepared → cantrips');
+            setSpellStep('cantrips');
+          } else {
+            // No internal back (Paladin/Ranger at prepared)
+            console.log('[SpellWizard] No internal back, letting wizard handle');
+            return false;
+          }
+          return true; // Handled internally
+        }
+
+        // Spellbook step (Wizard only)
+        if (currentStep === 'spellbook') {
+          if (cantripMax > 0) {
+            // Wizard: spellbook → cantrips
+            console.log('[SpellWizard] Wizard: spellbook → cantrips');
+            setSpellStep('cantrips');
+            return true; // Handled internally
+          }
+          // No cantrips, let wizard handle
+          console.log('[SpellWizard] No cantrips, letting wizard handle');
+          return false;
+        }
+
+        // Cantrips step: let wizard proceed to previous step
+        console.log('[SpellWizard] Cantrips step: letting wizard handle');
+        return false;
+      };
+      (window as any).__spellWizardBack = backHandler;
+    }
+  }, [classId, onCustomNext, cantripMax]);
+
   // ===== VALIDATION =====
   useEffect(() => {
-    // Only validation: can't go over the maximum
-    // Users can select 0 to max for everything - no minimum requirements
-    let valid = true;
+    // No validation - always valid
+    // User can select 0 to max spells, wizard Next button always works
+    onValidityChange(true);
+  }, [onValidityChange]);
 
-    // Check cantrips don't exceed max
-    if (cantrips.length > cantripMax) {
-      valid = false;
-    }
-
-    // Check prepared spells don't exceed max
-    if (preparedSpells.length > preparedMax) {
-      valid = false;
-    }
-
-    // Wizard spellbook: don't exceed 6 spells
-    if (usesSpellbook(classId) && wizardSpellbook.length > 6) {
-      valid = false;
-    }
-
-    // Wizard prepared: must be subset of spellbook
-    if (usesSpellbook(classId)) {
-      const invalidPrepared = preparedSpells.some((id) => !wizardSpellbook.includes(id));
-      if (invalidPrepared) valid = false;
-    }
-
-    onValidityChange(valid);
-  }, [cantrips, preparedSpells, wizardSpellbook, cantripMax, preparedMax, classId, onValidityChange]);
-
-  // Update parent component
+  // Update parent component with spell data AND current step
   useEffect(() => {
     // Combine cantrips + prepared/spellbook into known array
     const allKnown = [...cantrips, ...(usesSpellbook(classId) ? wizardSpellbook : preparedSpells)];
@@ -247,9 +308,12 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
       spellbook: {
         known: allKnown,
         prepared: preparedSpells,
+        cantrips: cantrips,
+        wizardSpellbook: wizardSpellbook,
       },
+      spellWizardStep: spellStep,
     });
-  }, [cantrips, preparedSpells, wizardSpellbook, classId, onUpdate]);
+  }, [cantrips, preparedSpells, wizardSpellbook, classId, spellStep, onUpdate]);
 
   // Handler to sync context spell selections with parent state
   // MUST be defined unconditionally (Rules of Hooks)
@@ -280,11 +344,10 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     // Step 1: Select cantrips (if any)
     if (cantripMax > 0 && spellStep === 'cantrips') {
       const cantripSpells = spells.filter((s: Spell) => s.level === 0);
-      const cantripsDone = cantrips.length === cantripMax;
 
       return (
         <StepContainer>
-          <h2>Select Cantrips</h2>
+          <h2>Select Cantrips - Wizard</h2>
           <InfoPanel>
             Select <strong>{cantripMax} cantrips</strong> for your Wizard.
           </InfoPanel>
@@ -292,40 +355,38 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
             label: 'Cantrips',
             current: cantrips.length,
             max: cantripMax,
-            invalid: !cantripsDone,
+            invalid: false,
           }]} />
 
-          <SpellGrid>
-            {cantripSpells.map((spell: Spell) => (
-              <SpellCard
-                key={spell.id}
-                spell={spell}
-                isSelected={cantrips.includes(normaliseSpellId(spell.id))}
-                isGranted={false}
-                canSelect={cantrips.length < cantripMax || cantrips.includes(normaliseSpellId(spell.id))}
-                onToggle={handleToggleCantrip}
-                onViewDetails={setSelectedSpell}
-              />
-            ))}
-          </SpellGrid>
+          <SpellFiltersBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            level={levelFilter}
+            onLevelChange={setLevelFilter}
+            school={schoolFilter}
+            onSchoolChange={setSchoolFilter}
+            ritual={ritualFilter}
+            onRitualChange={setRitualFilter}
+            concentration={concentrationFilter}
+            onConcentrationChange={setConcentrationFilter}
+            hideLevelFilter={true}
+          />
 
-          <div style={{ marginTop: '2rem', textAlign: 'right' }}>
-            <button
-              disabled={!cantripsDone}
-              onClick={() => setSpellStep('spellbook')}
-              style={{
-                background: cantripsDone ? '#8b5a2b' : 'transparent',
-                border: '1px solid #c0aa70',
-                color: '#f1c661',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '4px',
-                cursor: cantripsDone ? 'pointer' : 'not-allowed',
-                opacity: cantripsDone ? 1 : 0.5,
-              }}
-            >
-              Next: Select Spellbook
-            </button>
-          </div>
+          {isLoadingSpells ? (
+            <LoadingSpinner message="Loading cantrips..." />
+          ) : cantripSpells.length === 0 ? (
+            <EmptyState>No cantrips found with current filters.</EmptyState>
+          ) : (
+            <CompactSpellList
+              spells={cantripSpells}
+              selectedSpells={cantrips}
+              grantedSpells={grantedSpells}
+              maxSelections={cantripMax}
+              onToggle={handleToggleCantrip}
+              onViewDetails={setSelectedSpell}
+              normaliseId={normaliseSpellId}
+            />
+          )}
 
           <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
         </StepContainer>
@@ -346,14 +407,61 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     }
 
     if (spellStep === 'prepared') {
+      // Wizard prepares spells from their spellbook (not the full spell list)
+      const spellbookSpells = spells.filter((s: Spell) =>
+        s.level === 1 && wizardSpellbook.includes(normaliseSpellId(s.id))
+      );
+
       return (
-        <SpellWizardProvider
-          initialState={wizardInitialState}
-          onStepChange={setSpellStep}
-          onSpellsChange={handleSpellsChange}
-        >
-          <PreparedSpellsStep allSpells={spells} />
-        </SpellWizardProvider>
+        <StepContainer>
+          <h2>Prepare Spells - Wizard</h2>
+          <p style={{ color: '#c0aa70', marginBottom: '1rem', fontSize: '0.95rem' }}>
+            Prepare spells from your spellbook. Ritual spells can be cast from your spellbook without preparing.
+          </p>
+
+          <InfoPanel $variant="info">
+            You can change your entire prepared spell list after a <strong>long rest</strong>.
+          </InfoPanel>
+
+          <SpellCounterBar counters={[{
+            label: 'Prepared',
+            current: preparedSpells.length,
+            max: preparedMax,
+            invalid: false,
+          }]} />
+
+          <SpellFiltersBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            level={levelFilter}
+            onLevelChange={setLevelFilter}
+            school={schoolFilter}
+            onSchoolChange={setSchoolFilter}
+            ritual={ritualFilter}
+            onRitualChange={setRitualFilter}
+            concentration={concentrationFilter}
+            onConcentrationChange={setConcentrationFilter}
+            hideLevelFilter={true}
+          />
+
+          {isLoadingSpells ? (
+            <LoadingSpinner message="Loading spells..." />
+          ) : spellbookSpells.length === 0 ? (
+            <EmptyState>No spells in your spellbook match the current filters.</EmptyState>
+          ) : (
+            <CompactSpellList
+              spells={spellbookSpells}
+              selectedSpells={preparedSpells}
+              grantedSpells={grantedSpells}
+              maxSelections={preparedMax}
+              onToggle={handleTogglePrepared}
+              onViewDetails={setSelectedSpell}
+              normaliseId={normaliseSpellId}
+            />
+          )}
+
+          <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
+        </StepContainer>
       );
     }
   }
@@ -364,9 +472,21 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     const cantripSpells = spells.filter((s: Spell) => s.level === 0);
     const canProceed = cantrips.length >= 0 && cantrips.length <= cantripMax;
 
+    const helpText = {
+      Cleric: 'Cantrips are at-will spells you can cast any number of times.',
+      Druid: 'Cantrips are at-will spells you can cast any number of times.',
+      Bard: 'Cantrips are at-will spells you can cast any number of times.',
+      Sorcerer: 'Cantrips are at-will spells you can cast any number of times.',
+      Warlock: 'Cantrips are at-will spells you can cast any number of times.',
+      Wizard: 'Cantrips are at-will spells you can cast any number of times.',
+    }[classId] || 'Select your cantrips.';
+
     return (
       <StepContainer>
         <h2>Select Cantrips - {classId}</h2>
+        <p style={{ color: '#c0aa70', marginBottom: '1rem', fontSize: '0.95rem' }}>
+          {helpText}
+        </p>
 
         {classConfig.casterType === 'flexiblePrepared' && (
           <InfoPanel $variant="info">
@@ -403,50 +523,24 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
           onRitualChange={setRitualFilter}
           concentration={concentrationFilter}
           onConcentrationChange={setConcentrationFilter}
+          hideLevelFilter={true}
         />
 
         {isLoadingSpells ? (
           <LoadingSpinner message="Loading cantrips..." />
+        ) : cantripSpells.length === 0 ? (
+          <EmptyState>No cantrips found with current filters.</EmptyState>
         ) : (
-          <>
-            <h3>Available Cantrips ({cantripSpells.length})</h3>
-            {cantripSpells.length === 0 ? (
-              <EmptyState>No cantrips found with current filters.</EmptyState>
-            ) : (
-              <SpellGrid>
-                {cantripSpells.map((spell) => (
-                  <SpellCard
-                    key={spell.id}
-                    spell={spell}
-                    isSelected={cantrips.includes(normaliseSpellId(spell.id))}
-                    isGranted={grantedSpells.includes(normaliseSpellId(spell.id))}
-                    canSelect={cantrips.length < cantripMax || cantrips.includes(normaliseSpellId(spell.id))}
-                    onToggle={handleToggleCantrip}
-                    onViewDetails={setSelectedSpell}
-                  />
-                ))}
-              </SpellGrid>
-            )}
-          </>
+          <CompactSpellList
+            spells={cantripSpells}
+            selectedSpells={cantrips}
+            grantedSpells={grantedSpells}
+            maxSelections={cantripMax}
+            onToggle={handleToggleCantrip}
+            onViewDetails={setSelectedSpell}
+            normaliseId={normaliseSpellId}
+          />
         )}
-
-        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            disabled={!canProceed}
-            onClick={() => setSpellStep('prepared')}
-            style={{
-              background: canProceed ? '#8b5a2b' : 'transparent',
-              border: '1px solid #c0aa70',
-              color: '#f1c661',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '4px',
-              cursor: canProceed ? 'pointer' : 'not-allowed',
-              opacity: canProceed ? 1 : 0.5,
-            }}
-          >
-            Next: Select Spells
-          </button>
-        </div>
 
         <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
       </StepContainer>
@@ -459,9 +553,23 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     (classConfig.casterType === 'flexiblePrepared' && (preparedSpells.length < 1 || preparedSpells.length > preparedMax)) ||
     (classConfig.casterType === 'semiPrepared' && preparedSpells.length !== preparedMax);
 
+  const preparedHelpText = {
+    Cleric: 'Prepare spells from the entire Cleric spell list. You can change your prepared spells after a long rest.',
+    Druid: 'Prepare spells from the entire Druid spell list. You can change your prepared spells after a long rest.',
+    Paladin: 'Prepare spells from the entire Paladin spell list. You can change your prepared spells after a long rest.',
+    Ranger: 'Prepare spells from the entire Ranger spell list. You can change your prepared spells after a long rest.',
+    Wizard: 'Prepare spells from your spellbook. Ritual spells can be cast from your spellbook without preparing.',
+    Bard: 'Prepare spells from the Bard spell list. You can only replace one spell when you gain a level.',
+    Sorcerer: 'Prepare spells from the Sorcerer spell list. You can only replace one spell when you gain a level.',
+    Warlock: 'Prepare spells from the Warlock spell list. Pact Magic slots recover on short rest.',
+  }[classId] || 'Select your spells.';
+
   return (
     <StepContainer>
       <h2>Select Spells - {classId}</h2>
+      <p style={{ color: '#c0aa70', marginBottom: '1rem', fontSize: '0.95rem' }}>
+        {preparedHelpText}
+      </p>
 
       {/* Caster Type Info */}
       {classConfig.casterType === 'flexiblePrepared' && (
@@ -503,36 +611,21 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
         onConcentrationChange={setConcentrationFilter}
       />
 
-      {/* Spell Lists (Level 1+ only) */}
+      {/* Spell Lists (Level 1 only) */}
       {isLoadingSpells ? (
         <LoadingSpinner message="Loading spells..." />
+      ) : leveledSpells.length === 0 ? (
+        <EmptyState>No level 1 spells found with current filters.</EmptyState>
       ) : (
-        <>
-          <h3>Available Spells ({leveledSpells.length})</h3>
-          {leveledSpells.length === 0 ? (
-            <EmptyState>No level 1+ spells found with current filters.</EmptyState>
-          ) : (
-            <SpellGrid>
-              {leveledSpells.map((spell) => {
-                const spellId = normaliseSpellId(spell.id);
-                const isInPrepared = preparedSpells.includes(spellId);
-                const isGranted = grantedSpells.includes(spellId);
-
-                return (
-                  <SpellCard
-                    key={spell.id}
-                    spell={spell}
-                    isSelected={isInPrepared}
-                    isGranted={isGranted}
-                    canSelect={preparedSpells.length < preparedMax || isInPrepared}
-                    onToggle={handleTogglePrepared}
-                    onViewDetails={setSelectedSpell}
-                  />
-                );
-              })}
-            </SpellGrid>
-          )}
-        </>
+        <CompactSpellList
+          spells={leveledSpells}
+          selectedSpells={preparedSpells}
+          grantedSpells={grantedSpells}
+          maxSelections={preparedMax}
+          onToggle={handleTogglePrepared}
+          onViewDetails={setSelectedSpell}
+          normaliseId={normaliseSpellId}
+        />
       )}
 
       {/* Back Button (if came from cantrips page) */}

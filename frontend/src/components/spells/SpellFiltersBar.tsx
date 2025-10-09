@@ -12,6 +12,7 @@ interface SpellFiltersBarProps {
   onRitualChange: (value: RitualFilter) => void;
   concentration: ConcentrationFilter;
   onConcentrationChange: (value: ConcentrationFilter) => void;
+  hideLevelFilter?: boolean;
 }
 
 const FiltersBar = styled.div`
@@ -66,6 +67,7 @@ export const SpellFiltersBar: React.FC<SpellFiltersBarProps> = ({
   onRitualChange,
   concentration,
   onConcentrationChange,
+  hideLevelFilter = false,
 }) => {
   return (
     <FiltersBar>
@@ -78,22 +80,24 @@ export const SpellFiltersBar: React.FC<SpellFiltersBarProps> = ({
           onChange={(event) => onSearchChange(event.target.value)}
         />
       </FilterGroup>
-      <FilterGroup>
-        <span>Level</span>
-        <select
-          value={String(level)}
-          onChange={(event) => {
-            const value = event.target.value;
-            onLevelChange(value === 'all' ? 'all' : (Number(value) as LevelFilter));
-          }}
-        >
-          {LEVEL_OPTIONS.map(({ label, value }) => (
-            <option key={value} value={String(value)}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </FilterGroup>
+      {!hideLevelFilter && (
+        <FilterGroup>
+          <span>Level</span>
+          <select
+            value={String(level)}
+            onChange={(event) => {
+              const value = event.target.value;
+              onLevelChange(value === 'all' ? 'all' : (Number(value) as LevelFilter));
+            }}
+          >
+            {LEVEL_OPTIONS.map(({ label, value }) => (
+              <option key={value} value={String(value)}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </FilterGroup>
+      )}
       <FilterGroup>
         <span>School</span>
         <select value={school} onChange={(event) => onSchoolChange(event.target.value)}>

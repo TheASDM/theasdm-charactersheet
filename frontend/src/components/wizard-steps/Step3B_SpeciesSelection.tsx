@@ -62,7 +62,6 @@ const ALL_SKILLS = [
 interface Step3BSpeciesSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
-  onAdvance?: () => void;
 }
 
 type Species = ApiSpecies;
@@ -366,10 +365,8 @@ const TraitList = styled.div`
 export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   data,
   onUpdate,
-  onAdvance
 }) => {
   const [selectedSpeciesForModal, setSelectedSpeciesForModal] = useState<Species | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [modalPage, setModalPage] = useState<'details' | 'choices'>('details');
   const [currentSpeciesChoices, setCurrentSpeciesChoices] = useState<any>({});
   const [showValidationWarning, setShowValidationWarning] = useState(false);
@@ -387,7 +384,6 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
 
   const handleSpeciesClick = (speciesData: Species) => {
     setSelectedSpeciesForModal(speciesData);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSpeciesSelect = (speciesData: Species) => {
@@ -615,19 +611,9 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
         setCurrentSpeciesChoices(data.speciesChoices || {});
         setShowValidationWarning(false); // Reset warning when entering choices page
         setModalPage('choices');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        // No choices needed, advance
-        setIsTransitioning(true);
+        // No choices needed
         closeModal();
-
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(() => {
-          setIsTransitioning(false);
-          if (onAdvance) onAdvance();
-        }, 500);
-      }, 300);
     }
   };
 
@@ -676,24 +662,14 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     }
   };
 
-  // Confirm choices and advance
+  // Confirm choices
   const confirmChoices = () => {
     if (!areChoicesComplete()) {
       setShowValidationWarning(true); // Show warning only when user tries to confirm
       return;
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setIsTransitioning(true);
     closeModal();
-
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      setTimeout(() => {
-        setIsTransitioning(false);
-        if (onAdvance) onAdvance();
-      }, 500);
-    }, 300);
   };
 
   const getMainTraits = (traits?: any[]): string[] => {
@@ -1077,45 +1053,7 @@ const renderSpeciesChoicesContent = (
   }
 
   return (
-    <StepContainer style={{
-      opacity: isTransitioning ? 0.3 : 1,
-      transition: 'opacity 0.3s ease',
-      position: 'relative'
-    }}>
-      {/* Transition Screen */}
-      {isTransitioning && (
-        <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 999,
-          background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%)',
-          border: '3px solid #d4af37',
-          borderRadius: '12px',
-          padding: '2rem 3rem',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8)',
-          animation: 'fadeInScale 0.3s ease',
-        }}>
-          <h2 style={{
-            color: '#d4af37',
-            fontFamily: 'Cinzel, serif',
-            fontSize: '1.8rem',
-            margin: 0,
-            textAlign: 'center',
-          }}>
-            Configuring {selectedSpeciesForModal?.name}...
-          </h2>
-          <p style={{
-            color: '#ccc',
-            marginTop: '0.5rem',
-            textAlign: 'center',
-          }}>
-            Setting up species choices and traits
-          </p>
-        </div>
-      )}
-
+    <StepContainer>
       <div className="step-title">Species</div>
       <div className="step-description">
         Choose your character's species, which determines their physical traits and special abilities.

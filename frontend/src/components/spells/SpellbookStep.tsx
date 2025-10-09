@@ -69,35 +69,6 @@ const InfoPanel = styled.div`
   }
 `;
 
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  justify-content: flex-end;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  background: ${({ $variant }) => ($variant === 'secondary' ? 'transparent' : '#8b5a2b')};
-  border: 1px solid #c0aa70;
-  color: #f1c661;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover:not(:disabled) {
-    background: ${({ $variant }) => ($variant === 'secondary' ? 'rgba(192, 170, 112, 0.1)' : '#6d4623')};
-    border-color: #f1c661;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
 interface SpellbookStepProps {
   spells: Spell[];
 }
@@ -118,9 +89,6 @@ export const SpellbookStep: React.FC<SpellbookStepProps> = ({ spells }) => {
     concentrationFilter,
     setConcentrationFilter,
     spellbookMax = 6,
-    cantripMax,
-    goToNextStep,
-    goToPreviousStep,
   } = useSpellWizard();
 
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
@@ -152,18 +120,6 @@ export const SpellbookStep: React.FC<SpellbookStepProps> = ({ spells }) => {
   }, [setSpellbook, spellbookMax]);
 
   const isValid = spellbook.length === spellbookMax;
-
-  const handleComplete = useCallback(() => {
-    if (isValid) {
-      goToNextStep();
-    }
-  }, [isValid, goToNextStep]);
-
-  const handleBack = useCallback(() => {
-    if (cantripMax > 0) {
-      goToPreviousStep();
-    }
-  }, [cantripMax, goToPreviousStep]);
 
   return (
     <StepContainer>
@@ -208,17 +164,6 @@ export const SpellbookStep: React.FC<SpellbookStepProps> = ({ spells }) => {
         showRitualBadge
         emptyMessage="No level 1 Wizard spells found with current filters."
       />
-
-      <ButtonGroup>
-        {cantripMax > 0 && (
-          <Button $variant="secondary" onClick={handleBack}>
-            Back
-          </Button>
-        )}
-        <Button disabled={!isValid} onClick={handleComplete}>
-          Next: Prepare Spells
-        </Button>
-      </ButtonGroup>
 
       <SpellDetailModal spell={selectedSpell} onClose={() => setSelectedSpell(null)} />
     </StepContainer>

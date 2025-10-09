@@ -8,8 +8,6 @@ interface ConfirmationPanelProps {
   onConfirm: () => void;
   isComplete: boolean;
   children?: React.ReactNode;
-  autoAdvance?: boolean;
-  autoAdvanceDelay?: number;
 }
 
 const ConfirmationContainer = styled.div<{ isComplete: boolean }>`
@@ -107,18 +105,6 @@ const ConfirmButton = styled.button<{ isComplete: boolean }>`
   }
 `;
 
-const AutoAdvanceIndicator = styled.div`
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 6px;
-  text-align: center;
-  color: #d4af37;
-  font-size: 0.9rem;
-  font-weight: 500;
-`;
-
 export const ConfirmationPanel: React.FC<ConfirmationPanelProps> = ({
   title,
   description,
@@ -126,19 +112,7 @@ export const ConfirmationPanel: React.FC<ConfirmationPanelProps> = ({
   onConfirm,
   isComplete,
   children,
-  autoAdvance = false,
-  autoAdvanceDelay = 2000
 }) => {
-  React.useEffect(() => {
-    if (isComplete && autoAdvance) {
-      const timer = setTimeout(() => {
-        onConfirm();
-      }, autoAdvanceDelay);
-
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [isComplete, autoAdvance, autoAdvanceDelay, onConfirm]);
 
   return (
     <ConfirmationContainer isComplete={isComplete}>
@@ -164,13 +138,7 @@ export const ConfirmationPanel: React.FC<ConfirmationPanelProps> = ({
         </ConfirmationDetails>
       )}
 
-      {isComplete && autoAdvance && (
-        <AutoAdvanceIndicator>
-          🚀 Automatically advancing to next step in {autoAdvanceDelay / 1000} seconds...
-        </AutoAdvanceIndicator>
-      )}
-
-      {isComplete && !autoAdvance && (
+      {isComplete && (
         <ConfirmButton isComplete={isComplete} onClick={onConfirm}>
           {confirmText}
         </ConfirmButton>

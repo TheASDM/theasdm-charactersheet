@@ -39,7 +39,6 @@ const ALL_SKILLS = [
 interface Step2ClassSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
-  onAdvance?: () => void;
 }
 
 const ClassGrid = styled.div`
@@ -984,8 +983,7 @@ const getSpellcastingAbility = (name: string) => SPELLCASTING_ABILITIES[name];
 
 export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   data,
-  onUpdate,
-  onAdvance
+  onUpdate
 }) => {
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [activeClass, setActiveClass] = useState<string | null>(data.selectedClass);
@@ -1008,9 +1006,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
       return;
     }
     setIsClassModalOpen(false);
-    if (onAdvance) {
-      onAdvance();
-    }
   };
 
   useEffect(() => {
@@ -1152,7 +1147,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     if (data.selectedClass === className) {
       setActiveClass(className);
       setIsClassModalOpen(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -1180,7 +1174,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
     setActiveClass(className);
     setIsClassModalOpen(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSkillToggle = (skill: string) => {

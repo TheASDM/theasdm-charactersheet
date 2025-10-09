@@ -111,9 +111,14 @@ export interface CharacterBuilderData {
   };
 
   spellbook: {
-    known: string[];
+    known: string[]; // Combined: cantrips + wizardSpellbook OR cantrips + prepared
     prepared?: string[];
+    cantrips?: string[]; // Separate tracking for UI persistence
+    wizardSpellbook?: string[]; // For wizards: spells in spellbook (not cantrips)
   };
+
+  // Track internal spell wizard step (cantrips, spellbook, prepared)
+  spellWizardStep?: 'cantrips' | 'spellbook' | 'prepared';
 
   resources?: {
     manaCurrent?: number;
@@ -152,11 +157,6 @@ export default function CharacterGeneratorWizard() {
   const [showStartOverModal, setShowStartOverModal] = useState(false);
   const [isSpellStepValid, setIsSpellStepValid] = useState(true);
 
-  useEffect(() => {
-    if (showStartOverModal) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [showStartOverModal]);
 
   // DEV ONLY: Quick-fill for testing
   const isDev = import.meta.env.DEV;
@@ -252,8 +252,11 @@ export default function CharacterGeneratorWizard() {
         selectedEquipment,
         spellbook: {
           known: [...spells.known],
-          prepared: [...(spells.prepared ?? [])],
+          ...(spells.prepared && { prepared: [...spells.prepared] }),
+          ...(spells.cantrips && { cantrips: [...spells.cantrips] }),
+          ...(spells.wizardSpellbook && { wizardSpellbook: [...spells.wizardSpellbook] }),
         },
+        ...(spells.currentStep && { spellWizardStep: spells.currentStep }),
       };
 
       if (Object.keys(resources).length > 0) {
@@ -601,9 +604,19 @@ export default function CharacterGeneratorWizard() {
     if (updates.spellbook.prepared !== undefined) {
       spellUpdates.prepared = updates.spellbook.prepared;
     }
+    if (updates.spellbook.cantrips !== undefined) {
+      spellUpdates.cantrips = updates.spellbook.cantrips;
+    }
+    if (updates.spellbook.wizardSpellbook !== undefined) {
+      spellUpdates.wizardSpellbook = updates.spellbook.wizardSpellbook;
+    }
     if (Object.keys(spellUpdates).length > 0) {
       updateSpellbook(spellUpdates);
     }
+  }
+
+  if (updates.spellWizardStep !== undefined) {
+    updateSpellbook({ currentStep: updates.spellWizardStep });
   }
 
   if (updates.resources !== undefined) {
@@ -742,7 +755,22 @@ export default function CharacterGeneratorWizard() {
   );
 
   const goNext = useCallback(() => {
-    if (!canGoNext()) return;
+    console.log('[Wizard] goNext called. Current step:', currentStep);
+    if (!canGoNext()) {
+      console.log('[Wizard] canGoNext returned false, aborting');
+      return;
+    }
+
+    // Check if spell wizard wants to handle Next internally
+    if (currentStep === 'spell-selection' && (window as any).__spellWizardNext) {
+      console.log('[Wizard] Calling spell wizard handler');
+      const handled = (window as any).__spellWizardNext();
+      console.log('[Wizard] Spell wizard handler returned:', handled);
+      if (handled) {
+        console.log('[Wizard] Spell wizard handled navigation internally');
+        return; // Spell wizard handled it
+      }
+    }
 
     const currentIndex = getCurrentStepIndex();
     if (currentIndex === -1) return;
@@ -755,7 +783,6 @@ export default function CharacterGeneratorWizard() {
     setTimeout(() => {
       markStepComplete(currentStep);
       setCurrentStep(nextStep);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => {
         setIsTransitioning(false);
       }, 500);
@@ -763,7 +790,22 @@ export default function CharacterGeneratorWizard() {
   }, [canGoNext, currentStep, getCurrentStepIndex, markStepComplete, setCurrentStep, visibleSteps]);
 
   const goBack = useCallback(() => {
-    if (!canGoBack()) return;
+    console.log('[Wizard] goBack called. Current step:', currentStep);
+    if (!canGoBack()) {
+      console.log('[Wizard] canGoBack returned false, aborting');
+      return;
+    }
+
+    // Check if spell wizard wants to handle Back internally
+    if (currentStep === 'spell-selection' && (window as any).__spellWizardBack) {
+      console.log('[Wizard] Calling spell wizard back handler');
+      const handled = (window as any).__spellWizardBack();
+      console.log('[Wizard] Spell wizard back handler returned:', handled);
+      if (handled) {
+        console.log('[Wizard] Spell wizard handled back navigation internally');
+        return; // Spell wizard handled it
+      }
+    }
 
     const currentIndex = getCurrentStepIndex();
     if (currentIndex <= 0) return;
@@ -771,7 +813,7 @@ export default function CharacterGeneratorWizard() {
     const prevStep = visibleSteps[currentIndex - 1];
     if (!prevStep) return;
     setCurrentStep(prevStep);
-  }, [canGoBack, getCurrentStepIndex, setCurrentStep, visibleSteps]);
+  }, [canGoBack, getCurrentStepIndex, setCurrentStep, visibleSteps, currentStep]);
 
 
   // Check if ability scores are complete
@@ -966,7 +1008,6 @@ export default function CharacterGeneratorWizard() {
               <Step2ClassSelection
                 data={builderData}
                 onUpdate={updateBuilderData}
-                onAdvance={goNext}
               />
             </>
           )}
@@ -976,7 +1017,6 @@ export default function CharacterGeneratorWizard() {
               <Step3ABackgroundSelection
                 data={builderData}
                 onUpdate={updateBuilderData}
-                onAdvance={goNext}
               />
             </>
           )}
@@ -984,14 +1024,12 @@ export default function CharacterGeneratorWizard() {
             <Step3BSpeciesSelection
               data={builderData}
               onUpdate={updateBuilderData}
-              onAdvance={goNext}
             />
           )}
           {currentStep === 'origin-feats' && (
             <Step3DOriginFeats
               data={builderData}
               onUpdate={updateBuilderData}
-              onAdvance={goNext}
             />
           )}
           {currentStep === 'spell-selection' && shouldShowSpellStep && (
@@ -999,6 +1037,7 @@ export default function CharacterGeneratorWizard() {
               data={builderData}
               onUpdate={updateBuilderData}
               onValidityChange={setIsSpellStepValid}
+              onCustomNext={() => true}
             />
           )}
           {currentStep === 'equipment-selection' && (

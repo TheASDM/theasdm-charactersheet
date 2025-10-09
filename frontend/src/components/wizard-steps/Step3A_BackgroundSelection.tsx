@@ -10,7 +10,6 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 interface Step3ABackgroundSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
-  onAdvance?: () => void;
 }
 
 
@@ -368,7 +367,6 @@ const STANDARD_LANGUAGES = [
 export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps> = ({
   data,
   onUpdate,
-  onAdvance
 }) => {
   const {
     data: fetchedBackgrounds,
@@ -389,7 +387,6 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
 
   const handleBackgroundClick = (background: Background) => {
     setSelectedBackgroundForModal(background);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     // Initialize ability score allocations to all 0
     if (background.abilityScoreIncrease && 'options' in background.abilityScoreIncrease && Array.isArray(background.abilityScoreIncrease.options)) {
       const initialAllocations: { [ability: string]: number } = {};
@@ -659,11 +656,6 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
         backgroundFeatures: extractBackgroundFeatures(selectedBackgroundForModal.feature)
       });
       closeModal();
-
-      // Automatically advance to next step
-      if (onAdvance) {
-        setTimeout(() => onAdvance(), 300); // Small delay for smooth UX
-      }
     }
   };
 

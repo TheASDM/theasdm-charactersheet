@@ -96,6 +96,9 @@ export interface EquipmentState {
 export interface SpellbookState {
   known: string[];
   prepared?: string[];
+  cantrips?: string[];
+  wizardSpellbook?: string[];
+  currentStep?: 'cantrips' | 'spellbook' | 'prepared';
 }
 
 export interface ResourcesState {
