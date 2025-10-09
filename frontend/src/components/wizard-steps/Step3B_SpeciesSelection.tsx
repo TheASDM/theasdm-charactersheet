@@ -372,6 +372,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [modalPage, setModalPage] = useState<'details' | 'choices'>('details');
   const [currentSpeciesChoices, setCurrentSpeciesChoices] = useState<any>({});
+  const [showValidationWarning, setShowValidationWarning] = useState(false);
   const {
     data: speciesData,
     error,
@@ -612,6 +613,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
       if (speciesNeedsChoices(selectedSpeciesForModal.name)) {
         // Initialize choices for this species
         setCurrentSpeciesChoices(data.speciesChoices || {});
+        setShowValidationWarning(false); // Reset warning when entering choices page
         setModalPage('choices');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -633,6 +635,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
     setSelectedSpeciesForModal(null);
     setModalPage('details');
     setCurrentSpeciesChoices({});
+    setShowValidationWarning(false);
   };
 
   // Update species choice
@@ -642,6 +645,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
       [choiceKey]: value
     };
     setCurrentSpeciesChoices(newChoices);
+    setShowValidationWarning(false); // Hide warning when user makes a selection
 
     // Update in parent data
     onUpdate({ speciesChoices: newChoices });
@@ -674,7 +678,10 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({
 
   // Confirm choices and advance
   const confirmChoices = () => {
-    if (!areChoicesComplete()) return;
+    if (!areChoicesComplete()) {
+      setShowValidationWarning(true); // Show warning only when user tries to confirm
+      return;
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsTransitioning(true);
@@ -1215,7 +1222,7 @@ const renderSpeciesChoicesContent = (
               )
             : (
                 <>
-                  {!areChoicesComplete() && (
+                  {showValidationWarning && !areChoicesComplete() && (
                     <ChoiceWarning role="status" aria-live="polite">
                       <span>⚠️</span>
                       <div>

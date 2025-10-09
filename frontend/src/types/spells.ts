@@ -29,6 +29,9 @@ export interface ClassCastingConfig {
   /** Wizard-specific: uses spellbook */
   usesSpellbook?: boolean;
 
+  /** Wizard-specific: uses table values instead of formula (true = use table, false/undefined = use level + mod) */
+  usesPreparedTable?: boolean;
+
   /** Warlock-specific: Pact Magic (slots recover on short rest) */
   pactMagic?: boolean;
 

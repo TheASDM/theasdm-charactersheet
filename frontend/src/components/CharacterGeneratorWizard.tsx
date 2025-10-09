@@ -158,6 +158,9 @@ export default function CharacterGeneratorWizard() {
     }
   }, [showStartOverModal]);
 
+  // DEV ONLY: Quick-fill for testing
+  const isDev = import.meta.env.DEV;
+
   const {
     currentStep,
     completedSteps,
@@ -644,6 +647,74 @@ export default function CharacterGeneratorWizard() {
     setShowStartOverModal(false);
   }, []);
 
+  // DEV ONLY: Quick-fill with test data
+  const quickFillWizard = useCallback(() => {
+    // Basic Info
+    updateBasicInfo({
+      characterName: 'Test Wizard',
+      playerName: 'Dev Tester',
+    });
+    markStepComplete('character-info');
+
+    // Ability Scores (standard array with high INT for Wizard testing)
+    updateAbilityScores({
+      method: 'standard-array',
+      scores: {
+        strength: 8,
+        dexterity: 14,
+        constitution: 13,
+        intelligence: 15, // +2 from background = 17 (+3 mod)
+        wisdom: 12,
+        charisma: 10,
+      },
+    });
+    markStepComplete('ability-scores');
+
+    // Class (Wizard)
+    updateClassSelection({
+      selectedClass: 'Wizard',
+      selectedClassSkills: ['Arcana', 'History'],
+      selectedClassChoices: {},
+      classStep: 3,
+    });
+    markStepComplete('class-selection');
+
+    // Background (Sage)
+    updateBackground({
+      selectedBackground: 'Sage',
+      abilityScoreAllocations: { intelligence: 2, wisdom: 1 },
+      selectedLanguages: ['Draconic', 'Elvish'],
+    });
+    markStepComplete('background-selection');
+
+    // Species (Human)
+    updateSpecies({
+      selectedSpecies: 'Human',
+      isHuman: true,
+      choices: { humanSkill: 'Perception' },
+    });
+    markStepComplete('species-selection');
+
+    // Feats (2 for Human)
+    updateFeats({
+      selectedOriginFeats: ['Alert', 'Magic Initiate (Wizard)'],
+      requiredFeatCount: 2,
+    });
+    markStepComplete('origin-feats');
+
+    // Jump to spell selection
+    setCurrentStep('spell-selection');
+  }, [
+    updateBasicInfo,
+    updateAbilityScores,
+    updateClassSelection,
+    updateBackground,
+    updateSpecies,
+    updateFeats,
+    setCurrentStep,
+    markStepComplete,
+  ]);
+
   // Navigation functions
   const getCurrentStepIndex = useCallback(
     () => visibleSteps.indexOf(currentStep),
@@ -940,6 +1011,8 @@ export default function CharacterGeneratorWizard() {
             <Step5ReviewCreate
               data={builderData}
               onComplete={(characterId: number) => {
+                // Reset wizard state before navigating
+                resetBuilder();
                 // Navigate directly to character sheet - choices are now handled in Step2
                 navigate(`/characters/${characterId}`);
               }}
@@ -997,6 +1070,21 @@ export default function CharacterGeneratorWizard() {
               >
                 Start Over
               </button>
+              {isDev && (
+                <button
+                  onClick={quickFillWizard}
+                  className="wizard-btn"
+                  style={{
+                    background: 'linear-gradient(145deg, #17a2b8, #138496)',
+                    borderColor: '#17a2b8',
+                    color: '#fff',
+                    marginLeft: '0.5rem'
+                  }}
+                  title="DEV: Quick-fill wizard with test Wizard character"
+                >
+                  ⚡ Quick Fill (DEV)
+                </button>
+              )}
             </div>
 
             <div className="wizard-controls-right">

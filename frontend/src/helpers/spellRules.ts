@@ -293,7 +293,7 @@ export function getCantripCount(classId: string, level: number): number {
 
 /**
  * Get the base number of prepared spells for a class at a given level (D&D 2024).
- * This is BEFORE adding the ability modifier.
+ * This is BEFORE adding the ability modifier (unless using a table).
  */
 export function getPreparedCount(classId: string, level: number, abilityMod: number = 0): number {
   const config = CLASS_CONFIG[classId];
@@ -313,7 +313,12 @@ export function getPreparedCount(classId: string, level: number, abilityMod: num
     }
   }
 
-  // For flexible prepared casters, add ability modifier
+  // Wizard uses table values (not formula)
+  if (config.usesPreparedTable) {
+    return base;
+  }
+
+  // For flexible prepared casters (non-Wizard), add ability modifier
   if (config.casterType === 'flexiblePrepared') {
     return Math.max(1, base + abilityMod);
   }

@@ -9,6 +9,7 @@ interface SpellCardProps {
   canSelect: boolean;
   onToggle: (spell: Spell) => void;
   onViewDetails: (spell: Spell) => void;
+  showRitualBadge?: boolean;
 }
 
 const Card = styled.div<{ $selected?: boolean }>`
@@ -47,7 +48,7 @@ const SpellMeta = styled.div`
   letter-spacing: 0.2px;
 `;
 
-const Tag = styled.span<{ $kind?: 'granted' | 'error' }>`
+const Tag = styled.span<{ $kind?: 'granted' | 'error' | 'ritual' }>`
   display: inline-block;
   background: ${({ $kind }) => {
     if ($kind === 'granted') {
@@ -55,6 +56,9 @@ const Tag = styled.span<{ $kind?: 'granted' | 'error' }>`
     }
     if ($kind === 'error') {
       return 'rgba(182, 55, 55, 0.25)';
+    }
+    if ($kind === 'ritual') {
+      return 'rgba(147, 112, 219, 0.25)';
     }
     return 'rgba(212, 175, 55, 0.2)';
   }};
@@ -65,6 +69,9 @@ const Tag = styled.span<{ $kind?: 'granted' | 'error' }>`
     if ($kind === 'error') {
       return '#ff8a8a';
     }
+    if ($kind === 'ritual') {
+      return '#c9a9ff';
+    }
     return '#d4af37';
   }};
   padding: 0.15rem 0.5rem;
@@ -74,6 +81,13 @@ const Tag = styled.span<{ $kind?: 'granted' | 'error' }>`
   margin-right: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+`;
+
+const TagRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
 `;
 
 const ActionRow = styled.div`
@@ -132,6 +146,7 @@ export const SpellCard: React.FC<SpellCardProps> = ({
   canSelect,
   onToggle,
   onViewDetails,
+  showRitualBadge = false,
 }) => {
   const handleToggle = () => {
     if (canSelect || isSelected) {
@@ -139,16 +154,24 @@ export const SpellCard: React.FC<SpellCardProps> = ({
     }
   };
 
+  const hasRitual = spell.isRitual;
+  const showTags = isGranted || (!canSelect && !isSelected && !isGranted) || (showRitualBadge && hasRitual);
+
   return (
     <Card $selected={isSelected}>
       <SpellName>{spell.name}</SpellName>
       <SpellMeta>
         {formatLevel(spell.level)} • {getSchoolLabel(spell.school)}
-        {spell.isRitual && ' • Ritual'}
+        {hasRitual && ' • Ritual'}
         {spell.miscTags?.includes('Concentration') && ' • Concentration'}
       </SpellMeta>
-      {isGranted && <Tag $kind="granted">Granted</Tag>}
-      {!canSelect && !isSelected && !isGranted && <Tag $kind="error">Cannot Select</Tag>}
+      {showTags && (
+        <TagRow>
+          {isGranted && <Tag $kind="granted">Granted</Tag>}
+          {!canSelect && !isSelected && !isGranted && <Tag $kind="error">Cannot Select</Tag>}
+          {showRitualBadge && hasRitual && <Tag $kind="ritual">📖 Ritual</Tag>}
+        </TagRow>
+      )}
       <ActionRow>
         <ActionButton $variant="secondary" onClick={() => onViewDetails(spell)}>
           View Details
