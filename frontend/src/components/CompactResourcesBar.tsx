@@ -36,7 +36,7 @@ const ResourceItem = styled.div`
 `;
 
 const ResourceLabel = styled.span`
-  color: #d4af37;
+  color: #ce9016;
   font-weight: 600;
   font-size: 0.8rem;
   min-width: fit-content;
@@ -53,7 +53,7 @@ const ResourceBox = styled.div<{ $filled?: boolean; $isWounds?: boolean }>`
   border: 1px solid ${props => props.$isWounds ? '#dc3545' : '#8b6914'};
   background: ${props => {
     if (props.$filled) {
-      return props.$isWounds ? '#dc3545' : '#d4af37';
+      return props.$isWounds ? '#dc3545' : '#ce9016';
     }
     return 'rgba(26, 26, 26, 0.6)';
   }};
@@ -109,7 +109,7 @@ const PoolDisplay = styled.div`
   }
 
   .max {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     min-width: 20px;
     text-align: center;
@@ -125,7 +125,7 @@ const PoolDisplay = styled.div`
   .control-btn {
     background: rgba(139, 105, 20, 0.3);
     border: 1px solid #8b6914;
-    color: #d4af37;
+    color: #ce9016;
     width: 16px;
     height: 12px;
     font-size: 8px;

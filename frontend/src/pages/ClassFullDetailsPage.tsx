@@ -29,7 +29,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 0.5rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -37,9 +37,9 @@ const Header = styled.div`
 
 const BackButton = styled(Link)`
   display: inline-block;
-  background: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
-  border: 2px solid #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
+  border: 2px solid #ce9016;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -54,9 +54,9 @@ const BackButton = styled(Link)`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
   &:hover {
-    background: rgba(212, 175, 55, 0.4);
+    background: rgba(206, 144, 22, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 
   &:active {
@@ -84,10 +84,10 @@ const MetaItem = styled.div`
   background: rgba(35, 35, 35, 0.5);
   padding: 1.25rem;
   border-radius: 6px;
-  border-left: 3px solid #d4af37;
+  border-left: 3px solid #ce9016;
 
   h4 {
-    color: #d4af37;
+    color: #ce9016;
     margin: 0 0 0.5rem 0;
     font-size: 0.8rem;
     font-weight: 600;
@@ -111,7 +111,7 @@ const Section = styled.div`
   border: 1px solid #444;
 
   h3 {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 1.1rem;
     margin: 0 0 1rem 0;
     font-family: 'Cinzel', serif;
@@ -136,7 +136,7 @@ const FeatureItem = styled.div`
   }
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
   }
 `;
@@ -151,7 +151,7 @@ const QuickRefTable = styled.table`
 
   th {
     background: rgba(35, 35, 35, 0.9);
-    color: #d4af37;
+    color: #ce9016;
     padding: 0.75rem;
     text-align: left;
     font-weight: 700;
@@ -174,7 +174,7 @@ const QuickRefTable = styled.table`
 `;
 
 const TableHeader = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.3rem;
   margin: 1.5rem 0 0.5rem 0;
   font-family: 'Cinzel', serif;
@@ -189,7 +189,7 @@ const FeatureBlock = styled.div`
 `;
 
 const FeatureName = styled.h4`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1rem;
   font-weight: 700;
   margin: 0 0 0.75rem 0;
@@ -210,7 +210,7 @@ const FeatureDescription = styled.div`
   }
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
   }
 `;
@@ -220,7 +220,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;

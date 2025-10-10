@@ -16,12 +16,12 @@ interface CharacterCardProps {
 // Character card container (matching new black theme)
 const Card = styled.div<{ $clickable?: boolean; $hasActions?: boolean; $selectionMode?: boolean; $isSelected?: boolean }>`
   background: ${props => props.$isSelected
-    ? 'rgba(212, 175, 55, 0.15)'
+    ? 'rgba(206, 144, 22, 0.15)'
     : 'rgba(255, 255, 255, 0.03)'};
-  border: 2px solid ${props => props.$isSelected ? '#d4af37' : '#333'};
+  border: 2px solid ${props => props.$isSelected ? '#ce9016' : '#333'};
   border-radius: 12px;
   box-shadow: ${props => props.$isSelected
-    ? '0 6px 20px rgba(212, 175, 55, 0.3)'
+    ? '0 6px 20px rgba(206, 144, 22, 0.3)'
     : '0 4px 12px rgba(0, 0, 0, 0.5)'};
   margin: 0;
   overflow: hidden;
@@ -36,8 +36,8 @@ const Card = styled.div<{ $clickable?: boolean; $hasActions?: boolean; $selectio
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.2);
-    border-color: #d4af37;
+    box-shadow: 0 8px 24px rgba(206, 144, 22, 0.2);
+    border-color: #ce9016;
     background: rgba(255, 255, 255, 0.05);
   }
 `;
@@ -48,9 +48,9 @@ const SelectionIndicator = styled.div<{ $isSelected: boolean }>`
   right: 12px;
   width: 28px;
   height: 28px;
-  border: 2px solid #d4af37;
+  border: 2px solid #ce9016;
   border-radius: 50%;
-  background: ${props => props.$isSelected ? '#d4af37' : 'rgba(26, 26, 26, 0.9)'};
+  background: ${props => props.$isSelected ? '#ce9016' : 'rgba(26, 26, 26, 0.9)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,7 +60,7 @@ const SelectionIndicator = styled.div<{ $isSelected: boolean }>`
 
   &::after {
     content: '✓';
-    color: ${props => props.$isSelected ? '#1a1a1a' : '#d4af37'};
+    color: ${props => props.$isSelected ? '#1a1a1a' : '#ce9016'};
     font-weight: bold;
     font-size: 16px;
     opacity: ${props => props.$isSelected ? 1 : 0.3};
@@ -100,7 +100,7 @@ const CharacterName = styled.h3<{ $nameLength: number }>`
     return '1.3rem';
   }};
   font-weight: 700;
-  color: #d4af37;
+  color: #ce9016;
   letter-spacing: 0.5px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   line-height: 1.3;
@@ -150,7 +150,7 @@ const InfoRow = styled.p`
   line-height: 1.5;
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 700;
   }
 `;
@@ -186,17 +186,17 @@ const ActionButton = styled.button<{ $variant: 'edit' | 'delete' | 'open' }>`
   background: ${props => {
     if (props.$variant === 'edit') return 'rgba(33, 150, 243, 0.15)';
     if (props.$variant === 'delete') return 'rgba(244, 67, 54, 0.15)';
-    return 'rgba(212, 175, 55, 0.15)';
+    return 'rgba(206, 144, 22, 0.15)';
   }};
   color: ${props => {
     if (props.$variant === 'edit') return '#2196F3';
     if (props.$variant === 'delete') return '#f44336';
-    return '#d4af37';
+    return '#ce9016';
   }};
   border: 1px solid ${props => {
     if (props.$variant === 'edit') return '#2196F3';
     if (props.$variant === 'delete') return '#f44336';
-    return '#d4af37';
+    return '#ce9016';
   }};
   padding: 8px 14px;
   border-radius: 6px;
@@ -213,13 +213,13 @@ const ActionButton = styled.button<{ $variant: 'edit' | 'delete' | 'open' }>`
     background: ${props => {
       if (props.$variant === 'edit') return 'rgba(33, 150, 243, 0.25)';
       if (props.$variant === 'delete') return 'rgba(244, 67, 54, 0.25)';
-      return 'rgba(212, 175, 55, 0.25)';
+      return 'rgba(206, 144, 22, 0.25)';
     }};
     transform: translateY(-2px);
     box-shadow: 0 4px 12px ${props => {
       if (props.$variant === 'edit') return 'rgba(33, 150, 243, 0.3)';
       if (props.$variant === 'delete') return 'rgba(244, 67, 54, 0.3)';
-      return 'rgba(212, 175, 55, 0.3)';
+      return 'rgba(206, 144, 22, 0.3)';
     }};
   }
 

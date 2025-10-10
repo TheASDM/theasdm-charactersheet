@@ -27,8 +27,8 @@ const SearchInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &:hover {
@@ -50,7 +50,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -87,7 +87,7 @@ const NoResultsMessage = styled.div`
 
   .title {
     font-size: 1.6rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 15px;
     font-weight: 600;
     font-family: 'Cinzel', serif;
@@ -103,7 +103,7 @@ const NoResultsMessage = styled.div`
 const ResultsSummary = styled.div`
   text-align: center;
   margin-top: 1.5rem;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 0.95rem;
   background: rgba(45, 45, 45, 0.5);
   padding: 12px;

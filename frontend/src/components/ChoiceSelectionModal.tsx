@@ -201,7 +201,7 @@ const ModalHeader = styled.div`
 `;
 
 const ModalTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0;
   font-size: 24px;
   font-weight: 700;
@@ -210,7 +210,7 @@ const ModalTitle = styled.h2`
 
 const LevelBadge = styled.span`
   background: #8b4513;
-  color: #ffd700;
+  color: #e0a523;
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 14px;
@@ -240,7 +240,7 @@ const OptionsContainer = styled.div`
 
 const OptionCard = styled.div<{ $selected: boolean; $disabled?: boolean }>`
   background: ${(props) => (props.$selected ? '#2a2a2a' : '#222')};
-  border: 2px solid ${(props) => (props.$selected ? '#d4af37' : '#444')};
+  border: 2px solid ${(props) => (props.$selected ? '#ce9016' : '#444')};
   border-radius: 8px;
   padding: 16px;
   cursor: ${(props) => (props.$disabled ? 'not-allowed' : 'pointer')};
@@ -251,7 +251,7 @@ const OptionCard = styled.div<{ $selected: boolean; $disabled?: boolean }>`
     ${(props) =>
       !props.$disabled &&
       `
-      border-color: ${props.$selected ? '#ffd700' : '#666'};
+      border-color: ${props.$selected ? '#e0a523' : '#666'};
       background: ${props.$selected ? '#333' : '#2a2a2a'};
     `}
   }
@@ -273,8 +273,8 @@ const RadioButton = styled.div<{ $checked: boolean }>`
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid ${(props) => (props.$checked ? '#d4af37' : '#666')};
-  background: ${(props) => (props.$checked ? '#d4af37' : 'transparent')};
+  border: 2px solid ${(props) => (props.$checked ? '#ce9016' : '#666')};
+  background: ${(props) => (props.$checked ? '#ce9016' : 'transparent')};
   position: relative;
 
   &::after {
@@ -294,8 +294,8 @@ const Checkbox = styled.div<{ $checked: boolean }>`
   width: 20px;
   height: 20px;
   border-radius: 4px;
-  border: 2px solid ${(props) => (props.$checked ? '#d4af37' : '#666')};
-  background: ${(props) => (props.$checked ? '#d4af37' : 'transparent')};
+  border: 2px solid ${(props) => (props.$checked ? '#ce9016' : '#666')};
+  background: ${(props) => (props.$checked ? '#ce9016' : 'transparent')};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,7 +305,7 @@ const Checkbox = styled.div<{ $checked: boolean }>`
 `;
 
 const OptionTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0;
   font-size: 18px;
   font-weight: 600;
@@ -319,7 +319,7 @@ const OptionDescription = styled.div`
   padding-left: 32px;
 
   strong {
-    color: #ffd700;
+    color: #e0a523;
   }
 `;
 
@@ -380,7 +380,7 @@ const CancelButton = styled(Button)`
 
 const SubmitButton = styled(Button)`
   background: #8b4513;
-  color: #ffd700;
+  color: #e0a523;
 
   &:hover:not(:disabled) {
     background: #a0522d;

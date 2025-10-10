@@ -46,9 +46,9 @@ const NavigationBar = styled.div`
 `;
 
 const BackButton = styled.button`
-  background: rgba(212, 175, 55, 0.15);
-  color: #d4af37;
-  border: 1px solid #d4af37;
+  background: rgba(206, 144, 22, 0.15);
+  color: #ce9016;
+  border: 1px solid #ce9016;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -59,9 +59,9 @@ const BackButton = styled.button`
   letter-spacing: 0.5px;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.25);
+    background: rgba(206, 144, 22, 0.25);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
   }
 
   &:active {
@@ -70,7 +70,7 @@ const BackButton = styled.button`
 `;
 
 const CharacterTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
@@ -90,7 +90,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.2rem;
   text-transform: uppercase;
   letter-spacing: 1px;

@@ -18,7 +18,7 @@ import styled from 'styled-components';
 const FeatureButton = styled.button`
   margin-top: 0.75rem;
   padding: 0.5rem 1rem;
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #1a1a2e;
   border: none;
   border-radius: 6px;
@@ -28,9 +28,9 @@ const FeatureButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: linear-gradient(145deg, #f4d469, #d4af37);
+    background: linear-gradient(145deg, #e0a523, #ce9016);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
   }
 `;
 
@@ -41,7 +41,7 @@ const renderMarkdownText = (text: string) => {
   return parts.map((part, index) => {
     // Handle bold
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index} style={{ color: '#f4d469', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+      return <strong key={index} style={{ color: '#e0a523', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
     }
     // Handle italic in non-bold parts
     const italicParts = part.split(/(\*.*?\*)/g);

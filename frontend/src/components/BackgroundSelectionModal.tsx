@@ -6,6 +6,7 @@ import { processTraitDescription } from '../utils/textProcessor';
 import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { showError } from '@/utils/errorDisplay';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -25,20 +26,50 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
 // Background Selection Popup Styles
 const BackgroundPopupModal = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 800px;
   width: 85%;
   max-height: 80vh;
-  overflow-y: auto;
-  padding: 20px;
   color: #f4e7d1;
   font-family: 'Cinzel', serif;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ModalHeader = styled.div`
+  padding: 20px 20px 0 20px;
+  flex-shrink: 0;
+`;
+
+const ModalBody = styled.div`
+  padding: 0 20px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(35, 35, 35, 0.5);
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ce9016;
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #b8860b;
+  }
 `;
 
 const BackgroundPopupTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 15px 0;
   font-size: 1.2rem;
   text-align: center;
@@ -57,7 +88,7 @@ const BackgroundDescription = styled.p`
 
 
 const BackgroundChoicesTitle = styled.h4`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 10px 0;
   font-size: 1rem;
   text-align: center;
@@ -72,19 +103,19 @@ const BackgroundChoicesGrid = styled.div`
 `;
 
 const BackgroundChoice = styled.div<{ selected?: boolean }>`
-  background: ${props => props.selected ? 'rgba(212, 175, 55, 0.2)' : 'rgba(139, 105, 20, 0.1)'};
-  border: 2px solid ${props => props.selected ? '#d4af37' : 'rgba(139, 105, 20, 0.3)'};
+  background: ${props => props.selected ? 'rgba(206, 144, 22, 0.2)' : 'rgba(139, 105, 20, 0.1)'};
+  border: 2px solid ${props => props.selected ? '#ce9016' : 'rgba(139, 105, 20, 0.3)'};
   border-radius: 6px;
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
   font-size: 0.9rem;
-  color: ${props => props.selected ? '#d4af37' : '#f4e7d1'};
+  color: ${props => props.selected ? '#ce9016' : '#f4e7d1'};
 
   &:hover {
-    background: rgba(212, 175, 55, 0.15);
-    border-color: #d4af37;
+    background: rgba(206, 144, 22, 0.15);
+    border-color: #ce9016;
     transform: translateY(-1px);
   }
 `;
@@ -119,14 +150,14 @@ const CancelButton = styled(Button)`
 `;
 
 const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
-  background: ${props => props.disabled ? 'rgba(212, 175, 55, 0.3)' : 'linear-gradient(145deg, #d4af37, #b8941f)'};
+  background: ${props => props.disabled ? 'rgba(206, 144, 22, 0.3)' : 'linear-gradient(145deg, #ce9016, #b8860b)'};
   color: ${props => props.disabled ? '#8a8a8a' : '#2c1810'};
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
 
   &:hover:not(:disabled) {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 `;
 
@@ -148,12 +179,12 @@ const BackgroundDetails = styled.div`
     margin: 0.5rem 0;
 
     .skill-item {
-      background: rgba(212, 175, 55, 0.2);
-      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: rgba(206, 144, 22, 0.2);
+      border: 1px solid rgba(206, 144, 22, 0.4);
       border-radius: 4px;
       padding: 0.25rem 0.5rem;
       font-size: 0.8rem;
-      color: #d4af37;
+      color: #ce9016;
     }
   }
 
@@ -167,7 +198,7 @@ const BackgroundDetails = styled.div`
     color: #ccc;
 
     .label {
-      color: #d4af37;
+      color: #ce9016;
       font-weight: 600;
       margin-right: 0.5rem;
     }
@@ -186,6 +217,8 @@ const BackgroundSelectionModal: React.FC<BackgroundSelectionModalProps> = ({
   onBackgroundSelect,
   onCancel
 }) => {
+  useBodyScrollLock(isOpen);
+
   const [selectedBackground, setSelectedBackground] = useState<ApiBackground | null>(null);
   const {
     data: backgroundData,
@@ -289,38 +322,42 @@ const BackgroundSelectionModal: React.FC<BackgroundSelectionModalProps> = ({
     return (
       <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
         <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>
-          <BackgroundPopupTitle>
-            {selectedBackground.name} Background
-          </BackgroundPopupTitle>
+          <ModalHeader>
+            <BackgroundPopupTitle>
+              {selectedBackground.name} Background
+            </BackgroundPopupTitle>
+          </ModalHeader>
 
-          <BackgroundDescription
-            dangerouslySetInnerHTML={{
-              __html: processTraitDescription(selectedBackground.description)
-            }}
-          />
+          <ModalBody>
+            <BackgroundDescription
+              dangerouslySetInnerHTML={{
+                __html: processTraitDescription(selectedBackground.description)
+              }}
+            />
 
-          <BackgroundDetails>
-            <BackgroundChoicesTitle>Skills:</BackgroundChoicesTitle>
-            <div className="skill-list">
-              {skills.map((skill, index) => (
-                <div key={index} className="skill-item">{skill}</div>
-              ))}
-            </div>
+            <BackgroundDetails>
+              <BackgroundChoicesTitle>Skills:</BackgroundChoicesTitle>
+              <div className="skill-list">
+                {skills.map((skill, index) => (
+                  <div key={index} className="skill-item">{skill}</div>
+                ))}
+              </div>
 
-            <div className="tool-proficiency">
-              <span className="label">Tool Proficiency:</span>
-              {tools}
-            </div>
-          </BackgroundDetails>
+              <div className="tool-proficiency">
+                <span className="label">Tool Proficiency:</span>
+                {tools}
+              </div>
+            </BackgroundDetails>
 
-          <BackgroundButtonsContainer>
-            <CancelButton onClick={() => setSelectedBackground(null)}>
-              Back
-            </CancelButton>
-            <ConfirmButton onClick={handleConfirm}>
-              Select {selectedBackground.name}
-            </ConfirmButton>
-          </BackgroundButtonsContainer>
+            <BackgroundButtonsContainer>
+              <CancelButton onClick={() => setSelectedBackground(null)}>
+                Back
+              </CancelButton>
+              <ConfirmButton onClick={handleConfirm}>
+                Select {selectedBackground.name}
+              </ConfirmButton>
+            </BackgroundButtonsContainer>
+          </ModalBody>
         </BackgroundPopupModal>
       </ModalOverlay>
     );
@@ -329,30 +366,34 @@ const BackgroundSelectionModal: React.FC<BackgroundSelectionModalProps> = ({
   return (
     <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
       <BackgroundPopupModal onClick={(e) => e.stopPropagation()}>
-        <BackgroundPopupTitle>
-          Choose Your Background
-        </BackgroundPopupTitle>
+        <ModalHeader>
+          <BackgroundPopupTitle>
+            Choose Your Background
+          </BackgroundPopupTitle>
+        </ModalHeader>
 
-        <BackgroundDescription>
-          Select your character's background from the available options below.
-        </BackgroundDescription>
+        <ModalBody>
+          <BackgroundDescription>
+            Select your character's background from the available options below.
+          </BackgroundDescription>
 
-        <BackgroundChoicesGrid>
-          {backgrounds.map((background) => (
-            <BackgroundChoice
-              key={background.id}
-              onClick={() => handleBackgroundClick(background)}
-            >
-              {background.name}
-            </BackgroundChoice>
-          ))}
-        </BackgroundChoicesGrid>
+          <BackgroundChoicesGrid>
+            {backgrounds.map((background) => (
+              <BackgroundChoice
+                key={background.id}
+                onClick={() => handleBackgroundClick(background)}
+              >
+                {background.name}
+              </BackgroundChoice>
+            ))}
+          </BackgroundChoicesGrid>
 
-        <BackgroundButtonsContainer>
-          <CancelButton onClick={handleCancel}>
-            Cancel
-          </CancelButton>
-        </BackgroundButtonsContainer>
+          <BackgroundButtonsContainer>
+            <CancelButton onClick={handleCancel}>
+              Cancel
+            </CancelButton>
+          </BackgroundButtonsContainer>
+        </ModalBody>
       </BackgroundPopupModal>
     </ModalOverlay>
   );

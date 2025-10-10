@@ -13,7 +13,7 @@ export const ActionsSection = styled.div`
 `;
 
 export const ActionsTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 0.9rem;
   font-weight: 600;
@@ -44,7 +44,7 @@ export const ActionsTableHeader = styled.div<{ $column: number }>`
   margin-bottom: 0.25rem;
 
   .header-cell {
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     font-weight: 600;
     font-size: 0.7rem;
@@ -69,13 +69,13 @@ export const ActionsTableCell = styled.div<{ $column: number; $editable?: boolea
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.08);
-    border-color: rgba(212, 175, 55, 0.3);
+    background: rgba(206, 144, 22, 0.08);
+    border-color: rgba(206, 144, 22, 0.3);
   }
 
   .action-name {
     font-weight: 600;
-    color: #d4af37;
+    color: #ce9016;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -100,17 +100,17 @@ export const ActionsTableCell = styled.div<{ $column: number; $editable?: boolea
 
     &:focus {
       outline: none;
-      border: 1px solid #d4af37;
-      background: rgba(212, 175, 55, 0.15);
-      box-shadow: 0 0 3px rgba(212, 175, 55, 0.3);
+      border: 1px solid #ce9016;
+      background: rgba(206, 144, 22, 0.15);
+      box-shadow: 0 0 3px rgba(206, 144, 22, 0.3);
     }
   }
 `;
 
 export const AddActionButton = styled.button`
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid #d4af37;
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.15);
+  border: 1px solid #ce9016;
+  color: #ce9016;
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
   font-size: 0.7rem;
@@ -125,9 +125,9 @@ export const AddActionButton = styled.button`
   align-self: flex-start;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.25);
+    background: rgba(206, 144, 22, 0.25);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 2px 6px rgba(206, 144, 22, 0.3);
   }
 
   &:active {
@@ -175,7 +175,7 @@ export const TraitsSection = styled.section`
 `;
 
 export const TraitsTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 1rem;
   font-weight: 600;
@@ -212,13 +212,13 @@ export const TraitCard = styled.div`
   flex-direction: column;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.08);
-    border-color: rgba(212, 175, 55, 0.3);
+    background: rgba(206, 144, 22, 0.08);
+    border-color: rgba(206, 144, 22, 0.3);
   }
 `;
 
 export const TraitName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 0.8rem;
   font-weight: 600;
@@ -238,9 +238,9 @@ export const TraitDescription = styled.div`
 export const TraitCategory = styled.div`
   margin-top: 0.5rem;
   padding-top: 0.4rem;
-  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  border-top: 1px solid rgba(206, 144, 22, 0.2);
   font-size: 0.75rem;
-  color: #d4af37;
+  color: #ce9016;
   font-style: italic;
   font-weight: 500;
   text-align: right;

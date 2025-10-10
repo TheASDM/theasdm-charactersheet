@@ -7,8 +7,8 @@ interface AbilityScoresHeaderProps {
 }
 
 const HeaderContainer = styled.div`
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, rgba(206, 144, 22, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -35,13 +35,13 @@ const AbilityCard = styled.div`
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: #d4af37;
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+    border-color: #ce9016;
+    box-shadow: 0 2px 8px rgba(206, 144, 22, 0.2);
   }
 `;
 
 const AbilityName = styled.div`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 0.75rem;
   font-weight: 600;
@@ -66,7 +66,7 @@ const AbilityModifier = styled.div`
 `;
 
 const HeaderTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 1rem;
   margin: 0 0 1rem 0;

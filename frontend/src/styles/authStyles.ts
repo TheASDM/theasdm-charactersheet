@@ -32,7 +32,7 @@ export const AuthHeader = styled.div`
 export const AuthTitle = styled.h1`
   font-family: 'Cinzel', serif;
   font-size: 2rem;
-  color: #d4af37;
+  color: #ce9016;
   margin-bottom: 0.5rem;
   letter-spacing: 1px;
 `;
@@ -71,9 +71,9 @@ export const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
+    border-color: #ce9016;
     background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    box-shadow: 0 0 0 3px rgba(206, 144, 22, 0.1);
   }
 
   &::placeholder {
@@ -107,7 +107,7 @@ export const SuccessMessage = styled.div`
 `;
 
 export const SubmitButton = styled.button`
-  background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+  background: linear-gradient(135deg, #ce9016 0%, #b8860b 100%);
   color: #1a1a1a;
   border: none;
   border-radius: 8px;
@@ -118,11 +118,11 @@ export const SubmitButton = styled.button`
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 16px rgba(206, 144, 22, 0.3);
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.5);
   }
 
   &:active:not(:disabled) {
@@ -149,13 +149,13 @@ export const FooterText = styled.p`
 `;
 
 export const FooterLink = styled.a`
-  color: #d4af37;
+  color: #ce9016;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 
   &:hover {
-    color: #f0c851;
+    color: #e0a523;
     text-decoration: underline;
   }
 `;
@@ -175,7 +175,7 @@ export const PasswordRequirements = styled.ul`
 
     &::before {
       content: '•';
-      color: #d4af37;
+      color: #ce9016;
     }
 
     &.met {

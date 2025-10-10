@@ -88,6 +88,27 @@ export const parseComplexDnDEntry = (entry: any): string => {
     return result;
   }
 
+  // Handle benefits/description structure (common in feats)
+  if (entry.benefits || entry.description) {
+    let result = '';
+
+    if (entry.description) {
+      const desc = Array.isArray(entry.description)
+        ? entry.description.map((d: any) => parseComplexDnDEntry(d)).join(' ')
+        : parseComplexDnDEntry(entry.description);
+      result += desc + '\n\n';
+    }
+
+    if (entry.benefits) {
+      const benefits = Array.isArray(entry.benefits)
+        ? entry.benefits.map((b: any) => '• ' + parseComplexDnDEntry(b)).join('\n')
+        : '• ' + parseComplexDnDEntry(entry.benefits);
+      result += benefits;
+    }
+
+    return result;
+  }
+
   // Fallback for unknown object types
 
   // Check if it's a simple object with specific properties we can extract
@@ -103,7 +124,7 @@ export const parseComplexDnDEntry = (entry: any): string => {
   if (typeof entry === 'object' && entry !== null) {
     const keys = Object.keys(entry);
     if (keys.length <= 3) {
-      const formatted = keys.map(key => `${key}: ${entry[key]}`).join(', ');
+      const formatted = keys.map(key => `${key}: ${parseComplexDnDEntry(entry[key])}`).join(', ');
       return formatted;
     }
   }
@@ -115,7 +136,7 @@ export const parseComplexDnDEntry = (entry: any): string => {
 // Handles tags like {@spell Fireball|XPHB}, {@skill Stealth|XPHB}, etc.
 
 export const parseDnDTemplateTag = (text: string): string => {
-  if (!text) return '';
+  if (!text || typeof text !== 'string') return '';
 
   const result = text
     // Handle parenthetical references like (@sense Darkvision|XPHB)

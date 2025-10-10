@@ -19,7 +19,7 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
 // Class Selection Popup Styles
 const ClassPopupModal = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 800px;
@@ -32,7 +32,7 @@ const ClassPopupModal = styled.div`
 `;
 
 const ClassPopupTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 15px 0;
   font-size: 1.2rem;
   text-align: center;
@@ -45,7 +45,7 @@ const ClassSkillsContainer = styled.div`
 `;
 
 const ClassSkillsTitle = styled.h4`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 10px 0;
   font-size: 1rem;
   text-align: center;
@@ -60,19 +60,19 @@ const ClassSkillsGrid = styled.div`
 `;
 
 const ClassSkillChoice = styled.div<{ selected?: boolean }>`
-  background: ${props => props.selected ? 'rgba(212, 175, 55, 0.2)' : 'rgba(139, 105, 20, 0.1)'};
-  border: 2px solid ${props => props.selected ? '#d4af37' : 'rgba(139, 105, 20, 0.3)'};
+  background: ${props => props.selected ? 'rgba(206, 144, 22, 0.2)' : 'rgba(139, 105, 20, 0.1)'};
+  border: 2px solid ${props => props.selected ? '#ce9016' : 'rgba(139, 105, 20, 0.3)'};
   border-radius: 6px;
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
   font-size: 0.9rem;
-  color: ${props => props.selected ? '#d4af37' : '#f4e7d1'};
+  color: ${props => props.selected ? '#ce9016' : '#f4e7d1'};
 
   &:hover {
-    background: rgba(212, 175, 55, 0.15);
-    border-color: #d4af37;
+    background: rgba(206, 144, 22, 0.15);
+    border-color: #ce9016;
     transform: translateY(-1px);
   }
 `;
@@ -107,14 +107,14 @@ const CancelButton = styled(Button)`
 `;
 
 const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
-  background: ${props => props.disabled ? 'rgba(212, 175, 55, 0.3)' : 'linear-gradient(145deg, #d4af37, #b8941f)'};
+  background: ${props => props.disabled ? 'rgba(206, 144, 22, 0.3)' : 'linear-gradient(145deg, #ce9016, #b8860b)'};
   color: ${props => props.disabled ? '#8a8a8a' : '#2c1810'};
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
 
   &:hover:not(:disabled) {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 `;
 

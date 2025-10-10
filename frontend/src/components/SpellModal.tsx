@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Spell } from '../types/api';
 import { parseComplexDnDEntry } from '../utils/dndTemplateParser';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface SpellModalProps {
   spell: Spell | null;
@@ -19,22 +20,27 @@ const ModalOverlay = styled.div`
   align-items: center;
   padding: 1.5rem;
   z-index: 1000;
-  overflow-y: auto;
+  /* No overflow - backdrop doesn't scroll */
 `;
 
 const ModalContent = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 12px;
-  padding: 2rem;
   max-width: 720px;
   width: 90%;
   max-height: 85vh;
-  overflow-y: auto;
   position: relative;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   color: #f4e7d1;
-  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ModalHeader = styled.div`
+  padding: 2rem 2rem 1rem 2rem;
+  flex-shrink: 0;
+  position: relative;
 `;
 
 const CloseButton = styled.button`
@@ -45,23 +51,48 @@ const CloseButton = styled.button`
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #d4af37;
+  color: #ce9016;
   padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: rgba(212, 175, 55, 0.2);
+    background-color: rgba(206, 144, 22, 0.2);
     transform: scale(1.1);
   }
 `;
 
 const SpellTitle = styled.h2`
   margin: 0 0 1rem 0;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.5rem;
   font-family: 'Cinzel', serif;
   letter-spacing: 0.5px;
+`;
+
+const ModalBody = styled.div`
+  padding: 0 2rem 2rem 2rem;
+  overflow-y: auto;
+  flex: 1;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(35, 35, 35, 0.5);
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ce9016;
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #b8860b;
+  }
 `;
 
 const SpellMeta = styled.div`
@@ -72,13 +103,13 @@ const SpellMeta = styled.div`
   padding: 1rem;
   background-color: rgba(35, 35, 35, 0.5);
   border-radius: 8px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(206, 144, 22, 0.3);
 `;
 
 const MetaItem = styled.div`
   h4 {
     margin: 0 0 0.35rem 0;
-    color: #d4af37;
+    color: #ce9016;
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -97,7 +128,7 @@ const SpellDescription = styled.div`
   margin-bottom: 1.25rem;
 
   h3 {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 1.1rem;
     margin: 0 0 0.75rem 0;
     font-family: 'Cinzel', serif;
@@ -141,7 +172,7 @@ const TagsSection = styled.div`
   margin-top: 1rem;
 
   h4 {
-    color: #d4af37;
+    color: #ce9016;
     margin: 0 0 0.5rem 0;
     font-size: 0.85rem;
     font-weight: 600;
@@ -157,9 +188,9 @@ const Tags = styled.div`
 `;
 
 const Tag = styled.span`
-  background-color: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background-color: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
+  border: 1px solid rgba(206, 144, 22, 0.4);
   padding: 0.35rem 0.65rem;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -167,6 +198,8 @@ const Tag = styled.span`
 `;
 
 const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
+  useBodyScrollLock(isOpen);
+
   if (!isOpen || !spell) return null;
 
   // Helper functions
@@ -284,11 +317,13 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
   return (
     <ModalOverlay onClick={handleOverlayClick}>
       <ModalContent>
-        <CloseButton onClick={onClose}>&times;</CloseButton>
+        <ModalHeader>
+          <CloseButton onClick={onClose}>&times;</CloseButton>
+          <SpellTitle>{spell.name}</SpellTitle>
+        </ModalHeader>
 
-        <SpellTitle>{spell.name}</SpellTitle>
-
-        <SpellMeta>
+        <ModalBody>
+          <SpellMeta>
           <MetaItem>
             <h4>Level</h4>
             <p>{formatSpellLevel(spell.level)}</p>
@@ -394,6 +429,7 @@ const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
             )}
           </TagsSection>
         )}
+        </ModalBody>
       </ModalContent>
     </ModalOverlay>
   );

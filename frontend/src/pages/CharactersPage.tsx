@@ -30,7 +30,7 @@ const Header = styled.div`
 const Title = styled.h1`
   font-size: 2.5rem;
   font-weight: 700;
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 0.5rem 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 
@@ -58,8 +58,8 @@ const ActionButtonContainer = styled.div`
 const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   background: ${props => props.variant === 'secondary'
     ? 'rgba(255, 255, 255, 0.05)'
-    : 'linear-gradient(135deg, #d4af37 0%, #b8941f 100%)'};
-  color: ${props => props.variant === 'secondary' ? '#d4af37' : '#1a1a1a'};
+    : 'linear-gradient(135deg, #ce9016 0%, #b8860b 100%)'};
+  color: ${props => props.variant === 'secondary' ? '#ce9016' : '#1a1a1a'};
   border: ${props => props.variant === 'secondary' ? '1px solid #333' : 'none'};
   padding: 0.875rem 1.75rem;
   border-radius: 8px;
@@ -77,11 +77,11 @@ const ActionButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
   &:hover {
     background: ${props => props.variant === 'secondary'
       ? 'rgba(255, 255, 255, 0.08)'
-      : 'linear-gradient(135deg, #b8941f 0%, #a0801b 100%)'};
+      : 'linear-gradient(135deg, #b8860b 0%, #a0801b 100%)'};
     transform: translateY(-2px);
     box-shadow: 0 6px 16px ${props => props.variant === 'secondary'
-      ? 'rgba(212, 175, 55, 0.2)'
-      : 'rgba(212, 175, 55, 0.4)'};
+      ? 'rgba(206, 144, 22, 0.2)'
+      : 'rgba(206, 144, 22, 0.4)'};
   }
 
   &:active {

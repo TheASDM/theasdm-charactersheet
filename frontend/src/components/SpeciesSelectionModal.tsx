@@ -5,6 +5,7 @@ import { Species as ApiSpecies } from '../types/api';
 import { processTraitDescription } from '../utils/textProcessor';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { logger } from '../utils/logger';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // Import modal shared styles - we'll create these later
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -24,19 +25,49 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
 // Species Selection Popup Styles
 const SpeciesPopupModal = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 10px;
-  padding: 20px;
   max-width: 600px;
   width: 90%;
   max-height: 80vh;
-  overflow-y: auto;
   color: #f4e7d1;
   font-family: 'Cinzel', serif;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ModalHeader = styled.div`
+  padding: 20px 20px 0 20px;
+  flex-shrink: 0;
+`;
+
+const ModalBody = styled.div`
+  padding: 0 20px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(35, 35, 35, 0.5);
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ce9016;
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #b8860b;
+  }
 `;
 
 const SpeciesPopupTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 10px 0;
   font-size: 1.2rem;
   text-align: center;
@@ -52,7 +83,7 @@ const SpeciesDescription = styled.p`
 
 
 const SpeciesChoicesTitle = styled.h4`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 8px 0;
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -66,23 +97,23 @@ const SpeciesChoicesGrid = styled.div`
 `;
 
 const SpeciesChoice = styled.div<{ selected?: boolean }>`
-  background: ${props => props.selected ? 'rgba(212, 175, 55, 0.2)' : 'rgba(42, 37, 32, 0.5)'};
-  border: 2px solid ${props => props.selected ? '#d4af37' : 'rgba(212, 175, 55, 0.3)'};
+  background: ${props => props.selected ? 'rgba(206, 144, 22, 0.2)' : 'rgba(42, 37, 32, 0.5)'};
+  border: 2px solid ${props => props.selected ? '#ce9016' : 'rgba(206, 144, 22, 0.3)'};
   border-radius: 8px;
   padding: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.15);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.15);
     transform: translateY(-1px);
   }
 `;
 
 const SpeciesChoiceName = styled.div`
   font-weight: 600;
-  color: #d4af37;
+  color: #ce9016;
   margin-bottom: 4px;
   font-size: 0.9rem;
 `;
@@ -123,21 +154,21 @@ const CancelButton = styled(Button)`
 `;
 
 const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
-  background: ${props => props.disabled ? 'rgba(212, 175, 55, 0.3)' : 'linear-gradient(145deg, #d4af37, #b8941f)'};
+  background: ${props => props.disabled ? 'rgba(206, 144, 22, 0.3)' : 'linear-gradient(145deg, #ce9016, #b8860b)'};
   color: ${props => props.disabled ? '#8a8a8a' : '#2c1810'};
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
 
   &:hover:not(:disabled) {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 `;
 
 // Loading and error states
 const ModalLoadingWrapper = styled.div`
   text-align: center;
-  color: #d4af37;
+  color: #ce9016;
   padding: 2rem;
   font-size: 1.1rem;
 `;
@@ -161,7 +192,7 @@ const TraitsList = styled.div`
     margin-bottom: 0.5rem;
 
     .trait-name {
-      color: #d4af37;
+      color: #ce9016;
       font-weight: 600;
       font-size: 0.9rem;
       margin-bottom: 0.25rem;
@@ -187,6 +218,8 @@ const SpeciesSelectionModal: React.FC<SpeciesSelectionModalProps> = ({
   onSpeciesSelect,
   onCancel
 }) => {
+  useBodyScrollLock(isOpen);
+
   const [species, setSpecies] = useState<ApiSpecies[]>([]);
   const [selectedSpecies, setSelectedSpecies] = useState<ApiSpecies | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -289,29 +322,33 @@ const SpeciesSelectionModal: React.FC<SpeciesSelectionModalProps> = ({
     return (
       <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
         <SpeciesPopupModal onClick={(e) => e.stopPropagation()}>
-          <SpeciesPopupTitle>
-            {selectedSpecies.name}
-          </SpeciesPopupTitle>
+          <ModalHeader>
+            <SpeciesPopupTitle>
+              {selectedSpecies.name}
+            </SpeciesPopupTitle>
+          </ModalHeader>
 
-          <SpeciesDescription>
-            {getSpeciesSize(selectedSpecies.size)} {selectedSpecies.creatureType} • {selectedSpecies.speed} ft Speed
-          </SpeciesDescription>
+          <ModalBody>
+            <SpeciesDescription>
+              {getSpeciesSize(selectedSpecies.size)} {selectedSpecies.creatureType} • {selectedSpecies.speed} ft Speed
+            </SpeciesDescription>
 
-          {selectedSpecies.traits && selectedSpecies.traits.length > 0 && (
-            <>
-              <SpeciesChoicesTitle>Species Traits:</SpeciesChoicesTitle>
-              {renderTraits(selectedSpecies.traits)}
-            </>
-          )}
+            {selectedSpecies.traits && selectedSpecies.traits.length > 0 && (
+              <>
+                <SpeciesChoicesTitle>Species Traits:</SpeciesChoicesTitle>
+                {renderTraits(selectedSpecies.traits)}
+              </>
+            )}
 
-          <SpeciesButtonsContainer>
-            <CancelButton onClick={() => setSelectedSpecies(null)}>
-              Back
-            </CancelButton>
-            <ConfirmButton onClick={handleConfirm}>
-              Select {selectedSpecies.name}
-            </ConfirmButton>
-          </SpeciesButtonsContainer>
+            <SpeciesButtonsContainer>
+              <CancelButton onClick={() => setSelectedSpecies(null)}>
+                Back
+              </CancelButton>
+              <ConfirmButton onClick={handleConfirm}>
+                Select {selectedSpecies.name}
+              </ConfirmButton>
+            </SpeciesButtonsContainer>
+          </ModalBody>
         </SpeciesPopupModal>
       </ModalOverlay>
     );
@@ -320,39 +357,43 @@ const SpeciesSelectionModal: React.FC<SpeciesSelectionModalProps> = ({
   return (
     <ModalOverlay isOpen={isOpen} onClick={handleCancel}>
       <SpeciesPopupModal onClick={(e) => e.stopPropagation()}>
-        <SpeciesPopupTitle>
-          Choose Your Species
-        </SpeciesPopupTitle>
+        <ModalHeader>
+          <SpeciesPopupTitle>
+            Choose Your Species
+          </SpeciesPopupTitle>
+        </ModalHeader>
 
-        <SpeciesDescription>
-          Select your character's species from the available options below.
-        </SpeciesDescription>
+        <ModalBody>
+          <SpeciesDescription>
+            Select your character's species from the available options below.
+          </SpeciesDescription>
 
-        <SpeciesChoicesGrid>
-          {species.map((speciesOption) => (
-            <SpeciesChoice
-              key={speciesOption.id}
-              onClick={() => handleSpeciesClick(speciesOption)}
-            >
-              <SpeciesChoiceName>{speciesOption.name}</SpeciesChoiceName>
-              <SpeciesChoiceDescription>
-                {getSpeciesSize(speciesOption.size)} • {speciesOption.speed} ft Speed
-                {speciesOption.traits && speciesOption.traits.length > 0 && (
-                  <div style={{ marginTop: '0.25rem', fontSize: '0.7rem' }}>
-                    {speciesOption.traits.slice(0, 2).map((trait: any) => trait.name).join(', ')}
-                    {speciesOption.traits.length > 2 && '...'}
-                  </div>
-                )}
-              </SpeciesChoiceDescription>
-            </SpeciesChoice>
-          ))}
-        </SpeciesChoicesGrid>
+          <SpeciesChoicesGrid>
+            {species.map((speciesOption) => (
+              <SpeciesChoice
+                key={speciesOption.id}
+                onClick={() => handleSpeciesClick(speciesOption)}
+              >
+                <SpeciesChoiceName>{speciesOption.name}</SpeciesChoiceName>
+                <SpeciesChoiceDescription>
+                  {getSpeciesSize(speciesOption.size)} • {speciesOption.speed} ft Speed
+                  {speciesOption.traits && speciesOption.traits.length > 0 && (
+                    <div style={{ marginTop: '0.25rem', fontSize: '0.7rem' }}>
+                      {speciesOption.traits.slice(0, 2).map((trait: any) => trait.name).join(', ')}
+                      {speciesOption.traits.length > 2 && '...'}
+                    </div>
+                  )}
+                </SpeciesChoiceDescription>
+              </SpeciesChoice>
+            ))}
+          </SpeciesChoicesGrid>
 
-        <SpeciesButtonsContainer>
-          <CancelButton onClick={handleCancel}>
-            Cancel
-          </CancelButton>
-        </SpeciesButtonsContainer>
+          <SpeciesButtonsContainer>
+            <CancelButton onClick={handleCancel}>
+              Cancel
+            </CancelButton>
+          </SpeciesButtonsContainer>
+        </ModalBody>
       </SpeciesPopupModal>
     </ModalOverlay>
   );

@@ -391,67 +391,114 @@ function mapSavingThrows(builderData: CharacterBuilderData, abilityScores: any, 
 }
 
 /**
+ * Capitalize first letter of each word in a string
+ */
+function titleCase(str: string): string {
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Extract equipment items from the nested JSONB structure or simple choice objects
+ * Handles formats:
+ * - [{ type: "direct", item: { A: [...], B: [...] } }] (from backgrounds API)
+ * - [{ A: [...], B: [...] }] (from CLASS_STARTING_EQUIPMENT constant)
+ * - ["string"] (simple strings)
+ * Always uses Option A (equipment) instead of Option B (gold)
+ */
+function extractEquipmentItems(equipmentArray: any[]): string[] {
+  const items: string[] = [];
+
+  if (!Array.isArray(equipmentArray)) {
+    return items;
+  }
+
+  equipmentArray.forEach(entry => {
+    // Handle simple strings
+    if (typeof entry === 'string') {
+      items.push(entry);
+      return;
+    }
+
+    if (!entry || typeof entry !== 'object') {
+      return;
+    }
+
+    // Handle nested arrays (shouldn't happen but just in case)
+    if (Array.isArray(entry)) {
+      const nestedItems = extractEquipmentItems(entry);
+      items.push(...nestedItems);
+      return;
+    }
+
+    // Handle format from CLASS_STARTING_EQUIPMENT: { A: [...], B: [...] }
+    if (entry.A && Array.isArray(entry.A) && !entry.type) {
+      entry.A.forEach((item: any) => {
+        if (typeof item === 'string') {
+          items.push(item);
+        }
+      });
+      return;
+    }
+
+    // Handle API format from backgrounds: { type: "direct", item: { A: [...], B: [...] } }
+    if (entry.type === 'direct' && entry.item && typeof entry.item === 'object') {
+      const choices = entry.item;
+
+      // Only use Option A (equipment choice, not gold)
+      if (choices.A && Array.isArray(choices.A)) {
+        choices.A.forEach((subItem: any) => {
+          if (typeof subItem === 'string') {
+            items.push(titleCase(subItem));
+          } else if (subItem && typeof subItem === 'object') {
+            if ('item' in subItem && typeof subItem.item === 'string') {
+              // Extract item name and remove source tag (e.g., "spear|xphb" -> "spear")
+              const itemName = subItem.item.split('|')[0];
+              items.push(titleCase(itemName));
+            }
+            // Skip gold values - we want equipment, not gold
+          }
+        });
+      }
+    }
+  });
+
+  return items;
+}
+
+/**
  * Combine equipment from all sources
  */
 function combineEquipment(builderData: CharacterBuilderData): string[] {
   const equipment: string[] = [];
 
-  // Class starting equipment
-  if (builderData.classStartingEquipment) {
-    builderData.classStartingEquipment.forEach(item => {
-      // Handle both string and object formats
-      if (typeof item === 'string') {
-        equipment.push(item);
-      } else if (item && typeof item === 'object' && 'item' in item && typeof (item as any).item === 'string') {
-        equipment.push((item as any).item); // Extract the item name from object
-      } else if (item && typeof item === 'object' && 'name' in item && typeof (item as any).name === 'string') {
-        equipment.push((item as any).name); // Alternative object format
-      }
-    });
+  // Class starting equipment (if any - currently not populated)
+  if (builderData.classStartingEquipment && Array.isArray(builderData.classStartingEquipment)) {
+    const classEquipment = extractEquipmentItems(builderData.classStartingEquipment);
+    equipment.push(...classEquipment);
   }
 
-  // Background starting equipment
-  if (builderData.backgroundStartingEquipment) {
-    builderData.backgroundStartingEquipment.forEach(item => {
-      if (typeof item === 'string') {
-        equipment.push(item);
-      } else if (item && typeof item === 'object' && 'item' in item && typeof (item as any).item === 'string') {
-        equipment.push((item as any).item);
-      } else if (item && typeof item === 'object' && 'name' in item && typeof (item as any).name === 'string') {
-        equipment.push((item as any).name);
-      }
-    });
+  // Background starting equipment (primary source)
+  if (builderData.backgroundStartingEquipment && Array.isArray(builderData.backgroundStartingEquipment)) {
+    const backgroundEquipment = extractEquipmentItems(builderData.backgroundStartingEquipment);
+    equipment.push(...backgroundEquipment);
   }
 
-  // Selected equipment from step 4
+  // Selected equipment from step 4 (currently removed from wizard)
   if (builderData.selectedEquipment) {
     if (builderData.selectedEquipment.armor) {
       equipment.push(builderData.selectedEquipment.armor);
     }
-    if (builderData.selectedEquipment.weapons) {
-      builderData.selectedEquipment.weapons.forEach(weapon => {
-        if (typeof weapon === 'string') {
-          equipment.push(weapon);
-        } else if (weapon && typeof weapon === 'object' && 'item' in weapon && typeof (weapon as any).item === 'string') {
-          equipment.push((weapon as any).item);
-        } else if (weapon && typeof weapon === 'object' && 'name' in weapon && typeof (weapon as any).name === 'string') {
-          equipment.push((weapon as any).name);
-        }
-      });
+    if (builderData.selectedEquipment.weapons && Array.isArray(builderData.selectedEquipment.weapons)) {
+      equipment.push(...builderData.selectedEquipment.weapons.filter(Boolean));
     }
     if (builderData.selectedEquipment.shield) {
       equipment.push(builderData.selectedEquipment.shield);
     }
-    if (builderData.selectedEquipment.equipment) {
-      builderData.selectedEquipment.equipment.forEach(item => {
-        if (typeof item === 'string') {
-          equipment.push(item);
-        } else if (item && typeof item === 'object' && 'item' in item && typeof (item as any).item === 'string') {
-          equipment.push((item as any).item);
-        } else if (item && typeof item === 'object' && 'name' in item && typeof (item as any).name === 'string') {
-          equipment.push((item as any).name);
-        }
-      });
+    if (builderData.selectedEquipment.equipment && Array.isArray(builderData.selectedEquipment.equipment)) {
+      equipment.push(...builderData.selectedEquipment.equipment.filter(Boolean));
     }
   }
 

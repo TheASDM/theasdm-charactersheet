@@ -57,7 +57,7 @@ const CloseButton = styled.button`
 `;
 
 const ModalTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 1.5rem 0;
   font-size: 1.8rem;
   text-align: center;

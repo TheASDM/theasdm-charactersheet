@@ -26,7 +26,7 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
 
 const ModalContent = styled.div`
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 2px solid #d4af37;
+  border: 2px solid #ce9016;
   border-radius: 12px;
   max-width: 600px;
   width: 100%;
@@ -45,7 +45,7 @@ const ModalHeader = styled.div`
   align-items: center;
 
   h2 {
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     font-size: 1.5rem;
     margin: 0;
@@ -89,7 +89,7 @@ const ItemStats = styled.div`
     text-align: center;
 
     .stat-label {
-      color: #d4af37;
+      color: #ce9016;
       font-size: 0.8rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -108,7 +108,7 @@ const ItemDescription = styled.div`
   margin-bottom: 1.5rem;
 
   h3 {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
     font-family: 'Cinzel', serif;
@@ -195,7 +195,7 @@ const ModalFooter = styled.div`
 
   .add-to-inventory-btn {
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(145deg, #d4af37, #b8941f);
+    background: linear-gradient(145deg, #ce9016, #b8860b);
     border: none;
     border-radius: 8px;
     color: #1a1a1a;
@@ -207,9 +207,9 @@ const ModalFooter = styled.div`
     letter-spacing: 0.5px;
 
     &:hover {
-      background: linear-gradient(145deg, #e6b52a, #d4af37);
+      background: linear-gradient(145deg, #e6b52a, #ce9016);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+      box-shadow: 0 4px 12px rgba(206, 144, 22, 0.4);
     }
 
     &:active {
@@ -236,7 +236,7 @@ const processItemDescription = (entries: any): React.ReactNode => {
         return (
           <div key={index} style={{ marginBottom: '1rem' }}>
             <h4 style={{
-              color: '#d4af37',
+              color: '#ce9016',
               fontSize: '1rem',
               fontWeight: '600',
               marginBottom: '0.5rem',

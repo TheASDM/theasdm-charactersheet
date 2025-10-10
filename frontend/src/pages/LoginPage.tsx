@@ -68,7 +68,11 @@ export const LoginPage: React.FC = () => {
       <AuthContainer>
         <AuthCard>
           <AuthHeader>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🪓</div>
+            <img
+              src="/images/wtforged-logo.png"
+              alt="WTForged"
+              style={{ maxWidth: '300px', width: '100%', height: 'auto', marginBottom: '1rem', display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
+            />
             <AuthTitle>Welcome Back</AuthTitle>
             <AuthSubtitle>Log in to continue your adventure</AuthSubtitle>
           </AuthHeader>

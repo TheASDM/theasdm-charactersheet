@@ -50,7 +50,7 @@ export const StatBox = styled.div`
   .stat-value {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #d4af37;
+    color: #ce9016;
     line-height: 1;
   }
 
@@ -68,8 +68,8 @@ export const StatBox = styled.div`
 
     &:focus {
       outline: none;
-      border-bottom: 1px solid #d4af37;
-      background: rgba(212, 175, 55, 0.1);
+      border-bottom: 1px solid #ce9016;
+      background: rgba(206, 144, 22, 0.1);
     }
   }
 
@@ -87,7 +87,7 @@ export const StatBox = styled.div`
       .hp-value {
         font-size: 1.8rem;
         font-weight: 700;
-        color: #d4af37;
+        color: #ce9016;
         min-width: 2rem;
         text-align: center;
       }
@@ -106,8 +106,8 @@ export const StatBox = styled.div`
 
         &:focus {
           outline: none;
-          border-bottom: 1px solid #d4af37;
-          background: rgba(212, 175, 55, 0.1);
+          border-bottom: 1px solid #ce9016;
+          background: rgba(206, 144, 22, 0.1);
         }
       }
     }
@@ -115,7 +115,7 @@ export const StatBox = styled.div`
     .hp-slash {
       font-size: 1.8rem;
       font-weight: 700;
-      color: #d4af37;
+      color: #ce9016;
     }
   }
 `;
@@ -131,9 +131,9 @@ export const StatArrows = styled.div`
 `;
 
 export const StatArrow = styled.button<{ direction: 'up' | 'down' }>`
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid #d4af37;
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.15);
+  border: 1px solid #ce9016;
+  color: #ce9016;
   width: 14px;
   height: 12px;
   border-radius: 2px;
@@ -147,7 +147,7 @@ export const StatArrow = styled.button<{ direction: 'up' | 'down' }>`
   line-height: 1;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.25);
+    background: rgba(206, 144, 22, 0.25);
     transform: translateY(${props => props.direction === 'up' ? '-1px' : '1px'});
   }
 

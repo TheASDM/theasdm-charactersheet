@@ -23,7 +23,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           alignItems: 'center',
           justifyContent: 'center',
           background: 'linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%)',
-          color: '#d4af37',
+          color: '#ce9016',
           fontSize: '1.2rem',
         }}
       >

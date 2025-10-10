@@ -15,7 +15,7 @@ interface SelectionSummaryProps {
 
 const SummaryContainer = styled.div`
   background: rgba(26, 26, 26, 0.6);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(206, 144, 22, 0.2);
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1rem 0;
@@ -23,11 +23,11 @@ const SummaryContainer = styled.div`
 
 const SummaryTitle = styled.h4`
   margin: 0 0 1rem 0;
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 1.1rem;
   text-align: center;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  border-bottom: 1px solid rgba(206, 144, 22, 0.2);
   padding-bottom: 0.5rem;
 `;
 
@@ -68,7 +68,7 @@ const SummaryValue = styled.div`
 `;
 
 const SummaryValueItem = styled.span`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 0.95rem;
 `;
 

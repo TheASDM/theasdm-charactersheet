@@ -15,7 +15,7 @@ const MasterySection = styled.div`
 `;
 
 const MasteryTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 0.5rem 0;
   font-size: 0.9rem;
   text-align: center;
@@ -39,7 +39,7 @@ const MasteryCard = styled.div`
 `;
 
 const WeaponName = styled.div`
-  color: #d4af37;
+  color: #ce9016;
   font-weight: 600;
   font-size: 0.8rem;
   margin-bottom: 0.15rem;
@@ -65,7 +65,7 @@ const ManageButton = styled.button`
   padding: 0.5rem 0.75rem;
   margin-top: 0.5rem;
   background: rgba(255, 255, 255, 0.03);
-  color: #d4af37;
+  color: #ce9016;
   border: 1px solid #333;
   border-radius: 4px;
   font-weight: 600;
@@ -77,9 +77,9 @@ const ManageButton = styled.button`
 
   &:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: #d4af37;
+    border-color: #ce9016;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 2px 8px rgba(206, 144, 22, 0.2);
   }
 `;
 

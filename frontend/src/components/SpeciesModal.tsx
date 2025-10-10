@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import type { MouseEvent } from 'react';
 import { Species } from '../types/api';
 import { parseComplexDnDEntry } from '../utils/dndTemplateParser';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface SpeciesModalProps {
   species: Species;
@@ -20,47 +21,29 @@ const ModalOverlay = styled.div`
   align-items: center;
   z-index: 1000;
   padding: 2rem;
-  overflow-y: auto;
+  /* No overflow - backdrop doesn't scroll */
 `;
 
 const ModalContent = styled.div`
   background: rgba(26, 26, 26, 0.98);
-  border: 2px solid #d4af37;
+  border: 2px solid #ce9016;
   border-radius: 12px;
   max-width: 900px;
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9);
   position: relative;
-
-  /* Custom scrollbar */
-  &::-webkit-scrollbar {
-    width: 10px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: rgba(35, 35, 35, 0.5);
-    border-radius: 5px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #d4af37;
-    border-radius: 5px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #b8941f;
-  }
+  display: flex;
+  flex-direction: column;
 `;
 
 const CloseButton = styled.button`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(212, 175, 55, 0.2);
-  border: 1px solid #d4af37;
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  border: 1px solid #ce9016;
+  color: #ce9016;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -74,7 +57,7 @@ const CloseButton = styled.button`
   z-index: 1;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.4);
+    background: rgba(206, 144, 22, 0.4);
     transform: rotate(90deg);
   }
 `;
@@ -83,11 +66,12 @@ const SpeciesHeader = styled.div`
   background: rgba(35, 35, 35, 0.9);
   padding: 1.5rem 2rem;
   text-align: center;
-  border-bottom: 2px solid #d4af37;
+  border-bottom: 2px solid #ce9016;
+  flex-shrink: 0;
 `;
 
 const SpeciesTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 2rem;
   font-weight: 600;
   margin: 0;
@@ -127,7 +111,7 @@ const ColumnHeader = styled.div`
   padding: 0.75rem 1rem;
   font-weight: 600;
   font-size: 0.9rem;
-  color: #d4af37;
+  color: #ce9016;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid #444;
@@ -138,8 +122,8 @@ const ColumnContent = styled.div`
 `;
 
 const SourceTag = styled.div`
-  background: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.7rem;
@@ -147,7 +131,7 @@ const SourceTag = styled.div`
   display: inline-block;
   letter-spacing: 0.3px;
   text-transform: uppercase;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(206, 144, 22, 0.3);
 `;
 
 const SizeSpeedInfo = styled.div`
@@ -161,7 +145,7 @@ const SizeSpeedItem = styled.div`
 
   strong {
     font-weight: 600;
-    color: #d4af37;
+    color: #ce9016;
   }
 
   &:last-child {
@@ -188,8 +172,32 @@ const SpeciesDescription = styled.div`
   }
 
   em {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 0.85rem;
+  }
+`;
+
+const ModalBody = styled.div`
+  overflow-y: auto;
+  flex: 1;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(35, 35, 35, 0.5);
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ce9016;
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #b8860b;
   }
 `;
 
@@ -207,7 +215,7 @@ const TraitItem = styled.div`
   background: rgba(35, 35, 35, 0.5);
   border: 1px solid #444;
   border-radius: 6px;
-  border-left: 3px solid #d4af37;
+  border-left: 3px solid #ce9016;
 
   &:last-child {
     margin-bottom: 0;
@@ -215,7 +223,7 @@ const TraitItem = styled.div`
 `;
 
 const TraitName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0 0 0.75rem 0;
@@ -237,7 +245,7 @@ const TraitDescription = styled.div`
   }
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
   }
 
@@ -250,7 +258,7 @@ const TraitDescription = styled.div`
 
   th {
     background: rgba(26, 26, 26, 0.9) !important;
-    color: #d4af37 !important;
+    color: #ce9016 !important;
     font-family: 'Cinzel', serif !important;
     border: 1px solid #555 !important;
     padding: 0.75rem !important;
@@ -267,12 +275,12 @@ const TraitDescription = styled.div`
   }
 
   .dnd-list strong {
-    color: #d4af37 !important;
+    color: #ce9016 !important;
     font-family: 'Cinzel', serif !important;
   }
 
   .table-caption strong {
-    color: #d4af37 !important;
+    color: #ce9016 !important;
     font-family: 'Cinzel', serif !important;
     display: block;
     margin-bottom: 0.5rem;
@@ -280,6 +288,8 @@ const TraitDescription = styled.div`
 `;
 
 export default function SpeciesModal({ species, onClose }: SpeciesModalProps) {
+  useBodyScrollLock(true);
+
   const formatSize = (size: string | string[] | null): string => {
     if (!size) return 'Unknown';
     if (Array.isArray(size)) {
@@ -362,7 +372,7 @@ export default function SpeciesModal({ species, onClose }: SpeciesModalProps) {
     if (colLabels && colLabels.length > 0) {
       html += '<thead><tr style="background: rgba(26, 26, 26, 0.9);">';
       colLabels.forEach((label: string) => {
-        html += `<th style="padding: 0.75rem; border: 1px solid #555; font-weight: bold; color: #d4af37; font-family: Cinzel, serif;">${label}</th>`;
+        html += `<th style="padding: 0.75rem; border: 1px solid #555; font-weight: bold; color: #ce9016; font-family: Cinzel, serif;">${label}</th>`;
       });
       html += '</tr></thead>';
     }
@@ -396,7 +406,7 @@ export default function SpeciesModal({ species, onClose }: SpeciesModalProps) {
     let html = '<div class="dnd-list" style="margin: 1rem 0;">';
     items.forEach((item: any) => {
       if (item.name && item.entries) {
-        html += `<div style="margin-bottom: 1rem;"><strong style="color: #d4af37; font-family: Cinzel, serif;">${item.name}:</strong> `;
+        html += `<div style="margin-bottom: 1rem;"><strong style="color: #ce9016; font-family: Cinzel, serif;">${item.name}:</strong> `;
         if (Array.isArray(item.entries)) {
           html += item.entries
             .map((entry: string) => parseComplexDnDEntry(entry))
@@ -429,56 +439,58 @@ export default function SpeciesModal({ species, onClose }: SpeciesModalProps) {
           <SpeciesTitle>{species.name}</SpeciesTitle>
         </SpeciesHeader>
 
-        <InfoSection>
-          <InfoColumn>
-            <ColumnHeader>Physical Traits</ColumnHeader>
-            <ColumnContent>
-              <SizeSpeedInfo>
-                <SizeSpeedItem>
-                  <strong>Size:</strong> {formatSize(species.size)}
-                </SizeSpeedItem>
-                <SizeSpeedItem>
-                  <strong>Speed:</strong> {species.speed} feet
-                </SizeSpeedItem>
-                <SizeSpeedItem>
-                  <strong>Creature Type:</strong>{' '}
-                  {species.creatureType || 'Humanoid'}
-                </SizeSpeedItem>
-              </SizeSpeedInfo>
-              {species.source && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <SourceTag>{species.source}</SourceTag>
-                </div>
-              )}
-            </ColumnContent>
-          </InfoColumn>
-
-          <InfoColumn>
-            <ColumnHeader>Description</ColumnHeader>
-            <ColumnContent>
-              <SpeciesDescription>
-                {species.description ? (
-                  <p>{species.description}</p>
-                ) : (
-                  <p>
-                    <em>No description available for this species.</em>
-                  </p>
+        <ModalBody>
+          <InfoSection>
+            <InfoColumn>
+              <ColumnHeader>Physical Traits</ColumnHeader>
+              <ColumnContent>
+                <SizeSpeedInfo>
+                  <SizeSpeedItem>
+                    <strong>Size:</strong> {formatSize(species.size)}
+                  </SizeSpeedItem>
+                  <SizeSpeedItem>
+                    <strong>Speed:</strong> {species.speed} feet
+                  </SizeSpeedItem>
+                  <SizeSpeedItem>
+                    <strong>Creature Type:</strong>{' '}
+                    {species.creatureType || 'Humanoid'}
+                  </SizeSpeedItem>
+                </SizeSpeedInfo>
+                {species.source && (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <SourceTag>{species.source}</SourceTag>
+                  </div>
                 )}
-              </SpeciesDescription>
-            </ColumnContent>
-          </InfoColumn>
-        </InfoSection>
+              </ColumnContent>
+            </InfoColumn>
 
-        <TraitsSection>
-          {traits.map((trait, index) => (
-            <TraitItem key={index}>
-              <TraitName>{trait.name}</TraitName>
-              <TraitDescription>
-                <div dangerouslySetInnerHTML={{ __html: trait.description }} />
-              </TraitDescription>
-            </TraitItem>
-          ))}
-        </TraitsSection>
+            <InfoColumn>
+              <ColumnHeader>Description</ColumnHeader>
+              <ColumnContent>
+                <SpeciesDescription>
+                  {species.description ? (
+                    <p>{species.description}</p>
+                  ) : (
+                    <p>
+                      <em>No description available for this species.</em>
+                    </p>
+                  )}
+                </SpeciesDescription>
+              </ColumnContent>
+            </InfoColumn>
+          </InfoSection>
+
+          <TraitsSection>
+            {traits.map((trait, index) => (
+              <TraitItem key={index}>
+                <TraitName>{trait.name}</TraitName>
+                <TraitDescription>
+                  <div dangerouslySetInnerHTML={{ __html: trait.description }} />
+                </TraitDescription>
+              </TraitItem>
+            ))}
+          </TraitsSection>
+        </ModalBody>
       </ModalContent>
     </ModalOverlay>
   );

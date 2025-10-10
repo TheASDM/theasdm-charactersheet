@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { ClassStartingEquipment } from '../constants/startingEquipment';
 
 export type WizardStep =
   | 'character-info'
@@ -8,7 +9,7 @@ export type WizardStep =
   | 'species-selection'
   | 'origin-feats'
   | 'spell-selection'
-  | 'equipment-selection'
+  // | 'equipment-selection' // REMOVED per UX spec
   | 'review-create';
 
 export type AbilityScoreValue = {
@@ -42,7 +43,7 @@ export interface ClassSelectionState {
     tools: string[];
     savingThrows: string[];
   };
-  classStartingEquipment?: string[];
+  classStartingEquipment?: ClassStartingEquipment;
   classFeatures?: any[];
   hitDice?: string;
   primaryAbility?: string[];

@@ -51,7 +51,7 @@ export const DRACONIC_ANCESTRIES: { [key: string]: DraconicAncestryData } = {
     damageType: 'fire',
     areaType: '15-foot cone',
     saveType: 'dexterity',
-    color: '#ffd700'
+    color: '#e0a523'
   },
   'Green Dragon': {
     name: 'Green Dragon',

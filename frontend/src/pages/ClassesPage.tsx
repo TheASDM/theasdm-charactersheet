@@ -19,7 +19,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }

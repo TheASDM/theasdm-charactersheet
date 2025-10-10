@@ -22,7 +22,7 @@ const Header = styled.div`
 `;
 
 const Title = styled.h2`
-  color: #f1c661;
+  color: #e0a523;
   font-size: 1.75rem;
   margin-bottom: 0.5rem;
 `;
@@ -80,7 +80,7 @@ const ButtonGroup = styled.div`
 const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   background: ${({ $variant }) => ($variant === 'secondary' ? 'transparent' : '#8b5a2b')};
   border: 1px solid #c0aa70;
-  color: #f1c661;
+  color: #e0a523;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;
   font-size: 1rem;
@@ -89,7 +89,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
 
   &:hover:not(:disabled) {
     background: ${({ $variant }) => ($variant === 'secondary' ? 'rgba(192, 170, 112, 0.1)' : '#6d4623')};
-    border-color: #f1c661;
+    border-color: #e0a523;
   }
 
   &:disabled {
@@ -99,8 +99,8 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
 `;
 
 const RitualCount = styled.div`
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(206, 144, 22, 0.15);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 6px;
   padding: 0.75rem;
   margin: 1rem 0;
@@ -109,7 +109,7 @@ const RitualCount = styled.div`
   text-align: center;
 
   strong {
-    color: #f1c661;
+    color: #e0a523;
   }
 `;
 

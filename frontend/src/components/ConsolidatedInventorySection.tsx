@@ -46,7 +46,7 @@ const InventoryHeader = styled.div`
   position: relative;
 
   .title {
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     font-size: 0.9rem;
     font-weight: 700;
@@ -75,7 +75,7 @@ const InventoryHeader = styled.div`
       padding: 0.2rem 0.4rem;
       background: rgba(0, 0, 0, 0.3);
       border-radius: 3px;
-      border: 1px solid rgba(212, 175, 55, 0.2);
+      border: 1px solid rgba(206, 144, 22, 0.2);
 
       .label {
         color: #888;
@@ -122,7 +122,7 @@ const InventoryContent = styled.div<{ $mode: string; $maxHeight?: string }>`
     border-radius: 4px;
 
     &:hover {
-      background: #d4af37;
+      background: #ce9016;
     }
   }
 
@@ -149,7 +149,7 @@ const InventoryItemStyled = styled.div<{ $equipped?: boolean; $mode: string }>`
   ` : ''}
 
   &:hover {
-    background: ${props => props.$equipped ? 'rgba(74, 222, 128, 0.15)' : 'rgba(212, 175, 55, 0.1)'};
+    background: ${props => props.$equipped ? 'rgba(74, 222, 128, 0.15)' : 'rgba(206, 144, 22, 0.1)'};
     transform: translateX(1px);
   }
 
@@ -183,11 +183,11 @@ const ItemContent = styled.div<{ $clickable?: boolean }>`
     flex-wrap: wrap;
 
     .detail {
-      background: rgba(212, 175, 55, 0.15);
+      background: rgba(206, 144, 22, 0.15);
       padding: 0.1rem 0.25rem;
       border-radius: 2px;
       font-size: 0.55rem;
-      border: 1px solid rgba(212, 175, 55, 0.3);
+      border: 1px solid rgba(206, 144, 22, 0.3);
     }
   }
 `;
@@ -204,7 +204,7 @@ const QuantityControl = styled.div`
   gap: 0.15rem;
 
   .qty-label {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 0.6rem;
     font-weight: 600;
   }
@@ -221,7 +221,7 @@ const QuantityControl = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #d4af37;
+      border-color: #ce9016;
     }
   }
 `;
@@ -265,12 +265,12 @@ const ActionButton = styled.button<{ $variant?: 'equip' | 'delete' | 'primary'; 
         `;
       default:
         return `
-          background: rgba(212, 175, 55, 0.15);
-          color: #d4af37;
-          border: 1px solid #d4af37;
+          background: rgba(206, 144, 22, 0.15);
+          color: #ce9016;
+          border: 1px solid #ce9016;
 
           &:hover {
-            background: rgba(212, 175, 55, 0.25);
+            background: rgba(206, 144, 22, 0.25);
             transform: translateY(-1px);
           }
         `;
@@ -292,7 +292,7 @@ const AddItemButton = styled.button`
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid #333;
   border-radius: 4px;
-  color: #d4af37;
+  color: #ce9016;
   font-weight: 600;
   font-size: 0.7rem;
   cursor: pointer;
@@ -310,9 +310,9 @@ const AddItemButton = styled.button`
 
   &:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: #d4af37;
+    border-color: #ce9016;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 2px 8px rgba(206, 144, 22, 0.2);
   }
 
   &:active {
@@ -331,22 +331,22 @@ const PaginationControls = styled.div`
 
 const PaginationButton = styled.button<{ $disabled?: boolean }>`
   padding: 0.5rem 1rem;
-  background: ${props => props.$disabled ? 'rgba(212, 175, 55, 0.1)' : 'rgba(212, 175, 55, 0.15)'};
-  border: 1px solid ${props => props.$disabled ? '#333' : '#d4af37'};
+  background: ${props => props.$disabled ? 'rgba(206, 144, 22, 0.1)' : 'rgba(206, 144, 22, 0.15)'};
+  border: 1px solid ${props => props.$disabled ? '#333' : '#ce9016'};
   border-radius: 4px;
-  color: ${props => props.$disabled ? '#888' : '#d4af37'};
+  color: ${props => props.$disabled ? '#888' : '#ce9016'};
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   font-weight: 600;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: rgba(212, 175, 55, 0.25);
+    background: rgba(206, 144, 22, 0.25);
     transform: translateY(-1px);
   }
 `;
 
 const PageInfo = styled.span`
-  color: #d4af37;
+  color: #ce9016;
   font-weight: 600;
   font-size: 0.9rem;
 `;

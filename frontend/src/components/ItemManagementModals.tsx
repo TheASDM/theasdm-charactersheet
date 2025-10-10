@@ -28,7 +28,7 @@ const renderItemEntries = (entries: any): React.ReactNode => {
             <div key={`entry-${index}`} style={{ marginBottom: '1rem' }}>
               <h4
                 style={{
-                  color: '#d4af37',
+                  color: '#ce9016',
                   fontSize: '1rem',
                   fontWeight: 600,
                   marginBottom: '0.5rem',
@@ -117,7 +117,7 @@ const ModalHeader = styled.div`
 `;
 
 const ModalTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0;
   font-size: 1.4rem;
   text-transform: uppercase;
@@ -127,7 +127,7 @@ const ModalTitle = styled.h2`
 const CloseButton = styled.button`
   background: transparent;
   border: none;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 2rem;
   cursor: pointer;
   padding: 0;
@@ -162,8 +162,8 @@ const SearchInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
   }
 
   &::placeholder {
@@ -190,7 +190,7 @@ const ItemOptionContainer = styled.div`
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.1);
+    background: rgba(206, 144, 22, 0.1);
   }
 
   &:last-child {
@@ -205,7 +205,7 @@ const ItemInfo = styled.div`
 `;
 
 const ItemName = styled.div`
-  color: #d4af37;
+  color: #ce9016;
   font-weight: 600;
   margin-bottom: 4px;
 `;
@@ -236,9 +236,9 @@ const AddButton = styled.button`
   width: 100%;
   padding: 12px;
   margin-top: 15px;
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid #d4af37;
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.15);
+  border: 1px solid #ce9016;
+  color: #ce9016;
   border-radius: 6px;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -247,9 +247,9 @@ const AddButton = styled.button`
   text-transform: uppercase;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.25);
+    background: rgba(206, 144, 22, 0.25);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 `;
 
@@ -306,10 +306,10 @@ const AddItemButton = styled.button<{ inInventory?: boolean }>`
   margin-top: 20px;
   background: ${props => props.inInventory
     ? 'rgba(255, 255, 255, 0.05)'
-    : 'rgba(212, 175, 55, 0.15)'
+    : 'rgba(206, 144, 22, 0.15)'
   };
-  border: ${props => props.inInventory ? 'none' : '1px solid #d4af37'};
-  color: ${props => props.inInventory ? '#666' : '#d4af37'};
+  border: ${props => props.inInventory ? 'none' : '1px solid #ce9016'};
+  color: ${props => props.inInventory ? '#666' : '#ce9016'};
   border-radius: 6px;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -320,10 +320,10 @@ const AddItemButton = styled.button<{ inInventory?: boolean }>`
   &:hover:not(:disabled) {
     background: ${props => props.inInventory
       ? 'rgba(255, 255, 255, 0.05)'
-      : 'rgba(212, 175, 55, 0.25)'
+      : 'rgba(206, 144, 22, 0.25)'
     };
     transform: ${props => props.inInventory ? 'none' : 'translateY(-2px)'};
-    box-shadow: ${props => props.inInventory ? 'none' : '0 6px 20px rgba(212, 175, 55, 0.4)'};
+    box-shadow: ${props => props.inInventory ? 'none' : '0 6px 20px rgba(206, 144, 22, 0.4)'};
   }
 `;
 

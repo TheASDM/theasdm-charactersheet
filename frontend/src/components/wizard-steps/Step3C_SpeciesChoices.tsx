@@ -116,7 +116,7 @@ const ChoicesContainer = styled.div`
     margin-bottom: 2rem;
 
     .section-title {
-      color: #d4af37;
+      color: #ce9016;
       font-family: 'Cinzel', serif;
       font-size: 1.2rem;
       margin-bottom: 0.75rem;
@@ -142,7 +142,7 @@ const ChoiceGrid = styled.div`
 
 const ChoiceCard = styled.div<{ selected: boolean }>`
   background: rgba(26, 26, 26, 0.8);
-  border: 2px solid ${props => props.selected ? '#d4af37' : '#444'};
+  border: 2px solid ${props => props.selected ? '#ce9016' : '#444'};
   border-radius: 8px;
   padding: 1rem;
   cursor: pointer;
@@ -152,19 +152,19 @@ const ChoiceCard = styled.div<{ selected: boolean }>`
   flex-direction: column;
 
   &:hover {
-    border-color: #d4af37;
+    border-color: #ce9016;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
   }
 
   ${props => props.selected && `
-    background: rgba(212, 175, 55, 0.1);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    background: rgba(206, 144, 22, 0.1);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.4);
   `}
 `;
 
 const ChoiceName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 0.5rem 0;
   font-family: 'Cinzel', serif;
   font-size: 1rem;
@@ -191,22 +191,22 @@ const ChoiceDetails = styled.div`
     text-align: center;
 
     .label {
-      color: #d4af37;
+      color: #ce9016;
       font-weight: 600;
     }
   }
 `;
 
 const SelectionSummary = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(206, 144, 22, 0.1);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 8px;
   padding: 1rem;
   margin-top: 1.5rem;
   text-align: center;
 
   .summary-title {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 1rem;
     margin-bottom: 0.5rem;

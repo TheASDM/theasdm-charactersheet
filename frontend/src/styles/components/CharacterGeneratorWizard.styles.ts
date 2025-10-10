@@ -20,7 +20,7 @@ export const WizardHeader = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 2.5rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -108,13 +108,13 @@ export const WizardProgress = styled.div`
 
     &.current {
       .step-number {
-        background: linear-gradient(145deg, #d4af37, #b8941f);
+        background: linear-gradient(145deg, #ce9016, #b8860b);
         color: #1a1a1a;
-        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        box-shadow: 0 4px 12px rgba(206, 144, 22, 0.4);
       }
 
       .step-label {
-        color: #d4af37;
+        color: #ce9016;
         font-weight: 600;
       }
     }
@@ -168,7 +168,7 @@ export const WizardContent = styled.div`
 
     h2 {
       font-family: 'Cinzel', serif;
-      color: #d4af37;
+      color: #ce9016;
       margin-bottom: 1rem;
     }
 
@@ -220,12 +220,12 @@ export const WizardControls = styled.div`
     }
 
     &.wizard-btn-primary {
-      background: linear-gradient(145deg, #d4af37, #b8941f);
+      background: linear-gradient(145deg, #ce9016, #b8860b);
       color: #1a1a1a;
-      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+      box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
 
       &:not(:disabled):hover {
-        box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+        box-shadow: 0 6px 16px rgba(206, 144, 22, 0.4);
       }
     }
 
@@ -246,7 +246,7 @@ export const StepContainer = styled.div`
   .step-title {
     font-family: 'Cinzel', serif;
     font-size: 1.8rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-align: center;
   }
@@ -270,7 +270,7 @@ export const FormGroup = styled.div`
   label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 1rem;
   }
@@ -287,8 +287,8 @@ export const FormGroup = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #d4af37;
-      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+      border-color: #ce9016;
+      box-shadow: 0 0 0 3px rgba(206, 144, 22, 0.1);
     }
 
     &::placeholder {
@@ -322,14 +322,14 @@ export const RadioGroup = styled.div`
       text-align: center;
 
       &:hover {
-        border-color: #d4af37;
+        border-color: #ce9016;
       }
     }
 
     input[type="radio"]:checked + label {
-      border-color: #d4af37;
-      background: rgba(212, 175, 55, 0.1);
-      color: #d4af37;
+      border-color: #ce9016;
+      background: rgba(206, 144, 22, 0.1);
+      color: #ce9016;
     }
   }
 `;

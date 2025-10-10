@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { CharacterClass } from '../types/api';
 import { parseDnDTemplateTag } from '../utils/dndTemplateParser';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface ClassModalProps {
   characterClass: CharacterClass | null;
@@ -21,20 +22,58 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 2rem;
-  overflow-y: auto;
+  backdrop-filter: blur(3px);
+  /* No overflow - backdrop doesn't scroll */
 `;
 
 const ModalContent = styled.div`
-  background: rgba(26, 26, 26, 0.98);
-  border: 2px solid #d4af37;
-  border-radius: 12px;
-  max-width: 1200px;
+  background: linear-gradient(135deg, #1e1e1e 0%, #2b2b2b 100%);
+  border: 2px solid #ce9016;
+  border-radius: 14px;
+  max-width: 960px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-height: calc(100vh - clamp(5rem, 12vh, 7rem));
+  display: flex;
+  flex-direction: column;
   position: relative;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.68);
+  color: #f0f0f0;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 0 1.5rem;
+  flex-shrink: 0;
+`;
+
+const HeaderContent = styled.div`
+  flex: 1;
+  text-align: center;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #ce9016;
+  font-size: 1.55rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #e0a523;
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 1.25rem 1.5rem 1.35rem;
+  overflow-y: auto;
+  flex: 1;
 
   /* Custom scrollbar */
   &::-webkit-scrollbar {
@@ -47,76 +86,39 @@ const ModalContent = styled.div`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #d4af37;
+    background: #ce9016;
     border-radius: 5px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #b8941f;
+    background: #b8860b;
   }
-`;
-
-const ModalHeader = styled.div`
-  background: rgba(35, 35, 35, 0.9);
-  padding: 2rem;
-  text-align: center;
-  border-bottom: 2px solid #d4af37;
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(212, 175, 55, 0.2);
-  border: 1px solid #d4af37;
-  color: #d4af37;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.5rem;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  z-index: 1;
-
-  &:hover {
-    background: rgba(212, 175, 55, 0.4);
-    transform: rotate(90deg);
-  }
-`;
-
-const ModalBody = styled.div`
-  padding: 2rem;
 `;
 
 const ClassTitle = styled.h2`
-  margin: 0 0 0.5rem 0;
-  color: #d4af37;
+  margin: 0;
   font-family: 'Cinzel', serif;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: clamp(1.35rem, 2.4vw, 1.6rem);
+  color: #ce9016;
 `;
 
 const ClassMeta = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 `;
 
 const MetaItem = styled.div`
   background: rgba(35, 35, 35, 0.5);
-  padding: 1.25rem;
+  padding: 0.85rem;
   border-radius: 6px;
-  border-left: 3px solid #d4af37;
+  border-left: 3px solid #ce9016;
 
   h4 {
-    color: #d4af37;
-    margin: 0 0 0.5rem 0;
-    font-size: 0.8rem;
+    color: #ce9016;
+    margin: 0 0 0.35rem 0;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -124,23 +126,23 @@ const MetaItem = styled.div`
 
   p {
     margin: 0;
-    color: #f0f0f0;
+    color: #f4e7d1;
     font-weight: 500;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
   }
 `;
 
 const Section = styled.div`
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   background: rgba(35, 35, 35, 0.3);
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
   border: 1px solid #444;
 
   h3 {
-    color: #d4af37;
-    font-size: 1.1rem;
-    margin: 0 0 1rem 0;
+    color: #ce9016;
+    font-size: 1rem;
+    margin: 0 0 0.75rem 0;
     font-family: 'Cinzel', serif;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -149,48 +151,50 @@ const Section = styled.div`
 
 const FeaturesList = styled.div`
   background: rgba(35, 35, 35, 0.5);
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 6px;
+  padding: 0.75rem;
 `;
 
 const FeatureItem = styled.div`
-  margin-bottom: 0.75rem;
-  color: #f0f0f0;
-  line-height: 1.6;
+  margin-bottom: 0.5rem;
+  color: #f4e7d1;
+  line-height: 1.5;
+  font-size: 0.9rem;
 
   &:last-child {
     margin-bottom: 0;
   }
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
   }
 `;
 
 const FeatureBlock = styled.div`
-  margin-bottom: 1.5rem;
-  padding: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
   background: rgba(35, 35, 35, 0.5);
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid #444;
 `;
 
 const FeatureName = styled.h4`
-  color: #d4af37;
-  font-size: 1rem;
+  color: #ce9016;
+  font-size: 0.95rem;
   font-weight: 700;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   font-family: 'Cinzel', serif;
 `;
 
 const FeatureDescription = styled.div`
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: #f0f0f0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #c4b49d;
+  font-family: 'Crimson Text', serif;
 
   p {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
 
     &:last-child {
       margin-bottom: 0;
@@ -198,7 +202,7 @@ const FeatureDescription = styled.div`
   }
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
   }
 `;
@@ -206,28 +210,28 @@ const FeatureDescription = styled.div`
 const QuickRefTable = styled.table`
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5rem 0;
+  margin: 1rem 0;
   background: rgba(35, 35, 35, 0.5);
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
 
   th {
     background: rgba(35, 35, 35, 0.9);
-    color: #d4af37;
-    padding: 0.75rem;
+    color: #ce9016;
+    padding: 0.5rem;
     text-align: left;
     font-weight: 700;
     font-family: 'Cinzel', serif;
     border: 1px solid #444;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
   }
 
   td {
-    padding: 0.75rem;
+    padding: 0.5rem;
     border: 1px solid #444;
-    color: #f0f0f0;
+    color: #f4e7d1;
     vertical-align: top;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   tr:nth-child(even) td {
@@ -236,10 +240,12 @@ const QuickRefTable = styled.table`
 `;
 
 const TableHeader = styled.h3`
-  color: #d4af37;
-  font-size: 1.3rem;
-  margin: 1.5rem 0 0.5rem 0;
+  color: #ce9016;
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem 0;
   font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const ClassModal: React.FC<ClassModalProps> = ({
@@ -247,6 +253,9 @@ const ClassModal: React.FC<ClassModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  // Lock body scroll when modal is open
+  useBodyScrollLock(isOpen);
+
   if (!isOpen || !characterClass) return null;
 
   // Helper functions
@@ -377,10 +386,13 @@ const ClassModal: React.FC<ClassModalProps> = ({
   return (
     <ModalOverlay isOpen={isOpen} onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={onClose}>×</CloseButton>
-
         <ModalHeader>
-          <ClassTitle>{characterClass.name}</ClassTitle>
+          <HeaderContent>
+            <ClassTitle>{characterClass.name}</ClassTitle>
+          </HeaderContent>
+          <CloseButton onClick={onClose} type="button" aria-label="Close modal">
+            ×
+          </CloseButton>
         </ModalHeader>
 
         <ModalBody>

@@ -28,7 +28,7 @@ export const CharacterHeaderRow = styled.div`
 export const CharacterName = styled.div`
   font-size: 1.5rem;
   font-weight: 700;
-  color: #d4af37;
+  color: #ce9016;
   text-transform: uppercase;
   letter-spacing: 1px;
   flex: 1;
@@ -69,7 +69,7 @@ export const TopStatBox = styled.div`
   .stat-value {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #d4af37;
+    color: #ce9016;
     line-height: 1;
   }
 
@@ -87,8 +87,8 @@ export const TopStatBox = styled.div`
 
     &:focus {
       outline: none;
-      border-bottom: 1px solid #d4af37;
-      background: rgba(212, 175, 55, 0.1);
+      border-bottom: 1px solid #ce9016;
+      background: rgba(206, 144, 22, 0.1);
     }
   }
 
@@ -126,14 +126,14 @@ export const InfoBox = styled.div`
   .value {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #d4af37;
+    color: #ce9016;
   }
 
   select {
     background: rgba(26, 26, 26, 0.8);
     border: 1px solid #333;
     border-radius: 3px;
-    color: #d4af37;
+    color: #ce9016;
     font-family: inherit;
     font-size: 0.95rem;
     font-weight: 700;
@@ -143,13 +143,13 @@ export const InfoBox = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #d4af37;
-      background: rgba(212, 175, 55, 0.1);
+      border-color: #ce9016;
+      background: rgba(206, 144, 22, 0.1);
     }
 
     option {
       background: #1a1a1a;
-      color: #d4af37;
+      color: #ce9016;
       padding: 0.25rem;
     }
   }
@@ -158,7 +158,7 @@ export const InfoBox = styled.div`
     background: rgba(26, 26, 26, 0.8);
     border: 1px solid #333;
     border-radius: 3px;
-    color: #d4af37;
+    color: #ce9016;
     font-family: inherit;
     font-size: 0.95rem;
     font-weight: 700;
@@ -168,12 +168,12 @@ export const InfoBox = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #d4af37;
-      background: rgba(212, 175, 55, 0.1);
+      border-color: #ce9016;
+      background: rgba(206, 144, 22, 0.1);
     }
 
     &::placeholder {
-      color: rgba(212, 175, 55, 0.5);
+      color: rgba(206, 144, 22, 0.5);
       font-style: italic;
     }
   }
@@ -194,8 +194,8 @@ export const EditableInput = styled.input`
 
   &:focus {
     outline: none;
-    border-bottom: 1px solid #d4af37;
-    background: rgba(212, 175, 55, 0.1);
+    border-bottom: 1px solid #ce9016;
+    background: rgba(206, 144, 22, 0.1);
   }
 `;
 
@@ -218,9 +218,9 @@ export const SectionEditControls = styled.div`
 export const SectionEditButton = styled.button<{ variant?: 'edit' | 'save' }>`
   background: ${props => props.variant === 'save'
     ? 'linear-gradient(145deg, #4CAF50, #388E3C)'
-    : 'rgba(212, 175, 55, 0.15)'};
-  border: 1px solid ${props => props.variant === 'save' ? '#4CAF50' : '#d4af37'};
-  color: ${props => props.variant === 'save' ? 'white' : '#d4af37'};
+    : 'rgba(206, 144, 22, 0.15)'};
+  border: 1px solid ${props => props.variant === 'save' ? '#4CAF50' : '#ce9016'};
+  color: ${props => props.variant === 'save' ? 'white' : '#ce9016'};
   padding: 3px 6px;
   border-radius: 3px;
   font-size: 0.6rem;
@@ -240,7 +240,7 @@ export const SectionEditButton = styled.button<{ variant?: 'edit' | 'save' }>`
   &:hover {
     background: ${props => props.variant === 'save'
       ? 'linear-gradient(145deg, #388E3C, #2E7D32)'
-      : 'rgba(212, 175, 55, 0.25)'};
+      : 'rgba(206, 144, 22, 0.25)'};
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   }

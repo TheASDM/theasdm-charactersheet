@@ -24,7 +24,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -58,7 +58,7 @@ const LoadingMessage = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -95,7 +95,7 @@ const NoResultsMessage = styled.div`
 
   .title {
     font-size: 1.6rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 15px;
     font-weight: 600;
     font-family: 'Cinzel', serif;

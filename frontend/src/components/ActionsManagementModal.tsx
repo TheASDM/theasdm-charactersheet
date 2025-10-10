@@ -19,7 +19,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
 // Main Modal Container
 const ActionsModal = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 800px;
@@ -32,13 +32,13 @@ const ActionsModal = styled.div`
 `;
 
 const ModalTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 20px 0;
   font-size: 1.4rem;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 2px solid #d4af37;
+  border-bottom: 2px solid #ce9016;
   padding-bottom: 10px;
 `;
 
@@ -69,7 +69,7 @@ const ActionHeader = styled.div`
 `;
 
 const ActionName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
@@ -136,9 +136,9 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &::placeholder {
@@ -152,15 +152,15 @@ const FullWidthGroup = styled(FormGroup)`
 
 // Add New Action Section
 const AddActionSection = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 2px dashed #d4af37;
+  background: rgba(206, 144, 22, 0.1);
+  border: 2px dashed #ce9016;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
 `;
 
 const AddActionTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 15px 0;
   font-size: 1.1rem;
   text-align: center;
@@ -215,13 +215,13 @@ const CancelButton = styled(Button)`
 `;
 
 const SaveButton = styled(Button)`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #2c1810;
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.4);
   }
 `;
 

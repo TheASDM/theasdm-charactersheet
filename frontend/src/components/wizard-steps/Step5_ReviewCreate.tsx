@@ -20,6 +20,9 @@ import { normaliseDisplayString } from '@/utils/dndTemplateParser';
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
   onComplete: (characterId: number) => void;
+  createHandlerRef?: React.MutableRefObject<{
+    handleCreate?: () => Promise<void>;
+  }>;
 }
 
 const ReviewContainer = styled.div`
@@ -42,14 +45,15 @@ const SCRIBE_FLOW_CLASSES = new Set(['wizard']);
 const CANTRIP_ELIGIBLE_CLASSES = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'warlock', 'wizard']);
 
 const CharacterCard = styled.div`
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, rgba(206, 144, 22, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
 
   h3 {
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     font-size: 1.2rem;
     margin: 0 0 1rem 0;
@@ -59,16 +63,17 @@ const CharacterCard = styled.div`
   }
 `;
 
+
 const CharacterInfo = styled.div`
   .info-row {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.5rem;
     padding: 0.25rem 0;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    border-bottom: 1px solid rgba(206, 144, 22, 0.2);
 
     .label {
-      color: #d4af37;
+      color: #ce9016;
       font-weight: 600;
       font-size: 0.9rem;
     }
@@ -84,7 +89,7 @@ const Section = styled.div`
   margin-bottom: 1.5rem;
 
   .section-title {
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     font-size: 1rem;
     margin-bottom: 0.75rem;
@@ -127,8 +132,8 @@ const SpellCountBadge = styled.span<{ $invalid?: boolean }>`
   background: ${({ $invalid }) =>
     $invalid ? 'rgba(182, 55, 55, 0.2)' : 'rgba(26, 26, 26, 0.75)'};
   border: 1px solid ${({ $invalid }) =>
-    $invalid ? 'rgba(255, 120, 120, 0.6)' : 'rgba(212, 175, 55, 0.35)'};
-  color: ${({ $invalid }) => ($invalid ? '#ff9c9c' : '#d4af37')};
+    $invalid ? 'rgba(255, 120, 120, 0.6)' : 'rgba(206, 144, 22, 0.35)'};
+  color: ${({ $invalid }) => ($invalid ? '#ff9c9c' : '#ce9016')};
 `;
 
 const SpellList = styled.ul`
@@ -143,7 +148,7 @@ const SpellList = styled.ul`
 const SpellListItem = styled.li<{ $granted?: boolean }>`
   background: ${({ $granted }) => ($granted ? 'rgba(54, 126, 89, 0.2)' : 'rgba(35, 35, 35, 0.7)')};
   border: 1px solid ${({ $granted }) =>
-    $granted ? 'rgba(92, 224, 163, 0.45)' : 'rgba(212, 175, 55, 0.3)'};
+    $granted ? 'rgba(92, 224, 163, 0.45)' : 'rgba(206, 144, 22, 0.3)'};
   border-radius: 8px;
   padding: 0.45rem 0.6rem;
   font-size: 0.8rem;
@@ -164,7 +169,7 @@ const ProficiencyCard = styled.div`
   padding: 0.75rem;
 
   .prof-title {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 0.8rem;
     margin-bottom: 0.5rem;
@@ -175,54 +180,6 @@ const ProficiencyCard = styled.div`
     color: #ccc;
     font-size: 0.75rem;
     line-height: 1.3;
-  }
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(212, 175, 55, 0.3);
-
-  button {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    min-width: 150px;
-
-    &.btn-back {
-      background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
-      color: #f0f0f0;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-      }
-    }
-
-    &.btn-create {
-      background: linear-gradient(145deg, #d4af37, #b8941f);
-      color: #1a1a1a;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
-    }
   }
 `;
 
@@ -251,10 +208,10 @@ const StatusMessage = styled.div<{ type: 'success' | 'error' | 'info' | 'warning
 
 export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   data,
-  onComplete
+  onComplete,
+  createHandlerRef
 }) => {
   const { user } = useUser();
-  const [isCreating, setIsCreating] = useState(false);
   const [createStatus, setCreateStatus] = useState<'success' | 'error' | null>(null);
 
   const spellcastingAbilityScore = useMemo(() => {
@@ -530,12 +487,15 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
   // const finalScores = calculateFinalAbilityScores();
 
-  const handleCreateCharacter = async () => {
-    setIsCreating(true);
+  const handleCreateCharacter = React.useCallback(async () => {
+    console.log('🎬 handleCreateCharacter called');
     setCreateStatus(null);
 
+    console.log('📊 Mapping generator data to character sheet');
     const characterSheetData = mapGeneratorDataToCharacterSheet(data);
+    console.log('✅ Character sheet data:', characterSheetData);
 
+    console.log('📡 Calling character service create');
     const response = await characterService.create({
       userId: user?.id || 1,
       name: characterSheetData.name,
@@ -543,21 +503,33 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
       characterData: characterSheetData,
       isPublic: false,
     });
+    console.log('📬 Response received:', response);
 
     if (isError(response) || !response.data) {
       showError(response.error ?? 'Failed to create character', response.statusCode, response.errorCode);
       setCreateStatus('error');
-      setIsCreating(false);
       return;
     }
 
     setCreateStatus('success');
-    setIsCreating(false);
 
     setTimeout(() => {
       onComplete(response.data!.id);
     }, 1500);
-  };
+  }, [data, user?.id, onComplete]);
+
+  // Expose create handler to parent via ref
+  useEffect(() => {
+    console.log('🔧 Registering handleCreate in ref');
+    if (createHandlerRef) {
+      createHandlerRef.current = {
+        handleCreate: handleCreateCharacter
+      };
+      console.log('✅ Handler registered:', createHandlerRef.current);
+    } else {
+      console.warn('⚠️ createHandlerRef is undefined');
+    }
+  }, [createHandlerRef, handleCreateCharacter]);
 
   const formatList = (items: string[] | undefined): string => {
     if (!items || items.length === 0) return 'None';
@@ -597,103 +569,113 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
       .filter((skill) => skill.length > 0);
   };
 
+  /**
+   * Capitalize first letter of each word in a string
+   */
+  const titleCase = (str: string): string => {
+    return str
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  /**
+   * Extract equipment items from the nested JSONB structure or simple choice objects
+   * Handles formats:
+   * - [{ type: "direct", item: { A: [...], B: [...] } }] (from backgrounds API)
+   * - [{ A: [...], B: [...] }] (from CLASS_STARTING_EQUIPMENT constant)
+   * - ["string"] (simple strings)
+   * Always uses Option A (equipment) instead of Option B (gold)
+   */
+  const extractEquipmentItems = (equipmentArray: any[]): string[] => {
+    const items: string[] = [];
+
+    if (!Array.isArray(equipmentArray)) {
+      return items;
+    }
+
+    equipmentArray.forEach((entry) => {
+      // Handle simple strings
+      if (typeof entry === 'string') {
+        items.push(entry);
+        return;
+      }
+
+      if (!entry || typeof entry !== 'object') {
+        return;
+      }
+
+      // Handle nested arrays (shouldn't happen but just in case)
+      if (Array.isArray(entry)) {
+        const nestedItems = extractEquipmentItems(entry);
+        items.push(...nestedItems);
+        return;
+      }
+
+      // Handle format from CLASS_STARTING_EQUIPMENT: { A: [...], B: [...] }
+      if (entry.A && Array.isArray(entry.A) && !entry.type) {
+        entry.A.forEach((item: any) => {
+          if (typeof item === 'string') {
+            items.push(parseDnDTemplateTag(item));
+          }
+        });
+        return;
+      }
+
+      // Handle API format from backgrounds: { type: "direct", item: { A: [...], B: [...] } }
+      if (entry.type === 'direct' && entry.item && typeof entry.item === 'object') {
+        const choices = entry.item;
+
+        // Only use Option A (equipment choice, not gold)
+        if (choices.A && Array.isArray(choices.A)) {
+          choices.A.forEach((subItem: any) => {
+            if (typeof subItem === 'string') {
+              items.push(titleCase(subItem));
+            } else if (subItem && typeof subItem === 'object') {
+              if ('item' in subItem && typeof subItem.item === 'string') {
+                // Extract item name and remove source tag (e.g., "spear|xphb" -> "spear")
+                const itemName = subItem.item.split('|')[0];
+                const parsed = parseDnDTemplateTag(itemName);
+                items.push(titleCase(parsed));
+              }
+              // Skip gold values - we want equipment, not gold
+            }
+          });
+        }
+      }
+    });
+
+    return items;
+  };
+
   const getAllEquipment = (): string[] => {
     const equipment: string[] = [];
 
-    // Helper function to extract string from object or return string directly
-    const extractEquipmentName = (item: any): string | string[] => {
-      // Handle null/undefined
-      if (!item) return '';
-
-      if (typeof item === 'string') return parseDnDTemplateTag(item);
-      if (typeof item === 'object' && item?.item && typeof item.item === 'string') {
-        return parseDnDTemplateTag(item.item);
-      }
-      if (typeof item === 'object' && item?.name && typeof item.name === 'string') {
-        return parseDnDTemplateTag(item.name);
-      }
-
-      // Handle the {A, B} object structure (equipment choices)
-      if (typeof item === 'object' && item?.A && item?.B) {
-        logger.warn('🎯 Found {A, B} equipment object:', item);
-
-        // Helper to extract from nested arrays
-        const extractFromArray = (arr: any[]): string => {
-          if (!Array.isArray(arr)) {
-            const str = String(arr);
-            return parseDnDTemplateTag(str);
-          }
-
-          return arr.map(subItem => {
-            if (typeof subItem === 'string') return parseDnDTemplateTag(subItem);
-            if (typeof subItem === 'object' && subItem?.item && typeof subItem.item === 'string') {
-              return parseDnDTemplateTag(subItem.item);
-            }
-            if (typeof subItem === 'object' && subItem?.name && typeof subItem.name === 'string') {
-              return parseDnDTemplateTag(subItem.name);
-            }
-            if (typeof subItem === 'object' && subItem?.value !== undefined) {
-              return `${subItem.value} gp`;
-            }
-            return String(subItem);
-          }).join(', ');
-        };
-
-        const aItems = extractFromArray(item.A);
-        const bItems = extractFromArray(item.B);
-
-        // Return as separate items instead of combining
-        return [`Option A: ${aItems}`, `Option B: ${bItems}`];
-      }
-
-      // Handle {value: number} objects (gold amounts)
-      if (typeof item === 'object' && item?.value !== undefined) {
-        return `${item.value} gp`;
-      }
-
-      // Fallback: convert to string safely
-      const str = String(item || '');
-      return parseDnDTemplateTag(str);
-    };
-
-    // Helper to add items, flattening arrays
-    const addEquipment = (items: any[]) => {
-      items.forEach(item => {
-        const extracted = extractEquipmentName(item);
-        if (Array.isArray(extracted)) {
-          equipment.push(...extracted);
-        } else {
-          equipment.push(extracted);
-        }
-      });
-    };
-
-    if (data.classStartingEquipment) {
-      addEquipment(data.classStartingEquipment);
+    // Class starting equipment (if any - currently not populated)
+    if (data.classStartingEquipment && Array.isArray(data.classStartingEquipment)) {
+      const classEquipment = extractEquipmentItems(data.classStartingEquipment);
+      equipment.push(...classEquipment);
     }
-    if (data.backgroundStartingEquipment) {
-      addEquipment(data.backgroundStartingEquipment);
+
+    // Background starting equipment (primary source)
+    if (data.backgroundStartingEquipment && Array.isArray(data.backgroundStartingEquipment)) {
+      const backgroundEquipment = extractEquipmentItems(data.backgroundStartingEquipment);
+      equipment.push(...backgroundEquipment);
     }
-    if (data.selectedEquipment.weapons) {
-      addEquipment(data.selectedEquipment.weapons);
-    }
-    if (data.selectedEquipment.equipment) {
-      addEquipment(data.selectedEquipment.equipment);
-    }
-    if (data.selectedEquipment.armor) {
-      const extracted = extractEquipmentName(data.selectedEquipment.armor);
-      if (Array.isArray(extracted)) {
-        equipment.push(...extracted);
-      } else {
-        equipment.push(extracted);
+
+    // Selected equipment from step 4 (currently removed from wizard)
+    if (data.selectedEquipment) {
+      if (data.selectedEquipment.armor) {
+        equipment.push(data.selectedEquipment.armor);
       }
-    }
-    if (data.selectedEquipment.shield) {
-      const extracted = extractEquipmentName(data.selectedEquipment.shield);
-      if (Array.isArray(extracted)) {
-        equipment.push(...extracted);
-      } else {
-        equipment.push(extracted);
+      if (data.selectedEquipment.weapons && Array.isArray(data.selectedEquipment.weapons)) {
+        equipment.push(...data.selectedEquipment.weapons.filter(Boolean));
+      }
+      if (data.selectedEquipment.shield) {
+        equipment.push(data.selectedEquipment.shield);
+      }
+      if (data.selectedEquipment.equipment && Array.isArray(data.selectedEquipment.equipment)) {
+        equipment.push(...data.selectedEquipment.equipment.filter(Boolean));
       }
     }
 
@@ -954,22 +936,6 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         </StatusMessage>
       )}
 
-      <ActionButtons>
-        <button
-          className="btn-back"
-          onClick={() => window.history.back()}
-          disabled={isCreating}
-        >
-          Back to Review
-        </button>
-        <button
-          className="btn-create"
-          onClick={handleCreateCharacter}
-          disabled={isCreating || !data.characterName || !data.selectedClass}
-        >
-          {isCreating ? 'Creating Character...' : 'Create Character'}
-        </button>
-      </ActionButtons>
     </StepContainer>
   );
 };

@@ -45,7 +45,7 @@ const Logo = styled(Link)`
   font-family: 'Cinzel', serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #d4af37;
+  color: #ce9016;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -54,21 +54,25 @@ const Logo = styled(Link)`
   letter-spacing: 1.5px;
 
   &:hover {
-    color: #f0c851;
-    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    opacity: 0.9;
+    filter: brightness(1.1);
   }
 
-  .icon {
-    font-size: 2rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  img {
+    width: 200px;
+    height: auto;
+    max-width: 100%;
+    filter: drop-shadow(0 2px 8px rgba(206, 144, 22, 0.3));
+    transition: filter 0.3s ease;
+  }
+
+  &:hover img {
+    filter: drop-shadow(0 2px 12px rgba(206, 144, 22, 0.5));
   }
 
   @media (max-width: 768px) {
-    font-size: 1.2rem;
-    gap: 0.5rem;
-
-    .icon {
-      font-size: 1.5rem;
+    img {
+      width: 150px;
     }
   }
 `;
@@ -114,7 +118,7 @@ const DropdownContainer = styled.div`
 const DropdownButton = styled.button<{ $isActive: boolean; $isOpen: boolean }>`
   position: relative;
   padding: 0.75rem 1.25rem;
-  color: ${props => props.$isActive ? '#d4af37' : '#ccc'};
+  color: ${props => props.$isActive ? '#ce9016' : '#ccc'};
   font-family: 'Inter', sans-serif;
   font-weight: ${props => props.$isActive ? '600' : '500'};
   font-size: 0.95rem;
@@ -123,8 +127,8 @@ const DropdownButton = styled.button<{ $isActive: boolean; $isOpen: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: ${props => props.$isActive || props.$isOpen ? 'rgba(212, 175, 55, 0.1)' : 'transparent'};
-  border: 1px solid ${props => props.$isActive || props.$isOpen ? 'rgba(212, 175, 55, 0.3)' : 'transparent'};
+  background: ${props => props.$isActive || props.$isOpen ? 'rgba(206, 144, 22, 0.1)' : 'transparent'};
+  border: 1px solid ${props => props.$isActive || props.$isOpen ? 'rgba(206, 144, 22, 0.3)' : 'transparent'};
   white-space: nowrap;
   cursor: pointer;
 
@@ -145,9 +149,9 @@ const DropdownButton = styled.button<{ $isActive: boolean; $isOpen: boolean }>`
   }
 
   &:hover {
-    color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
-    border-color: rgba(212, 175, 55, 0.2);
+    color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
+    border-color: rgba(206, 144, 22, 0.2);
 
     .icon {
       filter: brightness(1.2);
@@ -200,11 +204,11 @@ const DropdownItem = styled(Link)<{ $isActive: boolean }>`
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1.25rem;
-  color: ${props => props.$isActive ? '#d4af37' : '#ccc'};
+  color: ${props => props.$isActive ? '#ce9016' : '#ccc'};
   text-decoration: none;
   font-size: 0.9rem;
   transition: all 0.3s ease;
-  border-left: 3px solid ${props => props.$isActive ? '#d4af37' : 'transparent'};
+  border-left: 3px solid ${props => props.$isActive ? '#ce9016' : 'transparent'};
 
   .icon {
     font-size: 1.1rem;
@@ -212,9 +216,9 @@ const DropdownItem = styled(Link)<{ $isActive: boolean }>`
   }
 
   &:hover {
-    background: rgba(212, 175, 55, 0.1);
-    color: #d4af37;
-    border-left-color: #d4af37;
+    background: rgba(206, 144, 22, 0.1);
+    color: #ce9016;
+    border-left-color: #ce9016;
 
     .icon {
       filter: brightness(1.2);
@@ -272,7 +276,7 @@ const MobileMenuButton = styled.button<{ $isOpen: boolean }>`
   div {
     width: 2rem;
     height: 0.2rem;
-    background: ${props => props.$isOpen ? '#d4af37' : '#ccc'};
+    background: ${props => props.$isOpen ? '#ce9016' : '#ccc'};
     border-radius: 10px;
     transition: all 0.3s ease;
     position: relative;
@@ -293,7 +297,7 @@ const MobileMenuButton = styled.button<{ $isOpen: boolean }>`
   }
 
   &:hover div {
-    background: #d4af37;
+    background: #ce9016;
   }
 `;
 
@@ -396,8 +400,7 @@ const Navigation: React.FC = () => {
         <NavContent>
           <LogoSection>
             <Logo to="/" onClick={handleLinkClick}>
-              <span className="icon">🪓</span>
-              <span>WTForged</span>
+              <img src="/images/forge-logo.png" alt="WTForged" />
             </Logo>
           </LogoSection>
 

@@ -19,7 +19,7 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
 // Main Modal Container
 const TraitsModal = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 1000px;
@@ -32,13 +32,13 @@ const TraitsModal = styled.div`
 `;
 
 const ModalTitle = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 20px 0;
   font-size: 1.4rem;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 2px solid #d4af37;
+  border-bottom: 2px solid #ce9016;
   padding-bottom: 10px;
 `;
 
@@ -52,7 +52,7 @@ const TabContainer = styled.div`
 
 const Tab = styled.button<{ active?: boolean }>`
   padding: 10px 20px;
-  background: ${props => props.active ? 'linear-gradient(145deg, #d4af37, #b8941f)' : 'rgba(139, 105, 20, 0.2)'};
+  background: ${props => props.active ? 'linear-gradient(145deg, #ce9016, #b8860b)' : 'rgba(139, 105, 20, 0.2)'};
   color: ${props => props.active ? '#2c1810' : '#f4e7d1'};
   border: none;
   border-radius: 6px 6px 0 0;
@@ -65,7 +65,7 @@ const Tab = styled.button<{ active?: boolean }>`
   letter-spacing: 0.5px;
 
   &:hover {
-    background: ${props => props.active ? 'linear-gradient(145deg, #b8941f, #a0801b)' : 'rgba(212, 175, 55, 0.2)'};
+    background: ${props => props.active ? 'linear-gradient(145deg, #b8860b, #a0801b)' : 'rgba(206, 144, 22, 0.2)'};
   }
 `;
 
@@ -82,16 +82,16 @@ const TraitsGrid = styled.div`
 `;
 
 const TraitCard = styled.div<{ editing?: boolean }>`
-  background: ${props => props.editing ? 'rgba(212, 175, 55, 0.15)' : 'rgba(139, 105, 20, 0.1)'};
-  border: 2px solid ${props => props.editing ? '#d4af37' : 'rgba(139, 105, 20, 0.3)'};
+  background: ${props => props.editing ? 'rgba(206, 144, 22, 0.15)' : 'rgba(139, 105, 20, 0.1)'};
+  border: 2px solid ${props => props.editing ? '#ce9016' : 'rgba(139, 105, 20, 0.3)'};
   border-radius: 8px;
   padding: 15px;
   transition: all 0.3s ease;
   cursor: ${props => props.editing ? 'default' : 'pointer'};
 
   &:hover {
-    background: ${props => props.editing ? 'rgba(212, 175, 55, 0.15)' : 'rgba(139, 105, 20, 0.15)'};
-    border-color: ${props => props.editing ? '#d4af37' : 'rgba(139, 105, 20, 0.5)'};
+    background: ${props => props.editing ? 'rgba(206, 144, 22, 0.15)' : 'rgba(139, 105, 20, 0.15)'};
+    border-color: ${props => props.editing ? '#ce9016' : 'rgba(139, 105, 20, 0.5)'};
   }
 `;
 
@@ -103,7 +103,7 @@ const TraitHeader = styled.div`
 `;
 
 const TraitName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
@@ -162,15 +162,15 @@ const TraitActionButton = styled.button<{ variant?: 'edit' | 'save' | 'cancel' |
 
 // Add New Trait Section
 const AddTraitSection = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 2px dashed #d4af37;
+  background: rgba(206, 144, 22, 0.1);
+  border: 2px dashed #ce9016;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
 `;
 
 const AddTraitTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 15px 0;
   font-size: 1.1rem;
   text-align: center;
@@ -207,9 +207,9 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &::placeholder {
@@ -231,9 +231,9 @@ const TextArea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &::placeholder {
@@ -253,9 +253,9 @@ const Select = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   option {
@@ -313,13 +313,13 @@ const CancelButton = styled(Button)`
 `;
 
 const SaveButton = styled(Button)`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #2c1810;
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.4);
   }
 `;
 

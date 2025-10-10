@@ -186,16 +186,16 @@ export const ResourceBox = styled.div<{ filled?: boolean; isWounds?: boolean }>`
     appearance: none;
     border: 2px solid #333;
     border-radius: ${props => props.isWounds ? '50%' : '3px'};
-    background: ${props => props.filled ? '#d4af37' : 'rgba(26, 26, 26, 0.8)'};
+    background: ${props => props.filled ? '#ce9016' : 'rgba(26, 26, 26, 0.8)'};
     transition: all 0.3s ease;
 
     &:hover {
-      background: ${props => props.filled ? '#b8941f' : 'rgba(212, 175, 55, 0.2)'};
+      background: ${props => props.filled ? '#b8860b' : 'rgba(206, 144, 22, 0.2)'};
     }
 
     &:checked {
-      background: #d4af37;
-      box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+      background: #ce9016;
+      box-shadow: 0 0 8px rgba(206, 144, 22, 0.5);
     }
   }
 `;
@@ -223,7 +223,7 @@ export const PoolCounter = styled.div`
   .current {
     font-size: 1rem;
     font-weight: 700;
-    color: #d4af37;
+    color: #ce9016;
     min-width: 1.5rem;
     text-align: center;
   }
@@ -247,9 +247,9 @@ export const PoolCounter = styled.div`
   }
 
   .control-btn {
-    background: rgba(212, 175, 55, 0.15);
-    border: 1px solid #d4af37;
-    color: #d4af37;
+    background: rgba(206, 144, 22, 0.15);
+    border: 1px solid #ce9016;
+    color: #ce9016;
     width: 16px;
     height: 12px;
     border-radius: 2px;
@@ -263,7 +263,7 @@ export const PoolCounter = styled.div`
     line-height: 1;
 
     &:hover {
-      background: rgba(212, 175, 55, 0.25);
+      background: rgba(206, 144, 22, 0.25);
     }
   }
 `;

@@ -49,7 +49,7 @@ export const SkillItem = styled.div`
   }
 
   .skill-bonus {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 700;
     margin-left: auto;
     font-size: 0.65rem;

@@ -31,7 +31,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
 
 const ModalContainer = styled.div`
   background: linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 12px;
   width: 90%;
   height: 85%;
@@ -40,7 +40,7 @@ const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(206, 144, 22, 0.2);
   animation: slideIn 0.3s ease;
 
   @keyframes slideIn {
@@ -57,19 +57,19 @@ const ModalContainer = styled.div`
 
 const ModalHeader = styled.div`
   padding: 1.5rem;
-  border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+  border-bottom: 2px solid rgba(206, 144, 22, 0.3);
   background: rgba(0, 0, 0, 0.3);
 `;
 
 const ClassName = styled.h1`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 2.5rem;
   margin: 0;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 2px;
-  text-shadow: 0 2px 10px rgba(212, 175, 55, 0.5);
+  text-shadow: 0 2px 10px rgba(206, 144, 22, 0.5);
 `;
 
 const ClassTagline = styled.p`
@@ -95,7 +95,7 @@ const ModalContent = styled.div`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #d4af37;
+    background: #ce9016;
     border-radius: 5px;
   }
 `;
@@ -112,18 +112,18 @@ const ContentGrid = styled.div`
 
 const Section = styled.div`
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(206, 144, 22, 0.2);
   border-radius: 8px;
   padding: 1.5rem;
 `;
 
 const SectionTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 1.3rem;
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  border-bottom: 1px solid rgba(206, 144, 22, 0.3);
   text-transform: uppercase;
   letter-spacing: 1px;
 `;
@@ -140,7 +140,7 @@ const InfoRow = styled.div`
 `;
 
 const InfoLabel = styled.span`
-  color: #d4af37;
+  color: #ce9016;
   font-weight: 600;
   font-size: 0.95rem;
 `;
@@ -151,8 +151,8 @@ const InfoValue = styled.span`
 `;
 
 const FeatureCard = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(206, 144, 22, 0.1);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -163,7 +163,7 @@ const FeatureCard = styled.div`
 `;
 
 const FeatureName = styled.h4`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
 `;
@@ -194,8 +194,8 @@ const SelectButton = styled.button`
   bottom: 2rem;
   right: 2rem;
   padding: 1rem 2.5rem;
-  background: linear-gradient(145deg, #d4af37, #b8941f);
-  border: 2px solid #d4af37;
+  background: linear-gradient(145deg, #ce9016, #b8860b);
+  border: 2px solid #ce9016;
   border-radius: 8px;
   color: #1a1a1a;
   font-family: 'Cinzel', serif;
@@ -205,11 +205,11 @@ const SelectButton = styled.button`
   letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 4px 15px rgba(206, 144, 22, 0.4);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.6);
     background: linear-gradient(145deg, #e0bb43, #c4a025);
   }
 
@@ -225,9 +225,9 @@ const CloseButton = styled.button`
   width: 40px;
   height: 40px;
   background: rgba(0, 0, 0, 0.5);
-  border: 2px solid #d4af37;
+  border: 2px solid #ce9016;
   border-radius: 50%;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -236,7 +236,7 @@ const CloseButton = styled.button`
   justify-content: center;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.2);
+    background: rgba(206, 144, 22, 0.2);
     transform: rotate(90deg);
   }
 `;

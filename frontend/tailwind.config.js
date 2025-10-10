@@ -11,7 +11,7 @@ export default {
         'serif': ['Cinzel', 'serif'],
       },
       colors: {
-        'dnd-gold': '#d4af37',
+        'dnd-gold': '#ce9016',
         'dnd-dark': '#1a1a1a',
       },
     },

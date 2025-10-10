@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { listFeats } from '../services/featService';
 import { Feat, isError } from '../types/api';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -16,30 +17,66 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(3px);
+  /* No overflow - backdrop doesn't scroll */
 `;
 
 // Feat Selection Popup Styles
 const FeatPopupModal = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   max-width: 900px;
   width: 90%;
   max-height: 85vh;
-  overflow-y: auto;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
   color: #f4e7d1;
   font-family: 'Cinzel', serif;
 `;
 
+const FeatModalHeader = styled.div`
+  padding: 20px 20px 0;
+  flex-shrink: 0;
+`;
+
 const FeatPopupTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 15px 0;
   font-size: 1.2rem;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 1px;
+`;
+
+const FeatModalBody = styled.div`
+  padding: 0 20px;
+  overflow-y: auto;
+  flex: 1;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(206, 144, 22, 0.5);
+    border-radius: 5px;
+
+    &:hover {
+      background: rgba(206, 144, 22, 0.7);
+    }
+  }
+`;
+
+const FeatModalFooter = styled.div`
+  padding: 0 20px 20px;
+  flex-shrink: 0;
 `;
 
 const SearchBar = styled.input`
@@ -55,8 +92,8 @@ const SearchBar = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
   }
 
   &::placeholder {
@@ -71,23 +108,23 @@ const FeatGrid = styled.div`
 `;
 
 const FeatCard = styled.div<{ selected?: boolean }>`
-  background: ${props => props.selected ? 'rgba(212, 175, 55, 0.2)' : 'rgba(139, 105, 20, 0.1)'};
-  border: 2px solid ${props => props.selected ? '#d4af37' : 'rgba(139, 105, 20, 0.3)'};
+  background: ${props => props.selected ? 'rgba(206, 144, 22, 0.2)' : 'rgba(139, 105, 20, 0.1)'};
+  border: 2px solid ${props => props.selected ? '#ce9016' : 'rgba(139, 105, 20, 0.3)'};
   border-radius: 8px;
   padding: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.15);
-    border-color: #d4af37;
+    background: rgba(206, 144, 22, 0.15);
+    border-color: #ce9016;
     transform: translateY(-1px);
   }
 `;
 
 const FeatName = styled.div`
   font-weight: 600;
-  color: #d4af37;
+  color: #ce9016;
   margin-bottom: 8px;
   font-size: 1.1rem;
   display: flex;
@@ -143,9 +180,9 @@ const CategoryFilter = styled.div`
 
 const CategoryButton = styled.button<{ active?: boolean }>`
   padding: 6px 12px;
-  background: ${props => props.active ? 'linear-gradient(145deg, #d4af37, #b8941f)' : 'rgba(139, 105, 20, 0.2)'};
+  background: ${props => props.active ? 'linear-gradient(145deg, #ce9016, #b8860b)' : 'rgba(139, 105, 20, 0.2)'};
   color: ${props => props.active ? '#2c1810' : '#f4e7d1'};
-  border: 2px solid ${props => props.active ? '#d4af37' : '#8b6914'};
+  border: 2px solid ${props => props.active ? '#ce9016' : '#8b6914'};
   border-radius: 4px;
   font-family: 'Cinzel', serif;
   font-size: 0.85rem;
@@ -154,8 +191,8 @@ const CategoryButton = styled.button<{ active?: boolean }>`
   text-transform: capitalize;
 
   &:hover {
-    background: ${props => props.active ? 'linear-gradient(145deg, #b8941f, #a0801b)' : 'rgba(212, 175, 55, 0.2)'};
-    border-color: #d4af37;
+    background: ${props => props.active ? 'linear-gradient(145deg, #b8860b, #a0801b)' : 'rgba(206, 144, 22, 0.2)'};
+    border-color: #ce9016;
   }
 `;
 
@@ -189,14 +226,14 @@ const CancelButton = styled(Button)`
 `;
 
 const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
-  background: ${props => props.disabled ? 'rgba(212, 175, 55, 0.3)' : 'linear-gradient(145deg, #d4af37, #b8941f)'};
+  background: ${props => props.disabled ? 'rgba(206, 144, 22, 0.3)' : 'linear-gradient(145deg, #ce9016, #b8860b)'};
   color: ${props => props.disabled ? '#8a8a8a' : '#2c1810'};
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
 
   &:hover:not(:disabled) {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 `;
 
@@ -224,6 +261,9 @@ const FeatSelectionModal: React.FC<FeatSelectionModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Lock body scroll when modal is open
+  useBodyScrollLock(isOpen);
 
   // Fetch feats when modal opens
   useEffect(() => {
@@ -299,82 +339,88 @@ const FeatSelectionModal: React.FC<FeatSelectionModalProps> = ({
       }
     }}>
       <FeatPopupModal>
-        <FeatPopupTitle>
-          Select {maxFeats > 1 ? `Up to ${maxFeats} Feats` : 'a Feat'}
-          {selectedFeats.length > 0 && ` (${selectedFeats.length}/${maxFeats})`}
-        </FeatPopupTitle>
+        <FeatModalHeader>
+          <FeatPopupTitle>
+            Select {maxFeats > 1 ? `Up to ${maxFeats} Feats` : 'a Feat'}
+            {selectedFeats.length > 0 && ` (${selectedFeats.length}/${maxFeats})`}
+          </FeatPopupTitle>
+        </FeatModalHeader>
 
-        {loading ? (
-          <LoadingMessage>⚔️ Loading feats...</LoadingMessage>
-        ) : error ? (
-          <ErrorMessage>{error}</ErrorMessage>
-        ) : (
-          <>
-            <SearchBar
-              type="text"
-              placeholder="Search feats by name or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <FeatModalBody>
+          {loading ? (
+            <LoadingMessage>⚔️ Loading feats...</LoadingMessage>
+          ) : error ? (
+            <ErrorMessage>{error}</ErrorMessage>
+          ) : (
+            <>
+              <SearchBar
+                type="text"
+                placeholder="Search feats by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
 
-            <CategoryFilter>
-              {categories.map(category => (
-                <CategoryButton
-                  key={category}
-                  active={selectedCategory === category}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </CategoryButton>
-              ))}
-            </CategoryFilter>
-
-            <FeatGrid>
-              {filteredFeats.length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#8b6914', padding: '20px' }}>
-                  No feats found matching your criteria
-                </div>
-              ) : (
-                filteredFeats.map((feat) => (
-                  <FeatCard
-                    key={feat.id}
-                    selected={selectedFeats.includes(feat.name)}
-                    onClick={() => onFeatToggle(feat.name)}
+              <CategoryFilter>
+                {categories.map(category => (
+                  <CategoryButton
+                    key={category}
+                    active={selectedCategory === category}
+                    onClick={() => setSelectedCategory(category)}
                   >
-                    <FeatName>
-                      {feat.name}
-                      {feat.category && <FeatCategory>{feat.category}</FeatCategory>}
-                    </FeatName>
-                    {formatPrerequisite(feat) && (
-                      <FeatPrerequisite>{formatPrerequisite(feat)}</FeatPrerequisite>
-                    )}
-                    <FeatDescription>
-                      {feat.entries ? (
-                        Array.isArray(feat.entries) ?
-                          feat.entries.map((entry: any, idx: number) =>
-                            <div key={idx}>{typeof entry === 'string' ? entry : JSON.stringify(entry)}</div>
-                          ) :
-                          <div>{typeof feat.entries === 'string' ? feat.entries : JSON.stringify(feat.entries)}</div>
-                      ) : 'No description available'}
-                    </FeatDescription>
-                  </FeatCard>
-                ))
-              )}
-            </FeatGrid>
-          </>
-        )}
+                    {category}
+                  </CategoryButton>
+                ))}
+              </CategoryFilter>
 
-        <FeatButtonsContainer>
-          <CancelButton onClick={onCancel}>
-            Cancel
-          </CancelButton>
-          <ConfirmButton
-            onClick={onConfirm}
-            disabled={selectedFeats.length === 0 || selectedFeats.length > maxFeats}
-          >
-            Confirm Selection
-          </ConfirmButton>
-        </FeatButtonsContainer>
+              <FeatGrid>
+                {filteredFeats.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#8b6914', padding: '20px' }}>
+                    No feats found matching your criteria
+                  </div>
+                ) : (
+                  filteredFeats.map((feat) => (
+                    <FeatCard
+                      key={feat.id}
+                      selected={selectedFeats.includes(feat.name)}
+                      onClick={() => onFeatToggle(feat.name)}
+                    >
+                      <FeatName>
+                        {feat.name}
+                        {feat.category && <FeatCategory>{feat.category}</FeatCategory>}
+                      </FeatName>
+                      {formatPrerequisite(feat) && (
+                        <FeatPrerequisite>{formatPrerequisite(feat)}</FeatPrerequisite>
+                      )}
+                      <FeatDescription>
+                        {feat.entries ? (
+                          Array.isArray(feat.entries) ?
+                            feat.entries.map((entry: any, idx: number) =>
+                              <div key={idx}>{typeof entry === 'string' ? entry : JSON.stringify(entry)}</div>
+                            ) :
+                            <div>{typeof feat.entries === 'string' ? feat.entries : JSON.stringify(feat.entries)}</div>
+                        ) : 'No description available'}
+                      </FeatDescription>
+                    </FeatCard>
+                  ))
+                )}
+              </FeatGrid>
+            </>
+          )}
+        </FeatModalBody>
+
+        <FeatModalFooter>
+          <FeatButtonsContainer>
+            <CancelButton onClick={onCancel}>
+              Cancel
+            </CancelButton>
+            <ConfirmButton
+              onClick={onConfirm}
+              disabled={selectedFeats.length === 0 || selectedFeats.length > maxFeats}
+            >
+              Confirm Selection
+            </ConfirmButton>
+          </FeatButtonsContainer>
+        </FeatModalFooter>
       </FeatPopupModal>
     </ModalOverlay>
   );

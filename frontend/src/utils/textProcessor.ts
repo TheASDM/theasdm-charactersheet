@@ -32,8 +32,8 @@ export function processDbMarkup(text: string, _options?: TextProcessorOptions): 
   // {@spell Name|Source} -> <em style="color: #a855f7;">Name</em> (purple for spells)
   processedText = processedText.replace(/{@spell ([^|]+)\|[^}]+}/g, '<em style="color: #a855f7;">$1</em>');
 
-  // {@action Name|Source} -> <strong style="color: #d4af37;">Name</strong> (gold for actions)
-  processedText = processedText.replace(/{@action ([^|]+)\|[^}]+}/g, '<strong style="color: #d4af37;">$1</strong>');
+  // {@action Name|Source} -> <strong style="color: #ce9016;">Name</strong> (gold for actions)
+  processedText = processedText.replace(/{@action ([^|]+)\|[^}]+}/g, '<strong style="color: #ce9016;">$1</strong>');
 
   // {@skill Name|Source} -> <strong>Name</strong>
   processedText = processedText.replace(/{@skill ([^|]+)\|[^}]+}/g, '<strong>$1</strong>');
@@ -47,8 +47,8 @@ export function processDbMarkup(text: string, _options?: TextProcessorOptions): 
   // {@dice expression} -> <strong style="color: #10b981;">expression</strong> (green for dice)
   processedText = processedText.replace(/{@dice ([^}]+)}/g, '<strong style="color: #10b981;">$1</strong>');
 
-  // {@dc value} -> <strong style="color: #d4af37;">DC value</strong> (gold for DCs)
-  processedText = processedText.replace(/{@dc ([^}]+)}/g, '<strong style="color: #d4af37;">DC $1</strong>');
+  // {@dc value} -> <strong style="color: #ce9016;">DC value</strong> (gold for DCs)
+  processedText = processedText.replace(/{@dc ([^}]+)}/g, '<strong style="color: #ce9016;">DC $1</strong>');
 
   // {@hit bonus} -> <strong style="color: #ef4444;">+bonus</strong> (red for attack bonuses)
   processedText = processedText.replace(/{@hit ([^}]+)}/g, '<strong style="color: #ef4444;">+$1</strong>');
@@ -66,7 +66,7 @@ export function processDbMarkup(text: string, _options?: TextProcessorOptions): 
   processedText = processedText.replace(/\b(charges?|action|bonus action|reaction|long rest|short rest|saving throw)\b/gi, '<strong>$1</strong>');
 
   // Style currency
-  processedText = processedText.replace(/\b(\d+)\s*(gp|sp|cp|pp)\b/g, '<span style="color: #d4af37; font-weight: 600;">$1 $2</span>');
+  processedText = processedText.replace(/\b(\d+)\s*(gp|sp|cp|pp)\b/g, '<span style="color: #ce9016; font-weight: 600;">$1 $2</span>');
 
   // Style dice notation that wasn't caught by markup
   processedText = processedText.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?)\b/g, '<strong style="color: #10b981;">$1</strong>');
@@ -88,7 +88,7 @@ export function processDescriptionArray(description: any[]): string {
         return processDbMarkup(entry);
       } else if (typeof entry === 'object' && entry.name && entry.entries) {
         // Handle D&D-style named sections with bold headers (like "Components")
-        const headerText = `<strong style="color: #d4af37; font-size: 1.1em; display: block; margin-top: 0.75em; margin-bottom: 0.5em;">${entry.name}</strong>`;
+        const headerText = `<strong style="color: #ce9016; font-size: 1.1em; display: block; margin-top: 0.75em; margin-bottom: 0.5em;">${entry.name}</strong>`;
         const contentText = processDescriptionArray(entry.entries);
         return `${headerText}${contentText}`;
       } else if (typeof entry === 'object' && entry.entries) {
@@ -163,7 +163,7 @@ export function processTraitDescriptionWithTables(description: any): { text: str
       lists.push(entry);
     } else if (typeof entry === 'object' && entry.name && entry.entries) {
       // Handle D&D-style named sections with bold headers
-      const headerText = `<strong style="color: #d4af37; font-size: 1.1em; display: block; margin-top: 0.75em; margin-bottom: 0.5em;">${entry.name}</strong>`;
+      const headerText = `<strong style="color: #ce9016; font-size: 1.1em; display: block; margin-top: 0.75em; margin-bottom: 0.5em;">${entry.name}</strong>`;
       textParts.push(headerText);
       if (Array.isArray(entry.entries)) {
         entry.entries.forEach(processEntry);

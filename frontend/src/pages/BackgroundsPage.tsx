@@ -23,7 +23,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -80,14 +80,14 @@ const BackgroundCard = styled.div`
   flex-direction: column;
 
   &:hover {
-    border-color: #d4af37;
+    border-color: #ce9016;
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 6px 16px rgba(206, 144, 22, 0.3);
   }
 `;
 
 const BackgroundName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   margin: 0 0 0.5rem 0;
   font-family: 'Cinzel', serif;
   font-size: 1.2rem;
@@ -105,7 +105,7 @@ const BackgroundDescription = styled.p`
 
 const BackgroundFeatures = styled.div`
   .feature-title {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 0.75rem;
     margin-bottom: 0.25rem;
@@ -125,7 +125,7 @@ const BackgroundFeatures = styled.div`
   }
 
   .ability-score-rules {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 0.7rem;
     font-style: italic;
     margin-top: 0.25rem;
@@ -138,7 +138,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;

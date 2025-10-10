@@ -25,7 +25,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -77,8 +77,8 @@ const FilterSelect = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &:hover {
@@ -113,8 +113,8 @@ const SearchInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &:hover {
@@ -147,7 +147,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -186,10 +186,10 @@ const PaginationContainer = styled.div`
 
 const PageButton = styled.button<{ isActive?: boolean }>`
   padding: 0.5rem 0.75rem;
-  border: 1px solid ${(props) => (props.isActive ? '#d4af37' : '#555')};
+  border: 1px solid ${(props) => (props.isActive ? '#ce9016' : '#555')};
   background: ${(props) =>
-    props.isActive ? 'rgba(212, 175, 55, 0.2)' : 'rgba(35, 35, 35, 0.8)'};
-  color: ${(props) => (props.isActive ? '#d4af37' : '#f0f0f0')};
+    props.isActive ? 'rgba(206, 144, 22, 0.2)' : 'rgba(35, 35, 35, 0.8)'};
+  color: ${(props) => (props.isActive ? '#ce9016' : '#f0f0f0')};
   cursor: pointer;
   font-size: 0.9rem;
   min-width: 40px;
@@ -197,9 +197,9 @@ const PageButton = styled.button<{ isActive?: boolean }>`
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: rgba(212, 175, 55, 0.2);
-    border-color: #d4af37;
-    color: #d4af37;
+    background: rgba(206, 144, 22, 0.2);
+    border-color: #ce9016;
+    color: #ce9016;
   }
 
   &:disabled {
@@ -217,7 +217,7 @@ const NoResultsMessage = styled.div`
 
   .title {
     font-size: 1.6rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 15px;
     font-weight: 600;
     font-family: 'Cinzel', serif;

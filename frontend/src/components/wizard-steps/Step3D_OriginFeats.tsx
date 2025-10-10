@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import { listFeats, FEAT_CATEGORIES } from '@/services/featsService';
+import { listFeats } from '@/services/featsService';
 import { Feat } from '@/types/api';
-import { processTraitDescriptionWithTables, processTraitDescription } from '../../utils/textProcessor';
+import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
-import WizardModal from '../wizard/WizardModal';
 import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { CompactList } from '../wizard/CompactList';
+import { DetailsModal } from '../wizard/DetailsModal';
+import { SelectModal } from '../wizard/SelectModal';
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 
 // Constants for feat choices
 const ALL_SKILLS = [
@@ -22,7 +25,7 @@ const ARTISAN_TOOLS = [
   "Alchemist's Supplies", "Brewer's Supplies", "Calligrapher's Supplies",
   "Carpenter's Tools", "Cartographer's Tools", "Cobbler's Tools",
   "Cook's Utensils", "Glassblower's Tools", "Jeweler's Tools",
-  "Leatherworker's Tools", "Mason's Tools", "Painter's Supplies",
+  "Leatherworker's Tools", "Mason's Tools", "Painter's Tools",
   "Potter's Tools", "Smith's Tools", "Tinker's Tools", "Weaver's Tools",
   "Woodcarver's Tools"
 ];
@@ -32,13 +35,18 @@ const MUSICAL_INSTRUMENTS = [
   "Horn", "Pan Flute", "Shawm", "Viol"
 ];
 
-const ALL_TOOLS = [
-  ...ARTISAN_TOOLS, "Gaming Set (Dice)", "Gaming Set (Cards)",
-  "Gaming Set (Chess)", "Thieves' Tools", "Navigator's Tools",
-  "Vehicles (Land)", "Vehicles (Water)"
+const ALL_TOOLS_AND_SKILLS = [
+  ...ALL_SKILLS,
+  ...ARTISAN_TOOLS,
+  "Thieves' Tools",
+  "Navigator's Tools",
+  "Vehicles (Land)",
+  "Vehicles (Water)",
+  ...MUSICAL_INSTRUMENTS
 ];
 
-const SPELL_CLASSES = ['Cleric', 'Druid', 'Wizard'];
+
+
 
 interface Step3DOriginFeatsProps {
   data: CharacterBuilderData;
@@ -47,15 +55,15 @@ interface Step3DOriginFeatsProps {
 
 const FeatsContainer = styled.div`
   .feats-header {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid rgba(212, 175, 55, 0.3);
+    background: rgba(206, 144, 22, 0.1);
+    border: 1px solid rgba(206, 144, 22, 0.3);
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1.5rem;
     text-align: center;
 
     .header-title {
-      color: #d4af37;
+      color: #ce9016;
       font-family: 'Cinzel', serif;
       font-size: 1.2rem;
       margin-bottom: 0.5rem;
@@ -65,173 +73,7 @@ const FeatsContainer = styled.div`
       color: #ccc;
       font-size: 0.9rem;
       line-height: 1.4;
-      margin-bottom: 0.75rem;
     }
-
-    .feat-count {
-      color: #d4af37;
-      font-weight: 600;
-      font-size: 1rem;
-    }
-  }
-
-  .search-section {
-    margin-bottom: 1.5rem;
-
-    .search-input {
-      width: 100%;
-      background: rgba(26, 26, 26, 0.8);
-      border: 2px solid #444;
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
-      color: #f0f0f0;
-      font-size: 1rem;
-      transition: border-color 0.3s ease;
-
-      &:focus {
-        outline: none;
-        border-color: #d4af37;
-        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
-      }
-
-      &::placeholder {
-        color: #888;
-      }
-    }
-  }
-`;
-
-const FeatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-`;
-
-const FeatCard = styled.div<{ selected: boolean }>`
-  background: rgba(26, 26, 26, 0.8);
-  border: 2px solid ${props => props.selected ? '#d4af37' : '#444'};
-  border-radius: 8px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-height: 180px;
-  display: flex;
-  flex-direction: column;
-
-  &:hover {
-    border-color: #d4af37;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
-  }
-
-  ${props => props.selected && `
-    background: rgba(212, 175, 55, 0.1);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
-  `}
-`;
-
-const FeatName = styled.h3`
-  color: #d4af37;
-  margin: 0 0 0.5rem 0;
-  font-family: 'Cinzel', serif;
-  font-size: 1rem;
-  text-align: center;
-`;
-
-const FeatDescription = styled.div`
-  color: #ccc;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  flex: 1;
-
-  .feat-text {
-    margin-bottom: 0.5rem;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-
-  .feat-benefits {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid #444;
-
-    .benefit-item {
-      margin: 0.25rem 0;
-      color: #aaa;
-      font-size: 0.75rem;
-
-      .benefit-label {
-        color: #d4af37;
-        font-weight: 600;
-      }
-    }
-  }
-`;
-
-const FeatPrerequisite = styled.div`
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  border-radius: 4px;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.75rem;
-  color: #ff6b6b;
-  text-align: center;
-`;
-
-const SelectedFeatsSection = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 1.5rem;
-
-  .section-title {
-    color: #d4af37;
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 0.75rem;
-    text-align: center;
-  }
-
-  .selected-feats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-
-    .selected-feat {
-      background: rgba(26, 26, 26, 0.6);
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 0.5rem 0.75rem;
-      color: #d4af37;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      .remove-btn {
-        background: none;
-        border: none;
-        color: #ff6b6b;
-        cursor: pointer;
-        font-size: 1rem;
-        padding: 0;
-        line-height: 1;
-
-        &:hover {
-          color: #ff4444;
-        }
-      }
-    }
-  }
-
-  .no-feats {
-    color: #888;
-    text-align: center;
-    font-style: italic;
   }
 `;
 
@@ -248,745 +90,527 @@ const ErrorMessage = styled.div`
   font-size: 1rem;
 `;
 
-const ModalButtons = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 2rem;
+const DetailsContent = styled.div`
+  h3 {
+    color: #ce9016;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    margin: 1.5rem 0 0.75rem 0;
 
-  button {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-
-    &.btn-cancel {
-      background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
-      color: #f0f0f0;
-      flex: 1;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-      }
+    &:first-child {
+      margin-top: 0;
     }
+  }
 
-    &.btn-confirm {
-      background: linear-gradient(145deg, #d4af37, #b8941f);
-      color: #1a1a1a;
-      flex: 2;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
-      }
-    }
+  p {
+    color: #e0d9c6;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
   }
 `;
 
-export const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({
-  data,
-  onUpdate,
-}) => {
-  const [feats, setFeats] = useState<Feat[]>([]);
-  const [filteredFeats, setFilteredFeats] = useState<Feat[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFeatForModal, setSelectedFeatForModal] = useState<Feat | null>(null);
-  const [modalPage, setModalPage] = useState<'details' | 'choices'>('details');
-  const [currentFeatChoices, setCurrentFeatChoices] = useState<any>({});
-  const {
-    error: loadError,
-    isLoading,
-    execute: loadFeats,
-  } = useApiCall(listFeats, {
-    onSuccess: (allFeats) => {
-      const originFeats = allFeats.filter(
-        (feat) => (feat.category ?? '').toUpperCase() === FEAT_CATEGORIES.ORIGIN
-      );
-      setFeats(originFeats);
-      setFilteredFeats(originFeats);
-    },
-  });
+
+const ConfigSection = styled.div`
+  margin-bottom: 1.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const SectionTitle = styled.h3`
+  color: #ce9016;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  font-family: 'Cinzel', serif;
+`;
+
+const SelectionCount = styled.div`
+  color: #c0aa70;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+`;
+
+const OptionGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+`;
+
+const OptionButton = styled.button<{ $isSelected: boolean; $isDisabled?: boolean }>`
+  background: ${({ $isSelected }) => ($isSelected ? 'rgba(206, 144, 22, 0.2)' : 'rgba(26, 26, 26, 0.6)')};
+  border: 2px solid ${({ $isSelected }) => ($isSelected ? '#ce9016' : '#444')};
+  color: ${({ $isSelected }) => ($isSelected ? '#ce9016' : '#ccc')};
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: ${({ $isDisabled }) => ($isDisabled ? 'not-allowed' : 'pointer')};
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  opacity: ${({ $isDisabled }) => ($isDisabled ? 0.5 : 1)};
+
+  &:hover:not(:disabled) {
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ce9016;
+    outline-offset: 2px;
+  }
+`;
+
+const AbilityScoreGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+`;
+
+const AbilityBox = styled.div`
+  background: rgba(26, 26, 26, 0.6);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const AbilityLabel = styled.div`
+  color: #ce9016;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+`;
+
+const AbilityControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const AbilityButton = styled.button`
+  background: rgba(60, 60, 60, 0.8);
+  border: 1px solid rgba(206, 144, 22, 0.3);
+  color: #f0f0f0;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(80, 80, 80, 0.8);
+    border-color: rgba(206, 144, 22, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ce9016;
+    outline-offset: 2px;
+  }
+`;
+
+const AbilityValue = styled.div`
+  color: #ce9016;
+  font-weight: 600;
+  font-size: 1rem;
+  min-width: 32px;
+  text-align: center;
+`;
+
+const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate }) => {
+  const { scrollToBottom } = useAutoScroll();
+  const [detailsFeat, setDetailsFeat] = useState<Feat | null>(null);
+  const [selectFeat, setSelectFeat] = useState<Feat | null>(null);
+
+  // State for feat configuration choices
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [selectedInstruments, setSelectedInstruments] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [abilityScoreAllocations, setAbilityScoreAllocations] = useState<{ [ability: string]: number }>({});
+
+  const { data: feats, isLoading, error, execute } = useApiCall<Feat[], [{ category: string }]>(
+    listFeats
+  );
 
   useEffect(() => {
-    loadFeats({ category: FEAT_CATEGORIES.ORIGIN });
-  }, [loadFeats]);
+    execute({ category: 'O' });
+  }, [execute]);
 
+  // Auto-scroll when feat selected
   useEffect(() => {
-    // Filter feats based on search term
-    const trimmed = searchTerm.trim();
-    if (trimmed === '') {
-      setFilteredFeats(feats);
-    } else {
-      const searchLower = trimmed.toLowerCase();
-      const filtered = feats.filter((feat) => {
-        const nameMatch = feat.name.toLowerCase().includes(searchLower);
-        const entries = feat.entries ?? {};
-        const description = Array.isArray(entries.description) ? entries.description : [];
-        const benefits = Array.isArray(entries.benefits) ? entries.benefits : [];
-        const contentMatch = [...description, ...benefits].some(
-          (entry: unknown) =>
-            typeof entry === 'string' && entry.toLowerCase().includes(searchLower)
-        );
-
-        return nameMatch || contentMatch;
-      });
-      setFilteredFeats(filtered);
+    if (data.selectedOriginFeats.length > 0) {
+      scrollToBottom({ offset: 20 });
     }
-  }, [feats, searchTerm]);
+  }, [data.selectedOriginFeats.length, scrollToBottom]);
 
-  const handleFeatClick = (feat: Feat) => {
-    setSelectedFeatForModal(feat);
+  const handleDetailsClick = (feat: Feat) => {
+    setDetailsFeat(feat);
   };
 
-  const handleFeatSelect = (featName: string) => {
-    const currentFeats = data.selectedOriginFeats || [];
-    const isAlreadySelected = currentFeats.includes(featName);
+  const handleSelectClick = (feat: Feat) => {
+    // Determine max allowed origin feats (2 for humans, 1 for others)
+    const maxFeats = data.selectedSpecies?.toLowerCase() === 'human' ? 2 : 1;
 
-    // Find the full feat data
-    const featData = feats.find(feat => feat.name === featName);
-
-    if (isAlreadySelected) {
-      // Remove feat
-      const updatedFeats = currentFeats.filter(name => name !== featName);
-
-      // Remove feat data
-      const updatedFeatFeatures = { ...data.featFeatures };
-      const updatedFeatSpells = { ...data.featSpells };
-      delete updatedFeatFeatures[featName];
-      delete updatedFeatSpells[featName];
-
-      onUpdate({
-        selectedOriginFeats: updatedFeats,
-        featFeatures: updatedFeatFeatures,
-        featSpells: updatedFeatSpells
-      });
-    } else {
-      // Extract feat features
-      const extractFeatFeatures = (entries: any): any[] => {
-        if (!entries) return [];
-        if (Array.isArray(entries)) return entries;
-        if (typeof entries === 'object') {
-          const features = [];
-          if (entries.description) features.push(...(Array.isArray(entries.description) ? entries.description : [entries.description]));
-          if (entries.benefits) features.push(...(Array.isArray(entries.benefits) ? entries.benefits : [entries.benefits]));
-          return features;
-        }
-        return [];
-      };
-
-      // Extract feat spells
-      const extractFeatSpells = (additionalSpells: any): string[] => {
-        if (!additionalSpells) return [];
-        const spells: string[] = [];
-
-        if (Array.isArray(additionalSpells)) {
-          additionalSpells.forEach(spell => {
-            if (typeof spell === 'string') {
-              spells.push(spell);
-            } else if (spell.spells) {
-              spells.push(...(Array.isArray(spell.spells) ? spell.spells : [spell.spells]));
-            }
-          });
-        }
-
-        return spells;
-      };
-
-      // Add feat - if at limit, replace the first selected feat
-      let updatedFeats: string[];
-      if (currentFeats.length < data.requiredFeatCount) {
-        // Under limit - just add the feat
-        updatedFeats = [...currentFeats, featName];
-      } else {
-        // At limit - replace the last selected feat with the new one
-        updatedFeats = [...currentFeats];
-        updatedFeats[updatedFeats.length - 1] = featName; // Replace the last feat
-      }
-
-      // Store feat data
-      const updatedFeatFeatures = {
-        ...data.featFeatures,
-        [featName]: featData ? extractFeatFeatures(featData.entries) : []
-      };
-
-      const updatedFeatSpells = {
-        ...data.featSpells,
-        [featName]: featData ? extractFeatSpells(featData.additionalSpells) : []
-      };
-
-      onUpdate({
-        selectedOriginFeats: updatedFeats,
-        featFeatures: updatedFeatFeatures,
-        featSpells: updatedFeatSpells
-      });
+    // Check if already selected
+    if (data.selectedOriginFeats.includes(feat.name)) {
+      // Allow viewing/reconfiguring already selected feat
+      setSelectFeat(feat);
+      return;
     }
-  };
 
-  // Check if a feat needs choices
-  const featNeedsChoices = (featName: string): boolean => {
-    return ['Magic Initiate', 'Skilled', 'Crafter', 'Musician'].includes(featName);
-  };
-
-  const confirmFeatSelection = () => {
-    if (!selectedFeatForModal) return;
-
-    const featName = selectedFeatForModal.name;
-    const isAlreadySelected = (data.selectedOriginFeats || []).includes(featName);
-
-    if (isAlreadySelected) {
-      // Remove feat
-      handleFeatSelect(featName);
-      closeModal();
-    } else {
-      // Add feat
-      handleFeatSelect(featName);
-
-      // Check if this feat needs choices
-      if (featNeedsChoices(featName)) {
-        // Initialize choices for this feat
-        setCurrentFeatChoices(data.featChoices?.[featName] || {});
-        setModalPage('choices');
-      } else {
-        // No choices needed
-        closeModal();
-      }
+    // Check if limit reached
+    if (data.selectedOriginFeats.length >= maxFeats) {
+      alert(`You can only select ${maxFeats} origin feat${maxFeats > 1 ? 's' : ''}. Please remove an existing feat first.`);
+      return;
     }
+
+    setSelectFeat(feat);
+
+    // Reset configuration state
+    setSelectedSkills([]);
+    setSelectedTools([]);
+    setSelectedInstruments([]);
+    setSelectedLanguages([]);
+    setAbilityScoreAllocations({});
   };
 
-  const closeModal = () => {
-    setSelectedFeatForModal(null);
-    setModalPage('details');
-    setCurrentFeatChoices({});
-  };
-
-  // Update feat choice and persist to data
-  const updateFeatChoice = (choiceKey: string, value: any) => {
-    if (!selectedFeatForModal) return;
-
-    const newChoices = {
-      ...currentFeatChoices,
-      [choiceKey]: value
-    };
-    setCurrentFeatChoices(newChoices);
-
-    // Update in parent data
-    const newFeatChoices = {
-      ...data.featChoices,
-      [selectedFeatForModal.name]: newChoices
-    };
-    onUpdate({ featChoices: newFeatChoices });
-  };
-
-  // Check if current feat choices are complete
-  const areChoicesComplete = (): boolean => {
-    if (!selectedFeatForModal) return false;
-
-    const featName = selectedFeatForModal.name;
-    const choices = currentFeatChoices;
-
-    switch (featName) {
-      case 'Magic Initiate':
-        return !!choices.spellClass;
-      case 'Skilled':
-        return choices.skills?.length === 3;
-      case 'Crafter':
-        return choices.tools?.length === 3;
-      case 'Musician':
-        return choices.instruments?.length === 3;
-      default:
-        return true;
-    }
-  };
-
-  // Complete choices
-  const confirmChoices = () => {
-    if (!areChoicesComplete()) return;
-
-    closeModal();
-  };
-
-  const removeFeat = (featName: string) => {
-    const updatedFeats = (data.selectedOriginFeats || []).filter(name => name !== featName);
-
-    // Remove feat data
-    const updatedFeatFeatures = { ...data.featFeatures };
-    const updatedFeatSpells = { ...data.featSpells };
-    delete updatedFeatFeatures[featName];
-    delete updatedFeatSpells[featName];
+  const handleConfirmSelection = () => {
+    if (!selectFeat) return;
 
     onUpdate({
-      selectedOriginFeats: updatedFeats,
-      featFeatures: updatedFeatFeatures,
-      featSpells: updatedFeatSpells
+      selectedOriginFeats: [...data.selectedOriginFeats, selectFeat.name],
+      featChoices: {
+        ...data.featChoices,
+        [selectFeat.name]: {
+          ...(selectedSkills.length > 0 && { skills: selectedSkills }),
+          ...(selectedTools.length > 0 && { tools: selectedTools }),
+          ...(selectedInstruments.length > 0 && { instruments: selectedInstruments }),
+          ...(selectedLanguages.length > 0 && { languages: selectedLanguages }),
+          ...(Object.keys(abilityScoreAllocations).length > 0 && { abilityScores: abilityScoreAllocations })
+        }
+      },
+      featFeatures: {
+        ...data.featFeatures,
+        [selectFeat.name]: selectFeat.entries || []
+      }
     });
-  };
 
-  const formatFeatDescription = (entries: any): string => {
-    if (Array.isArray(entries)) {
-      return processTraitDescription(entries);
-    } else if (typeof entries === 'object' && entries) {
-      // Handle the API format: { description: [], benefits: [] }
-      // Skip generic "You gain the following benefits." and show actual benefits
-      const parts = [];
-
-      if (entries.benefits && entries.benefits.length > 0) {
-        // Show benefits first as they're more descriptive
-        parts.push(...entries.benefits);
-      }
-
-      if (entries.description && entries.description.length > 0) {
-        // Filter out generic description text
-        const filteredDescription = entries.description.filter((desc: string) =>
-          desc && !desc.includes('You gain the following benefits') && desc.trim().length > 10
-        );
-        parts.push(...filteredDescription);
-      }
-
-      return processTraitDescription(parts);
-    }
-    return '';
-  };
-
-  // Render choice UI for Magic Initiate
-  const renderMagicInitiateChoices = () => {
-    const choices = currentFeatChoices;
-    const SPELLCASTING_ABILITIES: Record<string, string> = { 'Cleric': 'WIS', 'Druid': 'WIS', 'Wizard': 'INT' };
-
-    return (
-      <div style={{ marginTop: '1rem' }}>
-        <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Spell Class</h3>
-        <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
-          Select which spell class you want to learn spells from.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-          {SPELL_CLASSES.map((spellClass) => (
-            <div
-              key={spellClass}
-              onClick={() => updateFeatChoice('spellClass', spellClass)}
-              style={{
-                background: choices.spellClass === spellClass ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
-                border: `2px solid ${choices.spellClass === spellClass ? '#d4af37' : '#444'}`,
-                borderRadius: '8px',
-                padding: '1rem',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                textAlign: 'center'
-              }}
-            >
-              <div style={{ color: '#d4af37', fontWeight: 600, marginBottom: '0.25rem' }}>{spellClass}</div>
-              <div style={{ color: '#ccc', fontSize: '0.8rem' }}>
-                Ability: {SPELLCASTING_ABILITIES[spellClass]}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Render choice UI for Skilled
-  const renderSkilledChoices = () => {
-    const choices = currentFeatChoices;
-    const selectedItems = choices.skills || [];
-    const SKILLS_AND_TOOLS = [
-      ...ALL_SKILLS.map(skill => ({ name: skill, type: 'skill' })),
-      ...ALL_TOOLS.map(tool => ({ name: tool, type: 'tool' }))
-    ];
-
-    return (
-      <div style={{ marginTop: '1rem' }}>
-        <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Skills or Tools</h3>
-        <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
-          Select any combination of 3 skills or tools. Selected: {selectedItems.length}/3
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto' }}>
-          {SKILLS_AND_TOOLS.map((item) => {
-            const isSelected = selectedItems.includes(item.name);
-            const canSelect = selectedItems.length < 3 || isSelected;
-
-            return (
-              <div
-                key={item.name}
-                onClick={() => {
-                  if (isSelected) {
-                    updateFeatChoice('skills', selectedItems.filter((s: string) => s !== item.name));
-                  } else if (canSelect) {
-                    updateFeatChoice('skills', [...selectedItems, item.name]);
-                  }
-                }}
-                style={{
-                  background: isSelected ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
-                  border: `2px solid ${isSelected ? '#d4af37' : '#444'}`,
-                  borderRadius: '8px',
-                  padding: '0.75rem',
-                  cursor: canSelect ? 'pointer' : 'not-allowed',
-                  opacity: canSelect ? 1 : 0.5,
-                  transition: 'all 0.3s ease',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ color: '#d4af37', fontSize: '0.85rem' }}>{item.name}</div>
-                <div style={{ color: '#888', fontSize: '0.7rem', textTransform: 'capitalize', marginTop: '0.25rem' }}>
-                  {item.type}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Render choice UI for Crafter
-  const renderCrafterChoices = () => {
-    const choices = currentFeatChoices;
-    const selectedTools = choices.tools || [];
-
-    return (
-      <div style={{ marginTop: '1rem' }}>
-        <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Artisan's Tools</h3>
-        <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
-          Choose 3 different Artisan's Tools. Selected: {selectedTools.length}/3
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
-          {ARTISAN_TOOLS.map((tool) => {
-            const isSelected = selectedTools.includes(tool);
-            const canSelect = selectedTools.length < 3 || isSelected;
-
-            return (
-              <div
-                key={tool}
-                onClick={() => {
-                  if (isSelected) {
-                    updateFeatChoice('tools', selectedTools.filter((t: string) => t !== tool));
-                  } else if (canSelect) {
-                    updateFeatChoice('tools', [...selectedTools, tool]);
-                  }
-                }}
-                style={{
-                  background: isSelected ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
-                  border: `2px solid ${isSelected ? '#d4af37' : '#444'}`,
-                  borderRadius: '8px',
-                  padding: '0.75rem',
-                  cursor: canSelect ? 'pointer' : 'not-allowed',
-                  opacity: canSelect ? 1 : 0.5,
-                  transition: 'all 0.3s ease',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ color: '#d4af37', fontSize: '0.85rem' }}>{tool}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Render choice UI for Musician
-  const renderMusicianChoices = () => {
-    const choices = currentFeatChoices;
-    const selectedInstruments = choices.instruments || [];
-
-    return (
-      <div style={{ marginTop: '1rem' }}>
-        <h3 style={{ color: '#d4af37', textAlign: 'center', marginBottom: '0.75rem' }}>Choose Musical Instruments</h3>
-        <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
-          Choose 3 different Musical Instruments. Selected: {selectedInstruments.length}/3
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
-          {MUSICAL_INSTRUMENTS.map((instrument) => {
-            const isSelected = selectedInstruments.includes(instrument);
-            const canSelect = selectedInstruments.length < 3 || isSelected;
-
-            return (
-              <div
-                key={instrument}
-                onClick={() => {
-                  if (isSelected) {
-                    updateFeatChoice('instruments', selectedInstruments.filter((i: string) => i !== instrument));
-                  } else if (canSelect) {
-                    updateFeatChoice('instruments', [...selectedInstruments, instrument]);
-                  }
-                }}
-                style={{
-                  background: isSelected ? 'rgba(212, 175, 55, 0.1)' : 'rgba(26, 26, 26, 0.8)',
-                  border: `2px solid ${isSelected ? '#d4af37' : '#444'}`,
-                  borderRadius: '8px',
-                  padding: '0.75rem',
-                  cursor: canSelect ? 'pointer' : 'not-allowed',
-                  opacity: canSelect ? 1 : 0.5,
-                  transition: 'all 0.3s ease',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ color: '#d4af37', fontSize: '0.85rem' }}>{instrument}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
+    setSelectFeat(null);
   };
 
   const renderFeatDetails = (feat: Feat) => {
-    const entries = feat.entries;
-    let content = [];
+    // Parse the entries array through the template parser
+    const parsedEntries = parseComplexDnDEntry(feat.entries);
 
-    if (entries.description) content.push(...entries.description);
-    if (entries.benefits) content.push(...entries.benefits);
+    return (
+      <DetailsContent>
+        <div style={{ whiteSpace: 'pre-wrap' }}>{parsedEntries}</div>
 
-    const { text } = processTraitDescriptionWithTables(content);
-    return text;
+        {feat.prerequisites && (
+          <>
+            <h3>Prerequisites</h3>
+            <p>{JSON.stringify(feat.prerequisites)}</p>
+          </>
+        )}
+      </DetailsContent>
+    );
   };
 
-  const renderFeatDetailsContent = (feat: Feat) => (
-    <>
-      {feat.prerequisites && (
-        <FeatPrerequisite>
-          Prerequisite: {JSON.stringify(feat.prerequisites)}
-        </FeatPrerequisite>
-      )}
-
-      <div
-        className="feat-details"
-        dangerouslySetInnerHTML={{ __html: renderFeatDetails(feat) }}
-      />
-
-      <div
-        style={{
-          textAlign: 'center',
-          fontSize: '0.7rem',
-          color: '#888',
-          marginTop: '1rem',
-        }}
-      >
-        <strong>Source:</strong> {feat.sourceBook ?? feat.source ?? 'Unknown'}
-      </div>
-    </>
-  );
-
-  const renderFeatChoicesContent = (feat: Feat) => {
-    const featName = feat.name.toLowerCase();
-
-    switch (featName) {
-      case 'magic initiate':
-        return renderMagicInitiateChoices();
-      case 'skilled':
-        return renderSkilledChoices();
-      case 'crafter':
-        return renderCrafterChoices();
-      case 'musician':
-        return renderMusicianChoices();
-      default:
-        return null;
+  const getFeatSummary = (feat: Feat): string => {
+    // Extract first sentence or key benefit from feat
+    if (feat.entries && Array.isArray(feat.entries) && feat.entries.length > 0) {
+      const firstEntry = feat.entries[0];
+      if (typeof firstEntry === 'string') {
+        const match = firstEntry.match(/^[^.!?]+[.!?]/);
+        return match ? match[0] : firstEntry.slice(0, 100) + '...';
+      }
     }
+    return 'View details for more information';
+  };
+
+  const renderSelectConfiguration = () => {
+    if (!selectFeat) return null;
+
+    const needsSkillOrToolChoice = selectFeat.name === 'Skilled';
+    const needsCrafterTools = selectFeat.name === 'Crafter';
+    const needsInstruments = selectFeat.name === 'Musician';
+    const needsLanguageChoice = selectFeat.name === 'Linguist';
+    const needsAbilityChoice = selectFeat.name === 'Ability Score Improvement';
+
+    const needsAnyChoice = needsSkillOrToolChoice || needsCrafterTools || needsInstruments || needsLanguageChoice || needsAbilityChoice;
+
+    if (!needsAnyChoice) {
+      return (
+        <div style={{
+          textAlign: 'center',
+          padding: '2rem',
+          color: '#ccc',
+          fontSize: '0.95rem',
+          lineHeight: '1.6'
+        }}>
+          <div style={{ color: '#ce9016', fontWeight: 600, marginBottom: '0.5rem' }}>
+            No Selections Required
+          </div>
+          <div>
+            This feat doesn't require any additional choices. Click "CONFIRM" to add it to your character.
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {needsSkillOrToolChoice && (
+          <ConfigSection>
+            <SectionTitle>Choose 3 Skills or Tools</SectionTitle>
+            <SelectionCount>Selected: {selectedSkills.length} / 3</SelectionCount>
+            <OptionGrid>
+              {ALL_TOOLS_AND_SKILLS.map((option) => (
+                <OptionButton
+                  key={option}
+                  $isSelected={selectedSkills.includes(option)}
+                  $isDisabled={!selectedSkills.includes(option) && selectedSkills.length >= 3}
+                  onClick={() => {
+                    if (selectedSkills.includes(option)) {
+                      setSelectedSkills(selectedSkills.filter(s => s !== option));
+                    } else if (selectedSkills.length < 3) {
+                      setSelectedSkills([...selectedSkills, option]);
+                    }
+                  }}
+                >
+                  {option}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </ConfigSection>
+        )}
+
+        {needsCrafterTools && (
+          <ConfigSection>
+            <SectionTitle>Choose 3 Artisan's Tools</SectionTitle>
+            <SelectionCount>Selected: {selectedTools.length} / 3</SelectionCount>
+            <OptionGrid>
+              {ARTISAN_TOOLS.map((tool) => (
+                <OptionButton
+                  key={tool}
+                  $isSelected={selectedTools.includes(tool)}
+                  $isDisabled={!selectedTools.includes(tool) && selectedTools.length >= 3}
+                  onClick={() => {
+                    if (selectedTools.includes(tool)) {
+                      setSelectedTools(selectedTools.filter(t => t !== tool));
+                    } else if (selectedTools.length < 3) {
+                      setSelectedTools([...selectedTools, tool]);
+                    }
+                  }}
+                >
+                  {tool}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </ConfigSection>
+        )}
+
+        {needsInstruments && (
+          <ConfigSection>
+            <SectionTitle>Choose 3 Musical Instruments</SectionTitle>
+            <SelectionCount>Selected: {selectedInstruments.length} / 3</SelectionCount>
+            <OptionGrid>
+              {MUSICAL_INSTRUMENTS.map((instrument) => (
+                <OptionButton
+                  key={instrument}
+                  $isSelected={selectedInstruments.includes(instrument)}
+                  $isDisabled={!selectedInstruments.includes(instrument) && selectedInstruments.length >= 3}
+                  onClick={() => {
+                    if (selectedInstruments.includes(instrument)) {
+                      setSelectedInstruments(selectedInstruments.filter(i => i !== instrument));
+                    } else if (selectedInstruments.length < 3) {
+                      setSelectedInstruments([...selectedInstruments, instrument]);
+                    }
+                  }}
+                >
+                  {instrument}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </ConfigSection>
+        )}
+
+        {needsLanguageChoice && (
+          <ConfigSection>
+            <SectionTitle>Choose Languages</SectionTitle>
+            <SelectionCount>Selected: {selectedLanguages.length} / 3</SelectionCount>
+            <OptionGrid>
+              {['Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Orc', 'Abyssal', 'Celestial', 'Draconic', 'Deep Speech', 'Infernal', 'Primordial', 'Sylvan', 'Undercommon'].map((lang) => (
+                <OptionButton
+                  key={lang}
+                  $isSelected={selectedLanguages.includes(lang)}
+                  $isDisabled={!selectedLanguages.includes(lang) && selectedLanguages.length >= 3}
+                  onClick={() => {
+                    if (selectedLanguages.includes(lang)) {
+                      setSelectedLanguages(selectedLanguages.filter(l => l !== lang));
+                    } else if (selectedLanguages.length < 3) {
+                      setSelectedLanguages([...selectedLanguages, lang]);
+                    }
+                  }}
+                >
+                  {lang}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </ConfigSection>
+        )}
+
+        {needsAbilityChoice && (
+          <ConfigSection>
+            <SectionTitle>Allocate Ability Score Increases</SectionTitle>
+            <SelectionCount>
+              Allocated: {Object.values(abilityScoreAllocations).reduce((sum, val) => sum + val, 0)} / 3
+            </SelectionCount>
+            <AbilityScoreGrid>
+              {['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].map((ability) => (
+                <AbilityBox key={ability}>
+                  <AbilityLabel>{ability}</AbilityLabel>
+                  <AbilityControls>
+                    <AbilityButton
+                      onClick={() => {
+                        const current = abilityScoreAllocations[ability] || 0;
+                        if (current > 0) {
+                          setAbilityScoreAllocations({
+                            ...abilityScoreAllocations,
+                            [ability]: current - 1
+                          });
+                        }
+                      }}
+                      disabled={!abilityScoreAllocations[ability] || abilityScoreAllocations[ability] === 0}
+                    >
+                      −
+                    </AbilityButton>
+                    <AbilityValue>+{abilityScoreAllocations[ability] || 0}</AbilityValue>
+                    <AbilityButton
+                      onClick={() => {
+                        const current = abilityScoreAllocations[ability] || 0;
+                        const total = Object.values(abilityScoreAllocations).reduce((sum, val) => sum + val, 0);
+                        if (total < 3 && current < 2) {
+                          setAbilityScoreAllocations({
+                            ...abilityScoreAllocations,
+                            [ability]: current + 1
+                          });
+                        }
+                      }}
+                      disabled={
+                        Object.values(abilityScoreAllocations).reduce((sum, val) => sum + val, 0) >= 3 ||
+                        (abilityScoreAllocations[ability] || 0) >= 2
+                      }
+                    >
+                      +
+                    </AbilityButton>
+                  </AbilityControls>
+                </AbilityBox>
+              ))}
+            </AbilityScoreGrid>
+          </ConfigSection>
+        )}
+      </>
+    );
+  };
+
+  const isConfigurationValid = (): boolean => {
+    if (!selectFeat) return false;
+
+    if (selectFeat.name === 'Skilled') return selectedSkills.length === 3;
+    if (selectFeat.name === 'Crafter') return selectedTools.length === 3;
+    if (selectFeat.name === 'Musician') return selectedInstruments.length === 3;
+    if (selectFeat.name === 'Linguist') return selectedLanguages.length === 3;
+    if (selectFeat.name === 'Ability Score Improvement') {
+      const total = Object.values(abilityScoreAllocations).reduce((sum, val) => sum + val, 0);
+      return total === 3;
+    }
+
+    // No configuration needed for other feats
+    return true;
   };
 
   if (isLoading) {
     return (
       <StepContainer>
-        <div className="step-title">Origin Feats</div>
         <LoadingState>
-          <LoadingSpinner message="Loading origin feats..." />
+          <LoadingSpinner message="Loading feats..." />
         </LoadingState>
       </StepContainer>
     );
   }
 
-  if (loadError) {
+  if (error || !feats) {
     return (
       <StepContainer>
-        <div className="step-title">Origin Feats</div>
-        <ErrorMessage>Error: {loadError}</ErrorMessage>
+        <ErrorMessage>
+          Failed to load feats. Please try again.
+        </ErrorMessage>
       </StepContainer>
     );
   }
 
-  const selectedFeats = data.selectedOriginFeats || [];
-  const remainingFeats = data.requiredFeatCount - selectedFeats.length;
-
   return (
     <StepContainer>
-      <div className="step-title">Origin Feats</div>
-      <div className="step-description">
-        Choose {data.requiredFeatCount} Origin Feat{data.requiredFeatCount > 1 ? 's' : ''} to customize your character's abilities.
-        {data.isHuman && (
-          <span style={{ color: '#d4af37', marginLeft: '0.5rem' }}>
-            🌟 Humans get 2 Origin Feats!
-          </span>
-        )}
-      </div>
-
       <AbilityScoresHeader data={data} />
 
-      <div className="step-content">
-        <FeatsContainer>
-          <div className="feats-header">
-            <div className="header-title">Origin Feats Selection</div>
-            <div className="header-description">
-              Origin feats are special abilities that define your character's background and training.
-              These feats are available to all characters at 1st level.
-            </div>
-            <div className="feat-count">
-              Selected: {selectedFeats.length} / {data.requiredFeatCount}
-              {remainingFeats > 0 && (
-                <span style={{ color: '#ff6b6b', marginLeft: '1rem' }}>
-                  ({remainingFeats} remaining)
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="search-section">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search feats by name or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <FeatsGrid>
-            {filteredFeats.map((feat) => (
-              <FeatCard
-                key={feat.id}
-                selected={selectedFeats.includes(feat.name)}
-                onClick={() => handleFeatClick(feat)}
-              >
-                <FeatName>{feat.name}</FeatName>
-
-                {feat.prerequisites && (
-                  <FeatPrerequisite>
-                    Prerequisite: {JSON.stringify(feat.prerequisites)}
-                  </FeatPrerequisite>
-                )}
-
-                <FeatDescription>
-                  <div
-                    className="feat-text"
-                    dangerouslySetInnerHTML={{
-                      __html: formatFeatDescription(feat.entries).substring(0, 200) +
-                              (formatFeatDescription(feat.entries).length > 200 ? '...' : '')
-                    }}
-                  />
-
-                  {feat.abilityScoreIncrease && (
-                    <div className="feat-benefits">
-                      <div className="benefit-item">
-                        <span className="benefit-label">Ability Score Increase</span>
-                      </div>
-                    </div>
-                  )}
-                </FeatDescription>
-              </FeatCard>
-            ))}
-          </FeatsGrid>
-
-          {filteredFeats.length === 0 && (
-            <div style={{
-              textAlign: 'center',
-              color: '#888',
-              padding: '2rem',
-              fontStyle: 'italic'
-            }}>
-              No feats found matching your search.
-            </div>
-          )}
-
-          <SelectedFeatsSection>
-            <div className="section-title">Selected Origin Feats</div>
-            {selectedFeats.length > 0 ? (
-              <div className="selected-feats">
-                {selectedFeats.map((featName) => (
-                  <div key={featName} className="selected-feat">
-                    {featName}
-                    <button
-                      className="remove-btn"
-                      onClick={() => removeFeat(featName)}
-                      title="Remove feat"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="no-feats">
-                No feats selected yet. Choose {data.requiredFeatCount} feat{data.requiredFeatCount > 1 ? 's' : ''} from the list above.
+      <FeatsContainer>
+        <div className="feats-header">
+          <div className="header-title">Choose Your Origin Feat{data.selectedSpecies?.toLowerCase() === 'human' ? 's' : ''}</div>
+          <div className="header-description">
+            {data.selectedSpecies?.toLowerCase() === 'human'
+              ? 'As a Human, you gain 2 Origin feats at 1st level. These feats represent your character\'s innate talents and versatile training.'
+              : 'Every character gains an Origin feat at 1st level. This feat represents your character\'s innate talents and training.'
+            }
+            {data.selectedOriginFeats.length > 0 && (
+              <div style={{ marginTop: '0.5rem', color: '#ce9016', fontWeight: 'bold' }}>
+                Selected: {data.selectedOriginFeats.length} / {data.selectedSpecies?.toLowerCase() === 'human' ? 2 : 1}
               </div>
             )}
-          </SelectedFeatsSection>
+          </div>
+        </div>
 
-          {selectedFeats.length !== data.requiredFeatCount && (
-            <div style={{
-              textAlign: 'center',
-              color: '#ff6b6b',
-              marginTop: '1rem',
-              fontSize: '0.9rem'
-            }}>
-              ⚠️ Please select exactly {data.requiredFeatCount} feat{data.requiredFeatCount > 1 ? 's' : ''} before proceeding.
-            </div>
-          )}
-        </FeatsContainer>
-      </div>
+        <CompactList
+          items={feats}
+          isSelected={(feat) => data.selectedOriginFeats.includes(feat.name)}
+          onDetails={handleDetailsClick}
+          onSelect={handleSelectClick}
+          renderName={(feat) => feat.name}
+          renderSummary={getFeatSummary}
+        />
 
-      {selectedFeatForModal && (
-        <WizardModal
-          isOpen={Boolean(selectedFeatForModal)}
-          onClose={closeModal}
-          title={
-            modalPage === 'details'
-              ? selectedFeatForModal.name
-              : `${selectedFeatForModal.name} - Make Choices`
-          }
-          maxWidth="800px"
-          footer={
-            modalPage === 'details' ? (
-              <ModalButtons>
-                <button className="btn-cancel" onClick={closeModal}>
-                  Close
-                </button>
-                <button
-                  className="btn-confirm"
-                  onClick={confirmFeatSelection}
-                >
-                  {selectedFeats.includes(selectedFeatForModal.name)
-                    ? 'Remove Feat'
-                    : 'Select Feat'}
-                </button>
-              </ModalButtons>
-            ) : (
-              <ModalButtons style={{ marginTop: '1.5rem' }}>
-                <button
-                  className="btn-cancel"
-                  onClick={() => setModalPage('details')}
-                >
-                  Back
-                </button>
-                <button
-                  className="btn-confirm"
-                  onClick={confirmChoices}
-                  disabled={!areChoicesComplete()}
-                >
-                  Confirm Choices
-                </button>
-              </ModalButtons>
-            )
-          }
+        {/* Details Modal - Read Only */}
+        <DetailsModal
+          isOpen={!!detailsFeat}
+          onClose={() => setDetailsFeat(null)}
+          title={detailsFeat?.name || ''}
+          content={detailsFeat ? renderFeatDetails(detailsFeat) : null}
+        />
+
+        {/* Select Modal - Configuration */}
+        <SelectModal
+          isOpen={!!selectFeat}
+          onClose={() => setSelectFeat(null)}
+          onConfirm={handleConfirmSelection}
+          title={`Configure ${selectFeat?.name || ''}`}
+          isConfirmDisabled={!isConfigurationValid()}
         >
-          {modalPage === 'details'
-            ? renderFeatDetailsContent(selectedFeatForModal)
-            : renderFeatChoicesContent(selectedFeatForModal)}
-        </WizardModal>
-      )}
+          {renderSelectConfiguration()}
+        </SelectModal>
+      </FeatsContainer>
     </StepContainer>
   );
 };
+
+export default Step3DOriginFeats;

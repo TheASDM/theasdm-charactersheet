@@ -20,10 +20,10 @@ const CounterPill = styled.div<{ $invalid?: boolean }>`
   background: ${({ $invalid }) =>
     $invalid ? 'rgba(182, 55, 55, 0.2)' : 'rgba(26, 26, 26, 0.75)'};
   border: 1px solid
-    ${({ $invalid }) => ($invalid ? 'rgba(255, 92, 92, 0.6)' : 'rgba(212, 175, 55, 0.4)')};
+    ${({ $invalid }) => ($invalid ? 'rgba(255, 92, 92, 0.6)' : 'rgba(206, 144, 22, 0.4)')};
   border-radius: 999px;
   padding: 0.5rem 1rem;
-  color: ${({ $invalid }) => ($invalid ? '#ff8a8a' : '#d4af37')};
+  color: ${({ $invalid }) => ($invalid ? '#ff8a8a' : '#ce9016')};
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: 0.4px;

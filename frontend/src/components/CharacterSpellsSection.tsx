@@ -34,13 +34,13 @@ const SummaryRow = styled.div`
 
 const SummaryBadge = styled.div<{ $variant?: 'default' | 'warning' }>`
   background: ${({ $variant }) =>
-    $variant === 'warning' ? 'rgba(244, 67, 54, 0.12)' : 'rgba(212, 175, 55, 0.12)'};
+    $variant === 'warning' ? 'rgba(244, 67, 54, 0.12)' : 'rgba(206, 144, 22, 0.12)'};
   border: 1px solid ${({ $variant }) =>
-    $variant === 'warning' ? 'rgba(244, 67, 54, 0.35)' : 'rgba(212, 175, 55, 0.35)'};
+    $variant === 'warning' ? 'rgba(244, 67, 54, 0.35)' : 'rgba(206, 144, 22, 0.35)'};
   border-radius: 999px;
   padding: 0.5rem 1rem;
   color: ${({ $variant }) =>
-    $variant === 'warning' ? '#f76b5c' : '#d4af37'};
+    $variant === 'warning' ? '#f76b5c' : '#ce9016'};
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.3px;
@@ -51,7 +51,7 @@ const SummaryBadge = styled.div<{ $variant?: 'default' | 'warning' }>`
 
 const Section = styled.section`
   background: rgba(26, 26, 26, 0.65);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  border: 1px solid rgba(206, 144, 22, 0.25);
   border-radius: 12px;
   padding: 1.25rem;
   display: flex;
@@ -67,7 +67,7 @@ const SectionHeader = styled.div`
   h3 {
     margin: 0;
     font-size: 1rem;
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     letter-spacing: 0.6px;
     text-transform: uppercase;
@@ -75,7 +75,7 @@ const SectionHeader = styled.div`
 
   span {
     font-size: 0.8rem;
-    color: rgba(212, 175, 55, 0.7);
+    color: rgba(206, 144, 22, 0.7);
   }
 `;
 
@@ -89,7 +89,7 @@ const SpellCard = styled.div<{ $prepared?: boolean; $granted?: boolean }>`
   background: rgba(16, 16, 16, 0.9);
   border: 1px solid
     ${({ $prepared, $granted }) =>
-      $granted ? 'rgba(108, 198, 255, 0.4)' : $prepared ? 'rgba(125, 225, 125, 0.45)' : 'rgba(212, 175, 55, 0.25)'};
+      $granted ? 'rgba(108, 198, 255, 0.4)' : $prepared ? 'rgba(125, 225, 125, 0.45)' : 'rgba(206, 144, 22, 0.25)'};
   border-radius: 12px;
   padding: 0.85rem 1rem;
   display: flex;
@@ -133,7 +133,7 @@ const Tag = styled.span<{ $tone?: 'default' | 'prepared' | 'granted' | 'cantrip'
       ? '#80cfff'
       : $tone === 'cantrip'
       ? '#f4c76a'
-      : '#d4af37'};
+      : '#ce9016'};
   border: 1px solid ${({ $tone }) =>
     $tone === 'prepared'
       ? 'rgba(125, 225, 125, 0.6)'
@@ -141,7 +141,7 @@ const Tag = styled.span<{ $tone?: 'default' | 'prepared' | 'granted' | 'cantrip'
       ? 'rgba(108, 198, 255, 0.6)'
       : $tone === 'cantrip'
       ? 'rgba(244, 199, 106, 0.6)'
-      : 'rgba(212, 175, 55, 0.5)'};
+      : 'rgba(206, 144, 22, 0.5)'};
   background: ${({ $tone }) =>
     $tone === 'prepared'
       ? 'rgba(125, 225, 125, 0.12)'
@@ -149,7 +149,7 @@ const Tag = styled.span<{ $tone?: 'default' | 'prepared' | 'granted' | 'cantrip'
       ? 'rgba(108, 198, 255, 0.12)'
       : $tone === 'cantrip'
       ? 'rgba(244, 199, 106, 0.12)'
-      : 'rgba(212, 175, 55, 0.1)'};
+      : 'rgba(206, 144, 22, 0.1)'};
 `;
 
 const SpellMetaRow = styled.div`
@@ -164,8 +164,8 @@ const EmptyState = styled.div`
   padding: 1rem;
   text-align: center;
   font-size: 0.9rem;
-  color: rgba(212, 175, 55, 0.8);
-  border: 1px dashed rgba(212, 175, 55, 0.25);
+  color: rgba(206, 144, 22, 0.8);
+  border: 1px dashed rgba(206, 144, 22, 0.25);
   border-radius: 10px;
   background: rgba(26, 26, 26, 0.5);
 `;

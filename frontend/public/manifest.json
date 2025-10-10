@@ -1,27 +1,29 @@
 {
-  "short_name": "D&D Character Sheet",
-  "name": "D&D 2024 Character Sheet Generator",
+  "short_name": "WTForged",
+  "name": "WTForged - D&D Character Sheet Generator",
   "description": "Create and manage D&D 2024 characters with Nimble TTRPG homebrew mechanics",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "images/favicon.png",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "type": "image/png"
     },
     {
-      "src": "logo192.png",
+      "src": "images/forge-icon.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "logo512.png",
+      "src": "images/forge-icon.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#8B0000",
+  "theme_color": "#ce9016",
   "background_color": "#1a1a1a",
   "orientation": "portrait-primary",
   "categories": ["games", "entertainment"],

@@ -15,10 +15,10 @@ interface SpellCardProps {
 const Card = styled.div<{ $selected?: boolean }>`
   background: ${({ $selected }) =>
     $selected
-      ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(184, 148, 31, 0.1))'
+      ? 'linear-gradient(135deg, rgba(206, 144, 22, 0.15), rgba(184, 148, 31, 0.1))'
       : 'rgba(26, 26, 26, 0.6)'};
   border: 1px solid
-    ${({ $selected }) => ($selected ? 'rgba(212, 175, 55, 0.6)' : 'rgba(212, 175, 55, 0.25)')};
+    ${({ $selected }) => ($selected ? 'rgba(206, 144, 22, 0.6)' : 'rgba(206, 144, 22, 0.25)')};
   border-radius: 12px;
   padding: 1rem;
   transition: all 0.2s ease;
@@ -27,7 +27,7 @@ const Card = styled.div<{ $selected?: boolean }>`
   flex-direction: column;
 
   &:hover {
-    border-color: #d4af37;
+    border-color: #ce9016;
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
   }
@@ -36,7 +36,7 @@ const Card = styled.div<{ $selected?: boolean }>`
 const SpellName = styled.h3`
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
-  color: #f1c661;
+  color: #e0a523;
   font-weight: 600;
   letter-spacing: 0.3px;
 `;
@@ -60,7 +60,7 @@ const Tag = styled.span<{ $kind?: 'granted' | 'error' | 'ritual' }>`
     if ($kind === 'ritual') {
       return 'rgba(147, 112, 219, 0.25)';
     }
-    return 'rgba(212, 175, 55, 0.2)';
+    return 'rgba(206, 144, 22, 0.2)';
   }};
   color: ${({ $kind }) => {
     if ($kind === 'granted') {
@@ -72,7 +72,7 @@ const Tag = styled.span<{ $kind?: 'granted' | 'error' | 'ritual' }>`
     if ($kind === 'ritual') {
       return '#c9a9ff';
     }
-    return '#d4af37';
+    return '#ce9016';
   }};
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
@@ -109,11 +109,11 @@ const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'dange
   ${({ $variant }) => {
     if ($variant === 'primary') {
       return `
-        background: linear-gradient(135deg, #d4af37, #b8941f);
+        background: linear-gradient(135deg, #ce9016, #b8860b);
         color: #1a1a1a;
         &:hover {
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+          box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
         }
       `;
     }
@@ -129,11 +129,11 @@ const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'dange
     }
     return `
       background: rgba(60, 60, 60, 0.5);
-      color: #d4af37;
-      border-color: rgba(212, 175, 55, 0.3);
+      color: #ce9016;
+      border-color: rgba(206, 144, 22, 0.3);
       &:hover {
         background: rgba(80, 80, 80, 0.6);
-        border-color: #d4af37;
+        border-color: #ce9016;
       }
     `;
   }}

@@ -16,11 +16,11 @@ const PageContainer = styled.div`
 
 const Message = styled.div`
   text-align: center;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.2rem;
   padding: 2rem;
-  background: rgba(212, 175, 55, 0.1);
-  border: 2px solid #d4af37;
+  background: rgba(206, 144, 22, 0.1);
+  border: 2px solid #ce9016;
   border-radius: 8px;
   max-width: 600px;
 `;
@@ -28,7 +28,7 @@ const Message = styled.div`
 export const SpeciesFeaturesTestPage: React.FC = () => {
   return (
     <PageContainer>
-      <h1 style={{ color: '#d4af37', fontFamily: 'Cinzel, serif', fontSize: '2.5rem', marginBottom: '1.5rem' }}>
+      <h1 style={{ color: '#ce9016', fontFamily: 'Cinzel, serif', fontSize: '2.5rem', marginBottom: '1.5rem' }}>
         Character Features Test - D&D 2024
       </h1>
       <Message>

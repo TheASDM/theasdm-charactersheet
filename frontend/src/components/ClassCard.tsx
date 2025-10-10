@@ -22,7 +22,7 @@ const Card = styled.div`
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-    border-color: #d4af37;
+    border-color: #ce9016;
   }
 `;
 
@@ -30,11 +30,11 @@ const ClassHeader = styled.div`
   background: rgba(35, 35, 35, 0.9);
   padding: 1rem;
   text-align: center;
-  border-bottom: 2px solid #d4af37;
+  border-bottom: 2px solid #ce9016;
 `;
 
 const ClassName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
@@ -51,8 +51,8 @@ const ClassType = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #f0f0f0;
-  background: rgba(212, 175, 55, 0.2);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(206, 144, 22, 0.2);
+  border: 1px solid rgba(206, 144, 22, 0.3);
 `;
 
 const CardBody = styled.div`
@@ -70,7 +70,7 @@ const InfoRow = styled.div`
   font-size: 0.9rem;
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     min-width: 110px;
   }
@@ -87,19 +87,19 @@ const AbilityTags = styled.div`
 `;
 
 const AbilityTag = styled.span`
-  background: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
   padding: 2px 6px;
   border-radius: 3px;
   font-size: 0.7rem;
   font-weight: 600;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   letter-spacing: 0.3px;
 `;
 
 const SourceTag = styled.div`
-  background: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.7rem;
@@ -107,7 +107,7 @@ const SourceTag = styled.div`
   display: inline-block;
   letter-spacing: 0.3px;
   text-transform: uppercase;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   align-self: flex-start;
   margin-top: auto;
 `;
@@ -122,9 +122,9 @@ const ButtonContainer = styled.div`
 `;
 
 const ActionButton = styled.button`
-  background: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
-  border: 1px solid #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
+  border: 1px solid #ce9016;
   padding: 8px 12px;
   border-radius: 6px;
   font-weight: 600;
@@ -136,9 +136,9 @@ const ActionButton = styled.button`
   font-family: 'Cinzel', serif;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.4);
+    background: rgba(206, 144, 22, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
   }
 
   &:active {

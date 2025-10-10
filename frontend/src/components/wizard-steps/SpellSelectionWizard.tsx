@@ -33,19 +33,22 @@ interface SpellSelectionWizardProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
   onValidityChange: (isValid: boolean) => void;
-  onCustomNext?: () => boolean; // Return true if handled internally, false to let wizard proceed
+  navigationHandlersRef?: React.MutableRefObject<{
+    handleNext?: () => boolean;
+    handleBack?: () => boolean;
+  }>;
 }
 
 const InfoPanel = styled.div<{ $variant?: 'info' | 'warning' | 'special' }>`
   background: ${({ $variant }) => {
     if ($variant === 'warning') return 'rgba(255, 193, 7, 0.1)';
     if ($variant === 'special') return 'rgba(106, 168, 79, 0.1)';
-    return 'rgba(212, 175, 55, 0.1)';
+    return 'rgba(206, 144, 22, 0.1)';
   }};
   border: 1px solid ${({ $variant }) => {
     if ($variant === 'warning') return 'rgba(255, 193, 7, 0.4)';
     if ($variant === 'special') return 'rgba(106, 168, 79, 0.4)';
-    return 'rgba(212, 175, 55, 0.4)';
+    return 'rgba(206, 144, 22, 0.4)';
   }};
   border-radius: 8px;
   padding: 1rem;
@@ -55,7 +58,7 @@ const InfoPanel = styled.div<{ $variant?: 'info' | 'warning' | 'special' }>`
   line-height: 1.5;
 
   strong {
-    color: #f1c661;
+    color: #e0a523;
   }
 `;
 
@@ -70,7 +73,7 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
   data,
   onUpdate,
   onValidityChange,
-  onCustomNext,
+  navigationHandlersRef,
 }) => {
   const classId = data.selectedClass ?? '';
   const level = 1; // For now, always level 1
@@ -212,23 +215,19 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     });
   }, []);
 
-  // ===== CUSTOM NEXT HANDLER =====
+  // ===== NAVIGATION HANDLERS =====
   useEffect(() => {
-    if (onCustomNext) {
-      // Provide handler that returns true if we handle Next internally
-      const handler = () => {
+    if (!navigationHandlersRef) return;
+
+    navigationHandlersRef.current = {
+      handleNext: () => {
         const currentStep = spellStepRef.current;
-        console.log('[SpellWizard] Next clicked. Current step:', currentStep, 'Class:', classId);
 
         // Cantrips step
         if (currentStep === 'cantrips') {
           if (usesSpellbook(classId)) {
-            // Wizard: cantrips → spellbook
-            console.log('[SpellWizard] Wizard: cantrips → spellbook');
             setSpellStep('spellbook');
           } else {
-            // Non-Wizard: cantrips → prepared
-            console.log('[SpellWizard] Non-Wizard: cantrips → prepared');
             setSpellStep('prepared');
           }
           return true; // Handled internally
@@ -236,37 +235,24 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
 
         // Spellbook step (Wizard only)
         if (currentStep === 'spellbook') {
-          // Wizard: spellbook → prepared
-          console.log('[SpellWizard] Wizard: spellbook → prepared');
           setSpellStep('prepared');
           return true; // Handled internally
         }
 
         // Prepared step: let wizard proceed to next step (equipment)
-        console.log('[SpellWizard] Prepared step: letting wizard proceed to equipment');
         return false;
-      };
-      // Store handler reference
-      (window as any).__spellWizardNext = handler;
-
-      // Back handler
-      const backHandler = () => {
+      },
+      handleBack: () => {
         const currentStep = spellStepRef.current;
-        console.log('[SpellWizard] Back clicked. Current step:', currentStep, 'Class:', classId);
 
         // Prepared step
         if (currentStep === 'prepared') {
           if (usesSpellbook(classId)) {
-            // Wizard: prepared → spellbook
-            console.log('[SpellWizard] Wizard: prepared → spellbook');
             setSpellStep('spellbook');
           } else if (cantripMax > 0) {
-            // Non-Wizard with cantrips: prepared → cantrips
-            console.log('[SpellWizard] Non-Wizard: prepared → cantrips');
             setSpellStep('cantrips');
           } else {
             // No internal back (Paladin/Ranger at prepared)
-            console.log('[SpellWizard] No internal back, letting wizard handle');
             return false;
           }
           return true; // Handled internally
@@ -275,23 +261,24 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
         // Spellbook step (Wizard only)
         if (currentStep === 'spellbook') {
           if (cantripMax > 0) {
-            // Wizard: spellbook → cantrips
-            console.log('[SpellWizard] Wizard: spellbook → cantrips');
             setSpellStep('cantrips');
             return true; // Handled internally
           }
-          // No cantrips, let wizard handle
-          console.log('[SpellWizard] No cantrips, letting wizard handle');
           return false;
         }
 
         // Cantrips step: let wizard proceed to previous step
-        console.log('[SpellWizard] Cantrips step: letting wizard handle');
         return false;
-      };
-      (window as any).__spellWizardBack = backHandler;
-    }
-  }, [classId, onCustomNext, cantripMax]);
+      },
+    };
+
+    // Cleanup on unmount
+    return () => {
+      if (navigationHandlersRef) {
+        navigationHandlersRef.current = {};
+      }
+    };
+  }, [classId, cantripMax, navigationHandlersRef]);
 
   // ===== VALIDATION =====
   useEffect(() => {
@@ -636,7 +623,7 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
             style={{
               background: 'transparent',
               border: '1px solid #c0aa70',
-              color: '#f1c661',
+              color: '#e0a523',
               padding: '0.75rem 1.5rem',
               borderRadius: '4px',
               cursor: 'pointer',

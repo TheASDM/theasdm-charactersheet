@@ -14,8 +14,8 @@ const ConfirmationContainer = styled.div<{ isComplete: boolean }>`
   margin-top: 2rem;
   padding: 1.5rem;
   border-radius: 12px;
-  border: 2px solid rgba(212, 175, 55, 0.3);
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+  border: 2px solid rgba(206, 144, 22, 0.3);
+  background: linear-gradient(135deg, rgba(206, 144, 22, 0.1) 0%, rgba(206, 144, 22, 0.05) 100%);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -27,7 +27,7 @@ const ConfirmationContainer = styled.div<{ isComplete: boolean }>`
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #d4af37, #f4d03f);
+    background: linear-gradient(90deg, #ce9016, #f4d03f);
     opacity: ${props => props.isComplete ? 1 : 0.7};
     transition: all 0.3s ease;
   }
@@ -49,9 +49,9 @@ const ConfirmationIcon = styled.div<{ isComplete: boolean }>`
   justify-content: center;
   font-size: 1.5rem;
   font-weight: bold;
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #1a1a1a;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
   transition: all 0.3s ease;
 `;
 
@@ -61,7 +61,7 @@ const ConfirmationContent = styled.div`
 
 const ConfirmationTitle = styled.h3<{ isComplete: boolean }>`
   margin: 0 0 0.5rem 0;
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 1.2rem;
   transition: color 0.3s ease;
@@ -91,13 +91,13 @@ const ConfirmButton = styled.button<{ isComplete: boolean }>`
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #1a1a1a;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 16px rgba(206, 144, 22, 0.4);
   }
 
   &:active {

@@ -23,7 +23,7 @@ const ModalOverlay = styled.div`
 
 const ModalContent = styled.div`
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 2px solid #d4af37;
+  border: 2px solid #ce9016;
   border-radius: 12px;
   padding: 2rem;
   max-width: 600px;
@@ -34,7 +34,7 @@ const ModalContent = styled.div`
 
   h2 {
     font-family: 'Cinzel', serif;
-    color: #d4af37;
+    color: #ce9016;
     font-size: 1.8rem;
     margin: 0 0 1rem 0;
   }
@@ -53,7 +53,7 @@ const CloseButton = styled.button`
   right: 1rem;
   background: transparent;
   border: none;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.25rem;
@@ -66,7 +66,7 @@ const CloseButton = styled.button`
   justify-content: center;
 
   &:hover {
-    color: #f0c851;
+    color: #e0a523;
     transform: scale(1.1);
   }
 `;
@@ -93,9 +93,9 @@ const MethodCard = styled.div`
   position: relative;
 
   &:hover {
-    border-color: #d4af37;
+    border-color: #ce9016;
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 6px 16px rgba(206, 144, 22, 0.3);
   }
 
   .method-icon {
@@ -105,7 +105,7 @@ const MethodCard = styled.div`
 
   .method-title {
     font-family: 'Cinzel', serif;
-    color: #d4af37;
+    color: #ce9016;
     font-size: 1.3rem;
     margin-bottom: 0.75rem;
     font-weight: 600;

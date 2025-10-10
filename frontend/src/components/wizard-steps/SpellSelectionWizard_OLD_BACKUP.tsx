@@ -34,7 +34,7 @@ const FiltersBar = styled.div`
   margin: 1.5rem 0;
   padding: 1rem;
   background: rgba(26, 26, 26, 0.75);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 12px;
 `;
 
@@ -42,7 +42,7 @@ const FilterGroup = styled.label`
   display: flex;
   flex-direction: column;
   font-size: 0.85rem;
-  color: #d4af37;
+  color: #ce9016;
 
   span {
     margin-bottom: 0.35rem;
@@ -53,7 +53,7 @@ const FilterGroup = styled.label`
   input,
   select {
     background: rgba(16, 16, 16, 0.9);
-    border: 1px solid rgba(212, 175, 55, 0.35);
+    border: 1px solid rgba(206, 144, 22, 0.35);
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     color: #f8f4e1;
@@ -62,7 +62,7 @@ const FilterGroup = styled.label`
 
     &:focus {
       outline: none;
-      border-color: #f1c661;
+      border-color: #e0a523;
       box-shadow: 0 0 0 2px rgba(241, 198, 97, 0.15);
     }
   }
@@ -79,10 +79,10 @@ const CounterPill = styled.div<{ $invalid?: boolean }>`
   background: ${({ $invalid }) =>
     $invalid ? 'rgba(182, 55, 55, 0.2)' : 'rgba(26, 26, 26, 0.75)'};
   border: 1px solid ${({ $invalid }) =>
-    $invalid ? 'rgba(255, 92, 92, 0.6)' : 'rgba(212, 175, 55, 0.4)'};
+    $invalid ? 'rgba(255, 92, 92, 0.6)' : 'rgba(206, 144, 22, 0.4)'};
   border-radius: 999px;
   padding: 0.5rem 1rem;
-  color: ${({ $invalid }) => ($invalid ? '#ff8a8a' : '#d4af37')};
+  color: ${({ $invalid }) => ($invalid ? '#ff8a8a' : '#ce9016')};
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: 0.4px;
@@ -146,12 +146,12 @@ const Tag = styled.span<{ $kind?: 'granted' | 'error' }>`
   color: ${({ $kind }) => {
     if ($kind === 'granted') return '#5ce0a3';
     if ($kind === 'error') return '#ff8a8a';
-    return '#d4af37';
+    return '#ce9016';
   }};
   border: 1px solid ${({ $kind }) => {
     if ($kind === 'granted') return 'rgba(92, 224, 163, 0.6)';
     if ($kind === 'error') return 'rgba(255, 138, 138, 0.6)';
-    return 'rgba(212, 175, 55, 0.35)';
+    return 'rgba(206, 144, 22, 0.35)';
   }};
 `;
 
@@ -176,7 +176,7 @@ const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'dange
       case 'secondary':
         return 'linear-gradient(135deg, #444, #333)';
       default:
-        return 'linear-gradient(135deg, #d4af37, #b8941f)';
+        return 'linear-gradient(135deg, #ce9016, #b8860b)';
     }
   }};
   color: ${({ $variant }) => ($variant === 'primary' ? '#1a1a1a' : '#f8f4e1')};
@@ -234,10 +234,10 @@ const StatusBanner = styled.div<{ $tone: 'error' | 'info' }>`
   padding: 0.85rem 1.1rem;
   border-radius: 10px;
   border: 1px solid
-    ${({ $tone }) => ($tone === 'error' ? 'rgba(255, 120, 120, 0.65)' : 'rgba(212, 175, 55, 0.45)')};
+    ${({ $tone }) => ($tone === 'error' ? 'rgba(255, 120, 120, 0.65)' : 'rgba(206, 144, 22, 0.45)')};
   background: ${({ $tone }) =>
     $tone === 'error' ? 'rgba(182, 55, 55, 0.2)' : 'rgba(40, 40, 40, 0.75)'};
-  color: ${({ $tone }) => ($tone === 'error' ? '#ff9c9c' : '#d4af37')};
+  color: ${({ $tone }) => ($tone === 'error' ? '#ff9c9c' : '#ce9016')};
   font-size: 0.9rem;
 `;
 
@@ -245,9 +245,9 @@ const EmptyState = styled.div`
   margin: 1.5rem 0;
   padding: 1.5rem;
   border-radius: 12px;
-  border: 1px dashed rgba(212, 175, 55, 0.4);
+  border: 1px dashed rgba(206, 144, 22, 0.4);
   background: rgba(26, 26, 26, 0.6);
-  color: #d4af37;
+  color: #ce9016;
   text-align: center;
   font-size: 0.9rem;
 `;
@@ -256,7 +256,7 @@ const PreparedSection = styled.div`
   margin: 2rem 0;
   padding: 1.25rem;
   border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  border: 1px solid rgba(206, 144, 22, 0.35);
   background: rgba(26, 26, 26, 0.65);
 `;
 
@@ -269,7 +269,7 @@ const PreparedHeader = styled.div`
   h2 {
     margin: 0;
     font-size: 1rem;
-    color: #d4af37;
+    color: #ce9016;
     letter-spacing: 0.5px;
     text-transform: uppercase;
   }
@@ -292,14 +292,14 @@ const PreparedRow = styled.div`
 
   label {
     font-size: 0.8rem;
-    color: #d4af37;
+    color: #ce9016;
     letter-spacing: 0.4px;
   }
 `;
 
 const PreparedSelect = styled.select`
   background: rgba(16, 16, 16, 0.9);
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  border: 1px solid rgba(206, 144, 22, 0.35);
   border-radius: 6px;
   padding: 0.55rem 0.75rem;
   color: #f8f4e1;
@@ -308,7 +308,7 @@ const PreparedSelect = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #f1c661;
+    border-color: #e0a523;
     box-shadow: 0 0 0 2px rgba(241, 198, 97, 0.15);
   }
 `;
@@ -368,7 +368,7 @@ const ModalBackdrop = styled.div`
 
 const ModalCard = styled.div`
   background: linear-gradient(135deg, #2a2520 0%, #1a1a1a 100%);
-  border: 3px solid #d4af37;
+  border: 3px solid #ce9016;
   border-radius: 12px;
   max-width: 720px;
   width: 90%;
@@ -383,7 +383,7 @@ const ModalCard = styled.div`
   h2 {
     margin-top: 0;
     margin-bottom: 0.75rem;
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     letter-spacing: 0.5px;
   }
@@ -402,7 +402,7 @@ const ModalClose = styled.button`
   right: 1rem;
   border: none;
   background: transparent;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.25rem;
@@ -410,7 +410,7 @@ const ModalClose = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: rgba(212, 175, 55, 0.2);
+    background-color: rgba(206, 144, 22, 0.2);
     transform: scale(1.1);
   }
 `;
@@ -427,7 +427,7 @@ const SectionHeading = styled.h2`
   font-size: 1rem;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #d4af37;
+  color: #ce9016;
 `;
 
 const PaginationContainer = styled.div`
@@ -441,9 +441,9 @@ const PaginationContainer = styled.div`
 
 const PaginationButton = styled.button<{ $disabled?: boolean }>`
   background: ${({ $disabled }) =>
-    $disabled ? 'rgba(60, 60, 60, 0.5)' : 'linear-gradient(135deg, #d4af37, #b8941f)'};
+    $disabled ? 'rgba(60, 60, 60, 0.5)' : 'linear-gradient(135deg, #ce9016, #b8860b)'};
   color: ${({ $disabled }) => ($disabled ? '#666' : '#1a1a1a')};
-  border: 1px solid ${({ $disabled }) => ($disabled ? '#444' : '#d4af37')};
+  border: 1px solid ${({ $disabled }) => ($disabled ? '#444' : '#ce9016')};
   border-radius: 8px;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
@@ -453,7 +453,7 @@ const PaginationButton = styled.button<{ $disabled?: boolean }>`
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
   }
 
   &:disabled {
@@ -462,7 +462,7 @@ const PaginationButton = styled.button<{ $disabled?: boolean }>`
 `;
 
 const PageInfo = styled.span`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 0.9rem;
   font-weight: 600;
   min-width: 120px;

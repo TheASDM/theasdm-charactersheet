@@ -29,9 +29,9 @@ const FilterBar = styled.div`
 `;
 
 const FilterButton = styled.button<{ $active: boolean }>`
-  background: ${(props) => (props.$active ? '#d4af37' : 'transparent')};
-  color: ${(props) => (props.$active ? '#1a1a1a' : '#d4af37')};
-  border: 1px solid #d4af37;
+  background: ${(props) => (props.$active ? '#ce9016' : 'transparent')};
+  color: ${(props) => (props.$active ? '#1a1a1a' : '#ce9016')};
+  border: 1px solid #ce9016;
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
@@ -40,7 +40,7 @@ const FilterButton = styled.button<{ $active: boolean }>`
 
   &:hover {
     background: ${(props) =>
-      props.$active ? '#b8941f' : 'rgba(212, 175, 55, 0.1)'};
+      props.$active ? '#b8860b' : 'rgba(206, 144, 22, 0.1)'};
   }
 `;
 
@@ -48,14 +48,14 @@ const FeatureSection = styled.div`
   margin-bottom: 1.5rem;
 
   .section-header {
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    border-bottom: 1px solid rgba(206, 144, 22, 0.3);
     padding-bottom: 0.25rem;
   }
 
@@ -129,7 +129,7 @@ const FeatureCard = styled.div<{ $type: FeatureType }>`
   }
 
   .mechanic-label {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 500;
   }
 
@@ -157,7 +157,7 @@ const CompactFeatureList = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    border-bottom: 1px solid rgba(206, 144, 22, 0.2);
 
     &:last-child {
       border-bottom: none;
@@ -165,7 +165,7 @@ const CompactFeatureList = styled.div`
   }
 
   .feature-name {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 0.85rem;
   }
@@ -458,7 +458,7 @@ export const StructuredFeaturesDisplay: React.FC<
       {showFilters && (
         <FilterBar>
           <div
-            style={{ color: '#d4af37', fontWeight: 600, marginRight: '0.5rem' }}
+            style={{ color: '#ce9016', fontWeight: 600, marginRight: '0.5rem' }}
           >
             Filter by type:
           </div>

@@ -44,7 +44,7 @@ const Navigation = styled.div`
 
 const BackButton = styled(Link)`
   padding: 12px 24px;
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #2c1810;
   text-decoration: none;
   border-radius: 8px;
@@ -57,10 +57,10 @@ const BackButton = styled(Link)`
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     color: #2c1810;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 `;
 
@@ -170,7 +170,7 @@ const QuickRefTable = styled.table`
       rgba(90, 58, 42, 0.9),
       rgba(74, 42, 26, 0.9)
     );
-    color: #d4af37;
+    color: #ce9016;
     padding: 0.75rem 0.5rem;
     text-align: left;
     font-weight: 700;
@@ -256,7 +256,7 @@ const QuickRefTable = styled.table`
 `;
 
 const SectionHeader = styled.h2`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 1.8rem;
   font-weight: 700;
@@ -268,7 +268,7 @@ const SectionHeader = styled.h2`
 `;
 
 const SubHeader = styled.h3`
-  color: #c9a961;
+  color: #b8860b;
   font-family: 'Cinzel', serif;
   font-size: 1.3rem;
   margin: 2rem 0 1rem 0;
@@ -350,7 +350,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -366,7 +366,7 @@ const ErrorContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   text-align: center;
   position: relative;
   z-index: 1;
@@ -384,7 +384,7 @@ const ErrorContainer = styled.div`
   }
 
   button {
-    background: linear-gradient(145deg, #d4af37, #b8941f);
+    background: linear-gradient(145deg, #ce9016, #b8860b);
     color: #2c1810;
     border: none;
     padding: 12px 24px;
@@ -399,8 +399,8 @@ const ErrorContainer = styled.div`
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-      background: linear-gradient(145deg, #b8941f, #a0801b);
+      box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
+      background: linear-gradient(145deg, #b8860b, #a0801b);
     }
   }
 `;
@@ -413,7 +413,7 @@ const TabContainer = styled.div`
 const TabButton = styled.button<{ active: boolean }>`
   background: ${(props) =>
     props.active
-      ? 'linear-gradient(145deg, #d4af37, #b8941f)'
+      ? 'linear-gradient(145deg, #ce9016, #b8860b)'
       : 'linear-gradient(145deg, rgba(244, 231, 209, 0.8), rgba(232, 213, 183, 0.8))'};
   color: ${(props) => (props.active ? '#2c1810' : '#8b6914')};
   border: 2px solid #8b6914;
@@ -434,8 +434,8 @@ const TabButton = styled.button<{ active: boolean }>`
   &:hover {
     background: ${(props) =>
       props.active
-        ? 'linear-gradient(145deg, #d4af37, #b8941f)'
-        : 'linear-gradient(145deg, #d4af37, #b8941f)'};
+        ? 'linear-gradient(145deg, #ce9016, #b8860b)'
+        : 'linear-gradient(145deg, #ce9016, #b8860b)'};
     color: #2c1810;
     transform: translateY(-2px);
     text-shadow: none;
@@ -1184,7 +1184,7 @@ const ClassDetailsPage: React.FC = () => {
                                                                       border:
                                                                         '1px solid #8b6914',
                                                                       color:
-                                                                        '#d4af37',
+                                                                        '#ce9016',
                                                                       fontWeight:
                                                                         'bold',
                                                                       textAlign:
@@ -1374,7 +1374,7 @@ const ClassDetailsPage: React.FC = () => {
                                                             padding: '8px 12px',
                                                             border:
                                                               '1px solid #8b6914',
-                                                            color: '#d4af37',
+                                                            color: '#ce9016',
                                                             fontWeight: 'bold',
                                                             textAlign: 'left',
                                                             fontFamily:

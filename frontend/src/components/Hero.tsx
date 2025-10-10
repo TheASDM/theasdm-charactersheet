@@ -63,7 +63,7 @@ const HeroContainer = styled.div<{ $backgroundImage: string; $height: string }>`
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="medievalTexture"><feTurbulence baseFrequency="0.02" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.5"/></filter></defs><rect width="100" height="100" fill="rgba(212,175,55,0.05)" filter="url(%23medievalTexture)"/></svg>')
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><filter id="medievalTexture"><feTurbulence baseFrequency="0.02" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.5"/></filter></defs><rect width="100" height="100" fill="rgba(206,144,22,0.05)" filter="url(%23medievalTexture)"/></svg>')
       repeat;
     z-index: 2;
   }
@@ -81,7 +81,7 @@ const HeroContent = styled.div`
   position: relative;
   z-index: 3;
   text-align: center;
-  color: #d4af37;
+  color: #ce9016;
   padding: 1rem;
   max-width: 800px;
 `;
@@ -92,18 +92,18 @@ const HeroTitle = styled.h1`
   margin: 0;
   font-family: 'Cinzel', serif;
   letter-spacing: 2px;
-  color: #d4af37;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(212, 175, 55, 0.4),
-    0 0 20px rgba(212, 175, 55, 0.2);
+  color: #ce9016;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(206, 144, 22, 0.4),
+    0 0 20px rgba(206, 144, 22, 0.2);
 
-  /* Medieval gold gradient effect */
+  /* Medieval bronze gradient effect */
   background: linear-gradient(
     135deg,
-    #d4af37 0%,
-    #ffd700 25%,
-    #fff8dc 50%,
-    #ffd700 75%,
-    #d4af37 100%
+    #ce9016 0%,
+    #e0a523 25%,
+    #f5d5a8 50%,
+    #e0a523 75%,
+    #ce9016 100%
   );
   background-clip: text;
   -webkit-background-clip: text;
@@ -111,11 +111,11 @@ const HeroTitle = styled.h1`
 
   /* Fallback for browsers that don't support background-clip */
   @supports not (-webkit-background-clip: text) {
-    color: #d4af37;
+    color: #ce9016;
   }
 
   /* Enhanced glow effect */
-  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
+  filter: drop-shadow(0 0 8px rgba(206, 144, 22, 0.5));
 
   @media (max-width: 768px) {
     font-size: clamp(1.8rem, 10vw, 3rem);
@@ -134,7 +134,7 @@ const HeroSubtitle = styled.h2`
   margin: 0.5rem 0 0 0;
   font-family: 'Crimson Text', serif;
   letter-spacing: 1px;
-  color: #c9a961;
+  color: #b8860b;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 0 0 5px rgba(201, 169, 97, 0.3);
   font-style: italic;
   opacity: 0.95;

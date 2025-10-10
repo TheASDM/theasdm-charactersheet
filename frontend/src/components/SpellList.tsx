@@ -56,7 +56,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 300px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;
@@ -80,7 +80,7 @@ const ErrorContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 300px;
-  color: #d4af37;
+  color: #ce9016;
   text-align: center;
   background: linear-gradient(
     145deg,
@@ -107,7 +107,7 @@ const ErrorContainer = styled.div`
   }
 
   button {
-    background: linear-gradient(145deg, #d4af37, #b8941f);
+    background: linear-gradient(145deg, #ce9016, #b8860b);
     color: #2c1810;
     border: none;
     padding: 12px 24px;
@@ -122,8 +122,8 @@ const ErrorContainer = styled.div`
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-      background: linear-gradient(145deg, #b8941f, #a0801b);
+      box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
+      background: linear-gradient(145deg, #b8860b, #a0801b);
     }
   }
 `;
@@ -149,7 +149,7 @@ const SearchInput = styled.input`
   border: 2px solid #8b6914;
   border-radius: 12px;
   padding: 16px 20px;
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Crimson Text', serif;
   font-size: 18px;
   width: 100%;
@@ -166,14 +166,14 @@ const SearchInput = styled.input`
   }
 
   &:focus {
-    border-color: #d4af37;
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 15px rgba(206, 144, 22, 0.3);
     font-style: normal;
     transform: translateY(-1px);
   }
 
   &:hover {
-    border-color: #d4af37;
+    border-color: #ce9016;
   }
 `;
 
@@ -224,14 +224,14 @@ const NoResultsMessage = styled.div`
 
   .title {
     font-size: 1.6rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 15px;
     font-weight: 600;
   }
 
   .subtitle {
     font-size: 1.2rem;
-    color: #c9a961;
+    color: #b8860b;
     line-height: 1.5;
   }
 `;
@@ -263,13 +263,13 @@ const PaginationContainer = styled.div`
 
 const PaginationButton = styled.button<{ active?: boolean }>`
   padding: 12px 20px;
-  border: 2px solid ${(props) => (props.active ? '#d4af37' : '#8b6914')};
+  border: 2px solid ${(props) => (props.active ? '#ce9016' : '#8b6914')};
   border-radius: 8px;
   background: ${(props) =>
     props.active
-      ? 'linear-gradient(145deg, #d4af37, #b8941f)'
+      ? 'linear-gradient(145deg, #ce9016, #b8860b)'
       : 'linear-gradient(145deg, #4a2a1a, #3a1a0a)'};
-  color: ${(props) => (props.active ? '#2c1810' : '#d4af37')};
+  color: ${(props) => (props.active ? '#2c1810' : '#ce9016')};
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -282,18 +282,18 @@ const PaginationButton = styled.button<{ active?: boolean }>`
   font-size: 14px;
   box-shadow: ${(props) =>
     props.active
-      ? '0 4px 15px rgba(212, 175, 55, 0.3)'
+      ? '0 4px 15px rgba(206, 144, 22, 0.3)'
       : '0 2px 8px rgba(0, 0, 0, 0.3)'};
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: ${(props) =>
       props.active
-        ? '0 6px 20px rgba(212, 175, 55, 0.4)'
+        ? '0 6px 20px rgba(206, 144, 22, 0.4)'
         : '0 4px 15px rgba(139, 105, 20, 0.3)'};
     background: ${(props) =>
       props.active
-        ? 'linear-gradient(145deg, #b8941f, #a0801b)'
+        ? 'linear-gradient(145deg, #b8860b, #a0801b)'
         : 'linear-gradient(145deg, #5a3a2a, #4a2a1a)'};
   }
 
@@ -306,14 +306,14 @@ const PaginationButton = styled.button<{ active?: boolean }>`
       transform: none;
       box-shadow: ${(props) =>
         props.active
-          ? '0 4px 15px rgba(212, 175, 55, 0.3)'
+          ? '0 4px 15px rgba(206, 144, 22, 0.3)'
           : '0 2px 8px rgba(0, 0, 0, 0.3)'};
     }
   }
 `;
 
 const PaginationInfo = styled.span`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-weight: 600;
   font-size: 1rem;
@@ -492,7 +492,7 @@ const SpellList: React.FC<SpellListProps> = ({
                       1
                     </PaginationButton>
                     {currentPage > 4 && (
-                      <span style={{ color: '#d4af37', padding: '0 5px' }}>
+                      <span style={{ color: '#ce9016', padding: '0 5px' }}>
                         ...
                       </span>
                     )}
@@ -525,7 +525,7 @@ const SpellList: React.FC<SpellListProps> = ({
                 {currentPage < totalPages - 2 && (
                   <>
                     {currentPage < totalPages - 3 && (
-                      <span style={{ color: '#d4af37', padding: '0 5px' }}>
+                      <span style={{ color: '#ce9016', padding: '0 5px' }}>
                         ...
                       </span>
                     )}

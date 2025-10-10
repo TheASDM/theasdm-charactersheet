@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { AbilityScoreMethodModal } from '../ui/AbilityScoreMethodModal';
+import { useAutoScroll } from '../../hooks/useAutoScroll';
 import styled from 'styled-components';
 
 interface Step1AbilityScoresProps {
@@ -40,7 +41,7 @@ const AbilityScoreBox = styled.div`
   min-width: 0;
 
   .ability-name {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     margin-bottom: 0.75rem;
     text-transform: capitalize;
@@ -71,13 +72,13 @@ const AbilityScoreBox = styled.div`
     justify-content: center;
 
     &:hover:not(.disabled) {
-      border-color: #d4af37;
-      background: rgba(212, 175, 55, 0.1);
+      border-color: #ce9016;
+      background: rgba(206, 144, 22, 0.1);
     }
 
     &.selected {
-      background: linear-gradient(145deg, #d4af37, #b8941f);
-      border-color: #d4af37;
+      background: linear-gradient(145deg, #ce9016, #b8860b);
+      border-color: #ce9016;
       color: #1a1a1a;
     }
 
@@ -117,8 +118,8 @@ const AbilityScoreBox = styled.div`
 
     &:focus {
       outline: none;
-      border-color: #d4af37;
-      box-shadow: 0 0 4px rgba(212, 175, 55, 0.3);
+      border-color: #ce9016;
+      box-shadow: 0 0 4px rgba(206, 144, 22, 0.3);
     }
   }
 `;
@@ -150,28 +151,28 @@ const MethodToggle = styled.div<{ disabled?: boolean }>`
     }
 
     &.active {
-      background: linear-gradient(145deg, #d4af37, #b8941f);
+      background: linear-gradient(145deg, #ce9016, #b8860b);
       color: #1a1a1a;
     }
 
     &:hover:not(.active) {
-      background: rgba(212, 175, 55, 0.1);
-      color: #d4af37;
+      background: rgba(206, 144, 22, 0.1);
+      color: #ce9016;
     }
   }
 `;
 
 
 const RollingSection = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(206, 144, 22, 0.1);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   text-align: center;
 
   .rolling-title {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 1rem;
@@ -188,7 +189,7 @@ const RollingSection = styled.div`
   .rolled-value {
     width: 48px;
     height: 48px;
-    background: linear-gradient(145deg, #d4af37, #b8941f);
+    background: linear-gradient(145deg, #ce9016, #b8860b);
     color: #1a1a1a;
     border-radius: 8px;
     display: flex;
@@ -196,13 +197,13 @@ const RollingSection = styled.div`
     justify-content: center;
     font-weight: 700;
     font-size: 1.2rem;
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 2px 8px rgba(206, 144, 22, 0.3);
     cursor: pointer;
     transition: all 0.3s ease;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+      box-shadow: 0 4px 12px rgba(206, 144, 22, 0.4);
     }
 
     &.used {
@@ -266,7 +267,8 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
   data,
   onUpdate
 }) => {
-  const [showMethodModal, setShowMethodModal] = useState(!data.abilityScoreMethod || data.abilityScoreMethod === 'standard-array');
+  const { scrollToBottom } = useAutoScroll();
+  const [showMethodModal, setShowMethodModal] = useState(false); // Method is now selected on Step0
   const [rolledValues, setRolledValues] = useState<number[]>([]);
   const [usedRolledIndices, setUsedRolledIndices] = useState<Set<number>>(new Set());
   const [abilityToIndexMap, setAbilityToIndexMap] = useState<Map<string, number>>(new Map());
@@ -397,6 +399,12 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
 
   const isComplete = isStandardArrayComplete() || isCustomComplete();
 
+  // Auto-scroll when all ability scores are assigned
+  useEffect(() => {
+    if (isComplete && data.abilityScoreMethod) {
+      scrollToBottom({ offset: 20 });
+    }
+  }, [isComplete, data.abilityScoreMethod, scrollToBottom]);
 
   return (
     <>
@@ -503,7 +511,7 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
 
                     {rolledValues.length > 0 && (
                       <div style={{ marginBottom: '0.5rem' }}>
-                        <div style={{ fontSize: '0.7rem', color: '#d4af37', marginBottom: '0.25rem' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#ce9016', marginBottom: '0.25rem' }}>
                           Click rolled values:
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
@@ -513,7 +521,7 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
                               style={{
                                 width: '24px',
                                 height: '24px',
-                                background: usedRolledIndices.has(index) ? '#666' : '#d4af37',
+                                background: usedRolledIndices.has(index) ? '#666' : '#ce9016',
                                 color: usedRolledIndices.has(index) ? '#999' : '#1a1a1a',
                                 borderRadius: '4px',
                                 display: 'flex',
@@ -546,12 +554,12 @@ export const Step1AbilityScores: React.FC<Step1AbilityScoresProps> = ({
             <div style={{
               marginTop: '1rem',
               textAlign: 'center',
-              color: '#d4af37',
+              color: '#ce9016',
               fontSize: '0.9rem',
               padding: '0.75rem',
-              background: 'rgba(212, 175, 55, 0.1)',
+              background: 'rgba(206, 144, 22, 0.1)',
               borderRadius: '6px',
-              border: '1px solid rgba(212, 175, 55, 0.2)'
+              border: '1px solid rgba(206, 144, 22, 0.2)'
             }}>
               {data.abilityScoreMethod === 'standard-array'
                 ? '💡 Click the circles to assign each standard array value to an ability.'

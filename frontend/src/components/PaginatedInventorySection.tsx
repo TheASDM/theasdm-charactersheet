@@ -70,7 +70,7 @@ const ScrollableInventoryList = styled.div<{ $maxHeight: string }>`
     border-radius: 4px;
 
     &:hover {
-      background: #d4af37;
+      background: #ce9016;
     }
   }
 
@@ -104,7 +104,7 @@ const PaginationControls = styled.div`
 `;
 
 const PaginationButton = styled.button<{ $disabled?: boolean }>`
-  background: ${props => props.$disabled ? 'rgba(139, 105, 20, 0.3)' : 'linear-gradient(145deg, #8b6914, #d4af37)'};
+  background: ${props => props.$disabled ? 'rgba(139, 105, 20, 0.3)' : 'linear-gradient(145deg, #8b6914, #ce9016)'};
   color: ${props => props.$disabled ? '#666' : '#1a1a1a'};
   border: none;
   padding: 0.5rem 1rem;
@@ -116,7 +116,7 @@ const PaginationButton = styled.button<{ $disabled?: boolean }>`
   &:hover {
     ${props => !props.$disabled && `
       transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+      box-shadow: 0 2px 8px rgba(206, 144, 22, 0.3);
     `}
   }
 
@@ -126,7 +126,7 @@ const PaginationButton = styled.button<{ $disabled?: boolean }>`
 `;
 
 const PageInfo = styled.span`
-  color: #d4af37;
+  color: #ce9016;
   font-weight: 600;
   font-size: 0.9rem;
 `;

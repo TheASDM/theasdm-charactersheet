@@ -22,7 +22,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -37,9 +37,9 @@ const Header = styled.div`
 
 const BackButton = styled(Link)`
   display: inline-block;
-  background: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
-  border: 2px solid #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
+  border: 2px solid #ce9016;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -54,9 +54,9 @@ const BackButton = styled(Link)`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
   &:hover {
-    background: rgba(212, 175, 55, 0.4);
+    background: rgba(206, 144, 22, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 
   &:active {
@@ -87,7 +87,7 @@ const ClassSection = styled.div`
 const ClassTitle = styled.h2`
   font-family: 'Cinzel', serif;
   font-size: 2rem;
-  color: #d4af37;
+  color: #ce9016;
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #444;
@@ -111,12 +111,12 @@ const SubclassCard = styled.div`
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-    border-color: #d4af37;
+    border-color: #ce9016;
   }
 `;
 
 const SubclassName = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   margin: 0 0 1rem 0;
@@ -129,7 +129,7 @@ const SubclassInfo = styled.div`
   font-size: 0.9rem;
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
   }
 `;
@@ -143,10 +143,10 @@ const FeatureLevel = styled.div`
   background: rgba(35, 35, 35, 0.5);
   padding: 0.75rem;
   border-radius: 6px;
-  border-left: 3px solid #d4af37;
+  border-left: 3px solid #ce9016;
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     display: block;
     margin-bottom: 0.25rem;
@@ -164,7 +164,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.4rem;
   font-weight: 600;
   font-family: 'Cinzel', serif;

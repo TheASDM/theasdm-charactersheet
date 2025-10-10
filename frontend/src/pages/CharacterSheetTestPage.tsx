@@ -100,7 +100,7 @@ const TestControls = styled.div`
 `;
 
 const TestButton = styled.button`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #2c1810;
   border: none;
   padding: 10px 20px;
@@ -116,9 +116,9 @@ const TestButton = styled.button`
   margin: 0 10px;
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 
   &:active {

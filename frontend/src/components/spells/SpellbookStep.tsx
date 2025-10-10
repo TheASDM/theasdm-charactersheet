@@ -22,7 +22,7 @@ const Header = styled.div`
 `;
 
 const Title = styled.h2`
-  color: #f1c661;
+  color: #e0a523;
   font-size: 1.75rem;
   margin-bottom: 0.5rem;
 `;
@@ -46,8 +46,8 @@ const CounterPill = styled.div<{ $invalid?: boolean }>`
 `;
 
 const InfoPanel = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(206, 144, 22, 0.1);
+  border: 1px solid rgba(206, 144, 22, 0.4);
   border-radius: 8px;
   padding: 1rem;
   margin: 1rem 0;
@@ -56,7 +56,7 @@ const InfoPanel = styled.div`
   line-height: 1.5;
 
   strong {
-    color: #f1c661;
+    color: #e0a523;
   }
 
   ul {

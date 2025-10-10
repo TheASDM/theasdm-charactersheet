@@ -18,13 +18,13 @@ const CardContainer = styled.div<{ compact?: boolean; clickable?: boolean }>`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-    border-color: #d4af37;
+    border-color: #ce9016;
   }
 `;
 
 const SpellHeader = styled.div`
   background: rgba(35, 35, 35, 0.9);
-  color: #d4af37;
+  color: #ce9016;
   padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
@@ -44,19 +44,19 @@ const SpellName = styled.h3<{ compact?: boolean }>`
   margin: 0;
   font-size: ${(props) => (props.compact ? '1.1rem' : '1.2rem')};
   font-weight: 600;
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   flex: 1;
 `;
 
 const SpellLevel = styled.div`
-  background: rgba(212, 175, 55, 0.2);
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.2);
+  color: #ce9016;
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 600;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -126,11 +126,11 @@ const DetailItem = styled.div`
   background: rgba(35, 35, 35, 0.5);
   padding: 0.75rem;
   border-radius: 6px;
-  border-left: 3px solid #d4af37;
+  border-left: 3px solid #ce9016;
   font-size: 0.85rem;
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     display: block;
     margin-bottom: 0.25rem;
@@ -171,7 +171,7 @@ const SourceInfo = styled.div`
   border-radius: 0 0 8px 8px;
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-style: normal;
     text-transform: uppercase;

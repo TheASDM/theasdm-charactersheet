@@ -54,20 +54,18 @@ const HomePage: React.FC = () => {
     >
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Hero Section */}
-        <div style={{ marginBottom: '4rem' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🪓</div>
-          <h1
+        <div style={{ marginBottom: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <img
+            src="/images/wtforged-logo.png"
+            alt="WTForged"
             style={{
-              fontSize: '3.5rem',
-              marginBottom: '1rem',
-              fontFamily: '"Cinzel", serif',
-              color: '#d4af37',
-              letterSpacing: '2px',
-              textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+              maxWidth: '600px',
+              width: '100%',
+              height: 'auto',
+              marginBottom: '2rem',
+              filter: 'drop-shadow(0 4px 12px rgba(206, 144, 22, 0.4))',
             }}
-          >
-            WTForged
-          </h1>
+          />
           <p
             style={{
               fontSize: '1.3rem',
@@ -91,18 +89,18 @@ const HomePage: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                color: '#d4af37',
+                color: '#ce9016',
                 textDecoration: 'none',
-                borderBottom: '1px solid #d4af37',
+                borderBottom: '1px solid #ce9016',
                 transition: 'all 0.3s ease',
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.color = '#f0c851';
-                e.currentTarget.style.borderBottomColor = '#f0c851';
+                e.currentTarget.style.color = '#e0a523';
+                e.currentTarget.style.borderBottomColor = '#e0a523';
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.color = '#d4af37';
-                e.currentTarget.style.borderBottomColor = '#d4af37';
+                e.currentTarget.style.color = '#ce9016';
+                e.currentTarget.style.borderBottomColor = '#ce9016';
               }}
             >
               Vanya's Quest
@@ -124,7 +122,7 @@ const HomePage: React.FC = () => {
                 padding: '1.25rem 2.5rem',
                 fontSize: '1.1rem',
                 fontWeight: '600',
-                background: 'linear-gradient(135deg, #d4af37 0%, #b8941f 100%)',
+                background: 'linear-gradient(135deg, #ce9016 0%, #b8860b 100%)',
                 color: '#1a1a1a',
                 border: 'none',
                 borderRadius: '8px',
@@ -132,15 +130,15 @@ const HomePage: React.FC = () => {
                 transition: 'all 0.3s ease',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
-                boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)',
+                boxShadow: '0 4px 16px rgba(206, 144, 22, 0.3)',
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(206, 144, 22, 0.5)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(212, 175, 55, 0.3)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(206, 144, 22, 0.3)';
               }}
             >
               ⚔ Create New Character
@@ -153,8 +151,8 @@ const HomePage: React.FC = () => {
                 fontSize: '1.1rem',
                 fontWeight: '600',
                 background: 'rgba(255, 255, 255, 0.05)',
-                color: '#d4af37',
-                border: '1px solid #d4af37',
+                color: '#ce9016',
+                border: '1px solid #ce9016',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
@@ -164,7 +162,7 @@ const HomePage: React.FC = () => {
               onMouseOver={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(212, 175, 55, 0.2)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(206, 144, 22, 0.2)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
@@ -190,7 +188,7 @@ const HomePage: React.FC = () => {
         >
           <h2
             style={{
-              color: '#d4af37',
+              color: '#ce9016',
               marginBottom: '3rem',
               fontSize: '2rem',
               fontFamily: '"Cinzel", serif',
@@ -223,7 +221,7 @@ const HomePage: React.FC = () => {
                 border: '1px solid #333',
               }}
             >
-              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+              <h3 style={{ color: '#ce9016', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
                 🎲 D&D 2024 Rules
               </h3>
               <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>
@@ -238,7 +236,7 @@ const HomePage: React.FC = () => {
                 border: '1px solid #333',
               }}
             >
-              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+              <h3 style={{ color: '#ce9016', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
                 ⚡ Complete Database
               </h3>
               <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>
@@ -253,7 +251,7 @@ const HomePage: React.FC = () => {
                 border: '1px solid #333',
               }}
             >
-              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+              <h3 style={{ color: '#ce9016', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
                 📱 Mobile Optimized
               </h3>
               <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>
@@ -268,7 +266,7 @@ const HomePage: React.FC = () => {
                 border: '1px solid #333',
               }}
             >
-              <h3 style={{ color: '#d4af37', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
+              <h3 style={{ color: '#ce9016', marginBottom: '0.75rem', fontSize: '1.2rem' }}>
                 🛠️ Character Management
               </h3>
               <p style={{ color: '#b0b0b0', fontSize: '0.95rem', lineHeight: '1.6' }}>

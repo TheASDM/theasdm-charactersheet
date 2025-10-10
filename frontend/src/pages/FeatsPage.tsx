@@ -25,7 +25,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -81,8 +81,8 @@ const SearchInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &:hover {
@@ -103,8 +103,8 @@ const FilterSelect = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &:hover {
@@ -146,7 +146,7 @@ const FeatCard = styled.div`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-    border-color: #d4af37;
+    border-color: #ce9016;
   }
 `;
 
@@ -164,7 +164,7 @@ const FeatName = styled.h3`
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   flex: 1;
 `;
@@ -178,8 +178,8 @@ const FeatCategory = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #f0f0f0;
-  background: rgba(212, 175, 55, 0.2);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(206, 144, 22, 0.2);
+  border: 1px solid rgba(206, 144, 22, 0.3);
 `;
 
 const FeatContent = styled.div`
@@ -193,12 +193,12 @@ const Prerequisites = styled.div`
   background: rgba(35, 35, 35, 0.5);
   padding: 0.75rem;
   border-radius: 6px;
-  border-left: 3px solid #d4af37;
+  border-left: 3px solid #ce9016;
   margin-bottom: 0.75rem;
   font-size: 0.85rem;
 
   .label {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -235,7 +235,7 @@ const FeatSource = styled.div`
   border-radius: 0 0 8px 8px;
 
   strong {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-style: normal;
     text-transform: uppercase;
@@ -276,7 +276,7 @@ const NoResultsMessage = styled.div`
 
   .title {
     font-size: 1.6rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 15px;
     font-weight: 600;
     font-family: 'Cinzel', serif;
@@ -302,10 +302,10 @@ const PaginationContainer = styled.div`
 
 const PaginationButton = styled.button<{ $active?: boolean }>`
   background: ${props => props.$active
-    ? 'linear-gradient(135deg, #d4af37 0%, #b8941f 100%)'
+    ? 'linear-gradient(135deg, #ce9016 0%, #b8860b 100%)'
     : 'rgba(45, 45, 45, 0.8)'};
   color: ${props => props.$active ? '#1a1a1a' : '#f0f0f0'};
-  border: 1px solid ${props => props.$active ? '#d4af37' : '#444'};
+  border: 1px solid ${props => props.$active ? '#ce9016' : '#444'};
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -316,9 +316,9 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
 
   &:hover:not(:disabled) {
     background: ${props => props.$active
-      ? 'linear-gradient(135deg, #b8941f 0%, #a0801b 100%)'
-      : 'rgba(212, 175, 55, 0.2)'};
-    border-color: #d4af37;
+      ? 'linear-gradient(135deg, #b8860b 0%, #a0801b 100%)'
+      : 'rgba(206, 144, 22, 0.2)'};
+    border-color: #ce9016;
     transform: translateY(-2px);
   }
 

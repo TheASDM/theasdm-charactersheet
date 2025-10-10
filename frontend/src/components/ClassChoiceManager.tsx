@@ -259,7 +259,7 @@ const LoadingSpinner = styled.div`
   width: 50px;
   height: 50px;
   border: 4px solid #444;
-  border-top: 4px solid #d4af37;
+  border-top: 4px solid #ce9016;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 
@@ -274,7 +274,7 @@ const LoadingSpinner = styled.div`
 `;
 
 const LoadingText = styled.div`
-  color: #d4af37;
+  color: #ce9016;
   margin-top: 20px;
   font-size: 16px;
 `;
@@ -303,7 +303,7 @@ const ErrorMessage = styled.div`
 const RetryButton = styled.button`
   padding: 10px 20px;
   background: #8b4513;
-  color: #ffd700;
+  color: #e0a523;
   border: none;
   border-radius: 6px;
   font-size: 14px;
@@ -324,7 +324,7 @@ const ProgressIndicator = styled.div`
   border: 2px solid #8b4513;
   border-radius: 8px;
   padding: 12px 20px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 14px;
   font-weight: 600;
   z-index: 10000;

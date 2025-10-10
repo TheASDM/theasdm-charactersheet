@@ -91,7 +91,7 @@ const AbilityScore = styled.div`
   text-align: center;
 
   .ability-name {
-    color: #d4af37;
+    color: #ce9016;
     font-family: 'Cinzel', serif;
     font-size: 0.9rem;
     font-weight: 600;
@@ -127,7 +127,7 @@ const AbilityScore = styled.div`
   }
 
   .modifier {
-    color: #d4af37;
+    color: #ce9016;
     font-size: 1.1rem;
     font-weight: bold;
     margin-bottom: 8px;
@@ -139,7 +139,7 @@ const AbilityScore = styled.div`
     justify-content: center;
     gap: 5px;
     font-size: 0.9rem;
-    color: #c9a961;
+    color: #b8860b;
 
     input[type='checkbox'] {
       transform: scale(1.2);
@@ -147,7 +147,7 @@ const AbilityScore = styled.div`
 
     .save-modifier {
       font-weight: bold;
-      color: #d4af37;
+      color: #ce9016;
       margin-left: 5px;
     }
   }
@@ -378,7 +378,7 @@ const WeaponsSection = styled.div`
 `;
 
 const SaveButton = styled.button`
-  background: linear-gradient(145deg, #d4af37, #b8941f);
+  background: linear-gradient(145deg, #ce9016, #b8860b);
   color: #2c1810;
   border: none;
   padding: 12px 24px;
@@ -395,9 +395,9 @@ const SaveButton = styled.button`
   display: block;
 
   &:hover {
-    background: linear-gradient(145deg, #b8941f, #a0801b);
+    background: linear-gradient(145deg, #b8860b, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
   }
 
   &:active {

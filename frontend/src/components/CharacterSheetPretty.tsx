@@ -59,7 +59,7 @@ const TabBar = styled.div`
   gap: 0.75rem;
   padding: 0.35rem;
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  border: 1px solid rgba(206, 144, 22, 0.25);
   border-radius: 999px;
 `;
 
@@ -74,13 +74,13 @@ const TabButton = styled.button<{ $active: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease;
   background: ${({ $active }) =>
-    $active ? 'rgba(212, 175, 55, 0.18)' : 'transparent'};
+    $active ? 'rgba(206, 144, 22, 0.18)' : 'transparent'};
   color: ${({ $active }) => ($active ? '#f8f4e1' : 'rgba(248, 244, 225, 0.75)')};
   border: ${({ $active }) =>
-    $active ? '1px solid rgba(212, 175, 55, 0.55)' : '1px solid transparent'};
+    $active ? '1px solid rgba(206, 144, 22, 0.55)' : '1px solid transparent'};
 
   &:hover {
-    background: rgba(212, 175, 55, 0.15);
+    background: rgba(206, 144, 22, 0.15);
     color: #f8f4e1;
   }
 `;

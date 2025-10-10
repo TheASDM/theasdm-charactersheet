@@ -18,7 +18,7 @@ export const AbilityScoresSection = styled.div`
 export const SectionTitle = styled.div`
   font-size: 1rem;
   font-weight: 700;
-  color: #d4af37;
+  color: #ce9016;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.5rem;
@@ -72,7 +72,7 @@ export const AbilityScore = styled.div`
   .score {
     font-size: clamp(1.1rem, 2.5vw, 2rem);
     font-weight: 700;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 0.1rem;
     position: relative;
   }
@@ -97,9 +97,9 @@ export const AbilityArrows = styled.div`
 
 // Individual arrow buttons
 export const AbilityArrow = styled.button<{ direction: 'up' | 'down' }>`
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid #d4af37;
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.15);
+  border: 1px solid #ce9016;
+  color: #ce9016;
   width: 14px;
   height: 12px;
   border-radius: 2px;
@@ -113,7 +113,7 @@ export const AbilityArrow = styled.button<{ direction: 'up' | 'down' }>`
   line-height: 1;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.25);
+    background: rgba(206, 144, 22, 0.25);
     transform: translateY(${props => props.direction === 'up' ? '-1px' : '1px'});
   }
 

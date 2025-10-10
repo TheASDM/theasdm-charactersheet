@@ -25,7 +25,7 @@ export const InventorySection = styled.div`
 `;
 
 export const InventoryTitle = styled.h3`
-  color: #d4af37;
+  color: #ce9016;
   font-family: 'Cinzel', serif;
   font-size: 1.2rem;
   font-weight: 700;
@@ -79,7 +79,7 @@ export const InventoryItem = styled.div`
 
     &:focus {
       outline: none;
-      background: rgba(212, 175, 55, 0.1);
+      background: rgba(206, 144, 22, 0.1);
     }
   }
 `;
@@ -95,8 +95,8 @@ export const InventoryItemContent = styled.div<{ clickable?: boolean }>`
 
   ${props => props.clickable && `
     &:hover {
-      background-color: rgba(212, 175, 55, 0.15);
-      color: #d4af37;
+      background-color: rgba(206, 144, 22, 0.15);
+      color: #ce9016;
     }
   `}
 `;
@@ -146,7 +146,7 @@ export const QuantityInput = styled.input`
   background: rgba(26, 26, 26, 0.8);
   border: 1px solid #333;
   border-radius: 3px;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 0.8rem;
   font-weight: 600;
   width: 30px;
@@ -156,8 +156,8 @@ export const QuantityInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.15);
+    border-color: #ce9016;
+    background: rgba(206, 144, 22, 0.15);
   }
 
   &::-webkit-outer-spin-button,
@@ -212,9 +212,9 @@ export const InventoryButtonContainer = styled.div`
 `;
 
 export const InventoryActionButton = styled.button`
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid #d4af37;
-  color: #d4af37;
+  background: rgba(206, 144, 22, 0.15);
+  border: 1px solid #ce9016;
+  color: #ce9016;
   border-radius: 4px;
   padding: 0.5rem 0.75rem;
   font-family: 'Cinzel', serif;
@@ -227,9 +227,9 @@ export const InventoryActionButton = styled.button`
   flex: 1;
 
   &:hover {
-    background: rgba(212, 175, 55, 0.25);
+    background: rgba(206, 144, 22, 0.25);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 2px 8px rgba(206, 144, 22, 0.3);
   }
 
   &:active {

@@ -22,7 +22,7 @@ const FiltersBar = styled.div`
   margin: 1.5rem 0;
   padding: 1rem;
   background: rgba(26, 26, 26, 0.75);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 12px;
 `;
 
@@ -30,7 +30,7 @@ const FilterGroup = styled.label`
   display: flex;
   flex-direction: column;
   font-size: 0.85rem;
-  color: #d4af37;
+  color: #ce9016;
 
   span {
     margin-bottom: 0.35rem;
@@ -41,7 +41,7 @@ const FilterGroup = styled.label`
   input,
   select {
     background: rgba(16, 16, 16, 0.9);
-    border: 1px solid rgba(212, 175, 55, 0.35);
+    border: 1px solid rgba(206, 144, 22, 0.35);
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     color: #f8f4e1;
@@ -50,7 +50,7 @@ const FilterGroup = styled.label`
 
     &:focus {
       outline: none;
-      border-color: #f1c661;
+      border-color: #e0a523;
       box-shadow: 0 0 0 2px rgba(241, 198, 97, 0.15);
     }
   }

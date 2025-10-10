@@ -33,9 +33,9 @@ const BulkActionsBar = styled.div`
 const BulkActionButton = styled.button<{ variant?: 'danger' | 'primary' }>`
   background: ${props => props.variant === 'danger'
     ? 'rgba(244, 67, 54, 0.15)'
-    : 'rgba(212, 175, 55, 0.15)'};
-  color: ${props => props.variant === 'danger' ? '#f44336' : '#d4af37'};
-  border: 1px solid ${props => props.variant === 'danger' ? '#f44336' : '#d4af37'};
+    : 'rgba(206, 144, 22, 0.15)'};
+  color: ${props => props.variant === 'danger' ? '#f44336' : '#ce9016'};
+  border: 1px solid ${props => props.variant === 'danger' ? '#f44336' : '#ce9016'};
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -49,11 +49,11 @@ const BulkActionButton = styled.button<{ variant?: 'danger' | 'primary' }>`
   &:hover {
     background: ${props => props.variant === 'danger'
       ? 'rgba(244, 67, 54, 0.25)'
-      : 'rgba(212, 175, 55, 0.25)'};
+      : 'rgba(206, 144, 22, 0.25)'};
     transform: translateY(-2px);
     box-shadow: 0 4px 12px ${props => props.variant === 'danger'
       ? 'rgba(244, 67, 54, 0.3)'
-      : 'rgba(212, 175, 55, 0.3)'};
+      : 'rgba(206, 144, 22, 0.3)'};
   }
 
   &:active {
@@ -64,7 +64,7 @@ const BulkActionButton = styled.button<{ variant?: 'danger' | 'primary' }>`
 const SelectionInfo = styled.span`
   font-weight: 600;
   font-size: 1rem;
-  color: #d4af37;
+  color: #ce9016;
 `;
 
 const CharacterList: React.FC<CharacterListProps> = ({

@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import type { Spell } from '@/types/api';
 import { formatLevel, getSchoolLabel } from '@/utils/spellUtils';
 import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface SpellDetailModalProps {
   spell: Spell | null;
@@ -17,30 +18,68 @@ const ModalBackdrop = styled.div`
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  /* No overflow - backdrop doesn't scroll */
 `;
 
 const ModalCard = styled.div`
   background: linear-gradient(135deg, rgba(26, 26, 26, 0.95), rgba(40, 40, 40, 0.95));
-  border: 1px solid rgba(212, 175, 55, 0.5);
+  border: 1px solid rgba(206, 144, 22, 0.5);
   border-radius: 16px;
-  padding: 2rem;
   max-width: 600px;
   width: 100%;
   max-height: 80vh;
-  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   position: relative;
+  display: flex;
+  flex-direction: column;
+
+`;
+
+const ModalHeader = styled.div`
+  padding: 2rem 2rem 1rem;
+  flex-shrink: 0;
 
   h2 {
     margin: 0 0 0.75rem 0;
-    color: #f1c661;
+    color: #e0a523;
     font-size: 1.5rem;
     letter-spacing: 0.5px;
   }
 
   p {
     line-height: 1.6;
+    color: #c0aa70;
+    margin: 0;
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 0 2rem 2rem;
+  overflow-y: auto;
+  flex: 1;
+
+  p {
+    line-height: 1.6;
     color: #e0d9c6;
+  }
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(206, 144, 22, 0.5);
+    border-radius: 4px;
+
+    &:hover {
+      background: rgba(206, 144, 22, 0.7);
+    }
   }
 `;
 
@@ -50,20 +89,24 @@ const ModalClose = styled.button`
   right: 1rem;
   border: none;
   background: transparent;
-  color: #d4af37;
+  color: #ce9016;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
+  z-index: 1;
 
   &:hover {
-    background-color: rgba(212, 175, 55, 0.2);
+    background-color: rgba(206, 144, 22, 0.2);
     transform: scale(1.1);
   }
 `;
 
 export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spell, onClose }) => {
+  // Lock body scroll when modal is open
+  useBodyScrollLock(!!spell);
+
   if (!spell) return null;
 
   return (
@@ -72,17 +115,21 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spell, onClo
         <ModalClose aria-label="Close" onClick={onClose}>
           ×
         </ModalClose>
-        <h2>{spell.name}</h2>
-        <p style={{ color: '#c0aa70', marginBottom: '1rem' }}>
-          {formatLevel(spell.level)} &bull; {getSchoolLabel(spell.school)}
-          {spell.isRitual ? ' • Ritual' : ''}
-          {spell.miscTags?.includes('Concentration') ? ' • Concentration' : ''}
-        </p>
-        {Array.isArray(spell.entries) && spell.entries.length > 0 ? (
-          <div dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(spell.entries) }} />
-        ) : (
-          <p>No additional description available.</p>
-        )}
+        <ModalHeader>
+          <h2>{spell.name}</h2>
+          <p>
+            {formatLevel(spell.level)} &bull; {getSchoolLabel(spell.school)}
+            {spell.isRitual ? ' • Ritual' : ''}
+            {spell.miscTags?.includes('Concentration') ? ' • Concentration' : ''}
+          </p>
+        </ModalHeader>
+        <ModalBody>
+          {Array.isArray(spell.entries) && spell.entries.length > 0 ? (
+            <div dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(spell.entries) }} />
+          ) : (
+            <p>No additional description available.</p>
+          )}
+        </ModalBody>
       </ModalCard>
     </ModalBackdrop>
   );

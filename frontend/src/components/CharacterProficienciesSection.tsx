@@ -16,7 +16,7 @@ const renderMarkdownText = (text: string) => {
   return parts.map((part, index) => {
     // Handle bold
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index} style={{ color: '#f4d469', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+      return <strong key={index} style={{ color: '#e0a523', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
     }
     // Handle italic in non-bold parts
     const italicParts = part.split(/(\*.*?\*)/g);

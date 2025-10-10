@@ -26,7 +26,7 @@ const Header = styled.div`
   h1 {
     font-family: 'Cinzel', serif;
     font-size: 3rem;
-    color: #d4af37;
+    color: #ce9016;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
@@ -80,8 +80,8 @@ const SearchInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &:hover {
@@ -110,8 +110,8 @@ const Select = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #d4af37;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    border-color: #ce9016;
+    box-shadow: 0 0 8px rgba(206, 144, 22, 0.3);
   }
 
   &:hover {
@@ -136,7 +136,7 @@ const StatsBar = styled.div`
   color: #ccc;
 
   .count {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 1.1rem;
   }
@@ -168,12 +168,12 @@ const ScrollableTable = styled.div`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(212, 175, 55, 0.5);
+    background: rgba(206, 144, 22, 0.5);
     border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: rgba(212, 175, 55, 0.7);
+    background: rgba(206, 144, 22, 0.7);
   }
 `;
 
@@ -191,7 +191,7 @@ const ItemTable = styled.table`
   th {
     text-align: left;
     padding: 1rem;
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     font-size: 0.9rem;
     border-bottom: 2px solid #444;
@@ -206,7 +206,7 @@ const ItemTable = styled.table`
     cursor: pointer;
 
     &:hover {
-      background: rgba(212, 175, 55, 0.1);
+      background: rgba(206, 144, 22, 0.1);
     }
 
     &:nth-child(even) {
@@ -233,7 +233,7 @@ const ItemTable = styled.table`
   }
 
   .item-stats {
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 500;
   }
 
@@ -285,11 +285,11 @@ const ItemTable = styled.table`
     font-size: 0.8rem;
     text-align: center;
     padding: 0.35rem 0.7rem;
-    background: rgba(212, 175, 55, 0.1);
+    background: rgba(206, 144, 22, 0.1);
     border-radius: 4px;
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 500;
-    border: 1px solid rgba(212, 175, 55, 0.2);
+    border: 1px solid rgba(206, 144, 22, 0.2);
   }
 
   .checkbox-cell {
@@ -301,7 +301,7 @@ const ItemTable = styled.table`
   .item-checkbox {
     width: 18px;
     height: 18px;
-    accent-color: #d4af37;
+    accent-color: #ce9016;
     cursor: pointer;
     margin: 0;
     transition: transform 0.2s ease;
@@ -338,9 +338,9 @@ const PaginationBar = styled.div`
       transition: all 0.2s ease;
 
       &:hover:not(:disabled) {
-        background: rgba(212, 175, 55, 0.2);
-        border-color: #d4af37;
-        color: #d4af37;
+        background: rgba(206, 144, 22, 0.2);
+        border-color: #ce9016;
+        color: #ce9016;
       }
 
       &:disabled {
@@ -349,14 +349,14 @@ const PaginationBar = styled.div`
       }
 
       &.active {
-        background: rgba(212, 175, 55, 0.2);
-        border-color: #d4af37;
-        color: #d4af37;
+        background: rgba(206, 144, 22, 0.2);
+        border-color: #ce9016;
+        color: #ce9016;
       }
     }
 
     .page-info {
-      color: #d4af37;
+      color: #ce9016;
       margin: 0 1rem;
       font-weight: 600;
     }
@@ -364,16 +364,16 @@ const PaginationBar = styled.div`
 
   .load-all-btn {
     padding: 10px 20px;
-    background: rgba(212, 175, 55, 0.2);
-    border: 1px solid #d4af37;
+    background: rgba(206, 144, 22, 0.2);
+    border: 1px solid #ce9016;
     border-radius: 6px;
-    color: #d4af37;
+    color: #ce9016;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover {
-      background: rgba(212, 175, 55, 0.3);
+      background: rgba(206, 144, 22, 0.3);
     }
 
     &:disabled {
@@ -768,7 +768,7 @@ const EquipmentPage: React.FC = () => {
 
           {loadAll && (
             <PaginationBar>
-              <div style={{ color: '#d4af37', fontWeight: 600 }}>
+              <div style={{ color: '#ce9016', fontWeight: 600 }}>
                 All {equipment.length} items loaded
               </div>
               <button

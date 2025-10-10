@@ -1,19 +1,19 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   WizardContainer,
   WizardHeader,
-  WizardProgress,
   WizardContent,
   WizardControls
 } from '../styles/components/CharacterGeneratorWizard.styles';
+import { PersistentBottomNav } from './wizard/PersistentBottomNav';
 import { Step0CharacterInfo } from './wizard-steps/Step0_CharacterInfo';
 import { Step1AbilityScores } from './wizard-steps/Step1_AbilityScores';
 import { Step2ClassSelection } from './wizard-steps/Step2_ClassSelection';
 import { Step3ABackgroundSelection } from './wizard-steps/Step3A_BackgroundSelection';
 import { Step3BSpeciesSelection } from './wizard-steps/Step3B_SpeciesSelection';
-import { Step3DOriginFeats } from './wizard-steps/Step3D_OriginFeats';
-import { Step4EquipmentSelection } from './wizard-steps/Step4_EquipmentSelection';
+import Step3DOriginFeats from './wizard-steps/Step3D_OriginFeats';
+// import { Step4EquipmentSelection } from './wizard-steps/Step4_EquipmentSelection'; // REMOVED per UX spec
 import { Step5ReviewCreate } from './wizard-steps/Step5_ReviewCreate';
 import { SpellSelectionWizard } from './wizard-steps/SpellSelectionWizard';
 import { AbilityScoresHeader } from './wizard-steps/AbilityScoresHeader';
@@ -21,6 +21,9 @@ import { useCharacterBuilderStore, WizardStep } from '../store/characterBuilderS
 import { shallow } from 'zustand/shallow';
 import WizardModal from './wizard/WizardModal';
 import { getCasterProgressionMeta } from '../helpers/spellRules';
+import { applyBuilderDataUpdates } from '../utils/builderDataMapper';
+import { storeToBuilderData } from '../utils/storeToBuilderData';
+import type { ClassStartingEquipment } from '../constants/startingEquipment';
 
 export interface CharacterBuilderData {
   // Step 0: Character Info
@@ -52,7 +55,7 @@ export interface CharacterBuilderData {
     tools: string[];
     savingThrows: string[];
   };
-  classStartingEquipment?: string[];
+  classStartingEquipment?: ClassStartingEquipment;
   classFeatures?: any[];
   hitDice?: string;
   primaryAbility?: string[];
@@ -134,20 +137,20 @@ const WIZARD_STEPS: WizardStep[] = [
   'species-selection',
   'origin-feats',
   'spell-selection',
-  'equipment-selection',
+  // 'equipment-selection', // REMOVED per UX spec
   'review-create'
 ];
 
 const STEP_LABELS = {
-  'character-info': 'Character & Player Info',
-  'ability-scores': 'Ability Scores',
+  'character-info': 'Name',
+  'ability-scores': 'Abilities',
   'class-selection': 'Class',
   'background-selection': 'Background',
   'species-selection': 'Species',
-  'origin-feats': 'Origin Feats',
+  'origin-feats': 'Feats',
   'spell-selection': 'Spells',
-  'equipment-selection': 'Equipment',
-  'review-create': 'Review & Create'
+  // 'equipment-selection': 'Equipment', // REMOVED per UX spec
+  'review-create': 'Review'
 };
 
 export default function CharacterGeneratorWizard() {
@@ -155,8 +158,18 @@ export default function CharacterGeneratorWizard() {
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showStartOverModal, setShowStartOverModal] = useState(false);
-  const [isSpellStepValid, setIsSpellStepValid] = useState(true);
+  // const [isSpellStepValid, setIsSpellStepValid] = useState(true); // No longer needed - validation removed
 
+  // Ref for spell wizard navigation handlers
+  const spellWizardNavigationRef = useRef<{
+    handleNext?: () => boolean;
+    handleBack?: () => boolean;
+  }>({});
+
+  // Ref for review step create handler
+  const reviewCreateHandlerRef = useRef<{
+    handleCreate?: () => Promise<void>;
+  }>({});
 
   // DEV ONLY: Quick-fill for testing
   const isDev = import.meta.env.DEV;
@@ -219,129 +232,17 @@ export default function CharacterGeneratorWizard() {
   const featsRequiredFeatCount = feats.requiredFeatCount;
 
   const builderData = useMemo<CharacterBuilderData>(
-    () => {
-      const selectedEquipment: CharacterBuilderData['selectedEquipment'] = {};
-      if (equipment.armor !== undefined) {
-        selectedEquipment.armor = equipment.armor;
-      }
-      if (equipment.weapons !== undefined) {
-        selectedEquipment.weapons = equipment.weapons;
-      }
-      if (equipment.shield !== undefined) {
-        selectedEquipment.shield = equipment.shield;
-      }
-      if (equipment.equipment !== undefined) {
-        selectedEquipment.equipment = equipment.equipment;
-      }
-
-      const result: CharacterBuilderData = {
-        characterName: basicInfo.characterName,
-        playerName: basicInfo.playerName,
-        abilityScoreMethod: abilityScores.method,
-        abilityScores: abilityScores.scores,
-        selectedClass: classSelection.selectedClass,
-        selectedClassSkills: classSelection.selectedClassSkills,
-        selectedClassChoices: classSelection.selectedClassChoices,
-        classStep: classSelection.classStep,
-        classFeatureData: classSelection.classFeatureData,
-        selectedBackground: background.selectedBackground,
-        selectedSpecies: species.selectedSpecies,
-        isHuman: species.isHuman,
-        selectedOriginFeats: feats.selectedOriginFeats,
-        requiredFeatCount: feats.requiredFeatCount,
-        selectedEquipment,
-        spellbook: {
-          known: [...spells.known],
-          ...(spells.prepared && { prepared: [...spells.prepared] }),
-          ...(spells.cantrips && { cantrips: [...spells.cantrips] }),
-          ...(spells.wizardSpellbook && { wizardSpellbook: [...spells.wizardSpellbook] }),
-        },
-        ...(spells.currentStep && { spellWizardStep: spells.currentStep }),
-      };
-
-      if (Object.keys(resources).length > 0) {
-        result.resources = { ...resources };
-      }
-
-      if (classSelection.classProficiencies !== undefined) {
-        result.classProficiencies = classSelection.classProficiencies;
-      }
-      if (classSelection.classStartingEquipment !== undefined) {
-        result.classStartingEquipment = classSelection.classStartingEquipment;
-      }
-      if (classSelection.classFeatures !== undefined) {
-        result.classFeatures = classSelection.classFeatures;
-      }
-      if (classSelection.hitDice !== undefined) {
-        result.hitDice = classSelection.hitDice;
-      }
-      if (classSelection.primaryAbility !== undefined) {
-        result.primaryAbility = classSelection.primaryAbility;
-      }
-      if (classSelection.spellcaster !== undefined) {
-        result.spellcaster = classSelection.spellcaster;
-      }
-      if (classSelection.spellcastingAbility !== undefined) {
-        result.spellcastingAbility = classSelection.spellcastingAbility;
-      }
-
-      if (background.abilityScoreAllocations !== undefined) {
-        result.backgroundAbilityScoreAllocations =
-          background.abilityScoreAllocations;
-      }
-      if (background.selectedLanguages !== undefined) {
-        result.selectedLanguages = background.selectedLanguages;
-      }
-      if (background.skillProficiencies !== undefined) {
-        result.backgroundSkillProficiencies = background.skillProficiencies;
-      }
-      if (background.toolProficiencies !== undefined) {
-        result.backgroundToolProficiencies = background.toolProficiencies;
-      }
-      if (background.startingEquipment !== undefined) {
-        result.backgroundStartingEquipment = background.startingEquipment;
-      }
-      if (background.features !== undefined) {
-        result.backgroundFeatures = background.features;
-      }
-
-      if (species.traits !== undefined) {
-        result.speciesTraits = species.traits;
-      }
-      if (species.spells !== undefined) {
-        result.speciesSpells = species.spells;
-      }
-      if (species.size !== undefined) {
-        result.speciesSize = species.size;
-      }
-      if (species.speed !== undefined) {
-        result.speciesSpeed = species.speed;
-      }
-      if (species.darkvision !== undefined) {
-        result.speciesDarkvision = species.darkvision;
-      }
-      if (species.resistances !== undefined) {
-        result.speciesResistances = species.resistances;
-      }
-      if (species.immunities !== undefined) {
-        result.speciesImmunities = species.immunities;
-      }
-      if (species.choices !== undefined) {
-        result.speciesChoices = species.choices;
-      }
-
-      if (feats.featFeatures !== undefined) {
-        result.featFeatures = feats.featFeatures;
-      }
-      if (feats.featSpells !== undefined) {
-        result.featSpells = feats.featSpells;
-      }
-      if (feats.featChoices !== undefined) {
-        result.featChoices = feats.featChoices;
-      }
-
-      return result;
-    },
+    () => storeToBuilderData({
+      basicInfo,
+      abilityScores,
+      classSelection,
+      background,
+      species,
+      feats,
+      equipment,
+      spells,
+      resources,
+    }),
     [
       basicInfo,
       abilityScores,
@@ -411,238 +312,75 @@ export default function CharacterGeneratorWizard() {
 
   useEffect(() => {
     if (!shouldShowSpellStep && currentStep === 'spell-selection') {
-      setCurrentStep('equipment-selection');
+      setCurrentStep('review-create'); // Skip to review since equipment step removed
     }
   }, [shouldShowSpellStep, currentStep, setCurrentStep]);
 
-  const visibleSteps = useMemo(
-    () => WIZARD_STEPS.filter((step) => step !== 'spell-selection' || shouldShowSpellStep),
-    [shouldShowSpellStep]
-  );
+  // Auto-mark spell-selection as complete when it's not applicable
+  useEffect(() => {
+    if (!shouldShowSpellStep && !completedSteps.includes('spell-selection')) {
+      markStepComplete('spell-selection');
+    }
+  }, [shouldShowSpellStep, completedSteps, markStepComplete]);
+
+  // Always show all steps - spell-selection will be auto-skipped if not applicable
+  const visibleSteps = useMemo(() => WIZARD_STEPS, []);
 
   const updateBuilderData = useCallback(
     (updates: Partial<CharacterBuilderData>) => {
-      const basicInfoUpdates: Partial<typeof basicInfo> = {};
-      if (updates.characterName !== undefined) {
-        basicInfoUpdates.characterName = updates.characterName;
-      }
-      if (updates.playerName !== undefined) {
-        basicInfoUpdates.playerName = updates.playerName;
-      }
-      if (Object.keys(basicInfoUpdates).length > 0) {
-        updateBasicInfo(basicInfoUpdates);
-      }
-
-      if (
-        updates.abilityScoreMethod !== undefined ||
-        updates.abilityScores !== undefined
-      ) {
-        const abilityUpdates: Parameters<
-          typeof updateAbilityScores
-        >[0] = {};
-        if (updates.abilityScoreMethod !== undefined) {
-          abilityUpdates.method = updates.abilityScoreMethod;
+      applyBuilderDataUpdates(
+        updates,
+        {
+          updateBasicInfo,
+          updateAbilityScores,
+          updateClassSelection,
+          updateBackground,
+          updateSpecies,
+          updateFeats,
+          updateEquipment,
+          updateSpellbook,
+          updateResources,
+        },
+        {
+          speciesIsHuman,
+          featsRequiredFeatCount,
+          currentOriginFeats,
         }
-        if (updates.abilityScores !== undefined) {
-          abilityUpdates.scores = updates.abilityScores;
-        }
-        updateAbilityScores(abilityUpdates);
-      }
-
-      const classUpdates: Partial<typeof classSelection> = {};
-      if (updates.selectedClass !== undefined) {
-        classUpdates.selectedClass = updates.selectedClass;
-      }
-      if (updates.selectedClassSkills !== undefined) {
-        classUpdates.selectedClassSkills = updates.selectedClassSkills;
-      }
-      if (updates.selectedClassChoices !== undefined) {
-        classUpdates.selectedClassChoices = updates.selectedClassChoices;
-      }
-      if (updates.classStep !== undefined) {
-        classUpdates.classStep = updates.classStep;
-      }
-      if (updates.classFeatureData !== undefined) {
-        classUpdates.classFeatureData = updates.classFeatureData;
-      }
-      if (updates.classProficiencies !== undefined) {
-        classUpdates.classProficiencies = updates.classProficiencies;
-      }
-      if (updates.classStartingEquipment !== undefined) {
-        classUpdates.classStartingEquipment = updates.classStartingEquipment;
-      }
-      if (updates.classFeatures !== undefined) {
-        classUpdates.classFeatures = updates.classFeatures;
-      }
-      if (updates.hitDice !== undefined) {
-        classUpdates.hitDice = updates.hitDice;
-      }
-      if (updates.primaryAbility !== undefined) {
-        classUpdates.primaryAbility = updates.primaryAbility;
-      }
-      if (updates.spellcaster !== undefined) {
-        classUpdates.spellcaster = updates.spellcaster;
-      }
-      if (updates.spellcastingAbility !== undefined) {
-        classUpdates.spellcastingAbility = updates.spellcastingAbility;
-      }
-      if (Object.keys(classUpdates).length > 0) {
-        updateClassSelection(classUpdates);
-      }
-
-      const backgroundUpdates: Partial<typeof background> = {};
-      if (updates.selectedBackground !== undefined) {
-        backgroundUpdates.selectedBackground = updates.selectedBackground;
-      }
-      if (updates.backgroundAbilityScoreAllocations !== undefined) {
-        backgroundUpdates.abilityScoreAllocations =
-          updates.backgroundAbilityScoreAllocations;
-      }
-      if (updates.selectedLanguages !== undefined) {
-        backgroundUpdates.selectedLanguages = updates.selectedLanguages;
-      }
-      if (updates.backgroundSkillProficiencies !== undefined) {
-        backgroundUpdates.skillProficiencies =
-          updates.backgroundSkillProficiencies;
-      }
-      if (updates.backgroundToolProficiencies !== undefined) {
-        backgroundUpdates.toolProficiencies =
-          updates.backgroundToolProficiencies;
-      }
-      if (updates.backgroundStartingEquipment !== undefined) {
-        backgroundUpdates.startingEquipment =
-          updates.backgroundStartingEquipment;
-      }
-      if (updates.backgroundFeatures !== undefined) {
-        backgroundUpdates.features = updates.backgroundFeatures;
-      }
-      if (Object.keys(backgroundUpdates).length > 0) {
-        updateBackground(backgroundUpdates);
-      }
-
-      const speciesUpdates: Partial<typeof species> = {};
-      const pendingFeatsUpdates: Partial<typeof feats> = {};
-
-      if (updates.selectedSpecies !== undefined) {
-        speciesUpdates.selectedSpecies = updates.selectedSpecies;
-        const nextIsHuman = updates.selectedSpecies
-          ? updates.selectedSpecies.toLowerCase() === 'human'
-          : speciesIsHuman;
-        speciesUpdates.isHuman = nextIsHuman;
-        const nextRequiredCount = nextIsHuman ? 2 : 1;
-        pendingFeatsUpdates.requiredFeatCount = nextRequiredCount;
-        if (nextRequiredCount !== featsRequiredFeatCount) {
-          pendingFeatsUpdates.selectedOriginFeats = [];
-        }
-      }
-
-      if (updates.isHuman !== undefined) {
-        speciesUpdates.isHuman = updates.isHuman;
-      }
-      if (updates.speciesTraits !== undefined) {
-        speciesUpdates.traits = updates.speciesTraits;
-      }
-      if (updates.speciesSpells !== undefined) {
-        speciesUpdates.spells = updates.speciesSpells;
-      }
-      if (updates.speciesSize !== undefined) {
-        speciesUpdates.size = updates.speciesSize;
-      }
-      if (updates.speciesSpeed !== undefined) {
-        speciesUpdates.speed = updates.speciesSpeed;
-      }
-      if (updates.speciesDarkvision !== undefined) {
-        speciesUpdates.darkvision = updates.speciesDarkvision;
-      }
-      if (updates.speciesResistances !== undefined) {
-        speciesUpdates.resistances = updates.speciesResistances;
-      }
-      if (updates.speciesImmunities !== undefined) {
-        speciesUpdates.immunities = updates.speciesImmunities;
-      }
-      if (updates.speciesChoices !== undefined) {
-        speciesUpdates.choices = updates.speciesChoices;
-      }
-      if (Object.keys(speciesUpdates).length > 0) {
-        updateSpecies(speciesUpdates);
-      }
-
-      if (updates.selectedOriginFeats !== undefined) {
-        pendingFeatsUpdates.selectedOriginFeats = updates.selectedOriginFeats;
-      }
-      if (updates.requiredFeatCount !== undefined) {
-        pendingFeatsUpdates.requiredFeatCount = updates.requiredFeatCount;
-        if (currentOriginFeats.length > updates.requiredFeatCount) {
-          pendingFeatsUpdates.selectedOriginFeats = currentOriginFeats.slice(
-            0,
-            updates.requiredFeatCount
-          );
-        }
-      }
-      if (updates.featFeatures !== undefined) {
-        pendingFeatsUpdates.featFeatures = updates.featFeatures;
-      }
-      if (updates.featSpells !== undefined) {
-        pendingFeatsUpdates.featSpells = updates.featSpells;
-      }
-      if (updates.featChoices !== undefined) {
-        pendingFeatsUpdates.featChoices = updates.featChoices;
-      }
-  if (Object.keys(pendingFeatsUpdates).length > 0) {
-    updateFeats(pendingFeatsUpdates);
-  }
-
-  if (updates.selectedEquipment !== undefined) {
-    updateEquipment(updates.selectedEquipment);
-  }
-
-  if (updates.spellbook !== undefined) {
-    const spellUpdates: Partial<typeof spells> = {};
-    if (updates.spellbook.known !== undefined) {
-      spellUpdates.known = updates.spellbook.known;
-    }
-    if (updates.spellbook.prepared !== undefined) {
-      spellUpdates.prepared = updates.spellbook.prepared;
-    }
-    if (updates.spellbook.cantrips !== undefined) {
-      spellUpdates.cantrips = updates.spellbook.cantrips;
-    }
-    if (updates.spellbook.wizardSpellbook !== undefined) {
-      spellUpdates.wizardSpellbook = updates.spellbook.wizardSpellbook;
-    }
-    if (Object.keys(spellUpdates).length > 0) {
-      updateSpellbook(spellUpdates);
-    }
-  }
-
-  if (updates.spellWizardStep !== undefined) {
-    updateSpellbook({ currentStep: updates.spellWizardStep });
-  }
-
-  if (updates.resources !== undefined) {
-    updateResources(updates.resources);
-  }
-},
-[
-  updateBasicInfo,
-  updateAbilityScores,
-  updateClassSelection,
-  updateBackground,
-    updateSpecies,
-    updateFeats,
-    updateEquipment,
-    updateSpellbook,
-    updateResources,
-    speciesIsHuman,
-    currentOriginFeats,
-    featsRequiredFeatCount,
-  ]
+      );
+    },
+    [
+      updateBasicInfo,
+      updateAbilityScores,
+      updateClassSelection,
+      updateBackground,
+      updateSpecies,
+      updateFeats,
+      updateEquipment,
+      updateSpellbook,
+      updateResources,
+      speciesIsHuman,
+      currentOriginFeats,
+      featsRequiredFeatCount,
+    ]
   );
 
   const completedStepsSet = useMemo(
     () => new Set(completedSteps),
     [completedSteps]
   );
+
+  const progressSteps = useMemo(() => {
+    return visibleSteps.map((step) => {
+      const isNotApplicable = step === 'spell-selection' && !shouldShowSpellStep;
+      return {
+        key: step,
+        label: STEP_LABELS[step] || step,
+        isComplete: completedStepsSet.has(step),
+        isCurrent: step === currentStep,
+        isNotApplicable,
+      };
+    });
+  }, [visibleSteps, completedStepsSet, currentStep, shouldShowSpellStep]);
 
 
   // Start Over functionality
@@ -749,25 +487,40 @@ export default function CharacterGeneratorWizard() {
       if (!visibleSteps.includes(step)) {
         return;
       }
+
+      // Prevent navigating to spell-selection if not a spellcasting class
+      if (step === 'spell-selection' && !shouldShowSpellStep) {
+        return;
+      }
+
       setCurrentStep(step);
     },
-    [setCurrentStep, visibleSteps]
+    [setCurrentStep, visibleSteps, shouldShowSpellStep]
   );
 
   const goNext = useCallback(() => {
-    console.log('[Wizard] goNext called. Current step:', currentStep);
+    // Check if on review step - trigger create character (no validation blocking)
+    if (currentStep === 'review-create') {
+      console.log('🎯 On review step, attempting to create character');
+      console.log('📝 Handler ref:', reviewCreateHandlerRef.current);
+      if (reviewCreateHandlerRef.current.handleCreate) {
+        console.log('✅ Calling handleCreate');
+        reviewCreateHandlerRef.current.handleCreate();
+        return;
+      } else {
+        console.error('❌ handleCreate not found in ref');
+      }
+    }
+
     if (!canGoNext()) {
-      console.log('[Wizard] canGoNext returned false, aborting');
+      console.log('🚫 Cannot go next - step incomplete');
       return;
     }
 
     // Check if spell wizard wants to handle Next internally
-    if (currentStep === 'spell-selection' && (window as any).__spellWizardNext) {
-      console.log('[Wizard] Calling spell wizard handler');
-      const handled = (window as any).__spellWizardNext();
-      console.log('[Wizard] Spell wizard handler returned:', handled);
+    if (currentStep === 'spell-selection' && spellWizardNavigationRef.current.handleNext) {
+      const handled = spellWizardNavigationRef.current.handleNext();
       if (handled) {
-        console.log('[Wizard] Spell wizard handled navigation internally');
         return; // Spell wizard handled it
       }
     }
@@ -775,8 +528,17 @@ export default function CharacterGeneratorWizard() {
     const currentIndex = getCurrentStepIndex();
     if (currentIndex === -1) return;
 
-    const nextStep = visibleSteps[currentIndex + 1];
+    let nextStep = visibleSteps[currentIndex + 1];
     if (!nextStep) return;
+
+    // Auto-skip spell-selection if not a spellcasting class
+    if (nextStep === 'spell-selection' && !shouldShowSpellStep) {
+      // Mark spell step as complete (since we're skipping it)
+      markStepComplete('spell-selection');
+      // Move to the step after spells
+      nextStep = visibleSteps[currentIndex + 2];
+      if (!nextStep) return;
+    }
 
     setIsTransitioning(true);
 
@@ -787,22 +549,17 @@ export default function CharacterGeneratorWizard() {
         setIsTransitioning(false);
       }, 500);
     }, 300);
-  }, [canGoNext, currentStep, getCurrentStepIndex, markStepComplete, setCurrentStep, visibleSteps]);
+  }, [canGoNext, currentStep, getCurrentStepIndex, markStepComplete, setCurrentStep, visibleSteps, shouldShowSpellStep]);
 
   const goBack = useCallback(() => {
-    console.log('[Wizard] goBack called. Current step:', currentStep);
     if (!canGoBack()) {
-      console.log('[Wizard] canGoBack returned false, aborting');
       return;
     }
 
     // Check if spell wizard wants to handle Back internally
-    if (currentStep === 'spell-selection' && (window as any).__spellWizardBack) {
-      console.log('[Wizard] Calling spell wizard back handler');
-      const handled = (window as any).__spellWizardBack();
-      console.log('[Wizard] Spell wizard back handler returned:', handled);
+    if (currentStep === 'spell-selection' && spellWizardNavigationRef.current.handleBack) {
+      const handled = spellWizardNavigationRef.current.handleBack();
       if (handled) {
-        console.log('[Wizard] Spell wizard handled back navigation internally');
         return; // Spell wizard handled it
       }
     }
@@ -810,142 +567,111 @@ export default function CharacterGeneratorWizard() {
     const currentIndex = getCurrentStepIndex();
     if (currentIndex <= 0) return;
 
-    const prevStep = visibleSteps[currentIndex - 1];
+    let prevStep = visibleSteps[currentIndex - 1];
     if (!prevStep) return;
+
+    // Auto-skip spell-selection if not a spellcasting class
+    if (prevStep === 'spell-selection' && !shouldShowSpellStep) {
+      // Move to the step before spells
+      prevStep = visibleSteps[currentIndex - 2];
+      if (!prevStep) return;
+    }
+
     setCurrentStep(prevStep);
-  }, [canGoBack, getCurrentStepIndex, setCurrentStep, visibleSteps, currentStep]);
+  }, [canGoBack, getCurrentStepIndex, setCurrentStep, visibleSteps, currentStep, shouldShowSpellStep]);
 
 
-  // Check if ability scores are complete
-  const isAbilityScoresComplete = (): boolean => {
-    if (builderData.abilityScoreMethod === 'standard-array') {
-      const usedScores = Object.values(builderData.abilityScores).filter(s => s > 0).sort();
-      const standardArray = [15, 14, 13, 12, 10, 8].sort();
-      return usedScores.length === 6 && JSON.stringify(usedScores) === JSON.stringify(standardArray);
-    } else {
-      return Object.values(builderData.abilityScores).every(score => score >= 3 && score <= 20);
-    }
-  };
+  // NOTE: All validation functions commented out - we allow character creation with partial data
+  // Validation is only used for visual feedback, not blocking navigation
 
-  // Check if class selection is complete
-  const isClassSelectionComplete = (): boolean => {
-    if (!builderData.selectedClass) return false;
+  // // Check if ability scores are complete
+  // const isAbilityScoresComplete = (): boolean => {
+  //   if (builderData.abilityScoreMethod === 'standard-array') {
+  //     const usedScores = Object.values(builderData.abilityScores).filter(s => s > 0).sort();
+  //     const standardArray = [15, 14, 13, 12, 10, 8].sort();
+  //     return usedScores.length === 6 && JSON.stringify(usedScores) === JSON.stringify(standardArray);
+  //   } else {
+  //     return Object.values(builderData.abilityScores).every(score => score >= 3 && score <= 20);
+  //   }
+  // };
 
-    // Import the CLASS_SKILL_CHOICES to get accurate requirements
-    const CLASS_SKILL_CHOICES: { [key: string]: number } = {
-      'Artificer': 2,
-      'Barbarian': 2,
-      'Bard': 3,
-      'Cleric': 2,
-      'Druid': 2,
-      'Fighter': 2,
-      'Monk': 2,
-      'Paladin': 2,
-      'Ranger': 3,
-      'Rogue': 4,
-      'Sorcerer': 2,
-      'Warlock': 2,
-      'Wizard': 2
-    };
+  // // Check if class selection is complete
+  // const isClassSelectionComplete = (): boolean => {
+  //   if (!builderData.selectedClass) return false;
+  //   const CLASS_SKILL_CHOICES: { [key: string]: number } = {
+  //     'Artificer': 2, 'Barbarian': 2, 'Bard': 3, 'Cleric': 2, 'Druid': 2,
+  //     'Fighter': 2, 'Monk': 2, 'Paladin': 2, 'Ranger': 3, 'Rogue': 4,
+  //     'Sorcerer': 2, 'Warlock': 2, 'Wizard': 2
+  //   };
+  //   const requiredSkillCount = CLASS_SKILL_CHOICES[builderData.selectedClass] || 0;
+  //   return requiredSkillCount === 0 || builderData.selectedClassSkills.length === requiredSkillCount;
+  // };
 
-    const requiredSkillCount = CLASS_SKILL_CHOICES[builderData.selectedClass] || 0;
-    const isSkillComplete = requiredSkillCount === 0 || builderData.selectedClassSkills.length === requiredSkillCount;
+  // // Check if background selection is complete
+  // const isBackgroundSelectionComplete = (): boolean => {
+  //   if (!builderData.selectedBackground) return false;
+  //   if (!builderData.selectedLanguages || builderData.selectedLanguages.length !== 2) return false;
+  //   if (!builderData.backgroundAbilityScoreAllocations) return false;
+  //   const total = Object.values(builderData.backgroundAbilityScoreAllocations).reduce((sum, val) => sum + val, 0);
+  //   return total === 3;
+  // };
 
-    // For now, we'll consider class features complete if a class is selected
-    // This can be enhanced later with specific class feature validation
-    const isClassFeatureComplete = true;
+  // // Check if species selection is complete
+  // const isSpeciesSelectionComplete = (): boolean => {
+  //   return !!builderData.selectedSpecies;
+  // };
 
-    return isSkillComplete && isClassFeatureComplete;
-  };
+  // // Check if origin feats selection is complete
+  // const isOriginFeatsComplete = (): boolean => {
+  //   return builderData.selectedOriginFeats.length >= builderData.requiredFeatCount;
+  // };
 
-  // Check if background selection is complete
-  const isBackgroundSelectionComplete = (): boolean => {
-    return !!(builderData.selectedBackground &&
-              builderData.backgroundAbilityScoreAllocations &&
-              builderData.selectedLanguages);
-  };
+  // const isSpellSelectionComplete = useCallback(
+  //   () => !shouldShowSpellStep || isSpellStepValid,
+  //   [shouldShowSpellStep, isSpellStepValid]
+  // );
 
-  // Check if species selection is complete
-  const isSpeciesSelectionComplete = (): boolean => {
-    return !!builderData.selectedSpecies;
-  };
+  // // Check if equipment selection is complete
+  // const isEquipmentSelectionComplete = (): boolean => {
+  //   return !!(builderData.selectedEquipment.armor ||
+  //             (builderData.selectedEquipment.weapons && builderData.selectedEquipment.weapons.length > 0) ||
+  //             (builderData.selectedEquipment.equipment && builderData.selectedEquipment.equipment.length > 0));
+  // };
 
-  // Check if origin feats selection is complete
-  const isOriginFeatsComplete = (): boolean => {
-    return builderData.selectedOriginFeats.length >= builderData.requiredFeatCount;
-  };
+  // // Check if character info is complete
+  // const isCharacterInfoComplete = (): boolean => {
+  //   return !!(builderData.characterName && builderData.playerName);
+  // };
 
-  const isSpellSelectionComplete = useCallback(
-    () => !shouldShowSpellStep || isSpellStepValid,
-    [shouldShowSpellStep, isSpellStepValid]
-  );
-
-  // Check if equipment selection is complete
-  const isEquipmentSelectionComplete = (): boolean => {
-    return !!(builderData.selectedEquipment.armor ||
-              (builderData.selectedEquipment.weapons && builderData.selectedEquipment.weapons.length > 0) ||
-              (builderData.selectedEquipment.equipment && builderData.selectedEquipment.equipment.length > 0));
-  };
-
-  // Check if character info is complete
-  const isCharacterInfoComplete = (): boolean => {
-    return !!(builderData.characterName && builderData.playerName);
-  };
-
-  const isStepMarkedComplete = (step: WizardStep): boolean => {
-    switch (step) {
-      case 'character-info':
-        return isCharacterInfoComplete();
-      case 'ability-scores':
-        return isAbilityScoresComplete();
-      case 'class-selection':
-        return isClassSelectionComplete();
-      case 'background-selection':
-        return isBackgroundSelectionComplete();
-      case 'species-selection':
-        return isSpeciesSelectionComplete();
-      case 'origin-feats':
-        return isOriginFeatsComplete();
-      case 'spell-selection':
-        return isSpellSelectionComplete();
-      case 'equipment-selection':
-        return isEquipmentSelectionComplete();
-      case 'review-create':
-        return completedStepsSet.has(step);
-      default:
-        return completedStepsSet.has(step);
-    }
-  };
-
-  // Check if current step is complete
-  const isCurrentStepComplete = (): boolean => {
-    switch (currentStep) {
-      case 'character-info':
-        return isCharacterInfoComplete();
-      case 'ability-scores':
-        return isAbilityScoresComplete();
-      case 'class-selection':
-        return isClassSelectionComplete();
-      case 'background-selection':
-        return isBackgroundSelectionComplete();
-      case 'species-selection':
-        return isSpeciesSelectionComplete();
-      case 'origin-feats':
-        return isOriginFeatsComplete();
-      case 'spell-selection':
-        return isSpellSelectionComplete();
-      case 'equipment-selection':
-        return isEquipmentSelectionComplete();
-      case 'review-create':
-        return true; // Review step is always complete for navigation
-      default:
-        return false;
-    }
-  };
+  // Check if current step is complete (for visual indicators only, not blocking)
+  // const isCurrentStepComplete = (): boolean => {
+  //   switch (currentStep) {
+  //     case 'character-info':
+  //       return isCharacterInfoComplete();
+  //     case 'ability-scores':
+  //       return isAbilityScoresComplete();
+  //     case 'class-selection':
+  //       return isClassSelectionComplete();
+  //     case 'background-selection':
+  //       return isBackgroundSelectionComplete();
+  //     case 'species-selection':
+  //       return isSpeciesSelectionComplete();
+  //     case 'origin-feats':
+  //       return isOriginFeatsComplete();
+  //     case 'spell-selection':
+  //       return isSpellSelectionComplete();
+  //     case 'equipment-selection':
+  //       return isEquipmentSelectionComplete();
+  //     case 'review-create':
+  //       return true; // Review step is always complete for navigation
+  //     default:
+  //       return false;
+  //   }
+  // };
 
   return (
     <WizardContainer>
-      <div className="character-generator-wizard">
+      <div className="character-generator-wizard" style={{ paddingBottom: '120px' }}>
         {/* Header */}
         <WizardHeader>
           <h1>Create New Character</h1>
@@ -966,14 +692,14 @@ export default function CharacterGeneratorWizard() {
               transform: 'translate(-50%, -50%)',
               zIndex: 999,
               background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2520 100%)',
-              border: '3px solid #d4af37',
+              border: '3px solid #ce9016',
               borderRadius: '12px',
               padding: '2rem 3rem',
               boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8)',
               animation: 'fadeInScale 0.3s ease',
             }}>
               <h2 style={{
-                color: '#d4af37',
+                color: '#ce9016',
                 fontFamily: 'Cinzel, serif',
                 fontSize: '1.8rem',
                 margin: 0,
@@ -994,6 +720,10 @@ export default function CharacterGeneratorWizard() {
             <Step0CharacterInfo
               data={builderData}
               onUpdate={updateBuilderData}
+              onMethodSelect={() => {
+                // Navigate to ability scores step after method selection
+                setCurrentStep('ability-scores');
+              }}
             />
           )}
           {currentStep === 'ability-scores' && (
@@ -1036,16 +766,11 @@ export default function CharacterGeneratorWizard() {
             <SpellSelectionWizard
               data={builderData}
               onUpdate={updateBuilderData}
-              onValidityChange={setIsSpellStepValid}
-              onCustomNext={() => true}
+              onValidityChange={() => {}} // No-op - validation no longer blocks
+              navigationHandlersRef={spellWizardNavigationRef}
             />
           )}
-          {currentStep === 'equipment-selection' && (
-            <Step4EquipmentSelection
-              data={builderData}
-              onUpdate={updateBuilderData}
-            />
-          )}
+          {/* Equipment selection step removed per UX spec - equipment is auto-derived */}
           {currentStep === 'review-create' && (
             <Step5ReviewCreate
               data={builderData}
@@ -1055,9 +780,10 @@ export default function CharacterGeneratorWizard() {
                 // Navigate directly to character sheet - choices are now handled in Step2
                 navigate(`/characters/${characterId}`);
               }}
+              createHandlerRef={reviewCreateHandlerRef}
             />
           )}
-          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'origin-feats', 'spell-selection', 'equipment-selection', 'review-create'].includes(currentStep) && (
+          {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'origin-feats', 'spell-selection', 'review-create'].includes(currentStep) && (
             <div className="step-placeholder">
               <h2>{STEP_LABELS[currentStep]}</h2>
               <p>Step content coming soon...</p>
@@ -1065,84 +791,63 @@ export default function CharacterGeneratorWizard() {
             </div>
           )}
 
-          {/* Progress Bar */}
-          <WizardProgress className="bottom-progress">
-            {visibleSteps.map((step, index) => (
-              <div
-                key={step}
-                className={`progress-step ${
-                  step === currentStep ? 'current' : ''
-                } ${
-                  completedStepsSet.has(step) ? 'completed' : ''
-                }`}
-                onClick={() => goToStep(step)}
-              >
-                <span className="step-number">{index + 1}</span>
-                <span className="step-label" style={{
-                  color: isStepMarkedComplete(step) ? '#4caf50' : undefined
-                }}>
-                  {STEP_LABELS[step]}
-                </span>
+          {/* Dev/Utility Controls */}
+          {(isDev || currentStep !== 'character-info') && (
+            <WizardControls style={{ padding: '0.75rem 0', marginTop: '1rem' }}>
+              <div className="wizard-controls-left">
+                {currentStep !== 'character-info' && (
+                  <button
+                    onClick={handleStartOver}
+                    className="wizard-btn wizard-btn-danger"
+                    style={{
+                      background: 'linear-gradient(145deg, #dc3545, #c82333)',
+                      borderColor: '#dc3545',
+                      color: '#fff',
+                      padding: '8px 16px',
+                      fontSize: '0.875rem'
+                    }}
+                  >
+                    Start Over
+                  </button>
+                )}
+                {isDev && (
+                  <button
+                    onClick={quickFillWizard}
+                    className="wizard-btn"
+                    style={{
+                      background: 'linear-gradient(145deg, #17a2b8, #138496)',
+                      borderColor: '#17a2b8',
+                      color: '#fff',
+                      marginLeft: currentStep !== 'character-info' ? '0.5rem' : '0',
+                      padding: '8px 16px',
+                      fontSize: '0.875rem'
+                    }}
+                    title="DEV: Quick-fill wizard with test Wizard character"
+                  >
+                    ⚡ Quick Fill (DEV)
+                  </button>
+                )}
               </div>
-            ))}
-          </WizardProgress>
-
-          {/* Navigation Controls */}
-          <WizardControls>
-            <div className="wizard-controls-left">
-              <button
-                onClick={goBack}
-                disabled={!canGoBack()}
-                className="wizard-btn wizard-btn-secondary"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleStartOver}
-                className="wizard-btn wizard-btn-danger"
-                style={{
-                  background: 'linear-gradient(145deg, #dc3545, #c82333)',
-                  borderColor: '#dc3545',
-                  color: '#fff',
-                  marginLeft: '0.5rem'
-                }}
-              >
-                Start Over
-              </button>
-              {isDev && (
-                <button
-                  onClick={quickFillWizard}
-                  className="wizard-btn"
-                  style={{
-                    background: 'linear-gradient(145deg, #17a2b8, #138496)',
-                    borderColor: '#17a2b8',
-                    color: '#fff',
-                    marginLeft: '0.5rem'
-                  }}
-                  title="DEV: Quick-fill wizard with test Wizard character"
-                >
-                  ⚡ Quick Fill (DEV)
-                </button>
-              )}
-            </div>
-
-            <div className="wizard-controls-right">
-              {currentStep !== 'review-create' && (
-                <button
-                  onClick={goNext}
-                  className="wizard-btn wizard-btn-primary"
-                  style={{
-                    background: isCurrentStepComplete() ? 'linear-gradient(145deg, #4caf50, #45a049)' : undefined,
-                    borderColor: isCurrentStepComplete() ? '#4caf50' : undefined
-                  }}
-                  disabled={!isCurrentStepComplete()}
-                >
-                  Next {!isCurrentStepComplete() && '⚠️'}
-                </button>
-              )}
-            </div>
-          </WizardControls>
+            </WizardControls>
+          )}
         </WizardContent>
+
+        {/* Persistent Bottom Navigation - Hidden on character-info step */}
+        {currentStep !== 'character-info' && (
+          <PersistentBottomNav
+            canGoBack={canGoBack()}
+            canGoNext={true}
+            canReview={false}
+            onBack={goBack}
+            onNext={goNext}
+            onReview={() => setCurrentStep('review-create')}
+            currentStepLabel={STEP_LABELS[currentStep] || ''}
+            isNextDisabled={false}
+            nextLabel={currentStep === 'review-create' ? 'Create Character' : 'Next'}
+            steps={progressSteps}
+            onStepClick={(stepKey) => goToStep(stepKey as WizardStep)}
+          />
+        )}
       </div>
 
       <WizardModal

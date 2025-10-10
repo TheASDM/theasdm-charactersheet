@@ -13,6 +13,11 @@ import WizardModal from '../wizard/WizardModal';
 import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { logger } from '../../utils/logger';
+import { useAutoScroll } from '@/hooks/useAutoScroll';
+import { CompactList } from '../wizard/CompactList';
+import { DetailsModal } from '../wizard/DetailsModal';
+import { ClassDetailsContent } from '../wizard/ClassDetailsContent';
+import { CLASS_STARTING_EQUIPMENT } from '../../constants/startingEquipment';
 
 // Complete list of all D&D skills for classes that can choose "any" skill
 const ALL_SKILLS = [
@@ -41,93 +46,93 @@ interface Step2ClassSelectionProps {
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
 }
 
-const ClassGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
-
-  @keyframes fadeInScale {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-`;
-
-const ClassCard = styled.div<{ selected: boolean }>`
-  background: rgba(26, 26, 26, 0.8);
-  border: 2px solid ${(props) => (props.selected ? '#d4af37' : '#444')};
-  border-radius: 8px;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-
-  &:hover {
-    border-color: #d4af37;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
-  }
-
-  ${(props) =>
-    props.selected &&
-    `
-    background: rgba(212, 175, 55, 0.1);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
-  `}
-`;
-
-const ClassName = styled.h3`
-  color: #d4af37;
-  margin: 0 0 0.5rem 0;
-  font-family: 'Cinzel', serif;
-  font-size: 1.3rem;
-  text-align: center;
-`;
-
-const ClassDescription = styled.p`
-  color: #ccc;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  margin: 0 0 1rem 0;
-  text-align: center;
-`;
-
-const ClassFeatures = styled.div`
-  .feature-title {
-    color: #d4af37;
-    font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .feature-list {
-    color: #aaa;
-    font-size: 0.8rem;
-    line-height: 1.3;
-  }
-`;
-
-const SelectedIndicator = styled.div`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 24px;
-  height: 24px;
-  background: #d4af37;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #1a1a1a;
-  font-weight: bold;
-  font-size: 14px;
-`;
+// const ClassGrid = styled.div`
+//   display: grid;
+//   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+//   gap: 1rem;
+//   margin-top: 1.5rem;
+// 
+//   @keyframes fadeInScale {
+//     from {
+//       opacity: 0;
+//       transform: scale(0.9);
+//     }
+//     to {
+//       opacity: 1;
+//       transform: scale(1);
+//     }
+//   }
+// `;
+// 
+// const ClassCard = styled.div<{ selected: boolean }>`
+//   background: rgba(26, 26, 26, 0.8);
+//   border: 2px solid ${(props) => (props.selected ? '#ce9016' : '#444')};
+//   border-radius: 8px;
+//   padding: 1.5rem;
+//   cursor: pointer;
+//   transition: all 0.3s ease;
+//   position: relative;
+// 
+//   &:hover {
+//     border-color: #ce9016;
+//     transform: translateY(-2px);
+//     box-shadow: 0 4px 12px rgba(206, 144, 22, 0.3);
+//   }
+// 
+//   ${(props) =>
+//     props.selected &&
+//     `
+//     background: rgba(206, 144, 22, 0.1);
+//     box-shadow: 0 4px 12px rgba(206, 144, 22, 0.4);
+//   `}
+// `;
+// 
+// const ClassName = styled.h3`
+//   color: #ce9016;
+//   margin: 0 0 0.5rem 0;
+//   font-family: 'Cinzel', serif;
+//   font-size: 1.3rem;
+//   text-align: center;
+// `;
+// 
+// const ClassDescription = styled.p`
+//   color: #ccc;
+//   font-size: 0.9rem;
+//   line-height: 1.4;
+//   margin: 0 0 1rem 0;
+//   text-align: center;
+// `;
+// 
+// const ClassFeatures = styled.div`
+//   .feature-title {
+//     color: #ce9016;
+//     font-weight: 600;
+//     font-size: 0.85rem;
+//     margin-bottom: 0.25rem;
+//   }
+// 
+//   .feature-list {
+//     color: #aaa;
+//     font-size: 0.8rem;
+//     line-height: 1.3;
+//   }
+// `;
+// 
+// const SelectedIndicator = styled.div`
+//   position: absolute;
+//   top: 10px;
+//   right: 10px;
+//   width: 24px;
+//   height: 24px;
+//   background: #ce9016;
+//   border-radius: 50%;
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   color: #1a1a1a;
+//   font-weight: bold;
+//   font-size: 14px;
+// `;
 
 const SkillSelectionContainer = styled.div`
   margin-top: 2rem;
@@ -143,7 +148,7 @@ const SkillGrid = styled.div`
 const SkillOption = styled.div<{ selected: boolean; disabled?: boolean }>`
   padding: 0.75rem 1rem;
   background: rgba(26, 26, 26, 0.8);
-  border: 2px solid ${(props) => (props.selected ? '#d4af37' : '#444')};
+  border: 2px solid ${(props) => (props.selected ? '#ce9016' : '#444')};
   border-radius: 6px;
   cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
   transition: all 0.3s ease;
@@ -154,7 +159,7 @@ const SkillOption = styled.div<{ selected: boolean; disabled?: boolean }>`
     ${(props) =>
       !props.disabled &&
       `
-      border-color: #d4af37;
+      border-color: #ce9016;
       transform: translateY(-1px);
     `}
   }
@@ -162,20 +167,20 @@ const SkillOption = styled.div<{ selected: boolean; disabled?: boolean }>`
   ${(props) =>
     props.selected &&
     `
-    background: rgba(212, 175, 55, 0.1);
-    color: #d4af37;
+    background: rgba(206, 144, 22, 0.1);
+    color: #ce9016;
   `}
 `;
 
 const ClassSelectionInfo = styled.div`
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(206, 144, 22, 0.1);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
 
   h4 {
-    color: #d4af37;
+    color: #ce9016;
     margin: 0 0 0.5rem 0;
   }
 
@@ -193,60 +198,61 @@ const ModalChoiceCard = styled.button<{ $selected?: boolean }>`
   align-items: flex-start;
   width: 100%;
   text-align: left;
-  padding: 1.25rem 1.1rem 1.35rem;
-  background: ${(props) => (props.$selected ? 'rgba(212, 175, 55, 0.12)' : 'rgba(26, 26, 26, 0.88)')};
-  border: 2px solid ${(props) => (props.$selected ? '#d4af37' : 'rgba(90, 90, 90, 0.7)')};
-  border-radius: 14px;
+  padding: 0.9rem 1rem 1rem;
+  background: ${(props) => (props.$selected ? 'rgba(206, 144, 22, 0.12)' : 'rgba(26, 26, 26, 0.88)')};
+  border: 2px solid ${(props) => (props.$selected ? '#ce9016' : 'rgba(90, 90, 90, 0.7)')};
+  border-radius: 8px;
   transition: all 0.28s ease;
   cursor: pointer;
-  min-height: 180px;
-  box-shadow: ${(props) => (props.$selected ? '0 10px 28px rgba(212, 175, 55, 0.22)' : '0 6px 18px rgba(0, 0, 0, 0.28)')};
+  min-height: 100px;
+  box-shadow: ${(props) => (props.$selected ? '0 6px 18px rgba(206, 144, 22, 0.22)' : '0 4px 12px rgba(0, 0, 0, 0.28)')};
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(2px);
 
   &:hover {
-    border-color: #d4af37;
-    transform: translateY(-3px);
-    box-shadow: 0 14px 32px rgba(212, 175, 55, 0.24);
-    background: ${(props) => (props.$selected ? 'rgba(212, 175, 55, 0.16)' : 'rgba(34, 34, 34, 0.92)')};
+    border-color: #ce9016;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(206, 144, 22, 0.24);
+    background: ${(props) => (props.$selected ? 'rgba(206, 144, 22, 0.16)' : 'rgba(34, 34, 34, 0.92)')};
   }
 `;
 
 const ModalChoiceTitle = styled.div`
   font-family: 'Cinzel', serif;
-  font-size: 1.05rem;
-  line-height: 1.25;
+  font-size: 0.95rem;
+  line-height: 1.2;
   font-weight: 600;
   color: #f0d693;
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.5rem;
 `;
 
 const ModalChoiceOptionText = styled.div`
   color: #d9d9d9;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.85rem;
+  line-height: 1.4;
   margin: 0;
   word-break: break-word;
-  max-height: 220px;
+  max-height: 120px;
   overflow-y: auto;
   padding-right: 0.4rem;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(212, 175, 55, 0.45);
+    background: rgba(206, 144, 22, 0.45);
     border-radius: 4px;
   }
 `;
 
 const ChoiceGrid = styled.div`
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   align-items: stretch;
+  padding-bottom: 1.5rem;
 `;
 
 const ModalButtonRow = styled.div`
@@ -283,35 +289,35 @@ const ModalButtonRow = styled.div`
   }
 
   .btn-primary {
-    background: linear-gradient(145deg, #d4af37, #b8941f);
+    background: linear-gradient(145deg, #ce9016, #b8860b);
     color: #1a1a1a;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+      box-shadow: 0 6px 16px rgba(206, 144, 22, 0.4);
     }
   }
 `;
 
-const ReviewButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  border: 2px solid #d4af37;
-  background: rgba(212, 175, 55, 0.1);
-  color: #d4af37;
-  font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: rgba(212, 175, 55, 0.2);
-    box-shadow: 0 6px 18px rgba(212, 175, 55, 0.3);
-    transform: translateY(-2px);
-  }
-`;
+// const ReviewButton = styled.button`
+//   padding: 0.75rem 1.5rem;
+//   border-radius: 8px;
+//   border: 2px solid #ce9016;
+//   background: rgba(206, 144, 22, 0.1);
+//   color: #ce9016;
+//   font-weight: 700;
+//   font-size: 0.95rem;
+//   letter-spacing: 0.5px;
+//   text-transform: uppercase;
+//   cursor: pointer;
+//   transition: all 0.3s ease;
+// 
+//   &:hover {
+//     background: rgba(206, 144, 22, 0.2);
+//     box-shadow: 0 6px 18px rgba(206, 144, 22, 0.3);
+//     transform: translateY(-2px);
+//   }
+// `;
 
 // Class descriptions and features for 2024 PHB
 const CLASS_DATA = {
@@ -812,7 +818,7 @@ const CLASS_DATA = {
     },
     choices: {
       'Eldritch Invocation': {
-        description: 'Choose 1 Eldritch Invocation available at 1st level:',
+        description: 'You have unearthed Eldritch Invocations, pieces of forbidden knowledge that imbue you with an abiding magical ability or other lessons. You gain one invocation of your choice.',
         options: [
           {
             name: 'Pact of the Blade',
@@ -943,9 +949,15 @@ const extractClassFeatures = (info: any) => {
     );
 
     return level1Features.map((feature: any) => {
-      const description = parseComplexDnDEntry(
-        feature.entries || feature.description || ''
-      );
+      // Override long-winded Eldritch Invocations description
+      let description;
+      if (feature.name === 'Eldritch Invocations') {
+        description = 'You have unearthed Eldritch Invocations, pieces of forbidden knowledge that imbue you with an abiding magical ability or other lessons. You gain one invocation of your choice.';
+      } else {
+        description = parseComplexDnDEntry(
+          feature.entries || feature.description || ''
+        );
+      }
 
       return {
         name: feature.name,
@@ -987,6 +999,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 }) => {
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [activeClass, setActiveClass] = useState<string | null>(data.selectedClass);
+  const [detailsClass, setDetailsClass] = useState<string | null>(null);
   const {
     data: fetchedClasses,
     error: classesError,
@@ -996,6 +1009,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
   // New choice system state
   const [detectedChoices, setDetectedChoices] = useState<ChoicePrompt[]>([]);
+  const { scrollToBottom } = useAutoScroll();
 
   const closeClassModal = () => {
     setIsClassModalOpen(false);
@@ -1006,6 +1020,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
       return;
     }
     setIsClassModalOpen(false);
+    scrollToBottom({ offset: 20 });
   };
 
   useEffect(() => {
@@ -1138,10 +1153,10 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     return CLASS_DATA[className as keyof typeof CLASS_DATA];
   };
 
-  const handleClassClick = (className: string) => {
-    // Enter the modal workflow for the chosen class
-    handleClassSelect(className);
-  };
+//   const handleClassClick = (className: string) => {
+//     // Enter the modal workflow for the chosen class
+//     handleClassSelect(className);
+//   };
 
   const handleClassSelect = (className: string) => {
     if (data.selectedClass === className) {
@@ -1156,6 +1171,9 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     const isSpellcaster = SPELLCASTER_CLASSES.has(className);
     const spellcastingAbility = getSpellcastingAbility(className);
 
+    // Get starting equipment for this class
+    const classEquipment = CLASS_STARTING_EQUIPMENT[className] || [];
+
     onUpdate({
       selectedClass: className,
       selectedClassSkills: [],
@@ -1169,7 +1187,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         : [classData.primaryAbility],
       spellcaster: isSpellcaster,
       spellcastingAbility: spellcastingAbility,
-      classStartingEquipment: [],
+      classStartingEquipment: classEquipment,
     });
 
     setActiveClass(className);
@@ -1316,7 +1334,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
           <div
             style={{
               textAlign: 'center',
-              color: isSkillSelectionComplete() ? '#4caf50' : '#d4af37',
+              color: isSkillSelectionComplete() ? '#4caf50' : '#ce9016',
               fontWeight: 600,
               marginTop: '1rem',
             }}
@@ -1373,7 +1391,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
               <div
                 style={{
                   textAlign: 'center',
-                  color: isComplete ? '#4caf50' : '#d4af37',
+                  color: isComplete ? '#4caf50' : '#ce9016',
                   fontWeight: 600,
                   marginTop: '1rem',
                 }}
@@ -1443,70 +1461,42 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         <ClassSelectionInfo>
           <h4>Class Selection - Following 2024 PHB</h4>
           <p>
-            Click a class to review its details, then configure skills and feature choices directly inside the modal.
+            Click "Details" to review class information, or "Select" to choose and configure your class.
           </p>
         </ClassSelectionInfo>
 
-        <ClassGrid>
-          {classOptions.map((className) => {
-            const classInfo = getClassData(className);
-            const isSelected = data.selectedClass === className;
-
-            return (
-              <ClassCard
-                key={className}
-                selected={isSelected}
-                onClick={() => handleClassClick(className)}
-              >
-                {isSelected && <SelectedIndicator>✓</SelectedIndicator>}
-
-                <ClassName>{className}</ClassName>
-
-                <ClassDescription>
-                  {(classInfo as any).description || `A ${className.toLowerCase()} adventurer with unique abilities and skills.`}
-                </ClassDescription>
-
-                <ClassFeatures>
-                  <div className="feature-title">Hit Die:</div>
-                  <div className="feature-list">d{classInfo.hitDie}</div>
-
-                  <div className="feature-title">Primary Ability:</div>
-                  <div className="feature-list">
-                    {Array.isArray(classInfo.primaryAbility)
-                      ? classInfo.primaryAbility.map((a: string) => a.toUpperCase()).join(', ')
-                      : classInfo.primaryAbility}
-                  </div>
-
-                  <div className="feature-title">Saving Throws:</div>
-                  <div className="feature-list">
-                    {(classInfo as any).savingThrows || ((classInfo as any).savingThrowProficiencies && (classInfo as any).savingThrowProficiencies.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(', '))}
-                  </div>
-
-                  <div className="feature-title">Level 1 Features:</div>
-                  <div className="feature-list">
-                    {(classInfo as any).features
-                      ? (classInfo as any).features.join(', ')
-                      : ((classInfo as any).classFeatures && (classInfo as any).classFeatures['1'])
-                        ? (classInfo as any).classFeatures['1'].map((f: any) => f.name).join(', ')
-                        : 'View details for features'}
-                  </div>
-                </ClassFeatures>
-              </ClassCard>
-            );
-          })}
-        </ClassGrid>
-
-        {data.selectedClass && (
-          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-            <ReviewButton
-              type="button"
-              onClick={() => handleClassSelect(data.selectedClass as string)}
-            >
-              Update Skills & Features
-            </ReviewButton>
-          </div>
-        )}
+        <CompactList
+          items={classOptions.map((className) => ({
+            name: className,
+            ...getClassData(className),
+          }))}
+          isSelected={(cls) => cls.name === data.selectedClass}
+          onDetails={(cls) => setDetailsClass(cls.name)}
+          onSelect={(cls) => handleClassSelect(cls.name)}
+          renderName={(cls) => cls.name}
+          renderSummary={(cls) =>
+            (cls as any).description || `A ${cls.name.toLowerCase()} adventurer with unique abilities and skills.`
+          }
+          detailsLabel="Details"
+          selectLabel="Select"
+        />
       </StepContainer>
+
+      <DetailsModal
+        isOpen={!!detailsClass}
+        onClose={() => setDetailsClass(null)}
+        title={detailsClass || ''}
+        content={
+          detailsClass ? (
+            <ClassDetailsContent
+              classData={{
+                name: detailsClass,
+                ...getClassData(detailsClass),
+              }}
+            />
+          ) : null
+        }
+      />
 
       <WizardModal
         isOpen={isClassModalOpen && Boolean(activeClass)}
