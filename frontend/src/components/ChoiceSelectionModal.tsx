@@ -172,11 +172,28 @@ const ModalOverlay = styled.div`
   bottom: 0;
   background: rgba(0, 0, 0, 0.75);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 9999;
-  padding: 20px;
+  padding: 3rem 1rem 2rem;
   overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(206, 144, 22, 0.6);
+    border-radius: 6px;
+
+    &:hover {
+      background: rgba(206, 144, 22, 0.8);
+    }
+  }
 `;
 
 const ModalContainer = styled.div`

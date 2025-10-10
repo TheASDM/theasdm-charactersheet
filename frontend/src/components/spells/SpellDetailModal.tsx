@@ -14,11 +14,29 @@ const ModalBackdrop = styled.div`
   inset: 0;
   background: rgba(0, 0, 0, 0.8);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
-  /* No overflow - backdrop doesn't scroll */
+  padding: 3rem 1rem 2rem;
+  overflow-y: auto;
+
+  /* Custom scrollbar for backdrop */
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(206, 144, 22, 0.6);
+    border-radius: 6px;
+
+    &:hover {
+      background: rgba(206, 144, 22, 0.8);
+    }
+  }
 `;
 
 const ModalCard = styled.div`

@@ -92,9 +92,28 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   background: rgba(0, 0, 0, 0.9);
   display: ${props => props.$isOpen ? 'flex' : 'none'};
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
   backdrop-filter: blur(4px);
+  padding: 3rem 1rem 2rem;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(206, 144, 22, 0.6);
+    border-radius: 6px;
+
+    &:hover {
+      background: rgba(206, 144, 22, 0.8);
+    }
+  }
 `;
 
 const ModalContent = styled.div`

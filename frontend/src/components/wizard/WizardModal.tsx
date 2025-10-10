@@ -18,12 +18,30 @@ const Overlay = styled.div`
   inset: 0;
   background: rgba(0, 0, 0, 0.82);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1100;
   padding: clamp(2.5rem, 8vh, 4.5rem) 1.5rem 2.25rem;
   backdrop-filter: blur(2px);
-  /* No overflow - backdrop doesn't scroll */
+  overflow-y: auto;
+
+  /* Custom scrollbar for overlay */
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(206, 144, 22, 0.6);
+    border-radius: 6px;
+
+    &:hover {
+      background: rgba(206, 144, 22, 0.8);
+    }
+  }
 `;
 
 const Dialog = styled.div<{ $maxWidth: string }>`
