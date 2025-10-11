@@ -9,13 +9,6 @@ import './index.css';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { ToastProvider } from './contexts/ToastContext';
 
-// Development-only: Enable D&D template tag visual warnings
-if (import.meta.env.MODE === 'development') {
-  import('./utils/dndTemplateGuard').then(({ enableVisualTemplateWarnings }) => {
-    enableVisualTemplateWarnings();
-  });
-}
-
 const container = document.getElementById('root');
 if (!container) throw new Error('Failed to find the root element');
 

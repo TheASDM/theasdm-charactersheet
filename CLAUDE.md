@@ -131,9 +131,9 @@ This project has **three layers of enforcement** to prevent unparsed template ta
    - Console warnings when unparsed content is detected
    - Enable strict mode: `VITE_STRICT_TEMPLATE_PARSING=true` in `.env.development`
 
-3. **Visual Warnings** (Development Mode)
-   - Automatically highlights unparsed content with red borders
-   - Enabled in `frontend/src/main.tsx`
+3. **Visual Warnings** (Development Mode - Optional)
+   - Can highlight unparsed content with red borders
+   - Manually enable in `frontend/src/main.tsx` if desired (see docs)
 
 #### The Parser
 
