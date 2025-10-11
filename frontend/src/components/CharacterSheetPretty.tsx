@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import {
   CharacterSheetData,
   CharacterSheetProps,
+  InventoryItem,
 } from '../types/characterSheet';
 import { getCharacterResources } from '../utils/resourceDetection';
 import {
@@ -40,7 +41,6 @@ import ActionsManagementModal from './ActionsManagementModal';
 import SkillsManagementModal from './SkillsManagementModal';
 import TraitsManagementModal from './TraitsManagementModal';
 import CharacterHeader from './CharacterHeader';
-import ConsolidatedInventorySection from './ConsolidatedInventorySection';
 import CharacterAbilityScores from './AbilityScoresSection';
 import CharacterSkillsSection from './CharacterSkillsSection';
 import CompactResourcesBar from './CompactResourcesBar';
@@ -52,6 +52,7 @@ import WeaponMasterySection from './WeaponMasterySection';
 import SpellcastingBar from './SpellcastingBar';
 import { SimpleFeature } from '../utils/simpleFeatureGenerator';
 import CharacterSpellsSection from './CharacterSpellsSection';
+import InventoryTab from './InventoryTab';
 
 const TabBar = styled.div`
   margin: 1.75rem 0 1.25rem;
@@ -85,13 +86,81 @@ const TabButton = styled.button<{ $active: boolean }>`
   }
 `;
 
+const EquippedSummaryCard = styled.section`
+  background: rgba(17, 17, 17, 0.8);
+  border: 1px solid rgba(206, 144, 22, 0.35);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+`;
+
+const EquippedHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+
+  h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-family: 'Cinzel', serif;
+    color: #ce9016;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+`;
+
+const EquippedList = styled.ul`
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+`;
+
+const EquippedListItem = styled.li`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(206, 144, 22, 0.08);
+  border: 1px solid rgba(206, 144, 22, 0.2);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  color: #f8fafc;
+`;
+
+const InventoryCTAButton = styled.button`
+  border: 1px solid rgba(206, 144, 22, 0.45);
+  background: linear-gradient(135deg, rgba(206, 144, 22, 0.22), rgba(35, 35, 35, 0.85));
+  color: #f8f4e1;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+`;
+
+
+type CharacterSheetExtendedProps = CharacterSheetProps & { characterId?: number | undefined };
 
 export default function CharacterSheetPretty({
   character,
   onUpdate,
   onSave,
   initialEditMode,
-}: CharacterSheetProps) {
+  characterId,
+}: CharacterSheetExtendedProps) {
   // Custom updateCharacter function
   const updateCharacter = useCallback(
     (updates: Partial<CharacterSheetData>) => {
@@ -141,7 +210,7 @@ export default function CharacterSheetPretty({
 
   // State to hold extracted spellcasting feature
   const [spellcastingFeature, setSpellcastingFeature] = useState<SimpleFeature | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'spells'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'spells' | 'inventory'>('overview');
 
   // Get dynamic resources based on character
   const characterResources = useMemo(
@@ -305,6 +374,17 @@ export default function CharacterSheetPretty({
     return masteryClasses.some(c => className.includes(c));
   }, [character.class]);
 
+  const equippedItems = useMemo(() => {
+    const equippedIds = character.equippedItemIds ?? [];
+    if (!equippedIds.length) {
+      return [] as InventoryItem[];
+    }
+
+    const equippedSet = new Set(equippedIds);
+    const inventory = character.inventory ?? [];
+    return inventory.filter((item) => equippedSet.has(item.id));
+  }, [character.equippedItemIds, character.inventory]);
+
   // Calculate derived values using service
   const derivedValues = useMemo(() => {
     const calculations = calculateDerivedValues(character);
@@ -376,11 +456,49 @@ export default function CharacterSheetPretty({
           >
             Spells
           </TabButton>
+          <TabButton
+            type="button"
+            $active={activeTab === 'inventory'}
+            onClick={() => setActiveTab('inventory')}
+          >
+            Inventory
+          </TabButton>
         </TabBar>
 
         {activeTab === 'overview' ? (
           <MainLayout>
             <LeftColumn>
+              <EquippedSummaryCard>
+                <EquippedHeader>
+                  <h3>Equipped Items</h3>
+                  <InventoryCTAButton type="button" onClick={() => setActiveTab('inventory')}>
+                    Manage Inventory
+                  </InventoryCTAButton>
+                </EquippedHeader>
+                {equippedItems.length === 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    <span style={{ color: 'rgba(226, 232, 240, 0.75)', fontSize: '0.8rem' }}>
+                      You have not equipped any items yet.
+                    </span>
+                    <InventoryCTAButton
+                      type="button"
+                      onClick={() => setActiveTab('inventory')}
+                    >
+                      Equip Items From Your Inventory
+                    </InventoryCTAButton>
+                  </div>
+                ) : (
+                  <EquippedList>
+                    {equippedItems.map((item) => (
+                      <EquippedListItem key={item.id}>
+                        <span>{item.name}</span>
+                        <span>x{item.quantity}</span>
+                      </EquippedListItem>
+                    ))}
+                  </EquippedList>
+                )}
+              </EquippedSummaryCard>
+
               <ThreeColumnContainer>
               {/* Ability Scores */}
               <CharacterAbilityScores
@@ -441,12 +559,6 @@ export default function CharacterSheetPretty({
               <TwoColumnLayout>
                 {/* Left Column: Inventory and Proficiencies stacked */}
                 <div>
-                  <ConsolidatedInventorySection
-                    inventory={inventory}
-                    mode="scroll"
-                    maxHeight="900px"
-                    showEquipToggle={true}
-                  />
                   <CharacterProficienciesSection character={character} />
                 </div>
 
@@ -460,7 +572,7 @@ export default function CharacterSheetPretty({
               </TwoColumnLayout>
             </LeftColumn>
           </MainLayout>
-        ) : (
+        ) : activeTab === 'spells' ? (
           <CharacterSpellsSection
             character={character}
             onUpdateCharacter={updateCharacter}
@@ -469,6 +581,16 @@ export default function CharacterSheetPretty({
               removeActionByName: actions.removeActionByName,
               hasAction: actions.hasAction,
             }}
+          />
+        ) : (
+          <InventoryTab
+            character={character}
+            characterId={characterId}
+            onCharacterUpdate={onUpdate}
+            onSave={onSave}
+            onAddOfficialItem={inventory.handleAddOfficialItem}
+            onAddCustomItem={inventory.handleAddCustomItem}
+            onInspectItem={inventory.handleInventoryItemClick}
           />
         )}
 

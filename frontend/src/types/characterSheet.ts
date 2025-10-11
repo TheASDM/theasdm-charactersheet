@@ -8,6 +8,9 @@ export interface InventoryItem {
   equipped?: boolean; // For armor, weapons, shields
   attuned?: boolean; // For magic items requiring attunement
   itemId?: number; // Reference to the official item database
+  type?: string;
+  weaponCategory?: string;
+  armorCategory?: string;
   customProperties?: {
     damage?: string;
     ac?: number;

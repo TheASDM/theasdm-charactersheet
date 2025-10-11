@@ -1,5 +1,6 @@
 import { apiClient, request, withSignal } from './api';
 import type { ApiResult, Character } from '@/types/api';
+import type { CharacterSheetData } from '@/types/characterSheet';
 
 export interface ChoiceSelectionPayload {
   choiceGroupId: string;
@@ -13,6 +14,12 @@ export interface ChoiceSelectionResponse {
     choiceGroupId: string;
     selectedFeatureIds: string[];
   };
+}
+
+interface UpdateEquippedItemsPayload {
+  name: string;
+  level: number;
+  characterData: CharacterSheetData;
 }
 
 export const getCharacter = (
@@ -38,9 +45,19 @@ export const updateCharacterChoices = (
       )
   );
 
+export const updateEquippedItems = (
+  id: number | string,
+  payload: UpdateEquippedItemsPayload,
+  signal?: AbortSignal
+): Promise<ApiResult<Character>> =>
+  request<Character>(
+    () => apiClient.put<Character>(`/characters/${id}`, payload, withSignal(undefined, signal))
+  );
+
 export const characterApi = {
   getCharacter,
   updateCharacterChoices,
+  updateEquippedItems,
 };
 
 export default characterApi;

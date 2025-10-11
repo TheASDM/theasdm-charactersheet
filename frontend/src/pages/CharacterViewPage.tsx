@@ -246,6 +246,7 @@ const CharacterViewPage: React.FC = () => {
           character={character}
           onUpdate={handleCharacterUpdate}
           onSave={handleCharacterSave}
+          characterId={originalCharacter?.id}
         />
       </ContentContainer>
     </PageContainer>
