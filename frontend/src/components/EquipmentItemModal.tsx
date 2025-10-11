@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import type { Equipment } from '@/types/api';
 import { processDbMarkup } from '../utils/textProcessor';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { FocusManager } from '@/utils/focusManagement';
 
 interface EquipmentItemModalProps {
   item: Equipment | null;
@@ -294,7 +296,39 @@ export const EquipmentItemModal: React.FC<EquipmentItemModalProps> = ({
   onClose,
   onAddToInventory
 }) => {
+  const modalRef = useFocusTrap<HTMLDivElement>(isOpen && !!item);
+  const focusManagerRef = useRef(new FocusManager());
+
+  useEffect(() => {
+    const focusManager = focusManagerRef.current;
+    if (isOpen && item) {
+      focusManager.save();
+    } else {
+      focusManager.restore();
+    }
+
+    return () => {
+      if (!isOpen || !item) {
+        focusManager.clear();
+      }
+    };
+  }, [isOpen, item]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!item) return null;
+  const titleId = `equipment-modal-${item.id}`;
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -335,11 +369,18 @@ export const EquipmentItemModal: React.FC<EquipmentItemModalProps> = ({
   if (item.property && item.property.length > 0) relevantStats.push('Properties');
 
   return (
-    <ModalOverlay isOpen={isOpen} onClick={handleOverlayClick}>
-      <ModalContent>
+    <ModalOverlay
+      isOpen={isOpen}
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-hidden={!isOpen}
+      aria-labelledby={titleId}
+    >
+      <ModalContent ref={modalRef} onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <h2>{item.name}</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <h2 id={titleId}>{item.name}</h2>
+          <button type="button" className="close-btn" onClick={onClose}>×</button>
         </ModalHeader>
 
         <ModalBody>

@@ -138,38 +138,73 @@ const SkillSelectionContainer = styled.div`
   margin-top: 2rem;
 `;
 
+const ModalSection = styled.section`
+  background: rgba(26, 26, 26, 0.78);
+  border: 1px solid rgba(206, 144, 22, 0.25);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+`;
+
+const SectionTitle = styled.h3`
+  color: #ce9016;
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+`;
+
+const SectionDescription = styled.p`
+  color: #c0aa70;
+  font-size: 0.9rem;
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+`;
+
+const SectionHint = styled.div`
+  color: #9b9b9b;
+  font-size: 0.85rem;
+  margin: -0.5rem 0 1rem;
+`;
+
 const SkillGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin: 1rem 0;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
 `;
 
 const SkillOption = styled.div<{ selected: boolean; disabled?: boolean }>`
-  padding: 0.75rem 1rem;
-  background: rgba(26, 26, 26, 0.8);
-  border: 2px solid ${(props) => (props.selected ? '#ce9016' : '#444')};
+  padding: 0.6rem 0.75rem;
+  background: ${({ selected }) => (selected ? 'rgba(206, 144, 22, 0.2)' : 'rgba(60, 60, 60, 0.6)')};
+  border: 1px solid ${({ selected }) => (selected ? '#ce9016' : 'rgba(206, 144, 22, 0.3)')};
   border-radius: 6px;
-  cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
-  transition: all 0.3s ease;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   text-align: center;
-  opacity: ${(props) => (props.disabled ? 0.5 : 1)};
+  color: ${({ selected }) => (selected ? '#f0d693' : '#d7d7d7')};
+  font-weight: 500;
+  transition: all 0.2s ease;
+  opacity: ${({ disabled }) => (disabled ? 0.45 : 1)};
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 
   &:hover {
-    ${(props) =>
-      !props.disabled &&
+    ${({ disabled }) =>
+      !disabled &&
       `
-      border-color: #ce9016;
-      transform: translateY(-1px);
-    `}
+        background: rgba(206, 144, 22, 0.16);
+        border-color: #ce9016;
+        transform: translateY(-1px);
+      `}
   }
+`;
 
-  ${(props) =>
-    props.selected &&
-    `
-    background: rgba(206, 144, 22, 0.1);
-    color: #ce9016;
-  `}
+const SelectionStatus = styled.div<{ $complete?: boolean }>`
+  text-align: center;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  color: ${({ $complete }) => ($complete ? '#6aa84f' : '#ce9016')};
+  letter-spacing: 0.4px;
 `;
 
 const ClassSelectionInfo = styled.div`
@@ -198,23 +233,19 @@ const ModalChoiceCard = styled.button<{ $selected?: boolean }>`
   align-items: flex-start;
   width: 100%;
   text-align: left;
-  padding: 0.9rem 1rem 1rem;
-  background: ${(props) => (props.$selected ? 'rgba(206, 144, 22, 0.12)' : 'rgba(26, 26, 26, 0.88)')};
-  border: 2px solid ${(props) => (props.$selected ? '#ce9016' : 'rgba(90, 90, 90, 0.7)')};
-  border-radius: 8px;
-  transition: all 0.28s ease;
+  padding: 1rem 1.1rem;
+  background: ${({ $selected }) => ($selected ? 'rgba(206, 144, 22, 0.18)' : 'rgba(50, 50, 50, 0.78)')};
+  border: 1px solid ${({ $selected }) => ($selected ? '#ce9016' : 'rgba(206, 144, 22, 0.28)')};
+  border-radius: 10px;
+  transition: all 0.2s ease;
   cursor: pointer;
-  min-height: 100px;
-  box-shadow: ${(props) => (props.$selected ? '0 6px 18px rgba(206, 144, 22, 0.22)' : '0 4px 12px rgba(0, 0, 0, 0.28)')};
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(2px);
+  min-height: 110px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
 
   &:hover {
     border-color: #ce9016;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(206, 144, 22, 0.24);
-    background: ${(props) => (props.$selected ? 'rgba(206, 144, 22, 0.16)' : 'rgba(34, 34, 34, 0.92)')};
+    background: ${({ $selected }) => ($selected ? 'rgba(206, 144, 22, 0.22)' : 'rgba(62, 62, 62, 0.85)')};
+    transform: translateY(-1px);
   }
 `;
 
@@ -223,17 +254,19 @@ const ModalChoiceTitle = styled.div`
   font-size: 0.95rem;
   line-height: 1.2;
   font-weight: 600;
-  color: #f0d693;
-  margin-bottom: 0.5rem;
+  color: #ce9016;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 `;
 
 const ModalChoiceOptionText = styled.div`
-  color: #d9d9d9;
+  color: #d5d5d5;
   font-size: 0.85rem;
-  line-height: 1.4;
+  line-height: 1.45;
   margin: 0;
   word-break: break-word;
-  max-height: 120px;
+  max-height: 140px;
   overflow-y: auto;
   padding-right: 0.4rem;
 
@@ -250,9 +283,8 @@ const ModalChoiceOptionText = styled.div`
 const ChoiceGrid = styled.div`
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   align-items: stretch;
-  padding-bottom: 1.5rem;
 `;
 
 const ModalButtonRow = styled.div`
@@ -1303,46 +1335,49 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   const renderSkillSelectionSection = () => {
     if (!data.selectedClass) return null;
     if (requiredSkillCount <= 0) return null;
+
+    const selectionInstruction =
+      data.selectedClass === 'Bard'
+        ? `Bards are versatile and can learn any skills they desire. Choose ${requiredSkillCount} skill${requiredSkillCount !== 1 ? 's' : ''} from the full skill list below.`
+        : `Choose ${requiredSkillCount} skill${requiredSkillCount !== 1 ? 's' : ''} from your class's available skills. These represent your character's training and expertise.`;
+
+    const remainingSkills = Math.max(requiredSkillCount - data.selectedClassSkills.length, 0);
+
     return (
       <SkillSelectionContainer>
-        <ClassSelectionInfo>
-          <h4>{data.selectedClass} Skill Selection</h4>
-          <p>
-            {data.selectedClass === 'Bard'
-              ? `Choose ${requiredSkillCount} skills from ANY skill list. Bards are versatile and can learn any skills they desire.`
-              : `Choose ${requiredSkillCount} skills from your class's available skills. These represent your character's training and expertise.`}
-          </p>
-        </ClassSelectionInfo>
+        <ModalSection>
+          <SectionTitle>{data.selectedClass} Skill Selection</SectionTitle>
+          <SectionDescription>{selectionInstruction}</SectionDescription>
+          <SectionHint>
+            {remainingSkills === 0
+              ? 'All required skills selected.'
+              : `You can still choose ${remainingSkills} more skill${remainingSkills !== 1 ? 's' : ''}.`}
+          </SectionHint>
 
-        <>
           <SkillGrid>
-            {availableSkills.map((skill: string) => (
-              <SkillOption
-                key={skill}
-                selected={data.selectedClassSkills.includes(skill)}
-                disabled={
-                  !data.selectedClassSkills.includes(skill) &&
-                  data.selectedClassSkills.length >= requiredSkillCount
-                }
-                onClick={() => handleSkillToggle(skill)}
-              >
-                {skill}
-              </SkillOption>
-            ))}
+            {availableSkills.map((skill: string) => {
+              const isSelected = data.selectedClassSkills.includes(skill);
+              const isAtLimit =
+                !isSelected && data.selectedClassSkills.length >= requiredSkillCount;
+
+              return (
+                <SkillOption
+                  key={skill}
+                  selected={isSelected}
+                  disabled={isAtLimit}
+                  onClick={() => !isAtLimit && handleSkillToggle(skill)}
+                >
+                  {skill}
+                </SkillOption>
+              );
+            })}
           </SkillGrid>
 
-          <div
-            style={{
-              textAlign: 'center',
-              color: isSkillSelectionComplete() ? '#4caf50' : '#ce9016',
-              fontWeight: 600,
-              marginTop: '1rem',
-            }}
-          >
+          <SelectionStatus $complete={isSkillSelectionComplete()}>
             Selected: {data.selectedClassSkills.length} / {requiredSkillCount}
             {isSkillSelectionComplete() && ' ✓ Complete!'}
-          </div>
-        </>
+          </SelectionStatus>
+        </ModalSection>
       </SkillSelectionContainer>
     );
   };
@@ -1359,47 +1394,52 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         {detectedChoices.map((prompt) => {
           const currentSelections = data.selectedClassChoices[prompt.choiceGroup] || [];
           const maxSelections = prompt.maxSelections || 1;
+          const requiredMinimum = prompt.minSelections ?? Math.min(1, maxSelections);
           const isComplete = prompt.minSelections
             ? currentSelections.length >= prompt.minSelections
             : currentSelections.length > 0;
 
+          let hintMessage: string;
+          if (prompt.minSelections && prompt.minSelections !== maxSelections) {
+            hintMessage = `Select ${prompt.minSelections} to ${maxSelections} options.`;
+          } else if (prompt.minSelections || maxSelections === 1) {
+            hintMessage = `Select ${maxSelections} option${maxSelections !== 1 ? 's' : ''}.`;
+          } else {
+            hintMessage = `Select up to ${maxSelections} option${maxSelections !== 1 ? 's' : ''}.`;
+          }
+
           return (
-            <div key={prompt.choiceGroup} style={{ marginBottom: '1.5rem' }}>
-              <ClassSelectionInfo>
-                <h4>{prompt.title}</h4>
-                <p>{prompt.description}</p>
-              </ClassSelectionInfo>
+            <ModalSection key={prompt.choiceGroup}>
+              <SectionTitle>{prompt.title}</SectionTitle>
+              {prompt.description && <SectionDescription>{prompt.description}</SectionDescription>}
+              <SectionHint>{hintMessage}</SectionHint>
 
               <ChoiceGrid>
-                {prompt.options.map((option) => (
-                  <ModalChoiceCard
-                    key={option.id}
-                    type="button"
-                    $selected={currentSelections.includes(option.id)}
-                    onClick={() =>
-                      handleClassChoiceToggle(prompt.choiceGroup, option.id, maxSelections)
-                    }
-                  >
-                    <ModalChoiceTitle>{option.name}</ModalChoiceTitle>
-                    <ModalChoiceOptionText>
-                      {parseComplexDnDEntry(option.description)}
-                    </ModalChoiceOptionText>
-                  </ModalChoiceCard>
-                ))}
+                {prompt.options.map((option) => {
+                  const isSelected = currentSelections.includes(option.id);
+                  const isAtLimit = !isSelected && currentSelections.length >= maxSelections;
+
+                  return (
+                    <ModalChoiceCard
+                      key={option.id}
+                      type="button"
+                      $selected={isSelected}
+                      onClick={() => !isAtLimit && handleClassChoiceToggle(prompt.choiceGroup, option.id, maxSelections)}
+                    >
+                      <ModalChoiceTitle>{option.name}</ModalChoiceTitle>
+                      <ModalChoiceOptionText>
+                        {parseComplexDnDEntry(option.description)}
+                      </ModalChoiceOptionText>
+                    </ModalChoiceCard>
+                  );
+                })}
               </ChoiceGrid>
 
-              <div
-                style={{
-                  textAlign: 'center',
-                  color: isComplete ? '#4caf50' : '#ce9016',
-                  fontWeight: 600,
-                  marginTop: '1rem',
-                }}
-              >
+              <SelectionStatus $complete={isComplete}>
                 Selected: {currentSelections.length} / {maxSelections}
-                {isComplete && ' ✓ Complete!'}
-              </div>
-            </div>
+                {isComplete && requiredMinimum > 0 && ' ✓ Complete!'}
+              </SelectionStatus>
+            </ModalSection>
           );
         })}
       </SkillSelectionContainer>

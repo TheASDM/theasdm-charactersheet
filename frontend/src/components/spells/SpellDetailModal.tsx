@@ -1,8 +1,11 @@
+import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import type { Spell } from '@/types/api';
 import { formatLevel, getSchoolLabel } from '@/utils/spellUtils';
 import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { FocusManager } from '@/utils/focusManagement';
 
 interface SpellDetailModalProps {
   spell: Spell | null;
@@ -125,11 +128,42 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spell, onClo
   // Lock body scroll when modal is open
   useBodyScrollLock(!!spell);
 
+  const dialogRef = useFocusTrap<HTMLDivElement>(!!spell);
+  const focusManagerRef = useRef(new FocusManager());
+
+  useEffect(() => {
+    const focusManager = focusManagerRef.current;
+    if (spell) {
+      focusManager.save();
+    } else {
+      focusManager.restore();
+    }
+
+    return () => {
+      if (!spell) {
+        focusManager.clear();
+      }
+    };
+  }, [spell]);
+
+  useEffect(() => {
+    if (!spell) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [spell, onClose]);
+
   if (!spell) return null;
 
   return (
     <ModalBackdrop role="dialog" aria-modal="true" onClick={onClose}>
-      <ModalCard onClick={(e) => e.stopPropagation()}>
+      <ModalCard ref={dialogRef} onClick={(e) => e.stopPropagation()}>
         <ModalClose aria-label="Close" onClick={onClose}>
           ×
         </ModalClose>

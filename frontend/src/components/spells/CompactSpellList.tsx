@@ -1,4 +1,6 @@
+import { memo, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
+import { FixedSizeList as VirtualList, type ListChildComponentProps } from 'react-window';
 import type { Spell } from '@/types/api';
 import { formatLevel, getSchoolLabel } from '@/utils/spellUtils';
 
@@ -12,7 +14,23 @@ interface CompactSpellListProps {
   normaliseId: (id: string | number) => string;
 }
 
+const ROW_HEIGHT = 64;
+const MAX_VISIBLE_ROWS = 8;
+
+interface SpellListRowData {
+  spells: Spell[];
+  selectedSet: Set<string>;
+  grantedSet: Set<string>;
+  selectedCount: number;
+  maxSelections: number;
+  onToggle: (spell: Spell) => void;
+  onViewDetails: (spell: Spell) => void;
+  normaliseId: (id: string | number) => string;
+}
+
 const ListContainer = styled.div`
+  display: flex;
+  flex-direction: column;
   border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 8px;
   overflow: hidden;
@@ -31,6 +49,7 @@ const ListHeader = styled.div`
   color: #ce9016;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  flex: none;
 
   @media (max-width: 768px) {
     grid-template-columns: 40px 1fr 80px;
@@ -40,6 +59,10 @@ const ListHeader = styled.div`
       display: none;
     }
   }
+`;
+
+const ListBody = styled.div`
+  flex: 1;
 `;
 
 const SpellRow = styled.div<{ $selected?: boolean; $disabled?: boolean }>`
@@ -57,10 +80,6 @@ const SpellRow = styled.div<{ $selected?: boolean; $disabled?: boolean }>`
   &:hover {
     background: ${({ $disabled, $selected }) =>
       $disabled ? 'transparent' : $selected ? 'rgba(206, 144, 22, 0.15)' : 'rgba(206, 144, 22, 0.08)'};
-  }
-
-  &:last-child {
-    border-bottom: none;
   }
 
   @media (max-width: 768px) {
@@ -150,6 +169,68 @@ const ActionButton = styled.button`
   }
 `;
 
+const SpellRowRenderer = memo(
+  ({ index, style, data }: ListChildComponentProps<SpellListRowData>) => {
+    const spell = data.spells[index];
+    if (!spell) {
+      return null;
+    }
+
+    const spellId = data.normaliseId(spell.id);
+    const isSelected = data.selectedSet.has(spellId);
+    const isGranted = data.grantedSet.has(spellId);
+    const canSelect = isGranted || isSelected || data.selectedCount < data.maxSelections;
+
+    const handleToggle = () => {
+      if (!isGranted && canSelect) {
+        data.onToggle(spell);
+      }
+    };
+
+    return (
+      <SpellRow
+        style={{ ...style, width: '100%' }}
+        $selected={isSelected}
+        $disabled={!canSelect && !isGranted}
+        onClick={handleToggle}
+      >
+        <Checkbox
+          $checked={isSelected || isGranted}
+          $disabled={!canSelect && !isGranted}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!isGranted && canSelect) {
+              data.onToggle(spell);
+            }
+          }}
+        />
+        <SpellName>
+          {spell.name}
+        </SpellName>
+        <SpellInfo>{formatLevel(spell.level)}</SpellInfo>
+        <SpellInfo>{getSchoolLabel(spell.school)}</SpellInfo>
+        <SpellInfo>
+          {isGranted && <Tag $kind="granted">Granted</Tag>}
+          {spell.isRitual && <Tag $kind="ritual">Ritual</Tag>}
+          {spell.miscTags?.includes('Concentration') && <Tag $kind="concentration">Conc</Tag>}
+        </SpellInfo>
+        <div>
+          <ActionButton
+            onClick={(event) => {
+              event.stopPropagation();
+              data.onViewDetails(spell);
+            }}
+          >
+            View
+          </ActionButton>
+        </div>
+      </SpellRow>
+    );
+  }
+);
+
+SpellRowRenderer.displayName = 'SpellRowRenderer';
+
 export const CompactSpellList: React.FC<CompactSpellListProps> = ({
   spells,
   selectedSpells,
@@ -159,6 +240,40 @@ export const CompactSpellList: React.FC<CompactSpellListProps> = ({
   onViewDetails,
   normaliseId,
 }) => {
+  const selectedSet = useMemo(
+    () => new Set(selectedSpells.map((id) => normaliseId(id))),
+    [selectedSpells, normaliseId]
+  );
+  const grantedSet = useMemo(
+    () => new Set(grantedSpells.map((id) => normaliseId(id))),
+    [grantedSpells, normaliseId]
+  );
+  const rowData = useMemo<SpellListRowData>(
+    () => ({
+      spells,
+      selectedSet,
+      grantedSet,
+      selectedCount: selectedSet.size,
+      maxSelections,
+      onToggle,
+      onViewDetails,
+      normaliseId,
+    }),
+    [spells, selectedSet, grantedSet, maxSelections, onToggle, onViewDetails, normaliseId]
+  );
+  const listHeight = useMemo(() => {
+    if (spells.length === 0) return ROW_HEIGHT;
+    const visibleRows = Math.min(spells.length, MAX_VISIBLE_ROWS);
+    return visibleRows * ROW_HEIGHT;
+  }, [spells.length]);
+  const itemKey = useCallback(
+    (index: number, data: SpellListRowData) => {
+      const spell = data.spells[index];
+      return spell ? spell.id : index;
+    },
+    []
+  );
+
   return (
     <ListContainer>
       <ListHeader>
@@ -169,50 +284,19 @@ export const CompactSpellList: React.FC<CompactSpellListProps> = ({
         <span>Tags</span>
         <span>Details</span>
       </ListHeader>
-      {spells.map((spell) => {
-        const spellId = normaliseId(spell.id);
-        const isSelected = selectedSpells.includes(spellId);
-        const isGranted = grantedSpells.includes(spellId);
-        const canSelect = isGranted || isSelected || selectedSpells.length < maxSelections;
-
-        return (
-          <SpellRow
-            key={spell.id}
-            $selected={isSelected}
-            $disabled={!canSelect && !isGranted}
-            onClick={() => !isGranted && canSelect && onToggle(spell)}
-          >
-            <Checkbox
-              $checked={isSelected || isGranted}
-              $disabled={!canSelect && !isGranted}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isGranted && canSelect) onToggle(spell);
-              }}
-            />
-            <SpellName>
-              {spell.name}
-            </SpellName>
-            <SpellInfo>{formatLevel(spell.level)}</SpellInfo>
-            <SpellInfo>{getSchoolLabel(spell.school)}</SpellInfo>
-            <SpellInfo>
-              {isGranted && <Tag $kind="granted">Granted</Tag>}
-              {spell.isRitual && <Tag $kind="ritual">Ritual</Tag>}
-              {spell.miscTags?.includes('Concentration') && <Tag $kind="concentration">Conc</Tag>}
-            </SpellInfo>
-            <div>
-              <ActionButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewDetails(spell);
-                }}
-              >
-                View
-              </ActionButton>
-            </div>
-          </SpellRow>
-        );
-      })}
+      <ListBody>
+        <VirtualList
+          height={listHeight}
+          itemCount={spells.length}
+          itemSize={ROW_HEIGHT}
+          width="100%"
+          itemData={rowData}
+          overscanCount={4}
+          itemKey={itemKey}
+        >
+          {SpellRowRenderer}
+        </VirtualList>
+      </ListBody>
     </ListContainer>
   );
 };
