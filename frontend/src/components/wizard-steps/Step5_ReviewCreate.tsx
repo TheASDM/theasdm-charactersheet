@@ -12,10 +12,12 @@ import { isError } from '@/types/api';
 import type { Spell } from '@/types/api';
 import { showError } from '@/utils/errorDisplay';
 import { logger } from '../../utils/logger';
-import { getCasterProgressionMeta } from '@/helpers/spellRules';
+import { getCantripCount, getPreparedCount } from '@/helpers/spellRules';
+import { CLASS_CONFIG, normalizeClassId } from '@/helpers/spellcastingConfig';
 import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
 import { getSpellById } from '@/services/spellService';
 import { normaliseDisplayString } from '@/utils/dndTemplateParser';
+import type { AbilityId } from '@/types/spells';
 
 interface Step5ReviewCreateProps {
   data: CharacterBuilderData;
@@ -37,12 +39,16 @@ const ReviewContainer = styled.div`
   }
 `;
 
-type SpellFlowMode = 'known' | 'prepared' | 'scribe' | 'none';
+type SpellFlowMode = 'prepared' | 'scribe' | 'none';
 
-const KNOWN_FLOW_CLASSES = new Set(['bard', 'paladin', 'sorcerer', 'warlock', 'ranger']);
-const PREPARED_FLOW_CLASSES = new Set(['cleric', 'druid']);
-const SCRIBE_FLOW_CLASSES = new Set(['wizard']);
-const CANTRIP_ELIGIBLE_CLASSES = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'warlock', 'wizard']);
+const abilityIdToAbilityScoreKey: Record<AbilityId, keyof CharacterBuilderData['abilityScores']> = {
+  str: 'strength',
+  dex: 'dexterity',
+  con: 'constitution',
+  int: 'intelligence',
+  wis: 'wisdom',
+  cha: 'charisma',
+};
 
 const CharacterCard = styled.div`
   background: linear-gradient(135deg, rgba(206, 144, 22, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
@@ -214,27 +220,28 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   const { user } = useUser();
   const [createStatus, setCreateStatus] = useState<'success' | 'error' | null>(null);
 
-  const spellcastingAbilityScore = useMemo(() => {
-    if (!data.spellcastingAbility) {
-      return undefined;
-    }
-    const key = data.spellcastingAbility.toLowerCase() as keyof CharacterBuilderData['abilityScores'];
-    return data.abilityScores?.[key];
-  }, [data.spellcastingAbility, data.abilityScores]);
+  const normalizedClassId = normalizeClassId(data.selectedClass ?? '');
+  const classConfig = normalizedClassId ? CLASS_CONFIG[normalizedClassId] : undefined;
+  const characterLevel = 1;
 
-  const spellProgressionMeta = useMemo(() => {
-    if (!data.selectedClass) {
-      return null;
+  const spellcastingAbilityMod = useMemo(() => {
+    if (!classConfig?.spellcastingAbility) {
+      return 0;
     }
-    const params = {
-      classId: data.selectedClass,
-      level: 1,
-      ...(spellcastingAbilityScore !== undefined
-        ? { spellcastingAbilityScore }
-        : {}),
-    } as const;
-    return getCasterProgressionMeta(params);
-  }, [data.selectedClass, spellcastingAbilityScore]);
+    const abilityKey = abilityIdToAbilityScoreKey[classConfig.spellcastingAbility];
+    const score = data.abilityScores?.[abilityKey];
+    if (typeof score !== 'number') {
+      return 0;
+    }
+    return Math.floor((score - 10) / 2);
+  }, [classConfig?.spellcastingAbility, data.abilityScores]);
+
+  const cantripMax = classConfig
+    ? getCantripCount(normalizedClassId, characterLevel)
+    : null;
+  const preparedMax = classConfig && classConfig.casterType !== 'none'
+    ? getPreparedCount(normalizedClassId, characterLevel, spellcastingAbilityMod)
+    : null;
 
   const knownIds = useMemo(() => (data.spellbook?.known ?? []).map((id) => String(id)), [data.spellbook]);
   const preparedIds = useMemo(
@@ -312,26 +319,14 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     [preparedIds, grantedSet]
   );
 
-  const normalizedClassId = (data.selectedClass ?? '').trim().toLowerCase();
   const flowMode: SpellFlowMode = useMemo(() => {
-    if (!normalizedClassId) {
+    if (!classConfig || classConfig.casterType === 'none') {
       return 'none';
     }
-    if (SCRIBE_FLOW_CLASSES.has(normalizedClassId)) {
-      return 'scribe';
-    }
-    if (PREPARED_FLOW_CLASSES.has(normalizedClassId)) {
-      return 'prepared';
-    }
-    if (KNOWN_FLOW_CLASSES.has(normalizedClassId)) {
-      return 'known';
-    }
-    return 'none';
-  }, [normalizedClassId]);
+    return classConfig.usesSpellbook ? 'scribe' : 'prepared';
+  }, [classConfig]);
 
-  const cantripSelectionEnabled = normalizedClassId
-    ? CANTRIP_ELIGIBLE_CLASSES.has(normalizedClassId)
-    : false;
+  const cantripSelectionEnabled = cantripMax !== null && cantripMax > 0;
 
   const [spellLookup, setSpellLookup] = useState<Record<string, Spell | null>>({});
   const [isLoadingSpellNames, setIsLoadingSpellNames] = useState(false);
@@ -358,33 +353,21 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   const cantripKnownCount = knownBreakdown.cantrips.length;
   const leveledKnownCount = knownBreakdown.leveled.length;
 
-  const cantripMax = spellProgressionMeta?.cantripMax ?? null;
-  const leveledMax = flowMode === 'prepared' ? null : spellProgressionMeta?.knownMax ?? null;
-  const preparedMax = flowMode === 'prepared' ? spellProgressionMeta?.preparedMax ?? null : null;
-
   const cantripOverflow =
     cantripSelectionEnabled && cantripMax !== null && cantripKnownCount > cantripMax;
-  const leveledOverflow = leveledMax !== null && leveledKnownCount > leveledMax;
   const preparedOverflow =
-    flowMode === 'prepared' && preparedMax !== null && preparedTracked.length > preparedMax;
+    preparedMax !== null && preparedTracked.length > preparedMax;
 
   const spellLimitWarnings = useMemo(() => {
     const warnings: string[] = [];
     if (cantripOverflow) {
       warnings.push('Too many cantrips selected.');
     }
-    if (leveledOverflow) {
-      warnings.push(
-        flowMode === 'scribe'
-          ? 'Too many spells scribed into the spellbook.'
-          : 'Too many leveled spells known.'
-      );
-    }
     if (preparedOverflow) {
       warnings.push('Too many spells prepared.');
     }
     return warnings;
-  }, [cantripOverflow, leveledOverflow, preparedOverflow, flowMode]);
+  }, [cantripOverflow, preparedOverflow]);
 
   const uniqueSpellIds = useMemo(
     () => Array.from(new Set([...knownIds, ...preparedIds, ...grantedIds])).filter(Boolean),
@@ -778,22 +761,21 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         <CharacterCard>
           <h3>Spell Summary</h3>
           <SpellSummaryHeader>
-            {cantripSelectionEnabled && (
+            {cantripMax !== null && (cantripMax > 0 || cantripKnownCount > 0) && (
               <SpellCountBadge $invalid={cantripOverflow}>
                 Cantrips: {cantripKnownCount}
                 {cantripMax !== null && ` / ${cantripMax}`}
               </SpellCountBadge>
             )}
-            {flowMode !== 'prepared' && (
-              <SpellCountBadge $invalid={leveledOverflow}>
-                {flowMode === 'scribe' ? 'Spellbook' : 'Known'}: {leveledKnownCount}
-                {leveledMax !== null && ` / ${leveledMax}`}
-              </SpellCountBadge>
-            )}
-            {flowMode === 'prepared' && (
+            {preparedMax !== null && (preparedMax > 0 || preparedTracked.length > 0) && (
               <SpellCountBadge $invalid={preparedOverflow}>
                 Prepared: {preparedTracked.length}
                 {preparedMax !== null && ` / ${preparedMax}`}
+              </SpellCountBadge>
+            )}
+            {flowMode === 'scribe' && (
+              <SpellCountBadge>
+                Spellbook: {leveledKnownCount}
               </SpellCountBadge>
             )}
             {isLoadingSpellNames && <SpellCountBadge>Loading spell names…</SpellCountBadge>}
@@ -822,7 +804,9 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
           {knownSpellNames.length > 0 && (
             <Section>
-              <div className="section-title">Known Spells</div>
+              <div className="section-title">
+                {flowMode === 'scribe' ? 'Spellbook Spells' : 'Spell Repertoire'}
+              </div>
               <SpellList>
                 {knownSpellNames.map((name, index) => (
                   <SpellListItem key={`known-${index}`}>{name}</SpellListItem>
@@ -831,7 +815,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
             </Section>
           )}
 
-          {flowMode === 'prepared' && (
+          {(preparedMax !== null || preparedSpellNames.length > 0) && (
             <Section>
               <div className="section-title">Prepared Spells</div>
               {preparedSpellNames.length > 0 ? (

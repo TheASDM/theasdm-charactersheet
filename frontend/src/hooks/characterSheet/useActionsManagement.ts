@@ -39,6 +39,65 @@ export const useActionsManagement = (
     setIsActionsModalOpen(true);
   }, []);
 
+  const addOrReplaceAction = useCallback((newAction: Action) => {
+    const updatedActions = [...character.actions];
+    const targetName = newAction.name?.toLowerCase() ?? '';
+
+    if (!targetName) {
+      return;
+    }
+
+    const existingIndex = updatedActions.findIndex(
+      (action) => action?.name?.toLowerCase() === targetName
+    );
+
+    if (existingIndex !== -1) {
+      updatedActions[existingIndex] = { ...newAction };
+    } else {
+      const emptyIndex = updatedActions.findIndex(
+        (action) => !action || !action.name || !action.name.trim()
+      );
+
+      if (emptyIndex !== -1) {
+        updatedActions[emptyIndex] = { ...newAction };
+      } else {
+        updatedActions.push({ ...newAction });
+      }
+    }
+
+    updateCharacter({ actions: updatedActions });
+  }, [character.actions, updateCharacter]);
+
+  const removeActionByName = useCallback((name: string) => {
+    if (!name) return;
+
+    const lowerName = name.toLowerCase();
+    let changed = false;
+
+    const updatedActions = character.actions.map((action) => {
+      if (action?.name?.toLowerCase() === lowerName) {
+        changed = true;
+        return { name: '', atkBonus: '', damage: '' };
+      }
+      return action;
+    });
+
+    if (changed) {
+      updateCharacter({ actions: updatedActions });
+    }
+  }, [character.actions, updateCharacter]);
+
+  const hasAction = useCallback(
+    (name: string) => {
+      if (!name) return false;
+      const lower = name.toLowerCase();
+      return character.actions.some(
+        (action) => action?.name?.toLowerCase() === lower
+      );
+    },
+    [character.actions]
+  );
+
   // Save actions handler
   const handleSaveActions = useCallback((newActions: Action[]) => {
     updateCharacter({ actions: newActions });
@@ -61,5 +120,8 @@ export const useActionsManagement = (
     handleManageActions,
     handleSaveActions,
     handleCancelActionsModal,
+    addOrReplaceAction,
+    removeActionByName,
+    hasAction,
   };
 };
