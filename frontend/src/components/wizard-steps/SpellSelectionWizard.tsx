@@ -13,8 +13,6 @@ import styled from 'styled-components';
 import type { Spell } from '@/types/api';
 import type { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { StepContainer } from '@/styles/components/CharacterGeneratorWizard.styles';
-import { useApiCall } from '@/hooks/useApiCall';
-import { listSpells, SpellFilters } from '@/services/spellService';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { SpellFiltersBar } from '@/components/spells/SpellFiltersBar';
 import { SpellCounterBar } from '@/components/spells/SpellCounterBar';
@@ -28,6 +26,13 @@ import { getCantripCount, getPreparedCount, getNewCasterType, usesSpellbook, has
 import { CLASS_CONFIG } from '@/helpers/spellcastingConfig';
 import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
 import { abilityMod } from '@/helpers/spellRules';
+import { useSpellFiltering } from '@/hooks/useSpellFiltering';
+import {
+  useSpellLibraryStore,
+  selectClassSpells,
+  selectClassStatus,
+  selectWizardLevelOneSpells,
+} from '@/store/spellLibraryStore';
 
 interface SpellSelectionWizardProps {
   data: CharacterBuilderData;
@@ -154,45 +159,73 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
     return deriveGrantedSpells(null, options).map(normaliseSpellId);
   }, []);
 
-  // ===== API CALLS =====
-  const buildSpellRequest = useCallback(
-    (signal?: AbortSignal) => {
-      const filters: SpellFilters = {
-        page: 1,
-        limit: 500,
-      };
-
-      if (searchTerm.trim()) filters.q = searchTerm.trim();
-      if (levelFilter !== 'all') filters.level = levelFilter;
-      if (schoolFilter !== 'all') filters.school = schoolFilter;
-      if (classId) filters.className = classId;
-      if (ritualFilter !== 'any') filters.ritual = ritualFilter === 'ritual';
-      if (concentrationFilter !== 'any') filters.concentration = concentrationFilter === 'conc';
-
-      return listSpells(filters, signal);
-    },
-    [searchTerm, levelFilter, schoolFilter, ritualFilter, concentrationFilter, classId]
-  );
-
-  const {
-    data: spellsResponse,
-    isLoading: isLoadingSpells,
-    execute: loadSpells,
-  } = useApiCall(buildSpellRequest, { showErrorToast: false });
+  // ===== DATA SOURCE =====
+  const normalisedClassName = useMemo(() => classId.trim(), [classId]);
+  const fetchClassSpells = useSpellLibraryStore((state) => state.fetchClassSpells);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadSpells();
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [loadSpells]);
+    if (!normalisedClassName) return;
+    void fetchClassSpells(normalisedClassName);
+  }, [normalisedClassName, fetchClassSpells]);
 
-  const spells = useMemo(() => {
-    if (!spellsResponse) return [];
-    if (Array.isArray(spellsResponse.items)) return spellsResponse.items;
-    if (Array.isArray(spellsResponse.spells)) return spellsResponse.spells;
-    return [];
-  }, [spellsResponse]);
+  const spells = useSpellLibraryStore(
+    useMemo(() => selectClassSpells(normalisedClassName), [normalisedClassName])
+  );
+
+  const spellStatus = useSpellLibraryStore(
+    useMemo(() => selectClassStatus(normalisedClassName), [normalisedClassName])
+  );
+
+  const isLoadingSpells = spellStatus.isLoading;
+  const spellError = spellStatus.error;
+  const wizardLevelOneSpells = useSpellLibraryStore(
+    useMemo(() => selectWizardLevelOneSpells(searchTerm), [searchTerm])
+  );
+  const filteredCantripSpells = useSpellFiltering(spells, {
+    ...(classId ? { classId } : {}),
+    minLevel: 0,
+    maxLevel: 0,
+    school: schoolFilter,
+    ritual: ritualFilter,
+    concentration: concentrationFilter,
+    searchTerm,
+  });
+  const levelBounds = useMemo(() => {
+    if (levelFilter === 'all') {
+      return { minLevel: 1, maxLevel: 1 };
+    }
+    return { minLevel: levelFilter, maxLevel: levelFilter };
+  }, [levelFilter]);
+  const filteredLevelSpells = useSpellFiltering(spells, {
+    ...(classId ? { classId } : {}),
+    ...levelBounds,
+    school: schoolFilter,
+    ritual: ritualFilter,
+    concentration: concentrationFilter,
+    searchTerm,
+  });
+  const wizardSpellbookIds = useMemo(
+    () => new Set(wizardSpellbook.map((id) => normaliseSpellId(id))),
+    [wizardSpellbook]
+  );
+  const fallbackWizardLevelOnes = useMemo(
+    () => spells.filter((spell) => spell.level === 1),
+    [spells]
+  );
+  const wizardSpellbookSource = useMemo(() => {
+    if (wizardSpellbookIds.size === 0) {
+      return [] as Spell[];
+    }
+    const baseList = wizardLevelOneSpells.length > 0 ? wizardLevelOneSpells : fallbackWizardLevelOnes;
+    return baseList.filter((spell) => wizardSpellbookIds.has(normaliseSpellId(spell.id)));
+  }, [wizardLevelOneSpells, fallbackWizardLevelOnes, wizardSpellbookIds]);
+  const filteredWizardSpellbook = useSpellFiltering(wizardSpellbookSource, {
+    ...(classId ? { classId } : {}),
+    school: schoolFilter,
+    ritual: ritualFilter,
+    concentration: concentrationFilter,
+    searchTerm: wizardLevelOneSpells.length > 0 ? '' : searchTerm,
+  });
 
   // ===== HANDLERS =====
   const handleToggleCantrip = useCallback((spell: Spell) => {
@@ -330,7 +363,7 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
 
     // Step 1: Select cantrips (if any)
     if (cantripMax > 0 && spellStep === 'cantrips') {
-      const cantripSpells = spells.filter((s: Spell) => s.level === 0);
+      const cantripSpells = filteredCantripSpells;
 
       return (
         <StepContainer>
@@ -361,6 +394,8 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
 
           {isLoadingSpells ? (
             <LoadingSpinner message="Loading cantrips..." />
+          ) : spellError ? (
+            <EmptyState>Failed to load spells: {spellError}</EmptyState>
           ) : cantripSpells.length === 0 ? (
             <EmptyState>No cantrips found with current filters.</EmptyState>
           ) : (
@@ -395,9 +430,7 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
 
     if (spellStep === 'prepared') {
       // Wizard prepares spells from their spellbook (not the full spell list)
-      const spellbookSpells = spells.filter((s: Spell) =>
-        s.level === 1 && wizardSpellbook.includes(normaliseSpellId(s.id))
-      );
+      const spellbookSpells = filteredWizardSpellbook;
 
       return (
         <StepContainer>
@@ -433,6 +466,8 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
 
           {isLoadingSpells ? (
             <LoadingSpinner message="Loading spells..." />
+          ) : spellError ? (
+            <EmptyState>Failed to load spells: {spellError}</EmptyState>
           ) : spellbookSpells.length === 0 ? (
             <EmptyState>No spells in your spellbook match the current filters.</EmptyState>
           ) : (
@@ -456,7 +491,7 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
   // ===== NON-WIZARD TWO-STEP FLOW =====
   // Step 1: Cantrips (if class has cantrips and not Paladin/Ranger)
   if (cantripMax > 0 && spellStep === 'cantrips') {
-    const cantripSpells = spells.filter((s: Spell) => s.level === 0);
+    const cantripSpells = filteredCantripSpells;
     const canProceed = cantrips.length >= 0 && cantrips.length <= cantripMax;
 
     const helpText = {
@@ -515,6 +550,8 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
 
         {isLoadingSpells ? (
           <LoadingSpinner message="Loading cantrips..." />
+        ) : spellError ? (
+          <EmptyState>Failed to load spells: {spellError}</EmptyState>
         ) : cantripSpells.length === 0 ? (
           <EmptyState>No cantrips found with current filters.</EmptyState>
         ) : (
@@ -535,7 +572,6 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
   }
 
   // Step 2: Prepared/Known Spells (ONLY level 1 spells)
-  const leveledSpells = spells.filter((s: Spell) => s.level === 1);
   const preparedInvalid =
     (classConfig.casterType === 'flexiblePrepared' && (preparedSpells.length < 1 || preparedSpells.length > preparedMax)) ||
     (classConfig.casterType === 'semiPrepared' && preparedSpells.length !== preparedMax);
@@ -601,11 +637,13 @@ export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
       {/* Spell Lists (Level 1 only) */}
       {isLoadingSpells ? (
         <LoadingSpinner message="Loading spells..." />
-      ) : leveledSpells.length === 0 ? (
+      ) : spellError ? (
+        <EmptyState>Failed to load spells: {spellError}</EmptyState>
+      ) : filteredLevelSpells.length === 0 ? (
         <EmptyState>No level 1 spells found with current filters.</EmptyState>
       ) : (
         <CompactSpellList
-          spells={leveledSpells}
+          spells={filteredLevelSpells}
           selectedSpells={preparedSpells}
           grantedSpells={grantedSpells}
           maxSelections={preparedMax}

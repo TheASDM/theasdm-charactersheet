@@ -1,80 +1,25 @@
-import { useState, useEffect, useMemo } from 'react';
-import type { FC, MouseEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import type { FC } from 'react';
 import styled from 'styled-components';
+import { FixedSizeList as VirtualList, type ListChildComponentProps } from 'react-window';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import { listEquipment } from '@/services/equipmentService';
-import type { Equipment, ApiResult, PaginatedResponse } from '@/types/api';
+import type { Equipment } from '@/types/api';
 import { EquipmentItemModal } from '../EquipmentItemModal';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
-import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { ok, isError } from '@/types/api';
 import { logger } from '../../utils/logger';
+import {
+  useEquipmentCatalogStore,
+  makeFilteredEquipmentSelector,
+  selectAllEquipment,
+} from '@/store/equipmentCatalogStore';
+import { shallow } from 'zustand/shallow';
 
 interface Step4EquipmentSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
 }
-
-const normalizePagination = (
-  pagination: PaginatedResponse<Equipment>['pagination'] | undefined,
-  itemsCount: number,
-  page: number,
-  limit: number
-): PaginatedResponse<Equipment>['pagination'] => ({
-  page: pagination?.page ?? page,
-  limit: pagination?.limit ?? limit,
-  total: pagination?.total ?? itemsCount,
-  pages:
-    pagination?.pages ?? (limit > 0 ? Math.max(1, Math.ceil(itemsCount / limit)) : itemsCount > 0 ? 1 : 0),
-});
-
-const fetchAllEquipment = async (): Promise<ApiResult<PaginatedResponse<Equipment>>> => {
-  const initialPage = 1;
-  const initialLimit = 50;
-  const firstResult = await listEquipment({ page: initialPage, limit: initialLimit });
-  if (isError(firstResult)) {
-    return firstResult;
-  }
-
-  const firstData = firstResult.data;
-  if (!firstData) {
-    return ok({
-      items: [],
-      pagination: normalizePagination(undefined, 0, initialPage, initialLimit),
-    });
-  }
-
-  const pagination = firstData.pagination;
-  const totalPages = pagination?.pages ?? 1;
-
-  if (totalPages <= 1) {
-    const items = firstData.items ?? [];
-    return ok({
-      items,
-      pagination: normalizePagination(pagination, items.length, initialPage, initialLimit),
-    });
-  }
-
-  const items = [...(firstData.items ?? [])];
-
-  for (let page = 2; page <= totalPages; page += 1) {
-    const pageResult = await listEquipment({ page, limit: initialLimit });
-    if (isError(pageResult)) {
-      return pageResult;
-    }
-
-    items.push(...(pageResult.data?.items ?? []));
-  }
-
-  const total = pagination?.total ?? items.length;
-  const limit = pagination?.limit ?? initialLimit;
-  return ok({
-    items,
-    pagination: normalizePagination(pagination, total, initialPage, limit),
-  });
-};
 
 const TableContainer = styled.div`
   background: rgba(26, 26, 26, 0.9);
@@ -84,158 +29,226 @@ const TableContainer = styled.div`
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 `;
 
-const ScrollableTable = styled.div`
-  max-height: 70vh;
-  overflow-y: auto;
+const GRID_TEMPLATE = '40px minmax(220px, 2fr) minmax(140px, 1fr) minmax(160px, 1fr) minmax(90px, 0.8fr) minmax(110px, 0.8fr) minmax(120px, 0.8fr)';
 
-  /* Custom scrollbar */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
+const EquipmentHeader = styled.div`
+  display: grid;
+  grid-template-columns: ${GRID_TEMPLATE};
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  border-bottom: 3px solid #ce9016;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #ce9016;
+`;
 
-  &::-webkit-scrollbar-track {
-    background: rgba(40, 40, 40, 0.5);
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #ce9016;
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #e6b52a;
+const HeaderCell = styled.span`
+  text-align: left;
+  &:first-child {
+    text-align: center;
   }
 `;
 
-const ItemTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
+const EquipmentListBody = styled.div`
+  flex: 1;
+`;
 
-  thead {
-    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
+const EquipmentRow = styled.div<{ $zebra?: boolean }>`
+  display: grid;
+  grid-template-columns: ${GRID_TEMPLATE};
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #333;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: ${({ $zebra }) => ($zebra ? 'rgba(255, 255, 255, 0.02)' : 'transparent')};
 
-  th {
-    text-align: left;
-    padding: 1rem;
-    color: #ce9016;
-    font-weight: 700;
-    font-size: 1rem;
-    border-bottom: 3px solid #ce9016;
-    font-family: 'Cinzel', serif;
-  }
-
-  tbody tr {
-    border-bottom: 1px solid #333;
-    transition: all 0.2s ease;
-    cursor: pointer;
-
-    &:hover {
-      background: rgba(206, 144, 22, 0.08);
-      transform: translateX(2px);
-    }
-
-    &:nth-child(even) {
-      background: rgba(255, 255, 255, 0.02);
-    }
-  }
-
-  td {
-    padding: 0.75rem 1rem;
-    color: #ccc;
-    font-size: 0.95rem;
-    vertical-align: top;
-  }
-
-  .item-name {
-    color: #fff;
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .item-type {
-    color: #888;
-    font-size: 0.9rem;
-    font-style: italic;
-  }
-
-  .item-stats {
-    color: #ce9016;
-    font-weight: 500;
-  }
-
-  .item-weight {
-    text-align: right;
-    font-family: 'Monaco', monospace;
-  }
-
-  .item-rarity {
-    text-transform: capitalize;
-    font-weight: 500;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    text-align: center;
-
-    &.none {
-      background: rgba(128, 128, 128, 0.2);
-      color: #ccc;
-    }
-    &.common {
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-    }
-    &.uncommon {
-      background: rgba(30, 255, 0, 0.2);
-      color: #1eff00;
-    }
-    &.rare {
-      background: rgba(0, 153, 255, 0.2);
-      color: #0099ff;
-    }
-    &.very.rare {
-      background: rgba(163, 53, 238, 0.2);
-      color: #a335ee;
-    }
-    &.legendary {
-      background: rgba(255, 128, 0, 0.2);
-      color: #ff8000;
-    }
-    &.artifact {
-      background: rgba(230, 204, 128, 0.2);
-      color: #e6cc80;
-    }
-  }
-
-  .item-source {
-    font-family: 'Monaco', monospace;
-    font-size: 0.85rem;
-    text-align: center;
-    padding: 0.25rem 0.5rem;
-    background: rgba(40, 40, 40, 0.6);
-    border-radius: 4px;
-  }
-
-  .checkbox-cell {
-    width: 40px;
-    text-align: center;
-    padding: 0.75rem 0.5rem;
-  }
-
-  .item-checkbox {
-    width: 18px;
-    height: 18px;
-    accent-color: #ce9016;
-    cursor: pointer;
-    margin: 0;
-
-    &:hover {
-      transform: scale(1.1);
-    }
+  &:hover {
+    background: rgba(206, 144, 22, 0.08);
+    transform: translateX(2px);
   }
 `;
+
+const CheckboxCell = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+`;
+
+const ItemCheckbox = styled.input`
+  width: 18px;
+  height: 18px;
+  accent-color: #ce9016;
+  cursor: pointer;
+  margin: 0;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+`;
+
+const NameCell = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+
+  .name-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+`;
+
+const TypeCell = styled.div`
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+`;
+
+const StatsCell = styled.div`
+  color: #ce9016;
+  font-weight: 500;
+`;
+
+const WeightCell = styled.div`
+  text-align: right;
+  font-family: 'Monaco', monospace;
+`;
+
+const rarityStyles = (rarity?: string) => {
+  const normalized = (rarity ?? '').toLowerCase();
+  switch (normalized) {
+    case 'none':
+      return `
+        background: rgba(128, 128, 128, 0.2);
+        color: #ccc;
+      `;
+    case 'common':
+      return `
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      `;
+    case 'uncommon':
+      return `
+        background: rgba(30, 255, 0, 0.2);
+        color: #1eff00;
+      `;
+    case 'rare':
+      return `
+        background: rgba(0, 153, 255, 0.2);
+        color: #0099ff;
+      `;
+    case 'very rare':
+      return `
+        background: rgba(163, 53, 238, 0.2);
+        color: #a335ee;
+      `;
+    case 'legendary':
+      return `
+        background: rgba(255, 128, 0, 0.2);
+        color: #ff8000;
+      `;
+    case 'artifact':
+      return `
+        background: rgba(230, 204, 128, 0.2);
+        color: #e6cc80;
+      `;
+    default:
+      return `
+        background: rgba(128, 128, 128, 0.2);
+        color: #ccc;
+      `;
+  }
+};
+
+const RarityCell = styled.div<{ $rarity?: string }>`
+  text-transform: capitalize;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-align: center;
+  ${({ $rarity }) => rarityStyles($rarity)}
+`;
+
+const SourceCell = styled.div`
+  font-family: 'Monaco', monospace;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  background: rgba(40, 40, 40, 0.6);
+  border-radius: 4px;
+`;
+
+const EQUIPMENT_ROW_HEIGHT = 72;
+const EQUIPMENT_MAX_VISIBLE_ROWS = 12;
+
+interface EquipmentRowData {
+  items: Equipment[];
+  checkedItems: Set<number>;
+  selectedNames: Set<string>;
+  onRowClick: (item: Equipment) => void;
+  onCheckboxToggle: (item: Equipment, checked: boolean) => void;
+  formatDamage: (item: Equipment) => string;
+  formatAC: (item: Equipment) => string;
+}
+
+const EquipmentRowRenderer = memo(
+  ({ index, style, data }: ListChildComponentProps<EquipmentRowData>) => {
+    const item = data.items[index];
+    if (!item) {
+      return null;
+    }
+
+    const isChecked = data.checkedItems.has(item.id);
+    const isSelected = data.selectedNames.has(item.name);
+    const checked = isChecked || isSelected;
+    const stats = data.formatDamage(item) || data.formatAC(item) || '-';
+    const weight = item.weight ? (
+      <WeightDisplay $isHeavy={item.weight > 20}>{item.weight} lb</WeightDisplay>
+    ) : (
+      '-'
+    );
+
+    return (
+      <EquipmentRow
+        style={{ ...style, width: '100%' }}
+        $zebra={index % 2 === 1}
+        onClick={() => data.onRowClick(item)}
+      >
+        <CheckboxCell>
+          <ItemCheckbox
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => {
+              event.stopPropagation();
+              data.onCheckboxToggle(item, event.target.checked);
+            }}
+            onClick={(event) => event.stopPropagation()}
+          />
+        </CheckboxCell>
+        <NameCell>
+          <div className="name-content">
+            {item.name}
+            {checked && <EquippedBadge>Selected</EquippedBadge>}
+          </div>
+        </NameCell>
+        <TypeCell>{TYPE_LABELS[item.type] || item.type}</TypeCell>
+        <StatsCell>{stats}</StatsCell>
+        <WeightCell>{weight}</WeightCell>
+        <RarityCell {...(item.rarity ? { $rarity: item.rarity } : {})}>{item.rarity || '-'}</RarityCell>
+        <SourceCell>{item.source}</SourceCell>
+      </EquipmentRow>
+    );
+  }
+);
+
+EquipmentRowRenderer.displayName = 'EquipmentRowRenderer';
 
 const EquippedBadge = styled.span`
   display: inline-flex;
@@ -271,18 +284,6 @@ const WeightDisplay = styled.span<{ $isHeavy?: boolean }>`
       margin-left: 0.25rem;
     }
   `}
-`;
-
-const ItemNameCell = styled.td`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  .name-content {
-    display: flex;
-    align-items: center;
-    flex: 1;
-  }
 `;
 
 const SummarySection = styled.div`
@@ -523,40 +524,102 @@ export const Step4EquipmentSelection: FC<Step4EquipmentSelectionProps> = ({
     localStorage.setItem('wizardEquipmentCheckedItems', JSON.stringify(itemIds));
   }, [checkedItems]);
 
-  const {
-    data: equipmentData,
-    error,
-    isLoading,
-    execute: loadEquipment,
-  } = useApiCall(fetchAllEquipment);
+  const loadEquipment = useEquipmentCatalogStore((state) => state.loadEquipment);
+  const equipment = useEquipmentCatalogStore(selectAllEquipment);
+  const { isLoading, error } = useEquipmentCatalogStore(
+    (state) => ({
+      isLoading: state.isLoading,
+      error: state.error,
+    }),
+    shallow
+  );
 
   useEffect(() => {
-    loadEquipment();
+    void loadEquipment();
   }, [loadEquipment]);
 
-  const equipment = equipmentData?.items ?? [];
+  const filteredEquipmentSelector = useMemo(
+    () =>
+      makeFilteredEquipmentSelector({
+        searchTerm,
+        typeFilter,
+        rarityFilter,
+      }),
+    [searchTerm, typeFilter, rarityFilter]
+  );
+  const filteredEquipment = useEquipmentCatalogStore(filteredEquipmentSelector);
 
-  // Filter equipment based on search and filters
-  const filteredEquipment = equipment.filter((item: Equipment) => {
-    if (!item) return false;
-
-    // Search filter
-    if (searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
+  const selectedItemsSet = useMemo(() => new Set(selectedItems), [selectedItems]);
+  const equipmentListHeight = useMemo(() => {
+    if (filteredEquipment.length === 0) {
+      return EQUIPMENT_ROW_HEIGHT;
     }
+    const visibleRows = Math.min(filteredEquipment.length, EQUIPMENT_MAX_VISIBLE_ROWS);
+    return visibleRows * EQUIPMENT_ROW_HEIGHT;
+  }, [filteredEquipment.length]);
+  const handleItemClick = useCallback((item: Equipment) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  }, []);
 
-    // Type filter
-    if (typeFilter !== 'all' && item.type !== typeFilter) {
-      return false;
+  const handleCheckboxChange = useCallback((itemId: number, itemName: string, checked: boolean) => {
+    setCheckedItems(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(itemId);
+      } else {
+        newSet.delete(itemId);
+      }
+      return newSet;
+    });
+
+    setSelectedItems(prev => {
+      if (checked && !prev.includes(itemName)) {
+        return [...prev, itemName];
+      }
+      if (!checked) {
+        return prev.filter(name => name !== itemName);
+      }
+      return prev;
+    });
+  }, []);
+
+  const formatDamage = useCallback((item: Equipment) => {
+    if (item.dmg1) {
+      const dmg = typeof item.dmg1 === 'object' ? JSON.stringify(item.dmg1) : item.dmg1;
+      const dmgType = typeof item.dmgType === 'object' ? JSON.stringify(item.dmgType) : item.dmgType;
+      return `${dmg}${dmgType ? ` ${dmgType}` : ''}`;
     }
+    return '';
+  }, []);
 
-    // Rarity filter
-    if (rarityFilter !== 'all' && item.rarity !== rarityFilter) {
-      return false;
+  const formatAC = useCallback((item: Equipment) => {
+    if (item.ac) {
+      const ac = typeof item.ac === 'object' ? JSON.stringify(item.ac) : item.ac;
+      return `AC ${ac}`;
     }
+    return '';
+  }, []);
 
-    return true;
-  });
+  const equipmentRowData = useMemo<EquipmentRowData>(
+    () => ({
+      items: filteredEquipment,
+      checkedItems,
+      selectedNames: selectedItemsSet,
+      onRowClick: handleItemClick,
+      onCheckboxToggle: (item, checked) => handleCheckboxChange(item.id, item.name, checked),
+      formatDamage,
+      formatAC,
+    }),
+    [filteredEquipment, checkedItems, selectedItemsSet, handleItemClick, handleCheckboxChange, formatDamage, formatAC]
+  );
+  const equipmentItemKey = useCallback(
+    (index: number, data: EquipmentRowData) => {
+      const item = data.items[index];
+      return item ? item.id : index;
+    },
+    []
+  );
 
   // Get unique types and rarities for filters
   const uniqueTypes = [...new Set(equipment.map((item: Equipment) => item.type))].filter(Boolean).sort();
@@ -617,15 +680,6 @@ export const Step4EquipmentSelection: FC<Step4EquipmentSelectionProps> = ({
     });
   }, [categorizedEquipment, data.selectedEquipment, onUpdate]);
 
-  const handleItemClick = (item: Equipment, event: MouseEvent) => {
-    // Don't open modal if checkbox was clicked
-    if ((event.target as HTMLElement).closest('.checkbox-cell')) {
-      return;
-    }
-    setSelectedItem(item);
-    setIsModalOpen(true);
-  };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
@@ -641,45 +695,6 @@ export const Step4EquipmentSelection: FC<Step4EquipmentSelectionProps> = ({
       }
       return prev;
     });
-  };
-
-  const handleCheckboxChange = (itemId: number, itemName: string, checked: boolean) => {
-    setCheckedItems(prev => {
-      const newSet = new Set(prev);
-      if (checked) {
-        newSet.add(itemId);
-      } else {
-        newSet.delete(itemId);
-      }
-      return newSet;
-    });
-
-    // Also update the selected items for the wizard
-    setSelectedItems(prev => {
-      if (checked && !prev.includes(itemName)) {
-        return [...prev, itemName];
-      } else if (!checked) {
-        return prev.filter(name => name !== itemName);
-      }
-      return prev;
-    });
-  };
-
-  const formatDamage = (item: Equipment) => {
-    if (item.dmg1) {
-      const dmg = typeof item.dmg1 === 'object' ? JSON.stringify(item.dmg1) : item.dmg1;
-      const dmgType = typeof item.dmgType === 'object' ? JSON.stringify(item.dmgType) : item.dmgType;
-      return `${dmg}${dmgType ? ` ${dmgType}` : ''}`;
-    }
-    return '';
-  };
-
-  const formatAC = (item: Equipment) => {
-    if (item.ac) {
-      const ac = typeof item.ac === 'object' ? JSON.stringify(item.ac) : item.ac;
-      return `AC ${ac}`;
-    }
-    return '';
   };
 
   const calculateSelectedWeight = () => {
@@ -859,59 +874,28 @@ export const Step4EquipmentSelection: FC<Step4EquipmentSelectionProps> = ({
       </SummarySection>
 
       <TableContainer>
-        <ScrollableTable>
-          <ItemTable>
-            <thead>
-              <tr>
-                <th style={{ width: '40px' }}></th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Stats</th>
-                <th>Weight</th>
-                <th>Rarity</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEquipment.map((item: Equipment) => (
-                <tr key={item.id} onClick={(e) => handleItemClick(item, e)}>
-                  <td className="checkbox-cell">
-                    <input
-                      type="checkbox"
-                      className="item-checkbox"
-                      checked={checkedItems.has(item.id) || selectedItems.includes(item.name)}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleCheckboxChange(item.id, item.name, e.target.checked);
-                      }}
-                    />
-                  </td>
-                  <ItemNameCell className="item-name">
-                    <div className="name-content">
-                      {item.name}
-                      {checkedItems.has(item.id) && <EquippedBadge>Selected</EquippedBadge>}
-                    </div>
-                  </ItemNameCell>
-                  <td className="item-type">{TYPE_LABELS[item.type] || item.type}</td>
-                  <td className="item-stats">
-                    {formatDamage(item) || formatAC(item) || '-'}
-                  </td>
-                  <td className="item-weight">
-                    {item.weight ? (
-                      <WeightDisplay $isHeavy={item.weight > 20}>
-                        {item.weight} lb
-                      </WeightDisplay>
-                    ) : '-'}
-                  </td>
-                  <td className={`item-rarity ${item.rarity?.replace(' ', '.')}`}>
-                    {item.rarity || '-'}
-                  </td>
-                  <td className="item-source">{item.source}</td>
-                </tr>
-              ))}
-            </tbody>
-          </ItemTable>
-        </ScrollableTable>
+        <EquipmentHeader>
+          <HeaderCell />
+          <HeaderCell>Name</HeaderCell>
+          <HeaderCell>Type</HeaderCell>
+          <HeaderCell>Stats</HeaderCell>
+          <HeaderCell>Weight</HeaderCell>
+          <HeaderCell>Rarity</HeaderCell>
+          <HeaderCell>Source</HeaderCell>
+        </EquipmentHeader>
+        <EquipmentListBody>
+          <VirtualList
+            height={equipmentListHeight}
+            itemCount={filteredEquipment.length}
+            itemSize={EQUIPMENT_ROW_HEIGHT}
+            width="100%"
+            itemData={equipmentRowData}
+            overscanCount={6}
+            itemKey={equipmentItemKey}
+          >
+            {EquipmentRowRenderer}
+          </VirtualList>
+        </EquipmentListBody>
       </TableContainer>
 
       <EquipmentItemModal

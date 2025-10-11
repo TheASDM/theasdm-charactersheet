@@ -4,7 +4,7 @@
  */
 
 import type { CharacterBuilderData } from '../components/CharacterGeneratorWizard';
-import type { CharacterBuilderStore } from '../store/characterBuilderStore';
+import type { CharacterBuilderStore } from '../store/characterBuilder/types';
 
 type StoreUpdateFunctions = Pick<
   CharacterBuilderStore,

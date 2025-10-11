@@ -3,7 +3,7 @@
  * Now uses SpellWizardContext for state management
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import type { Spell } from '@/types/api';
 import { SpellFiltersBar } from './SpellFiltersBar';
@@ -12,6 +12,10 @@ import { SpellDetailModal } from './SpellDetailModal';
 import { normaliseSpellId } from '@/utils/spellUtils';
 import { useSpellFiltering } from '@/hooks/useSpellFiltering';
 import { useSpellWizard } from '@/contexts/SpellWizardContext';
+import {
+  useSpellLibraryStore,
+  selectWizardLevelOneSpells,
+} from '@/store/spellLibraryStore';
 
 const StepContainer = styled.div`
   width: 100%;
@@ -91,16 +95,26 @@ export const SpellbookStep: React.FC<SpellbookStepProps> = ({ spells }) => {
     spellbookMax = 6,
   } = useSpellWizard();
 
+  const wizardLevelSelector = useMemo(
+    () => selectWizardLevelOneSpells(searchTerm),
+    [searchTerm]
+  );
+  const derivedWizardSpells = useSpellLibraryStore(wizardLevelSelector);
+  const levelBounds = useMemo(() => {
+    if (levelFilter === 'all') {
+      return { minLevel: 1, maxLevel: 1 };
+    }
+    return { minLevel: levelFilter, maxLevel: levelFilter };
+  }, [levelFilter]);
+  const baseWizardSpells = derivedWizardSpells.length > 0 ? derivedWizardSpells : spells;
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
 
   // Filter spells (only level 1 Wizard spells)
-  const filteredSpells = useSpellFiltering(spells, {
+  const filteredSpells = useSpellFiltering(baseWizardSpells, {
     classId: 'Wizard',
-    minLevel: 1,
-    maxLevel: 1,
+    ...levelBounds,
     excludeCantrips: true,
-    searchTerm,
-    level: levelFilter,
+    searchTerm: derivedWizardSpells.length > 0 ? '' : searchTerm,
     school: schoolFilter,
     ritual: ritualFilter,
     concentration: concentrationFilter,

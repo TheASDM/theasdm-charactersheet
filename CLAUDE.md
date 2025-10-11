@@ -111,40 +111,106 @@ Backend follows RESTful conventions with planned endpoints:
 
 ## Important Development Notes
 
-### D&D Template Tag Parsing
+### D&D Template Tag Parsing - ENFORCED WITH AUTOMATED TOOLS
 
 **CRITICAL**: When displaying D&D content that comes from the database (feats, spells, class features, etc.), you MUST always parse it through the template tag parser to handle markup like `{@condition Incapacitated|XPHB}`, `{@spell Fireball|XPHB}`, etc.
 
-**The parser location**: `frontend/src/utils/dndTemplateParser.ts`
+**📚 Full Documentation**: See [docs/DND_TEMPLATE_TAG_ENFORCEMENT.md](docs/DND_TEMPLATE_TAG_ENFORCEMENT.md) for complete details.
+
+#### Enforcement Tools
+
+This project has **three layers of enforcement** to prevent unparsed template tags:
+
+1. **ESLint Rule** (Static Analysis)
+   - Location: `frontend/eslint-local-rules.cjs`
+   - Detects unparsed content at compile time
+   - Run: `npm run lint` (auto-fix: `npm run lint:fix`)
+
+2. **Runtime Guards** (Development Mode)
+   - Location: `frontend/src/utils/dndTemplateGuard.ts`
+   - Console warnings when unparsed content is detected
+   - Enable strict mode: `VITE_STRICT_TEMPLATE_PARSING=true` in `.env.development`
+
+3. **Visual Warnings** (Development Mode - Optional)
+   - Can highlight unparsed content with red borders
+   - Manually enable in `frontend/src/main.tsx` if desired (see docs)
+
+#### The Parser
+
+**Location**: `frontend/src/utils/dndTemplateParser.ts`
 
 **Key functions**:
 - `parseDnDTemplateTag(text: string)` - Parses a single string with template tags
 - `parseComplexDnDEntry(entry: any)` - Handles nested structures (objects, arrays) and recursively parses all strings
 
-**Common mistake**: When processing stored data (especially from `character.featFeatures`, `character.classFeatures`, etc.), developers often forget to parse strings through the template parser. This results in raw markup like `{@condition Incapacitated|XPHB}` being displayed to users instead of just "Incapacitated".
+#### Critical Rules
 
-**Solution pattern**:
-```typescript
-// BAD - displays raw template tags
-if (typeof feature === 'string') {
-  description = feature;  // ❌ No parsing!
-}
+1. **ALWAYS parse before display:**
+   ```typescript
+   // ❌ BAD - displays raw template tags
+   const description = feature.description;
 
-// GOOD - parses template tags
-if (typeof feature === 'string') {
-  description = parseComplexDnDEntry(feature);  // ✅ Parses tags
+   // ✅ GOOD - parses template tags
+   const description = parseComplexDnDEntry(feature.description);
+   ```
+
+2. **NEVER join arrays before parsing:**
+   ```typescript
+   // ❌ BAD - joins first, loses object structure
+   const description = feature.entries.join(' ');
+
+   // ✅ GOOD - parse the array directly
+   const description = parseComplexDnDEntry(feature.entries);
+   ```
+
+3. **Import the parser** at the top of any file displaying D&D content:
+   ```typescript
+   import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
+   ```
+
+#### High-Risk Locations
+
+These areas commonly have unparsed content issues:
+- `frontend/src/utils/simpleFeatureGenerator.ts` - Feature extraction
+- Modal components (ClassModal, SpellModal, FeatModal)
+- Wizard step components (Step3D_OriginFeats, Step5_ReviewCreate)
+- Any component displaying `character.classFeatures`, `character.featFeatures`, etc.
+
+#### Testing for Unparsed Content
+
+**In the UI**: Look for:
+- `{@` or `|XPHB` in rendered text
+- `[object Object]` (indicates objects weren't parsed)
+- Red borders (in development mode)
+
+**In the console**: Look for warnings like:
+```
+⚠️ UNPARSED D&D TEMPLATE TAGS DETECTED
+{
+  source: 'feature.description',
+  sample: 'You gain {@condition Invisible|XPHB}...',
+  fix: 'Use parseComplexDnDEntry() before displaying'
 }
 ```
 
-**Where this commonly occurs**:
-- `frontend/src/utils/simpleFeatureGenerator.ts` - When extracting feat/class/species features
-- Any component that displays character features, traits, or abilities
-- Modal components showing feat/spell/item details
-- **CRITICAL**: When processing `feature.entries` arrays from the API - these MUST be passed to `parseComplexDnDEntry()` as arrays, NOT joined first
+**Programmatically**:
+```typescript
+import { validateCharacterContent } from '@/utils/dndTemplateGuard';
 
-**Testing tip**: Search for unparsed content by looking for `{@` or `|XPHB` in the rendered UI, or for `[object Object]` which indicates objects weren't parsed.
+const validation = validateCharacterContent(character);
+if (validation.hasUnparsedContent) {
+  console.error('Issues found:', validation.violations);
+}
+```
 
-**CRITICAL BUG FIX (2025-01-10)**: The parser NOW properly handles when the input is an array (like `feature.entries`). Previously, passing an array would cause `[object Object]` to appear because arrays weren't explicitly handled. The parser now recursively processes array elements and filters out empty results from `type: "options"` and `type: "refClassFeature"` entries.
+#### Before Committing
+
+1. Run `npm run lint` to catch static issues
+2. Test in development mode with visual warnings enabled
+3. Check console for runtime warnings
+4. Verify no raw `{@` tags in the UI
+
+**See [docs/DND_TEMPLATE_TAG_ENFORCEMENT.md](docs/DND_TEMPLATE_TAG_ENFORCEMENT.md) for troubleshooting and advanced usage.**
 
 ## Testing the System
 

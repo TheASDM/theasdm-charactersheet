@@ -9,11 +9,17 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true,
+    },
   },
+  plugins: ['eslint-plugin-local-rules'],
   rules: {
     'no-console': ['error', { allow: ['warn', 'error'] }],
     'no-unused-vars': 'off', // Disabled for TS files
     'no-debugger': 'error',
+    // Custom D&D template parsing enforcement rule
+    'local-rules/require-dnd-template-parsing': 'warn',
   },
   overrides: [
     {
