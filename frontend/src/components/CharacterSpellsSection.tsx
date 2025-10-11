@@ -5,13 +5,50 @@ import type { Spell } from '@/types/api';
 import { getSpellById } from '@/services/spellService';
 import { isError } from '@/types/api';
 import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
-import { getCasterProgressionMeta } from '@/helpers/spellRules';
-import { SPELLCASTING_CONFIG, normalizeClassId } from '@/helpers/spellcastingConfig';
+import { getCantripCount, getPreparedCount, usesSpellbook } from '@/helpers/spellRules';
+import { CLASS_CONFIG, normalizeClassId } from '@/helpers/spellcastingConfig';
 import { logger } from '@/utils/logger';
+import {
+  useSpellLibraryStore,
+  selectClassSpells,
+  selectClassStatus,
+} from '@/store/spellLibraryStore';
+import {
+  calculateModifier,
+  calculateProficiencyBonus,
+} from '../types/characterSheet';
+import WizardModal from './wizard/WizardModal';
 
 interface CharacterSpellsSectionProps {
   character: CharacterSheetData;
+  onUpdateCharacter: (updates: Partial<CharacterSheetData>) => void;
+  actions: {
+    addAction: (action: { name: string; atkBonus: string; damage: string }) => void;
+    removeActionByName: (name: string) => void;
+    hasAction: (name: string) => boolean;
+  };
 }
+
+interface PreparedSpellsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  classLabel: string;
+  limit: number | null;
+  currentPrepared: string[];
+  grantedPrepared: string[];
+  availableSpells: Array<{ id: string; spell: Spell | null }>;
+  spellLookup: Record<string, Spell | null>;
+  isLoading: boolean;
+  error?: string | undefined;
+  onSave: (selectedIds: string[]) => void;
+}
+
+type SpellbookData = {
+  known: string[];
+  prepared?: string[];
+  cantrips?: string[];
+  wizardSpellbook?: string[];
+};
 
 const abilityKeyToScore: Record<string, keyof CharacterSheetData['abilityScores']> = {
   int: 'intelligence',
@@ -62,7 +99,8 @@ const Section = styled.section`
 const SectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 1rem;
 
   h3 {
     margin: 0;
@@ -76,6 +114,37 @@ const SectionHeader = styled.div`
   span {
     font-size: 0.8rem;
     color: rgba(206, 144, 22, 0.7);
+  }
+`;
+
+const SectionHeaderText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+`;
+
+const ManageButton = styled.button<{ disabled?: boolean }>`
+  background: ${({ disabled }) =>
+    disabled
+      ? 'rgba(120, 120, 120, 0.4)'
+      : 'linear-gradient(145deg, rgba(206, 144, 22, 0.32), rgba(206, 144, 22, 0.18))'};
+  border: 1px solid ${({ disabled }) => (disabled ? 'rgba(120, 120, 120, 0.6)' : 'rgba(206, 144, 22, 0.5)')};
+  color: ${({ disabled }) => (disabled ? '#bbb' : '#f3e7c8')};
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  transition: all 0.2s ease;
+
+  &:hover {
+    ${({ disabled }) =>
+      !disabled &&
+      `
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(206, 144, 22, 0.35);
+      `}
   }
 `;
 
@@ -160,6 +229,47 @@ const SpellMetaRow = styled.div`
   color: rgba(228, 220, 200, 0.85);
 `;
 
+const CardActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+`;
+
+const CardButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
+  border-radius: 8px;
+  border: 1px solid
+    ${({ $variant }) =>
+      $variant === 'danger'
+        ? 'rgba(220, 53, 69, 0.55)'
+        : $variant === 'secondary'
+        ? 'rgba(206, 144, 22, 0.35)'
+        : 'rgba(125, 225, 125, 0.45)'};
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.35px;
+  cursor: pointer;
+  color: ${({ $variant }) =>
+    $variant === 'danger'
+      ? '#ff9c9c'
+      : $variant === 'secondary'
+      ? '#f8f4e1'
+      : '#dfffd7'};
+  background: ${({ $variant }) =>
+    $variant === 'danger'
+      ? 'rgba(220, 53, 69, 0.18)'
+      : $variant === 'secondary'
+      ? 'rgba(35, 35, 35, 0.68)'
+      : 'rgba(125, 225, 125, 0.18)'};
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+`;
+
 const EmptyState = styled.div`
   padding: 1rem;
   text-align: center;
@@ -181,6 +291,159 @@ const WarningList = styled.div`
 const LoadingMessage = styled.div`
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
+`;
+
+const ModalColumns = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+`;
+
+const ModalSection = styled.div`
+  background: rgba(18, 18, 18, 0.78);
+  border: 1px solid rgba(206, 144, 22, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 420px;
+`;
+
+const ModalSectionTitle = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+
+  h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-family: 'Cinzel', serif;
+    color: #ce9016;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  span {
+    font-size: 0.75rem;
+    color: rgba(206, 144, 22, 0.75);
+  }
+`;
+
+const ModalList = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(206, 144, 22, 0.4);
+    border-radius: 4px;
+  }
+`;
+
+const ModalListItem = styled.button<{ $variant?: 'default' | 'danger' }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid
+    ${({ $variant }) =>
+      $variant === 'danger' ? 'rgba(244, 67, 54, 0.45)' : 'rgba(206, 144, 22, 0.35)'};
+  background: ${({ $variant }) =>
+    $variant === 'danger' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(35, 35, 35, 0.75)'};
+  color: #f0f0f0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  .spell-label {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+
+    strong {
+      font-size: 0.85rem;
+      letter-spacing: 0.3px;
+    }
+
+    span {
+      font-size: 0.7rem;
+      color: rgba(206, 144, 22, 0.7);
+    }
+  }
+`;
+
+const GrantedInfo = styled.div`
+  background: rgba(108, 198, 255, 0.12);
+  border: 1px solid rgba(108, 198, 255, 0.4);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: #d0edff;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(206, 144, 22, 0.3);
+  background: rgba(12, 12, 12, 0.75);
+  color: #f3f3f3;
+  font-size: 0.8rem;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(206, 144, 22, 0.6);
+    box-shadow: 0 0 0 2px rgba(206, 144, 22, 0.15);
+  }
+`;
+
+const ModalFooterActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+`;
+
+const FooterButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+  border-radius: 999px;
+  padding: 0.5rem 1.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  border: 1px solid
+    ${({ $variant }) =>
+      $variant === 'primary' ? 'rgba(206, 144, 22, 0.55)' : 'rgba(206, 144, 22, 0.35)'};
+  background: ${({ $variant }) =>
+    $variant === 'primary'
+      ? 'linear-gradient(145deg, rgba(206, 144, 22, 0.42), rgba(206, 144, 22, 0.26))'
+      : 'rgba(35, 35, 35, 0.72)'};
+  color: ${({ $variant }) => ($variant === 'primary' ? '#f8f4e1' : '#f0e1b8')};
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  }
 `;
 
 const formatLevelLabel = (level: number | undefined) => {
@@ -209,9 +472,256 @@ const getSchoolLabel = (school?: string | null) => {
   return lookup[school] ?? school;
 };
 
-export function CharacterSpellsSection({ character }: CharacterSpellsSectionProps) {
-  const knownIds = useMemo(() => (character.spellbook?.known ?? []).map((id) => String(id)), [character.spellbook]);
-  const preparedIds = useMemo(() => (character.spellbook?.prepared ?? []).map((id) => String(id)), [character.spellbook]);
+const PreparedSpellsModal = ({
+  isOpen,
+  onClose,
+  classLabel,
+  limit,
+  currentPrepared,
+  grantedPrepared,
+  availableSpells,
+  spellLookup,
+  isLoading,
+  error,
+  onSave,
+}: PreparedSpellsModalProps) => {
+  const [selected, setSelected] = useState<string[]>(currentPrepared);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelected(currentPrepared);
+      setSearchTerm('');
+    }
+  }, [isOpen, currentPrepared]);
+
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const grantedSet = useMemo(() => new Set(grantedPrepared), [grantedPrepared]);
+
+  const limitReached = limit !== null && selected.length >= limit;
+
+  const availableList = useMemo(() => {
+    const items = availableSpells
+      .filter(({ id }) => !selectedSet.has(id) && !grantedSet.has(id))
+      .map(({ id, spell }) => ({
+        id,
+        spell,
+        level: spell?.level ?? 0,
+        name: spell?.name ?? `Spell #${id}`,
+      }));
+
+    const searchValue = searchTerm.trim().toLowerCase();
+    const filtered = searchValue
+      ? items.filter((entry) =>
+          entry.name.toLowerCase().includes(searchValue) ||
+          formatLevelLabel(entry.level).toLowerCase().includes(searchValue)
+        )
+      : items;
+
+    return filtered.sort((a, b) => {
+      const levelDiff = (a.level ?? 0) - (b.level ?? 0);
+      if (levelDiff !== 0) {
+        return levelDiff;
+      }
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    });
+  }, [availableSpells, selectedSet, grantedSet, searchTerm]);
+
+  const selectedList = useMemo(() => {
+    return selected
+      .map((id) => {
+        const spell = spellLookup[id];
+        return {
+          id,
+          spell,
+          level: spell?.level ?? 0,
+          name: spell?.name ?? `Spell #${id}`,
+        };
+      })
+      .sort((a, b) => {
+        const levelDiff = (a.level ?? 0) - (b.level ?? 0);
+        if (levelDiff !== 0) {
+          return levelDiff;
+        }
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      });
+  }, [selected, spellLookup]);
+
+  const grantedList = useMemo(() => {
+    return grantedPrepared
+      .map((id) => {
+        const spell = spellLookup[id];
+        return {
+          id,
+          spell,
+          level: spell?.level ?? 0,
+          name: spell?.name ?? `Spell #${id}`,
+        };
+      })
+      .sort((a, b) => {
+        const levelDiff = (a.level ?? 0) - (b.level ?? 0);
+        if (levelDiff !== 0) {
+          return levelDiff;
+        }
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      });
+  }, [grantedPrepared, spellLookup]);
+
+  const handleAdd = (id: string) => {
+    if (selectedSet.has(id)) return;
+    if (limit !== null && selected.length >= limit) return;
+    setSelected((prev) => [...prev, id]);
+  };
+
+  const handleRemove = (id: string) => {
+    setSelected((prev) => prev.filter((spellId) => spellId !== id));
+  };
+
+  const handleSave = () => {
+    onSave(selected);
+    onClose();
+  };
+
+  const footer = (
+    <ModalFooterActions>
+      <FooterButton onClick={onClose}>Cancel</FooterButton>
+      <FooterButton $variant="primary" onClick={handleSave}>
+        Save Prepared Spells
+      </FooterButton>
+    </ModalFooterActions>
+  );
+
+  return (
+    <WizardModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Manage Prepared Spells"
+      subtitle={
+        limit !== null
+          ? `You can prepare up to ${limit} non-granted spells. Granted spells do not count against this limit.`
+          : `Manage which spells you have prepared. Granted spells are always prepared.`
+      }
+      maxWidth="960px"
+      footer={footer}
+    >
+      <ModalColumns>
+        <ModalSection>
+          <ModalSectionTitle>
+            <h4>Prepared Spells</h4>
+            <span>
+              {selected.length}
+              {limit !== null ? ` / ${limit}` : ''}
+            </span>
+          </ModalSectionTitle>
+          <ModalList>
+            {selectedList.length === 0 ? (
+              <EmptyState>No prepared spells selected.</EmptyState>
+            ) : (
+              selectedList.map(({ id, name, level }) => (
+                <ModalListItem
+                  key={id}
+                  $variant="danger"
+                  onClick={() => handleRemove(id)}
+                >
+                  <div className="spell-label">
+                    <strong>{name}</strong>
+                    <span>{formatLevelLabel(level)}</span>
+                  </div>
+                  <span>Remove</span>
+                </ModalListItem>
+              ))
+            )}
+          </ModalList>
+
+          {grantedList.length > 0 && (
+            <GrantedInfo>
+              <strong>Granted & Always Prepared</strong>
+              {grantedList.map(({ id, name, level }) => (
+                <div key={id}>
+                  {name} — {formatLevelLabel(level)}
+                </div>
+              ))}
+            </GrantedInfo>
+          )}
+        </ModalSection>
+
+        <ModalSection>
+          <ModalSectionTitle>
+            <h4>
+              {classLabel ? `${classLabel} Spell List` : 'Available Spells'}
+            </h4>
+            <span>Add spells to your prepared list</span>
+          </ModalSectionTitle>
+          <SearchInput
+            type="search"
+            value={searchTerm}
+            placeholder="Search spells by name or level…"
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+          <ModalList>
+            {isLoading ? (
+              <LoadingMessage>Loading spells…</LoadingMessage>
+            ) : error ? (
+              <EmptyState>{error}</EmptyState>
+            ) : availableList.length === 0 ? (
+              <EmptyState>
+                {limit !== null && limitReached
+                  ? 'You have prepared the maximum number of spells.'
+                  : 'No additional spells available.'}
+              </EmptyState>
+            ) : (
+              availableList.map(({ id, name, level }) => (
+                <ModalListItem
+                  key={id}
+                  onClick={() => handleAdd(id)}
+                  disabled={limit !== null && limitReached}
+                >
+                  <div className="spell-label">
+                    <strong>{name}</strong>
+                    <span>{formatLevelLabel(level)}</span>
+                  </div>
+                  <span>{limit !== null && limitReached ? 'Limit Reached' : 'Add'}</span>
+                </ModalListItem>
+              ))
+            )}
+          </ModalList>
+        </ModalSection>
+      </ModalColumns>
+    </WizardModal>
+  );
+};
+
+export function CharacterSpellsSection({
+  character,
+  onUpdateCharacter,
+  actions,
+}: CharacterSpellsSectionProps) {
+  const rawSpellbook = character.spellbook as SpellbookData | undefined;
+  const spellbook: SpellbookData = rawSpellbook
+    ? {
+        known: rawSpellbook.known ?? [],
+        prepared: rawSpellbook.prepared ?? [],
+        cantrips: rawSpellbook.cantrips ?? [],
+        wizardSpellbook: rawSpellbook.wizardSpellbook ?? [],
+      }
+    : { known: [], prepared: [], cantrips: [], wizardSpellbook: [] };
+
+  const knownIds = useMemo(
+    () => (spellbook.known ?? []).map((id) => String(id)),
+    [spellbook.known]
+  );
+  const preparedIds = useMemo(
+    () => (spellbook.prepared ?? []).map((id) => String(id)),
+    [spellbook.prepared]
+  );
+  const cantripBaseIds = useMemo(
+    () => (spellbook.cantrips ?? []).map((id) => String(id)),
+    [spellbook.cantrips]
+  );
+  const wizardSpellbookIds = useMemo(
+    () => (spellbook.wizardSpellbook ?? []).map((id) => String(id)),
+    [spellbook.wizardSpellbook]
+  );
 
   const speciesTraits = (character.features?.speciesTraits ?? character.speciesTraits ?? []) as unknown[];
   const featFeatureEntries = (character.features?.feats ?? []) as unknown[];
@@ -267,68 +777,50 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
 
   const grantedSet = useMemo(() => new Set(grantedIds), [grantedIds]);
   const preparedSet = useMemo(() => new Set(preparedIds), [preparedIds]);
-  const knownTrackedIds = useMemo(
-    () => knownIds.filter((id) => !grantedSet.has(id)),
-    [knownIds, grantedSet]
+  const grantedPreparedIds = useMemo(
+    () => grantedIds.filter((id) => preparedSet.has(id)),
+    [grantedIds, preparedSet]
   );
   const preparedTrackedIds = useMemo(
     () => preparedIds.filter((id) => !grantedSet.has(id)),
     [preparedIds, grantedSet]
   );
 
-  const grantedPreparedIds = useMemo(
-    () => grantedIds.filter((id) => preparedSet.has(id)),
-    [grantedIds, preparedSet]
-  );
-
-  const normalizedClass = normalizeClassId(character.class || '');
-  const spellcastingAbilityKey = SPELLCASTING_CONFIG[normalizedClass]?.spellcastingAbility;
+  const normalizedClass = normalizeClassId(character.class ?? '');
+  const classConfig = normalizedClass ? CLASS_CONFIG[normalizedClass] : undefined;
+  const spellcastingAbilityKey = classConfig?.spellcastingAbility;
   const abilityScore = spellcastingAbilityKey
     ? character.abilityScores[abilityKeyToScore[spellcastingAbilityKey] ?? 'charisma']
     : undefined;
+  const characterLevel = Math.max(1, character.level ?? 1);
+  const abilityMod = typeof abilityScore === 'number' ? calculateModifier(abilityScore) : 0;
 
-  const casterMeta = useMemo(() => {
-    const classId = character.class || 'none';
-    const params: Parameters<typeof getCasterProgressionMeta>[0] = {
-      classId: normalizeClassId(classId) || classId,
-      level: character.level ?? 1,
-    };
-    if (typeof abilityScore === 'number') {
-      params.spellcastingAbilityScore = abilityScore;
-    }
-    return getCasterProgressionMeta(params);
-  }, [character.class, character.level, abilityScore]);
-
-  const cantripMax = casterMeta.cantripMax ?? null;
-  const leveledMax = casterMeta.knownMax ?? null;
-  const preparedMax = casterMeta.preparedCaster ? casterMeta.preparedMax ?? null : null;
+  const cantripMax = classConfig
+    ? getCantripCount(normalizedClass, characterLevel)
+    : null;
+  const preparedLimit = classConfig && classConfig.casterType !== 'none'
+    ? getPreparedCount(normalizedClass, characterLevel, abilityMod)
+    : null;
 
   const [spellLookup, setSpellLookup] = useState<Record<string, Spell | null>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSpellDetails, setIsLoadingSpellDetails] = useState(false);
 
-  const sortIdsBySpell = useCallback(
-    (ids: string[]) =>
-      [...ids].sort((a, b) => {
-        const aSpell = spellLookup[a];
-        const bSpell = spellLookup[b];
-        const levelDiff = (aSpell?.level ?? 0) - (bSpell?.level ?? 0);
-        if (levelDiff !== 0) {
-          return levelDiff;
-        }
-        return (aSpell?.name ?? a).localeCompare(bSpell?.name ?? b, undefined, {
-          sensitivity: 'base',
-        });
-      }),
-    [spellLookup]
-  );
-
-  const uniqueSpellIds = useMemo(
-    () => Array.from(new Set([...knownIds, ...preparedIds, ...grantedIds])).filter(Boolean),
-    [knownIds, preparedIds, grantedIds]
+  const baseUniqueSpellIds = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...knownIds,
+          ...preparedIds,
+          ...grantedIds,
+          ...cantripBaseIds,
+          ...wizardSpellbookIds,
+        ])
+      ).filter(Boolean),
+    [knownIds, preparedIds, grantedIds, cantripBaseIds, wizardSpellbookIds]
   );
 
   useEffect(() => {
-    if (uniqueSpellIds.length === 0) {
+    if (baseUniqueSpellIds.length === 0) {
       setSpellLookup({});
       return;
     }
@@ -337,10 +829,10 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
     const controller = new AbortController();
 
     const load = async () => {
-      setIsLoading(true);
+      setIsLoadingSpellDetails(true);
       try {
         const entries = await Promise.all(
-          uniqueSpellIds.map(async (spellId) => {
+          baseUniqueSpellIds.map(async (spellId) => {
             const response = await getSpellById(spellId, controller.signal);
             if (isError(response) || !response.data) {
               if (isError(response)) {
@@ -358,17 +850,21 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
         if (!cancelled) {
           setSpellLookup((prev) => {
             const next = { ...prev };
+            let changed = false;
             entries.forEach(([id, spell]) => {
-              next[id] = spell;
+              if (!next[id]) {
+                next[id] = spell;
+                changed = true;
+              }
             });
-            return next;
+            return changed ? next : prev;
           });
-          setIsLoading(false);
+          setIsLoadingSpellDetails(false);
         }
       } catch (error) {
         if (!cancelled) {
           logger.error('Unexpected error loading spell details', error);
-          setIsLoading(false);
+          setIsLoadingSpellDetails(false);
         }
       }
     };
@@ -379,52 +875,195 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
       cancelled = true;
       controller.abort();
     };
-  }, [uniqueSpellIds]);
+  }, [baseUniqueSpellIds]);
 
-  const knownBreakdown = useMemo(() => {
-    const cantrips: string[] = [];
-    const leveled: string[] = [];
+  const fetchClassSpells = useSpellLibraryStore((state) => state.fetchClassSpells);
+  const classSpellsSelector = useMemo(() => selectClassSpells(normalizedClass), [normalizedClass]);
+  const classStatusSelector = useMemo(() => selectClassStatus(normalizedClass), [normalizedClass]);
+  const classSpells = useSpellLibraryStore(classSpellsSelector);
+  const classSpellStatus = useSpellLibraryStore(classStatusSelector);
 
-    knownTrackedIds.forEach((id) => {
-      const spell = spellLookup[id];
-      if (spell?.level === 0) {
-        cantrips.push(id);
-      } else if (spell && typeof spell.level === 'number') {
-        leveled.push(id);
-      } else {
-        leveled.push(id);
-      }
+  useEffect(() => {
+    if (!normalizedClass) return;
+    void fetchClassSpells(normalizedClass);
+  }, [normalizedClass, fetchClassSpells]);
+
+  useEffect(() => {
+    if (!classSpells || classSpells.length === 0) return;
+
+    setSpellLookup((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      classSpells.forEach((spell) => {
+        const id = String(spell.id);
+        if (!next[id]) {
+          next[id] = spell;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
+  }, [classSpells]);
 
-    return { cantrips, leveled };
-  }, [knownTrackedIds, spellLookup]);
+  const cantripDisplayIds = useMemo(() => {
+    if (cantripBaseIds.length > 0) {
+      return Array.from(new Set(cantripBaseIds));
+    }
+    return knownIds.filter((id) => {
+      const spell = spellLookup[id];
+      return spell?.level === 0;
+    });
+  }, [cantripBaseIds, knownIds, spellLookup]);
 
-  const cantripOverflow = cantripMax !== null && knownBreakdown.cantrips.length > cantripMax;
-  const leveledOverflow = leveledMax !== null && knownBreakdown.leveled.length > leveledMax;
-  const preparedOverflow = preparedMax !== null && preparedTrackedIds.length > preparedMax;
+  const sortIdsBySpell = useCallback(
+    (ids: string[]) =>
+      [...ids].sort((a, b) => {
+        const aSpell = spellLookup[a];
+        const bSpell = spellLookup[b];
+        const levelDiff = (aSpell?.level ?? 0) - (bSpell?.level ?? 0);
+        if (levelDiff !== 0) {
+          return levelDiff;
+        }
+        return (aSpell?.name ?? a).localeCompare(bSpell?.name ?? b, undefined, {
+          sensitivity: 'base',
+        });
+      }),
+    [spellLookup]
+  );
+
+  const proficiencyBonus = character.proficiencyBonus ?? calculateProficiencyBonus(character.level ?? 1);
+  const abilityModifier = abilityMod;
+  const spellAttackBonus = proficiencyBonus + abilityModifier;
+  const spellSaveDC = 8 + proficiencyBonus + abilityModifier;
+
+  const cantripOverflow = cantripMax !== null && cantripDisplayIds.length > cantripMax;
+  const preparedOverflow = preparedLimit !== null && preparedTrackedIds.length > preparedLimit;
 
   const warnings = useMemo(() => {
     const list: string[] = [];
     if (cantripOverflow) {
-      list.push('Cantrip count exceeds current limit.');
-    }
-    if (leveledOverflow) {
-      list.push('Known leveled spells exceed the recommended limit.');
+      list.push('Cantrip count exceeds the current limit.');
     }
     if (preparedOverflow) {
-      list.push('Prepared spells exceed your available preparation slots.');
+      list.push('Prepared spells exceed the current limit.');
     }
     return list;
-  }, [cantripOverflow, leveledOverflow, preparedOverflow]);
+  }, [cantripOverflow, preparedOverflow]);
 
-  const renderSpellCard = (spellId: string, extraTags: Array<'prepared' | 'granted'> = []) => {
+  const [isManagePreparedOpen, setIsManagePreparedOpen] = useState(false);
+
+  const availableSpellEntries = useMemo(() => {
+    const entries = new Map<string, { id: string; spell: Spell | null }>();
+
+    if (usesSpellbook(normalizedClass) && wizardSpellbookIds.length > 0) {
+      wizardSpellbookIds.forEach((id: string) => {
+        entries.set(id, { id, spell: spellLookup[id] ?? null });
+      });
+    }
+
+    if (classSpells && classSpells.length > 0) {
+      classSpells.forEach((spell) => {
+        const id = String(spell.id);
+        entries.set(id, { id, spell });
+      });
+    }
+
+    preparedTrackedIds.forEach((id: string) => {
+      if (!entries.has(id)) {
+        entries.set(id, { id, spell: spellLookup[id] ?? null });
+      }
+    });
+
+    return Array.from(entries.values());
+  }, [classSpells, normalizedClass, wizardSpellbookIds, spellLookup, preparedTrackedIds]);
+
+  const updatePreparedSpells = useCallback(
+    (nextPrepared: string[]) => {
+      const dedupSelected = Array.from(new Set(nextPrepared));
+      const combinedPrepared = Array.from(
+        new Set([...dedupSelected, ...grantedPreparedIds])
+      );
+
+      const cantrips = spellbook.cantrips ?? [];
+      const wizardBook = spellbook.wizardSpellbook ?? [];
+      const mergedKnown = Array.from(
+        new Set([
+          ...cantrips.map((id) => String(id)),
+          ...wizardBook.map((id) => String(id)),
+          ...combinedPrepared,
+        ])
+      );
+
+      onUpdateCharacter({
+        spellbook: {
+          ...spellbook,
+          prepared: combinedPrepared,
+          known: mergedKnown,
+        },
+      });
+    },
+    [spellbook, grantedPreparedIds, onUpdateCharacter]
+  );
+
+  const handleUnprepare = useCallback(
+    (spellId: string) => {
+      const next = preparedTrackedIds.filter((id) => id !== spellId);
+      updatePreparedSpells(next);
+    },
+    [preparedTrackedIds, updatePreparedSpells]
+  );
+
+  const handleToggleAction = useCallback(
+    (spell: Spell) => {
+      if (!spell?.name) return;
+
+      const actionName = spell.name;
+      const alreadyActive = actions.hasAction(actionName);
+
+      if (alreadyActive) {
+        actions.removeActionByName(actionName);
+        return;
+      }
+
+      let atkLabel = `Spell Attack ${spellAttackBonus >= 0 ? `+${spellAttackBonus}` : spellAttackBonus}`;
+      if (spell.savingThrow && spell.savingThrow.length > 0) {
+        const saveTypes = spell.savingThrow.join('/');
+        atkLabel = `Save DC ${spellSaveDC} (${saveTypes})`;
+      }
+
+      let damageLabel = '—';
+      if (spell.damageInflict && spell.damageInflict.length > 0) {
+        damageLabel = spell.damageInflict.join(', ');
+      } else if (spell.miscTags?.some((tag) => /heal/i.test(tag))) {
+        damageLabel = 'Healing';
+      }
+
+      actions.addAction({
+        name: actionName,
+        atkBonus: atkLabel,
+        damage: damageLabel,
+      });
+    },
+    [actions, spellAttackBonus, spellSaveDC]
+  );
+
+  const renderSpellCard = (
+    spellId: string,
+    options: {
+      prepared?: boolean;
+      granted?: boolean;
+      allowUnprepare?: boolean;
+      showActionButton?: boolean;
+    } = {}
+  ) => {
     const spell = spellLookup[spellId];
-    const isPrepared = preparedSet.has(spellId);
-    const isGranted = grantedSet.has(spellId);
+    const isPrepared = preparedSet.has(spellId) || Boolean(options.prepared);
+    const isGranted = grantedSet.has(spellId) || Boolean(options.granted);
     const level = spell?.level;
     const label = spell?.name ?? `Spell #${spellId}`;
     const schoolLabel = getSchoolLabel(spell?.school);
     const isCantrip = level === 0;
+    const actionActive = spell?.name ? actions.hasAction(spell.name) : false;
 
     return (
       <SpellCard key={spellId} $prepared={isPrepared && !isGranted} $granted={isGranted}>
@@ -434,28 +1073,56 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
         </SpellTitleRow>
         <SpellMetaRow>
           <span>{schoolLabel}</span>
-          {(isPrepared || extraTags.includes('prepared')) && <Tag $tone="prepared">Prepared</Tag>}
-          {(isGranted || extraTags.includes('granted')) && <Tag $tone="granted">Granted</Tag>}
+          {isPrepared && <Tag $tone="prepared">Prepared</Tag>}
+          {isGranted && <Tag $tone="granted">Granted</Tag>}
         </SpellMetaRow>
+        {options.showActionButton && spell?.name && (
+          <CardActions>
+            {options.allowUnprepare && !isGranted && (
+              <CardButton $variant="secondary" onClick={() => handleUnprepare(spellId)}>
+                Unprepare
+              </CardButton>
+            )}
+            <CardButton
+              $variant={actionActive ? 'danger' : 'primary'}
+              onClick={() => handleToggleAction(spell)}
+            >
+              {actionActive ? 'Remove from Action Bar' : 'Add to Action Bar'}
+            </CardButton>
+          </CardActions>
+        )}
       </SpellCard>
     );
   };
 
+  const preparedHeaderDescription = usesSpellbook(normalizedClass)
+    ? 'Choose spells from your spellbook to prepare for the day.'
+    : 'Select the spells you have ready to cast. You can change your prepared list at any time.';
+
+  const showPreparedSection =
+    preparedTrackedIds.length > 0 ||
+    grantedPreparedIds.length > 0 ||
+    (preparedLimit !== null && preparedLimit > 0) ||
+    (availableSpellEntries.length > 0 && classConfig && classConfig.casterType !== 'none');
+
   return (
     <Container>
       <SummaryRow>
-        <SummaryBadge $variant={cantripOverflow ? 'warning' : 'default'}>
-          Cantrips: {knownBreakdown.cantrips.length}
-          {cantripMax !== null && ` / ${cantripMax}`}
-        </SummaryBadge>
-        <SummaryBadge $variant={leveledOverflow ? 'warning' : 'default'}>
-          Known Spells: {knownBreakdown.leveled.length}
-          {leveledMax !== null && ` / ${leveledMax}`}
-        </SummaryBadge>
-        {preparedMax !== null && (
+        {(preparedLimit !== null || preparedTrackedIds.length > 0) && (
           <SummaryBadge $variant={preparedOverflow ? 'warning' : 'default'}>
             Prepared Spells: {preparedTrackedIds.length}
-            {preparedMax !== null && ` / ${preparedMax}`}
+            {preparedLimit !== null ? ` / ${preparedLimit}` : ''}
+          </SummaryBadge>
+        )}
+        {cantripMax !== null && (cantripMax > 0 || cantripDisplayIds.length > 0) && (
+          <SummaryBadge $variant={cantripOverflow ? 'warning' : 'default'}>
+            Cantrips: {cantripDisplayIds.length}
+            {cantripMax !== null && ` / ${cantripMax}`}
+          </SummaryBadge>
+        )}
+        {usesSpellbook(normalizedClass) && wizardSpellbookIds.length > 0 && (
+          <SummaryBadge>
+            Spellbook: {wizardSpellbookIds.length}
           </SummaryBadge>
         )}
         <SummaryBadge>
@@ -466,7 +1133,9 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
       {warnings.length > 0 && (
         <Section>
           <SectionHeader>
-            <h3>Spell Limit Notices</h3>
+            <SectionHeaderText>
+              <h3>Spell Limit Notices</h3>
+            </SectionHeaderText>
           </SectionHeader>
           <WarningList>
             {warnings.map((warning) => (
@@ -476,18 +1145,38 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
         </Section>
       )}
 
-      {preparedMax !== null && (
+      {showPreparedSection && (
         <Section>
           <SectionHeader>
-            <h3>Prepared Spells</h3>
-            <span>Spells you have ready to cast without ritual preparation.</span>
+            <SectionHeaderText>
+              <h3>Prepared Spells</h3>
+              <span>{preparedHeaderDescription}</span>
+            </SectionHeaderText>
+            <ManageButton
+              onClick={() => setIsManagePreparedOpen(true)}
+              disabled={availableSpellEntries.length === 0 && preparedTrackedIds.length === 0}
+            >
+              Manage Prepared Spells
+            </ManageButton>
           </SectionHeader>
           {preparedTrackedIds.length === 0 && grantedPreparedIds.length === 0 ? (
             <EmptyState>No prepared spells selected.</EmptyState>
           ) : (
             <SpellGrid>
-              {sortIdsBySpell(preparedTrackedIds).map((id) => renderSpellCard(id, ['prepared']))}
-              {sortIdsBySpell(grantedPreparedIds).map((id) => renderSpellCard(id, ['prepared', 'granted']))}
+              {sortIdsBySpell(preparedTrackedIds).map((id) =>
+                renderSpellCard(id, {
+                  prepared: true,
+                  allowUnprepare: true,
+                  showActionButton: true,
+                })
+              )}
+              {sortIdsBySpell(grantedPreparedIds).map((id) =>
+                renderSpellCard(id, {
+                  prepared: true,
+                  granted: true,
+                  showActionButton: true,
+                })
+              )}
             </SpellGrid>
           )}
         </Section>
@@ -495,49 +1184,75 @@ export function CharacterSpellsSection({ character }: CharacterSpellsSectionProp
 
       <Section>
         <SectionHeader>
-          <h3>Known Cantrips</h3>
-          <span>At-will spells that do not require spell slots.</span>
+          <SectionHeaderText>
+            <h3>Cantrips</h3>
+            <span>At-will spells that do not require spell slots.</span>
+          </SectionHeaderText>
         </SectionHeader>
-        {knownBreakdown.cantrips.length === 0 ? (
+        {cantripDisplayIds.length === 0 ? (
           <EmptyState>No cantrips added yet.</EmptyState>
         ) : (
           <SpellGrid>
-            {sortIdsBySpell(knownBreakdown.cantrips).map((id) => renderSpellCard(id))}
+            {sortIdsBySpell(cantripDisplayIds).map((id) =>
+              renderSpellCard(id, { showActionButton: true })
+            )}
           </SpellGrid>
         )}
       </Section>
 
-      <Section>
-        <SectionHeader>
-          <h3>Known Spells</h3>
-          <span>Spells recorded in your spell list or spellbook.</span>
-        </SectionHeader>
-        {knownBreakdown.leveled.length === 0 ? (
-          <EmptyState>No leveled spells known.</EmptyState>
-        ) : (
+      {usesSpellbook(normalizedClass) && wizardSpellbookIds.length > 0 && (
+        <Section>
+          <SectionHeader>
+            <SectionHeaderText>
+              <h3>Spellbook</h3>
+              <span>All spells recorded in your spellbook.</span>
+            </SectionHeaderText>
+          </SectionHeader>
           <SpellGrid>
-            {sortIdsBySpell(knownBreakdown.leveled).map((id) => renderSpellCard(id))}
+            {sortIdsBySpell(wizardSpellbookIds).map((id) =>
+              renderSpellCard(id, {
+                prepared: preparedSet.has(id),
+              })
+            )}
           </SpellGrid>
-        )}
-      </Section>
+        </Section>
+      )}
 
       <Section>
         <SectionHeader>
-          <h3>Granted Spells</h3>
-          <span>Automatically granted spells from features, species, or feats.</span>
+          <SectionHeaderText>
+            <h3>Granted Spells</h3>
+            <span>Automatically granted spells from features, species, or feats.</span>
+          </SectionHeaderText>
         </SectionHeader>
         {grantedIds.length === 0 ? (
           <EmptyState>No granted spells detected.</EmptyState>
         ) : (
           <SpellGrid>
-            {sortIdsBySpell(grantedIds).map((id) => renderSpellCard(id, ['granted']))}
+            {sortIdsBySpell(grantedIds).map((id) =>
+              renderSpellCard(id, { granted: true, showActionButton: true })
+            )}
           </SpellGrid>
         )}
       </Section>
 
-      {isLoading && (
+      {(isLoadingSpellDetails || classSpellStatus.isLoading) && (
         <LoadingMessage>Fetching spell details…</LoadingMessage>
       )}
+
+      <PreparedSpellsModal
+        isOpen={isManagePreparedOpen}
+        onClose={() => setIsManagePreparedOpen(false)}
+        classLabel={character.class || ''}
+        limit={preparedLimit}
+        currentPrepared={preparedTrackedIds}
+        grantedPrepared={grantedPreparedIds}
+        availableSpells={availableSpellEntries}
+        spellLookup={spellLookup}
+        isLoading={classSpellStatus.isLoading}
+        error={classSpellStatus.error}
+        onSave={updatePreparedSpells}
+      />
     </Container>
   );
 }

@@ -461,7 +461,15 @@ export default function CharacterSheetPretty({
             </LeftColumn>
           </MainLayout>
         ) : (
-          <CharacterSpellsSection character={character} />
+          <CharacterSpellsSection
+            character={character}
+            onUpdateCharacter={updateCharacter}
+            actions={{
+              addAction: actions.addOrReplaceAction,
+              removeActionByName: actions.removeActionByName,
+              hasAction: actions.hasAction,
+            }}
+          />
         )}
 
         {/* All Modals */}
