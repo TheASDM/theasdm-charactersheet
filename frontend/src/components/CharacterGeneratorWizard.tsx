@@ -87,9 +87,13 @@ export interface CharacterBuilderData {
   };
   speciesSize?: string;
   speciesSpeed?: number;
+  speciesAdditionalSpeeds?: Record<string, number>;
   speciesDarkvision?: number;
   speciesResistances?: string[];
   speciesImmunities?: string[];
+  speciesSkillProficiencies?: string[];
+  speciesToolProficiencies?: string[];
+  speciesAbilityScoreAllocations?: { [ability: string]: number };
 
   // Step 3C: Species Choices
   speciesChoices?: { [key: string]: string };
@@ -101,6 +105,8 @@ export interface CharacterBuilderData {
   // Feat-derived data
   featFeatures?: { [featName: string]: any[] };
   featSpells?: { [featName: string]: string[] };
+  featSkillProficiencies?: string[];
+  featToolProficiencies?: string[];
 
   // Step 3E: Feat Choices
   featChoices?: { [featName: string]: any };
@@ -501,19 +507,15 @@ export default function CharacterGeneratorWizard() {
   const goNext = useCallback(() => {
     // Check if on review step - trigger create character (no validation blocking)
     if (currentStep === 'review-create') {
-      console.log('🎯 On review step, attempting to create character');
-      console.log('📝 Handler ref:', reviewCreateHandlerRef.current);
       if (reviewCreateHandlerRef.current.handleCreate) {
-        console.log('✅ Calling handleCreate');
         reviewCreateHandlerRef.current.handleCreate();
         return;
       } else {
-        console.error('❌ handleCreate not found in ref');
+        console.error('handleCreate not found in ref');
       }
     }
 
     if (!canGoNext()) {
-      console.log('🚫 Cannot go next - step incomplete');
       return;
     }
 

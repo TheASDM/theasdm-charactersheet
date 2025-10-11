@@ -124,7 +124,7 @@ const ModalClose = styled.button`
   }
 `;
 
-export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spell, onClose }) => {
+export const SpellDetailModal = ({ spell, onClose }: SpellDetailModalProps) => {
   // Lock body scroll when modal is open
   useBodyScrollLock(!!spell);
 

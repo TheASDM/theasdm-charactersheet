@@ -46,6 +46,15 @@ export const SkillItem = styled.div`
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 500;
+    display: flex;
+    align-items: baseline;
+
+    .ability-abbr {
+      font-size: 0.6rem;
+      color: rgba(206, 144, 22, 0.5);
+      margin-left: 0.2rem;
+      font-weight: 400;
+    }
   }
 
   .skill-bonus {
@@ -60,5 +69,12 @@ export const SkillItem = styled.div`
   input[type="checkbox"] {
     margin-right: 0.15rem;
     transform: scale(0.75);
+  }
+
+  .proficiency-marker {
+    color: #ce9016;
+    font-size: 0.6rem;
+    margin-right: 0.25rem;
+    line-height: 1;
   }
 `;

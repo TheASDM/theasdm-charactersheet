@@ -56,7 +56,7 @@ const FilterGroup = styled.label`
   }
 `;
 
-export const SpellFiltersBar: React.FC<SpellFiltersBarProps> = ({
+export const SpellFiltersBar = ({
   searchTerm,
   onSearchChange,
   level,
@@ -68,7 +68,7 @@ export const SpellFiltersBar: React.FC<SpellFiltersBarProps> = ({
   concentration,
   onConcentrationChange,
   hideLevelFilter = false,
-}) => {
+}: SpellFiltersBarProps) => {
   return (
     <FiltersBar>
       <FilterGroup>

@@ -77,13 +77,13 @@ const Select = styled.select`
   }
 `;
 
-export const PreparedSpellsSection: React.FC<PreparedSpellsSectionProps> = ({
+export const PreparedSpellsSection = ({
   slotCount,
   preparedIds,
   knownSpells,
   onPreparedChange,
   maxPrepared,
-}) => {
+}: PreparedSpellsSectionProps) => {
   const slots = Array.from({ length: slotCount }, (_, i) => i);
 
   return (

@@ -60,6 +60,212 @@ const ALL_SKILLS = [
   'Sleight of Hand', 'Stealth', 'Survival'
 ];
 
+const ABILITY_KEY_MAP: Record<string, keyof CharacterBuilderData['abilityScores']> = {
+  str: 'strength',
+  strength: 'strength',
+  dex: 'dexterity',
+  dexterity: 'dexterity',
+  con: 'constitution',
+  constitution: 'constitution',
+  int: 'intelligence',
+  intelligence: 'intelligence',
+  wis: 'wisdom',
+  wisdom: 'wisdom',
+  cha: 'charisma',
+  charisma: 'charisma',
+};
+
+const MOVEMENT_KEYS = ['fly', 'swim', 'climb', 'burrow', 'hover'];
+
+const normaliseAbilityKey = (value: string): keyof CharacterBuilderData['abilityScores'] | null => {
+  const lower = value.toLowerCase();
+  return ABILITY_KEY_MAP[lower] ?? null;
+};
+
+const extractSpeedData = (speed: unknown): { base: number; additional?: Record<string, number> } => {
+  if (typeof speed === 'number') {
+    return { base: speed };
+  }
+
+  if (typeof speed === 'string') {
+    const parsed = parseInt(speed, 10);
+    if (!Number.isNaN(parsed)) {
+      return { base: parsed };
+    }
+    return { base: 30 };
+  }
+
+  if (speed && typeof speed === 'object') {
+    const record = speed as Record<string, unknown>;
+    const base = typeof record.walk === 'number'
+      ? record.walk
+      : typeof record.base === 'number'
+        ? record.base
+        : 30;
+
+    const additional: Record<string, number> = {};
+    MOVEMENT_KEYS.forEach((key) => {
+      const value = record[key];
+      if (typeof value === 'number') {
+        additional[key] = value;
+      } else if (typeof value === 'string') {
+        const parsed = parseInt(value, 10);
+        if (!Number.isNaN(parsed)) {
+          additional[key] = parsed;
+        }
+      }
+    });
+
+    return {
+      base,
+      ...(Object.keys(additional).length > 0 ? { additional } : {}),
+    };
+  }
+
+  return { base: 30 };
+};
+
+const flattenTraitText = (traits: unknown): string[] => {
+  if (!traits) return [];
+
+  if (Array.isArray(traits)) {
+    return traits.flatMap((entry) => flattenTraitText(entry));
+  }
+
+  if (typeof traits === 'string') {
+    return [traits];
+  }
+
+  if (typeof traits === 'object') {
+    const record = traits as Record<string, unknown>;
+    const collected: string[] = [];
+
+    if (typeof record.name === 'string') {
+      collected.push(record.name);
+    }
+
+    if (Array.isArray(record.entries)) {
+      collected.push(...flattenTraitText(record.entries));
+    }
+
+    if (typeof record.text === 'string') {
+      collected.push(record.text);
+    }
+
+    if (typeof record.entry === 'string') {
+      collected.push(record.entry);
+    }
+
+    return collected;
+  }
+
+  return [];
+};
+
+const extractDarkvision = (traits: unknown): number | undefined => {
+  const textFragments = flattenTraitText(traits);
+  for (const fragment of textFragments) {
+    if (typeof fragment !== 'string') continue;
+    if (fragment.toLowerCase().includes('darkvision')) {
+      const match = fragment.match(/(\d+)\s*(?:feet|foot|ft)/i);
+      if (match) {
+        const value = parseInt(match[1], 10);
+        if (!Number.isNaN(value)) {
+          return value;
+        }
+      }
+    }
+  }
+  return undefined;
+};
+
+const extractDamageKeywords = (traits: unknown, keyword: 'resistance' | 'immunity'): string[] => {
+  const textFragments = flattenTraitText(traits);
+  const results = new Set<string>();
+
+  textFragments.forEach((fragment) => {
+    if (typeof fragment !== 'string') return;
+    const lower = fragment.toLowerCase();
+    if (!lower.includes(keyword)) return;
+
+    // Attempt to capture "resistance to fire, cold, and lightning damage"
+    const match = fragment.match(/resistance to ([^.]+)/i) || fragment.match(/immunity to ([^.]+)/i);
+    if (match && match[1]) {
+      match[1]
+        .split(/,|and/)
+        .map((part) => part.replace(/damage/gi, '').trim())
+        .filter(Boolean)
+        .forEach((value) => results.add(value.replace(/\bfeet\b/gi, '').trim()));
+    }
+  });
+
+  return Array.from(results);
+};
+
+const extractAbilityScoreMap = (abilityData: unknown): Record<string, number> => {
+  if (!abilityData) {
+    return {};
+  }
+
+  const result: Record<string, number> = {};
+
+  const assignValue = (key: string, value: unknown) => {
+    const abilityKey = normaliseAbilityKey(key);
+    if (!abilityKey) return;
+
+    const numeric =
+      typeof value === 'number'
+        ? value
+        : typeof value === 'string'
+          ? parseInt(value, 10)
+          : typeof value === 'object' && value !== null && 'amount' in (value as Record<string, unknown>)
+            ? parseInt(String((value as Record<string, unknown>).amount), 10)
+            : NaN;
+
+    if (!Number.isNaN(numeric) && numeric !== 0) {
+      result[abilityKey] = (result[abilityKey] || 0) + numeric;
+    }
+  };
+
+  const walkStructure = (node: unknown) => {
+    if (!node) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(walkStructure);
+      return;
+    }
+
+    if (typeof node === 'object') {
+      const record = node as Record<string, unknown>;
+
+      if (record.choose && typeof record.choose === 'object') {
+        // Species ASIs rarely use choose mechanics; defer to explicit assignments during configuration.
+        return;
+      }
+
+      Object.entries(record).forEach(([key, value]) => {
+        if (typeof value === 'number' || typeof value === 'string') {
+          assignValue(key, value);
+        } else if (value && typeof value === 'object') {
+          if ('amount' in (value as Record<string, unknown>)) {
+            assignValue(key, value);
+          } else {
+            walkStructure(value);
+          }
+        }
+      });
+    }
+  };
+
+  if (typeof abilityData === 'object' && !Array.isArray(abilityData)) {
+    walkStructure(abilityData);
+  } else if (Array.isArray(abilityData)) {
+    abilityData.forEach(walkStructure);
+  }
+
+  return result;
+};
+
 interface Step3BSpeciesSelectionProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
@@ -214,6 +420,78 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
   const handleConfirmSelection = () => {
     if (!selectSpecies) return;
 
+    const normalizeName = (value: string) =>
+      value
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+    const collectProficiencies = (raw: unknown): string[] => {
+      const results: string[] = [];
+
+      const addValue = (value: unknown) => {
+        if (typeof value === 'string') {
+          results.push(normalizeName(value));
+        } else if (value && typeof value === 'object' && 'item' in (value as Record<string, unknown>)) {
+          const itemValue = (value as { item?: string }).item;
+          if (typeof itemValue === 'string') {
+            results.push(normalizeName(itemValue));
+          }
+        }
+      };
+
+      if (!raw) {
+        return results;
+      }
+
+      if (Array.isArray(raw)) {
+        raw.forEach(addValue);
+        return results;
+      }
+
+      if (typeof raw === 'object') {
+        const record = raw as Record<string, unknown>;
+
+        const choose = record.choose as { from?: unknown[] } | undefined;
+        if (choose && Array.isArray(choose.from)) {
+          choose.from.forEach(addValue);
+        }
+
+        Object.entries(record).forEach(([key, value]) => {
+          if (key === 'choose') return;
+
+          if (typeof value === 'boolean' && value) {
+            results.push(normalizeName(key));
+          } else if (Array.isArray(value)) {
+            value.forEach(addValue);
+          }
+        });
+      }
+
+      return results;
+    };
+
+    const speciesSkillProficiencies = collectProficiencies(selectSpecies.skillProficiencies);
+    const speciesToolProficiencies = collectProficiencies((selectSpecies as any)?.toolProficiencies);
+
+    if (selectedSkill) {
+      speciesSkillProficiencies.push(normalizeName(selectedSkill));
+    }
+
+    const uniqueSpeciesSkills = Array.from(new Set(speciesSkillProficiencies));
+    const uniqueSpeciesTools = Array.from(new Set(speciesToolProficiencies));
+
+    const speedData = extractSpeedData(selectSpecies.speed);
+    const darkvision = extractDarkvision(selectSpecies.traits);
+    const resistances = extractDamageKeywords(selectSpecies.traits, 'resistance');
+    const immunities = extractDamageKeywords(selectSpecies.traits, 'immunity');
+    const speciesAbilityScores = extractAbilityScoreMap((selectSpecies as any)?.abilityScoreIncrease);
+    const primarySize = Array.isArray(selectSpecies.size)
+      ? selectSpecies.size[0]
+      : typeof selectSpecies.size === 'string'
+        ? selectSpecies.size
+        : undefined;
+
     const updates: Partial<CharacterBuilderData> = {
       selectedSpecies: selectSpecies.name,
       isHuman: selectSpecies.name === 'Human',
@@ -226,9 +504,18 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
         ...(selectedAncestry && selectSpecies.name === 'Goliath' && { giantAncestry: selectedAncestry }),
         ...(selectedLegacy && selectSpecies.name === 'Tiefling' && { fiendishLegacy: selectedLegacy })
       },
+      speciesSkillProficiencies: uniqueSpeciesSkills,
+      speciesToolProficiencies: uniqueSpeciesTools,
       speciesTraits: selectSpecies.traits
         ? (Array.isArray(selectSpecies.traits) ? selectSpecies.traits : [selectSpecies.traits])
-        : []
+        : [],
+      speciesSpeed: speedData.base,
+      ...(speedData.additional ? { speciesAdditionalSpeeds: speedData.additional } : {}),
+      ...(darkvision ? { speciesDarkvision: darkvision } : {}),
+      ...(primarySize ? { speciesSize: normalizeName(primarySize) } : {}),
+      ...(resistances.length > 0 ? { speciesResistances: resistances.map(normalizeName) } : {}),
+      ...(immunities.length > 0 ? { speciesImmunities: immunities.map(normalizeName) } : {}),
+      ...(Object.keys(speciesAbilityScores).length > 0 ? { speciesAbilityScoreAllocations: speciesAbilityScores } : {}),
     };
 
     onUpdate(updates);

@@ -117,7 +117,7 @@ interface PreparedSpellsStepProps {
   allSpells: Spell[];
 }
 
-export const PreparedSpellsStep: React.FC<PreparedSpellsStepProps> = ({ allSpells }) => {
+export const PreparedSpellsStep = ({ allSpells }: PreparedSpellsStepProps) => {
   // Get state and actions from context
   const {
     spellbook: spellbookIds,

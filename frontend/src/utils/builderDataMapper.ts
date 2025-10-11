@@ -68,10 +68,14 @@ export const FIELD_TO_STORE_MAPPING: FieldMapping = {
   speciesSpells: { storeFn: 'updateSpecies', storeKey: 'spells' },
   speciesSize: { storeFn: 'updateSpecies', storeKey: 'size' },
   speciesSpeed: { storeFn: 'updateSpecies', storeKey: 'speed' },
+  speciesAdditionalSpeeds: { storeFn: 'updateSpecies', storeKey: 'additionalSpeeds' },
   speciesDarkvision: { storeFn: 'updateSpecies', storeKey: 'darkvision' },
   speciesResistances: { storeFn: 'updateSpecies', storeKey: 'resistances' },
   speciesImmunities: { storeFn: 'updateSpecies', storeKey: 'immunities' },
   speciesChoices: { storeFn: 'updateSpecies', storeKey: 'choices' },
+  speciesSkillProficiencies: { storeFn: 'updateSpecies', storeKey: 'skillProficiencies' },
+  speciesToolProficiencies: { storeFn: 'updateSpecies', storeKey: 'toolProficiencies' },
+  speciesAbilityScoreAllocations: { storeFn: 'updateSpecies', storeKey: 'abilityScoreAllocations' },
 
   // Feats
   selectedOriginFeats: { storeFn: 'updateFeats', storeKey: 'selectedOriginFeats' },
@@ -79,6 +83,8 @@ export const FIELD_TO_STORE_MAPPING: FieldMapping = {
   featFeatures: { storeFn: 'updateFeats', storeKey: 'featFeatures' },
   featSpells: { storeFn: 'updateFeats', storeKey: 'featSpells' },
   featChoices: { storeFn: 'updateFeats', storeKey: 'featChoices' },
+  featSkillProficiencies: { storeFn: 'updateFeats', storeKey: 'skillProficiencies' },
+  featToolProficiencies: { storeFn: 'updateFeats', storeKey: 'toolProficiencies' },
 
   // Equipment (handled specially - no individual field mapping)
   selectedEquipment: { storeFn: 'updateEquipment', storeKey: '_direct' },

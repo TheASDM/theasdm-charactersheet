@@ -231,7 +231,7 @@ const SpellRowRenderer = memo(
 
 SpellRowRenderer.displayName = 'SpellRowRenderer';
 
-export const CompactSpellList: React.FC<CompactSpellListProps> = ({
+export const CompactSpellList = ({
   spells,
   selectedSpells,
   grantedSpells,
@@ -239,7 +239,7 @@ export const CompactSpellList: React.FC<CompactSpellListProps> = ({
   onToggle,
   onViewDetails,
   normaliseId,
-}) => {
+}: CompactSpellListProps) => {
   const selectedSet = useMemo(
     () => new Set(selectedSpells.map((id) => normaliseId(id))),
     [selectedSpells, normaliseId]

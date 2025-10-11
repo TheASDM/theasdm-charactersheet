@@ -3,7 +3,7 @@
  * Eliminates prop drilling and provides shared state across wizard steps
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import type { LevelFilter, RitualFilter, ConcentrationFilter } from '@/utils/spellConstants';
 
 /**
@@ -51,9 +51,9 @@ export interface SpellWizardActions {
   goToPreviousStep: () => void;
 
   // Spell selections
-  setCantrips: React.Dispatch<React.SetStateAction<string[]>>;
-  setSpellbook: React.Dispatch<React.SetStateAction<string[]>>;
-  setPrepared: React.Dispatch<React.SetStateAction<string[]>>;
+  setCantrips: Dispatch<SetStateAction<string[]>>;
+  setSpellbook: Dispatch<SetStateAction<string[]>>;
+  setPrepared: Dispatch<SetStateAction<string[]>>;
 
   // Filters
   setSearchTerm: (term: string) => void;
@@ -97,12 +97,12 @@ export interface SpellWizardProviderProps {
 /**
  * Spell Wizard Context Provider
  */
-export const SpellWizardProvider: React.FC<SpellWizardProviderProps> = ({
+export const SpellWizardProvider = ({
   children,
   initialState,
   onStepChange,
   onSpellsChange,
-}) => {
+}: SpellWizardProviderProps) => {
   // === Step State ===
   const [currentStep, setCurrentStep] = useState<WizardStep>(
     initialState.cantripMax > 0 ? 'cantrips' : 'spellbook'

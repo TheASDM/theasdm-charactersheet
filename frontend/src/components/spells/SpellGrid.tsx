@@ -66,7 +66,7 @@ export interface SpellGridProps {
  * />
  * ```
  */
-export const SpellGrid: React.FC<SpellGridProps> = ({
+export const SpellGrid = ({
   spells,
   selectedSpells,
   grantedSpells = [],
@@ -76,7 +76,7 @@ export const SpellGrid: React.FC<SpellGridProps> = ({
   showRitualBadge = false,
   emptyMessage = 'No spells found.',
   loading = false,
-}) => {
+}: SpellGridProps) => {
   if (loading) {
     return <LoadingSpinner message="Loading spells..." />;
   }

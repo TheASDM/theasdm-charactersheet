@@ -139,7 +139,7 @@ const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'dange
   }}
 `;
 
-export const SpellCard: React.FC<SpellCardProps> = ({
+export const SpellCard = ({
   spell,
   isSelected,
   isGranted,
@@ -147,7 +147,7 @@ export const SpellCard: React.FC<SpellCardProps> = ({
   onToggle,
   onViewDetails,
   showRitualBadge = false,
-}) => {
+}: SpellCardProps) => {
   const handleToggle = () => {
     if (canSelect || isSelected) {
       onToggle(spell);

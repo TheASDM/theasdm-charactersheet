@@ -32,7 +32,7 @@ const CounterPill = styled.div<{ $invalid?: boolean }>`
   gap: 0.35rem;
 `;
 
-export const SpellCounterBar: React.FC<SpellCounterBarProps> = ({ counters }) => {
+export const SpellCounterBar = ({ counters }: SpellCounterBarProps) => {
   return (
     <CounterBar>
       {counters.map((counter, index) => (

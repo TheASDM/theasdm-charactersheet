@@ -188,6 +188,13 @@ const SkillRow = styled.div`
     transform: scale(1.1);
   }
 
+  .proficiency-marker {
+    color: #8b6914;
+    font-size: 0.7rem;
+    margin-right: 0.3rem;
+    line-height: 1;
+  }
+
   .modifier {
     margin-left: auto;
     font-weight: bold;
@@ -198,6 +205,13 @@ const SkillRow = styled.div`
 
   .skill-name {
     flex: 1;
+
+    .ability-abbr {
+      font-size: 0.75rem;
+      color: rgba(139, 105, 20, 0.5);
+      margin-left: 0.3rem;
+      font-weight: 400;
+    }
   }
 `;
 
@@ -525,6 +539,19 @@ export default function CharacterSheet({
     'Survival',
   ];
 
+  // Helper function to get ability abbreviation
+  const getAbilityAbbreviation = (ability: string): string => {
+    const abbreviations: { [key: string]: string } = {
+      'strength': 'STR',
+      'dexterity': 'DEX',
+      'constitution': 'CON',
+      'intelligence': 'INT',
+      'wisdom': 'WIS',
+      'charisma': 'CHA',
+    };
+    return abbreviations[ability] || '';
+  };
+
   return (
     <>
       <FontImport />
@@ -679,8 +706,10 @@ export default function CharacterSheet({
                   proficient: false,
                   modifier: 0,
                 };
+                const abilityKey = skillToAbility[skill];
+                const abilityAbbr = abilityKey ? getAbilityAbbreviation(abilityKey) : '';
                 return (
-                  <SkillRow key={skill}>
+                  <SkillRow key={skill} className={skillData.proficient ? 'proficient' : ''}>
                     <input
                       type="checkbox"
                       checked={skillData.proficient}
@@ -697,7 +726,10 @@ export default function CharacterSheet({
                         })
                       }
                     />
-                    <span className="skill-name">{skill}</span>
+                    {skillData.proficient && <span className="proficiency-marker">●</span>}
+                    <span className="skill-name">
+                      {skill} <span className="ability-abbr">({abilityAbbr})</span>
+                    </span>
                     <span className="modifier">
                       {formatModifier(skillData.modifier)}
                     </span>

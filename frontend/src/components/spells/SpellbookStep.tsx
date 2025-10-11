@@ -77,7 +77,7 @@ interface SpellbookStepProps {
   spells: Spell[];
 }
 
-export const SpellbookStep: React.FC<SpellbookStepProps> = ({ spells }) => {
+export const SpellbookStep = ({ spells }: SpellbookStepProps) => {
   // Get state and actions from context
   const {
     spellbook,

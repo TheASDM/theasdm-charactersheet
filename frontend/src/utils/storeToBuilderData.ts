@@ -135,6 +135,9 @@ export function storeToBuilderData(store: {
   if (species.speed !== undefined) {
     result.speciesSpeed = species.speed;
   }
+  if (species.additionalSpeeds !== undefined) {
+    result.speciesAdditionalSpeeds = species.additionalSpeeds;
+  }
   if (species.darkvision !== undefined) {
     result.speciesDarkvision = species.darkvision;
   }
@@ -147,6 +150,15 @@ export function storeToBuilderData(store: {
   if (species.choices !== undefined) {
     result.speciesChoices = species.choices;
   }
+  if (species.skillProficiencies !== undefined) {
+    result.speciesSkillProficiencies = species.skillProficiencies;
+  }
+  if (species.toolProficiencies !== undefined) {
+    result.speciesToolProficiencies = species.toolProficiencies;
+  }
+  if (species.abilityScoreAllocations !== undefined) {
+    result.speciesAbilityScoreAllocations = species.abilityScoreAllocations;
+  }
 
   // Add optional feat fields
   if (feats.featFeatures !== undefined) {
@@ -157,6 +169,12 @@ export function storeToBuilderData(store: {
   }
   if (feats.featChoices !== undefined) {
     result.featChoices = feats.featChoices;
+  }
+  if (feats.skillProficiencies !== undefined) {
+    result.featSkillProficiencies = feats.skillProficiencies;
+  }
+  if (feats.toolProficiencies !== undefined) {
+    result.featToolProficiencies = feats.toolProficiencies;
   }
 
   // Add optional resources

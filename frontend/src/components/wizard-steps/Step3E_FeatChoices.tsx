@@ -227,7 +227,22 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
       }
     };
     setFeatChoices(newFeatChoices);
-    onUpdate({ featChoices: newFeatChoices });
+    const aggregatedSkills = Object.values(newFeatChoices)
+      .flatMap((choice) => (Array.isArray((choice as any)?.skills) ? (choice as any).skills : []))
+      .filter((skill): skill is string => typeof skill === 'string' && skill.trim().length > 0);
+
+    const aggregatedTools = Object.values(newFeatChoices)
+      .flatMap((choice) => (Array.isArray((choice as any)?.tools) ? (choice as any).tools : []))
+      .filter((tool): tool is string => typeof tool === 'string' && tool.trim().length > 0);
+
+    const uniqueSkills = Array.from(new Set(aggregatedSkills));
+    const uniqueTools = Array.from(new Set(aggregatedTools));
+
+    onUpdate({
+      featChoices: newFeatChoices,
+      featSkillProficiencies: uniqueSkills,
+      featToolProficiencies: uniqueTools,
+    });
   };
 
   const renderMagicInitiateChoices = (featName: string) => {
@@ -275,70 +290,97 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
 
   const renderSkilledChoices = (featName: string) => {
     const choices = featChoices[featName] || {};
-    const selectedItems = choices.skills || [];
+    const selectedSkills: string[] = choices.skills || [];
+    const selectedTools: string[] = choices.tools || [];
+    const totalSelected = selectedSkills.length + selectedTools.length;
+
+    const isItemSelected = (itemName: string, itemType: string) =>
+      itemType === 'skill'
+        ? selectedSkills.includes(itemName)
+        : selectedTools.includes(itemName);
+
+    const toggleItem = (itemName: string, itemType: string) => {
+      if (itemType === 'skill') {
+        const currentlySelected = selectedSkills.includes(itemName);
+        const canSelect = totalSelected < 3 || currentlySelected;
+
+        if (!canSelect && !currentlySelected) return;
+
+        const nextSkills = currentlySelected
+          ? selectedSkills.filter((s) => s !== itemName)
+          : [...selectedSkills, itemName];
+
+        updateFeatChoice(featName, 'skills', nextSkills);
+      } else {
+        const currentlySelected = selectedTools.includes(itemName);
+        const canSelect = totalSelected < 3 || currentlySelected;
+
+        if (!canSelect && !currentlySelected) return;
+
+        const nextTools = currentlySelected
+          ? selectedTools.filter((t) => t !== itemName)
+          : [...selectedTools, itemName];
+
+        updateFeatChoice(featName, 'tools', nextTools);
+      }
+    };
 
     return (
       <div className="choice-section">
         <div className="section-title">Choose Skills or Tools</div>
         <div className="section-description">
-          Select any combination of 3 skills or tools. Selected: {selectedItems.length}/3
+          Select any combination of 3 skills or tools. Selected: {totalSelected}/3
         </div>
         <ChoiceGrid>
           {SKILLS_AND_TOOLS.map((item) => {
-            const isSelected = selectedItems.includes(item.name);
-            const canSelect = selectedItems.length < 3 || isSelected;
+            const isSelected = isItemSelected(item.name, item.type);
+            const canSelect = totalSelected < 3 || isSelected;
 
             return (
               <ChoiceCard
                 key={item.name}
                 selected={isSelected}
-                onClick={() => {
-                  if (isSelected) {
-                    // Remove item
-                    const newItems = selectedItems.filter((s: string) => s !== item.name);
-                    updateFeatChoice(featName, 'skills', newItems);
-                  } else if (canSelect) {
-                    // Add item
-                    const newItems = [...selectedItems, item.name];
-                    updateFeatChoice(featName, 'skills', newItems);
-                  }
-                }}
+                onClick={() => toggleItem(item.name, item.type)}
                 style={{
                   opacity: canSelect ? 1 : 0.5,
                   cursor: canSelect ? 'pointer' : 'not-allowed'
                 }}
               >
                 <ChoiceName>{item.name}</ChoiceName>
-                <div style={{
-                  color: '#888',
-                  fontSize: '0.7rem',
-                  textAlign: 'center',
-                  marginTop: '0.25rem',
-                  textTransform: 'capitalize'
-                }}>
+                <div
+                  style={{
+                    color: '#888',
+                    fontSize: '0.7rem',
+                    textAlign: 'center',
+                    marginTop: '0.25rem',
+                    textTransform: 'capitalize'
+                  }}
+                >
                   {item.type}
                 </div>
               </ChoiceCard>
-            )}
-          )}
+            );
+          })}
         </ChoiceGrid>
 
-        {selectedItems.length > 0 && (
+        {totalSelected > 0 && (
           <SelectionSummary>
             <div className="summary-title">Selected Skills/Tools</div>
             <div className="summary-text">
-              {selectedItems.join(', ')}
+              {[...selectedSkills, ...selectedTools].join(', ')}
             </div>
           </SelectionSummary>
         )}
 
-        {selectedItems.length !== 3 && (
-          <div style={{
-            textAlign: 'center',
-            color: '#ff6b6b',
-            marginTop: '1rem',
-            fontSize: '0.9rem'
-          }}>
+        {totalSelected !== 3 && (
+          <div
+            style={{
+              textAlign: 'center',
+              color: '#ff6b6b',
+              marginTop: '1rem',
+              fontSize: '0.9rem'
+            }}
+          >
             ⚠️ Please select exactly 3 skills or tools.
           </div>
         )}
@@ -500,8 +542,11 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
       switch (featName) {
         case 'Magic Initiate':
           return !!choices.spellClass;
-        case 'Skilled':
-          return choices.skills?.length === 3;
+        case 'Skilled': {
+          const skillCount = choices.skills?.length ?? 0;
+          const toolCount = choices.tools?.length ?? 0;
+          return skillCount + toolCount === 3;
+        }
         case 'Crafter':
           return choices.tools?.length === 3;
         case 'Musician':

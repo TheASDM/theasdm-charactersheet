@@ -288,6 +288,22 @@ const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate })
   const handleConfirmSelection = () => {
     if (!selectFeat) return;
 
+    // Aggregate all skill proficiencies from this feat and existing feats
+    const existingFeatSkills = data.featSkillProficiencies || [];
+    const newSkillsFromThisFeat = selectedSkills.filter(skill =>
+      ALL_SKILLS.includes(skill)
+    );
+    const allFeatSkills = [...existingFeatSkills, ...newSkillsFromThisFeat];
+
+    // Aggregate all tool proficiencies from this feat and existing feats
+    const existingFeatTools = data.featToolProficiencies || [];
+    const newToolsFromThisFeat = [
+      ...selectedTools,
+      ...selectedInstruments,
+      ...selectedSkills.filter(skill => !ALL_SKILLS.includes(skill)) // Tools from "Skilled" feat
+    ];
+    const allFeatTools = [...existingFeatTools, ...newToolsFromThisFeat];
+
     onUpdate({
       selectedOriginFeats: [...data.selectedOriginFeats, selectFeat.name],
       featChoices: {
@@ -303,7 +319,9 @@ const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate })
       featFeatures: {
         ...data.featFeatures,
         [selectFeat.name]: selectFeat.entries || []
-      }
+      },
+      featSkillProficiencies: allFeatSkills,
+      featToolProficiencies: allFeatTools
     });
 
     setSelectFeat(null);

@@ -246,6 +246,64 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   const handleConfirmSelection = () => {
     if (!selectBackground) return;
 
+    const normalizeSkill = (skill: string) =>
+      skill
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+    const extractBackgroundSkills = (): string[] => {
+      const result: string[] = [];
+      const skillData = selectBackground.skillProficiencies as unknown;
+
+      const addSkill = (value: unknown) => {
+        if (!value) return;
+        if (typeof value === 'string') {
+          result.push(normalizeSkill(value));
+        } else if (typeof value === 'object' && 'item' in (value as Record<string, unknown>)) {
+          const itemValue = (value as { item?: string }).item;
+          if (typeof itemValue === 'string') {
+            result.push(normalizeSkill(itemValue));
+          }
+        }
+      };
+
+      if (!skillData) {
+        return result;
+      }
+
+      if (Array.isArray(skillData)) {
+        skillData.forEach(addSkill);
+        return result;
+      }
+
+      if (typeof skillData === 'object') {
+        const record = skillData as Record<string, unknown>;
+
+        if (record.choose && typeof record.choose === 'object') {
+          const choose = record.choose as { from?: unknown[] };
+          if (Array.isArray(choose.from)) {
+            choose.from.forEach(addSkill);
+          }
+        }
+
+        Object.entries(record).forEach(([key, value]) => {
+          if (key === 'choose') return;
+
+          if (typeof value === 'boolean' && value) {
+            result.push(normalizeSkill(key));
+          } else if (Array.isArray(value)) {
+            value.forEach(addSkill);
+          }
+        });
+      }
+
+      return result;
+    };
+
+    const backgroundSkills = extractBackgroundSkills();
+    const uniqueBackgroundSkills = Array.from(new Set(backgroundSkills));
+
     // Update with selected background data
     onUpdate({
       selectedBackground: selectBackground.name,
@@ -255,6 +313,7 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
       backgroundFeatures: selectBackground.feature
         ? (Array.isArray(selectBackground.feature) ? selectBackground.feature : [selectBackground.feature])
         : [],
+      backgroundSkillProficiencies: uniqueBackgroundSkills,
     });
 
     setSelectBackground(null);

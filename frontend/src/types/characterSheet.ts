@@ -48,9 +48,13 @@ export interface CharacterSheetData {
   species: string;
   subclass: string;
   level: number;
+  equippedItemIds: string[];
 
   // Species choices from character generator
   speciesChoices?: { [key: string]: string };
+  speciesAdditionalSpeeds?: Record<string, number>;
+  speciesResistances?: string[];
+  speciesImmunities?: string[];
 
   // Background data from character generator
   backgroundFeatures?: any[];
@@ -80,6 +84,9 @@ export interface CharacterSheetData {
   spellbook?: {
     known: string[];
     prepared?: string[];
+    cantrips?: string[];
+    wizardSpellbook?: string[];
+    grantedSpells?: string[];
   };
 
   // Weapon Mastery tracking
@@ -237,6 +244,10 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
   species: '',
   subclass: '',
   level: 1,
+  equippedItemIds: [],
+  speciesAdditionalSpeeds: {},
+  speciesResistances: [],
+  speciesImmunities: [],
   xp: 0,
   abilityScores: {
     strength: 10,

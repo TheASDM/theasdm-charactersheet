@@ -9,56 +9,203 @@ import {
   parseBackgroundFeatures
 } from './featureParser';
 import { parseDnDTemplateTag } from './dndTemplateParser';
-import { EquipmentValidator } from './equipmentValidator';
 import { getAllQualifiedFeatureVariants } from '../services/featureVariantsService';
 import { renderFeature, createCharacterContext } from './featureTemplateRenderer';
+import { deriveGrantedSpells } from '../helpers/deriveGrantedSpells';
+
+/**
+ * Parse item name and quantity from strings like "Handaxes (4)" or "Rope"
+ * @returns { name: string, quantity: number }
+ */
+function parseItemNameAndQuantity(itemString: string): { name: string; quantity: number } {
+  // Match pattern: "Item Name (number)" where number is in parentheses at the end
+  const match = itemString.match(/^(.+?)\s*\((\d+)\)$/);
+
+  if (match) {
+    return {
+      name: match[1].trim(),
+      quantity: parseInt(match[2], 10)
+    };
+  }
+
+  // No quantity found, default to 1
+  return {
+    name: itemString.trim(),
+    quantity: 1
+  };
+}
+
+type ArmorDefinition = {
+  pattern: string;
+  baseAC: number;
+  maxDexBonus: number | null;
+};
+
+const ARMOR_DEFINITIONS: ArmorDefinition[] = [
+  { pattern: 'padded armor', baseAC: 11, maxDexBonus: null },
+  { pattern: 'leather armor', baseAC: 11, maxDexBonus: null },
+  { pattern: 'studded leather', baseAC: 12, maxDexBonus: null },
+  { pattern: 'hide armor', baseAC: 12, maxDexBonus: 2 },
+  { pattern: 'chain shirt', baseAC: 13, maxDexBonus: 2 },
+  { pattern: 'scale mail', baseAC: 14, maxDexBonus: 2 },
+  { pattern: 'breastplate', baseAC: 14, maxDexBonus: 2 },
+  { pattern: 'half plate', baseAC: 15, maxDexBonus: 2 },
+  { pattern: 'ring mail', baseAC: 14, maxDexBonus: 0 },
+  { pattern: 'chain mail', baseAC: 16, maxDexBonus: 0 },
+  { pattern: 'splint', baseAC: 17, maxDexBonus: 0 },
+  { pattern: 'plate', baseAC: 18, maxDexBonus: 0 },
+];
+
+type WeaponDefinition = {
+  damage: string;
+  properties: string[];
+  ability: 'strength' | 'dexterity';
+  category: 'simple' | 'martial';
+};
+
+const WEAPON_DATA: Record<string, WeaponDefinition> = {
+  'Dagger': { damage: '1d4', properties: ['finesse', 'light', 'thrown'], ability: 'dexterity', category: 'simple' },
+  'Shortsword': { damage: '1d6', properties: ['finesse', 'light'], ability: 'dexterity', category: 'martial' },
+  'Longsword': { damage: '1d8', properties: ['versatile'], ability: 'strength', category: 'martial' },
+  'Rapier': { damage: '1d8', properties: ['finesse'], ability: 'dexterity', category: 'martial' },
+  'Scimitar': { damage: '1d6', properties: ['finesse', 'light'], ability: 'dexterity', category: 'martial' },
+  'Handaxe': { damage: '1d6', properties: ['light', 'thrown'], ability: 'strength', category: 'simple' },
+  'Handaxes': { damage: '1d6', properties: ['light', 'thrown'], ability: 'strength', category: 'simple' }, // plural fallback
+  'Javelin': { damage: '1d6', properties: ['thrown'], ability: 'strength', category: 'simple' },
+  'Spear': { damage: '1d6', properties: ['thrown', 'versatile'], ability: 'strength', category: 'simple' },
+  'Mace': { damage: '1d6', properties: [], ability: 'strength', category: 'simple' },
+  'Club': { damage: '1d4', properties: ['light'], ability: 'strength', category: 'simple' },
+  'Greatclub': { damage: '1d8', properties: ['two-handed'], ability: 'strength', category: 'simple' },
+  'Greataxe': { damage: '1d12', properties: ['heavy', 'two-handed'], ability: 'strength', category: 'martial' },
+  'Greatsword': { damage: '2d6', properties: ['heavy', 'two-handed'], ability: 'strength', category: 'martial' },
+  'Maul': { damage: '2d6', properties: ['heavy', 'two-handed'], ability: 'strength', category: 'martial' },
+  'Quarterstaff': { damage: '1d6', properties: ['versatile'], ability: 'strength', category: 'simple' },
+  'Light Crossbow': { damage: '1d8', properties: ['ammunition', 'loading', 'two-handed'], ability: 'dexterity', category: 'simple' },
+  'Heavy Crossbow': { damage: '1d10', properties: ['ammunition', 'heavy', 'loading', 'two-handed'], ability: 'dexterity', category: 'martial' },
+  'Shortbow': { damage: '1d6', properties: ['ammunition', 'two-handed'], ability: 'dexterity', category: 'simple' },
+  'Longbow': { damage: '1d8', properties: ['ammunition', 'heavy', 'two-handed'], ability: 'dexterity', category: 'martial' },
+};
+
+const shieldPatterns = ['shield'];
+
+const ABILITY_KEY_MAP: Record<string, keyof CharacterBuilderData['abilityScores']> = {
+  str: 'strength',
+  strength: 'strength',
+  dex: 'dexterity',
+  dexterity: 'dexterity',
+  con: 'constitution',
+  constitution: 'constitution',
+  int: 'intelligence',
+  intelligence: 'intelligence',
+  wis: 'wisdom',
+  wisdom: 'wisdom',
+  cha: 'charisma',
+  charisma: 'charisma',
+};
+
+const normaliseAbilityKeyForTotals = (value: string): keyof CharacterBuilderData['abilityScores'] | null => {
+  return ABILITY_KEY_MAP[value.toLowerCase()] ?? null;
+};
+
+const normaliseItemLabel = (value: string): string =>
+  value.replace(/\|.*/g, '') // drop source suffix like "|xphb"
+    .replace(/[^a-z0-9]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const findArmorDefinition = (itemName: string): ArmorDefinition | undefined => {
+  const label = normaliseItemLabel(itemName);
+  return ARMOR_DEFINITIONS.find((definition) => label.includes(definition.pattern));
+};
+
+const looksLikeShield = (itemName: string): boolean => {
+  const label = normaliseItemLabel(itemName);
+  return shieldPatterns.some((pattern) => label.includes(pattern));
+};
+
+const findWeaponDefinition = (
+  itemName: string
+): { key: string; definition: WeaponDefinition } | null => {
+  const label = normaliseItemLabel(itemName);
+  for (const [key, definition] of Object.entries(WEAPON_DATA)) {
+    if (label.includes(key.toLowerCase())) {
+      return { key, definition };
+    }
+  }
+  return null;
+};
+
+function calculateArmorClassFromEquipment(
+  abilityScores: CharacterSheetData['abilityScores'],
+  equippedArmor?: InventoryItem,
+  equippedShield?: InventoryItem
+): number {
+  const dexModifier = calculateModifier(abilityScores.dexterity);
+  let baseAC = 10 + dexModifier;
+
+  if (equippedArmor) {
+    const definition = findArmorDefinition(equippedArmor.name);
+    if (definition) {
+      const dexContribution =
+        definition.maxDexBonus === null
+          ? dexModifier
+          : Math.min(dexModifier, definition.maxDexBonus);
+      baseAC = definition.baseAC + dexContribution;
+    }
+  }
+
+  if (equippedShield && looksLikeShield(equippedShield.name)) {
+    baseAC += 2;
+  }
+
+  return baseAC;
+}
+
+const formatItemName = (raw: string): string => {
+  const cleaned = raw.replace(/_/g, ' ').trim();
+  if (/^\d/.test(cleaned)) {
+    return cleaned;
+  }
+  return titleCase(cleaned);
+};
+
 
 /**
  * Maps CharacterBuilderData from the generator to CharacterSheetData for the character sheet
  */
 export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderData): CharacterSheetData {
-  // Calculate final ability scores (base + background bonuses)
   const finalAbilityScores = calculateFinalAbilityScores(builderData);
 
-  // Calculate derived stats
-  const proficiencyBonus = calculateProficiencyBonus(1); // Level 1 characters
+  const proficiencyBonus = calculateProficiencyBonus(1);
   const constitutionModifier = calculateModifier(finalAbilityScores.constitution);
   const dexterityModifier = calculateModifier(finalAbilityScores.dexterity);
   const wisdomModifier = calculateModifier(finalAbilityScores.wisdom);
 
-  // Calculate hit points based on class hit dice + con modifier
   const classHitDie = getClassHitDie(builderData.selectedClass);
   const baseHitPoints = classHitDie + constitutionModifier;
-  const hitPoints = Math.max(1, baseHitPoints); // Minimum 1 HP
+  const hitPoints = Math.max(1, baseHitPoints);
 
-  // Map skills from class and background proficiencies
   const skills = mapSkillProficiencies(builderData, finalAbilityScores, proficiencyBonus);
-
-  // Map saving throws from class proficiencies
   const savingThrows = mapSavingThrows(builderData, finalAbilityScores, proficiencyBonus);
 
-  // Combine all equipment sources
   const equipment = combineEquipment(builderData);
-  const inventory = equipment.map((item, index) => ({
-    id: `char-gen-${index}`,
-    name: item,
-    quantity: 1,
-    equipped: false,
-    attuned: false
-  }));
+  const inventory = buildInventoryFromEquipment(equipment);
+  const equippedItemIds: string[] = [];
 
-  // Determine which items should be equipped automatically
-  const { equippedArmor, equippedShield, equippedWeapons } = autoEquipItems(inventory);
-
-  // Extract weapons from equipment and map to weapon actions
-  const weapons = mapEquipmentToWeapons(equipment, finalAbilityScores, proficiencyBonus, builderData);
+  const weapons = mapInventoryToWeapons(inventory, finalAbilityScores, proficiencyBonus, builderData);
   const weaponActions = mapWeaponsToActions(weapons);
 
+  const equippedLookup = new Set(equippedItemIds);
+  inventory.forEach((item) => {
+    item.equipped = equippedLookup.has(item.id);
+  });
 
-  // Extract and parse structured features
+  const equipmentDerived = deriveEquipmentValues(finalAbilityScores, inventory, equippedItemIds);
+  const armorClass = equipmentDerived.armorClass;
+
   const structuredFeatures = extractStructuredFeatures(builderData);
 
-  // Create character context for template resolution during character creation
   const characterContext = createCharacterContext({
     ...builderData,
     level: 1,
@@ -90,69 +237,66 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   const legacySpeciesTraits = extractSpeciesTraits(builderData);
   const legacyFeats = builderData.selectedOriginFeats || [];
 
-
-  // Map all proficiencies
   const proficiencies = {
     armor: builderData.classProficiencies?.armor || [],
     weapons: builderData.classProficiencies?.weapons || [],
     tools: [
       ...(builderData.classProficiencies?.tools || []),
-      ...(builderData.backgroundToolProficiencies || [])
+      ...(builderData.backgroundToolProficiencies || []),
+      ...(builderData.speciesToolProficiencies || []),
+      ...(builderData.featToolProficiencies || [])
     ],
-    skills: [
+    skills: Array.from(new Set([
       ...(builderData.selectedClassSkills || []),
-      ...(builderData.backgroundSkillProficiencies || [])
-    ],
+      ...(builderData.backgroundSkillProficiencies || []),
+      ...(builderData.speciesSkillProficiencies || []),
+      ...(builderData.featSkillProficiencies || []),
+    ])),
     savingThrows: builderData.classProficiencies?.savingThrows || []
   };
 
-  // Calculate AC based on equipped armor and shield
-  const armorClass = EquipmentValidator.calculateArmorClass({
-    abilityScores: finalAbilityScores,
-    equippedArmor,
-    equippedShield
-  } as any); // Cast to avoid full CharacterSheetData type requirement
-
-  // Calculate initiative
   const initiative = dexterityModifier;
-
-  // Calculate passive perception
-  const perceptionModifier = skills['Perception']?.modifier || wisdomModifier;
+  const perceptionModifier = skills['Perception']?.modifier ?? wisdomModifier;
   const passivePerception = 10 + perceptionModifier;
 
-  // Get species size and speed
   const size = builderData.speciesSize || 'Medium';
   const speed = builderData.speciesSpeed || 30;
 
-  return {
+  const spellbook = {
+    known: [...(builderData.spellbook?.known ?? [])],
+    ...(builderData.spellbook?.prepared ? { prepared: [...builderData.spellbook.prepared] } : {}),
+    ...(builderData.spellbook?.cantrips ? { cantrips: [...builderData.spellbook.cantrips] } : {}),
+    ...(builderData.spellbook?.wizardSpellbook ? { wizardSpellbook: [...builderData.spellbook.wizardSpellbook] } : {}),
+  };
+
+  const characterData: CharacterSheetData = {
     name: builderData.characterName || 'Unnamed Character',
     background: builderData.selectedBackground || '',
     class: builderData.selectedClass || '',
     species: builderData.selectedSpecies || '',
     speciesChoices: builderData.speciesChoices || {},
+    speciesAdditionalSpeeds: builderData.speciesAdditionalSpeeds ?? {},
+    speciesResistances: builderData.speciesResistances || [],
+    speciesImmunities: builderData.speciesImmunities || [],
 
-    // Background data from wizard
     backgroundFeatures: builderData.backgroundFeatures || [],
     backgroundEquipment: builderData.backgroundStartingEquipment || [],
     selectedLanguages: builderData.selectedLanguages || [],
 
-    // Feat data from wizard
     selectedOriginFeats: builderData.selectedOriginFeats || [],
     featFeatures: builderData.featFeatures || {},
     featSpells: builderData.featSpells || {},
     featChoices: builderData.featChoices || {},
 
-    // Class choices from wizard (legacy format, deprecated)
     classChoices: {
       fightingStyle: builderData.selectedClassChoices?.['fighting-style-1']?.[0] ||
                      builderData.selectedClassChoices?.['fighting-style-2']?.[0] ||
                      undefined,
     },
 
-    // New class choices system - pass through as-is
     selectedClassChoices: builderData.selectedClassChoices || {},
 
-    subclass: '', // Subclass comes at level 3
+    subclass: '',
     level: 1,
     xp: 0,
     abilityScores: finalAbilityScores,
@@ -179,10 +323,7 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     },
     heroicInspiration: false,
     wounds: 0,
-    spellbook: {
-      known: [...(builderData.spellbook?.known ?? [])],
-      ...(builderData.spellbook?.prepared ? { prepared: [...builderData.spellbook.prepared] } : {}),
-    },
+    spellbook,
     mana: {
       current: builderData.resources?.manaCurrent ?? 0,
       max: builderData.resources?.manaMax ?? 0,
@@ -191,25 +332,21 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     inventory,
     equipment,
 
-    // Equipment constraints
     equipmentConstraints: {
       maxArmor: 1,
       maxShields: 1,
       maxAttunedItems: 3,
     },
 
-    // Equipped items tracking with auto-equipped items
-    ...(equippedArmor && { equippedArmor }),
-    ...(equippedShield && { equippedShield }),
-    equippedWeapons,
+    ...(equipmentDerived.equippedArmor ? { equippedArmor: equipmentDerived.equippedArmor } : {}),
+    ...(equipmentDerived.equippedShield ? { equippedShield: equipmentDerived.equippedShield } : {}),
+    equippedWeapons: equipmentDerived.equippedWeapons,
     attunedItems: [],
     skills,
     savingThrows,
 
-    // New structured features system
     features: structuredFeatures,
 
-    // Legacy support - can be removed after migration
     classFeatures: legacyClassFeatures,
     speciesTraits: legacySpeciesTraits,
     feats: legacyFeats,
@@ -217,7 +354,21 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     weapons,
     actions: weaponActions,
     proficiencies,
+    equippedItemIds,
   };
+
+  const grantedSpells = deriveGrantedSpells({ characterData } as any);
+  if (grantedSpells.length > 0) {
+    characterData.spellbook = {
+      known: characterData.spellbook?.known ?? [],
+      ...(characterData.spellbook?.prepared ? { prepared: characterData.spellbook.prepared } : {}),
+      ...(characterData.spellbook?.cantrips ? { cantrips: characterData.spellbook.cantrips } : {}),
+      ...(characterData.spellbook?.wizardSpellbook ? { wizardSpellbook: characterData.spellbook.wizardSpellbook } : {}),
+      grantedSpells: Array.from(new Set(grantedSpells.map((id) => String(id)))),
+    };
+  }
+
+  return characterData;
 }
 
 /**
@@ -287,17 +438,78 @@ function extractStructuredFeatures(builderData: CharacterBuilderData): Character
 /**
  * Calculate final ability scores including background bonuses
  */
+type AbilityScoreTotals = Record<keyof CharacterBuilderData['abilityScores'], number>;
+
+const createAbilityTotals = (): AbilityScoreTotals => ({
+  strength: 0,
+  dexterity: 0,
+  constitution: 0,
+  intelligence: 0,
+  wisdom: 0,
+  charisma: 0,
+});
+
+const extractNumericValue = (value: unknown): number | null => {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  if (value && typeof value === 'object' && 'amount' in (value as Record<string, unknown>)) {
+    const amount = (value as Record<string, unknown>).amount;
+    return extractNumericValue(amount);
+  }
+
+  return null;
+};
+
+const applyAbilityScoreAllocations = (
+  totals: AbilityScoreTotals,
+  allocations?: Record<string, unknown>
+) => {
+  if (!allocations) {
+    return;
+  }
+
+  Object.entries(allocations).forEach(([key, value]) => {
+    const abilityKey = normaliseAbilityKeyForTotals(key);
+    if (!abilityKey) {
+      return;
+    }
+
+    const numericValue = extractNumericValue(value);
+    if (numericValue && !Number.isNaN(numericValue)) {
+      totals[abilityKey] += numericValue;
+    }
+  });
+};
+
 function calculateFinalAbilityScores(builderData: CharacterBuilderData) {
   const base = builderData.abilityScores;
-  const bonuses = builderData.backgroundAbilityScoreAllocations || {};
+  const bonusTotals = createAbilityTotals();
+
+  applyAbilityScoreAllocations(bonusTotals, builderData.backgroundAbilityScoreAllocations);
+  applyAbilityScoreAllocations(bonusTotals, builderData.speciesAbilityScoreAllocations);
+
+  if (builderData.featChoices) {
+    Object.values(builderData.featChoices).forEach((choice) => {
+      if (choice && typeof choice === 'object' && 'abilityScores' in choice) {
+        applyAbilityScoreAllocations(bonusTotals, (choice as { abilityScores?: Record<string, unknown> }).abilityScores);
+      }
+    });
+  }
 
   return {
-    strength: base.strength + (bonuses.strength || bonuses.str || 0),
-    dexterity: base.dexterity + (bonuses.dexterity || bonuses.dex || 0),
-    constitution: base.constitution + (bonuses.constitution || bonuses.con || 0),
-    intelligence: base.intelligence + (bonuses.intelligence || bonuses.int || 0),
-    wisdom: base.wisdom + (bonuses.wisdom || bonuses.wis || 0),
-    charisma: base.charisma + (bonuses.charisma || bonuses.cha || 0),
+    strength: base.strength + bonusTotals.strength,
+    dexterity: base.dexterity + bonusTotals.dexterity,
+    constitution: base.constitution + bonusTotals.constitution,
+    intelligence: base.intelligence + bonusTotals.intelligence,
+    wisdom: base.wisdom + bonusTotals.wisdom,
+    charisma: base.charisma + bonusTotals.charisma,
   };
 }
 
@@ -348,10 +560,12 @@ function mapSkillProficiencies(builderData: CharacterBuilderData, abilityScores:
     'Survival': 'wisdom',
   };
 
-  const allProficientSkills = [
+  const allProficientSkills = Array.from(new Set([
     ...(builderData.selectedClassSkills || []),
-    ...(builderData.backgroundSkillProficiencies || [])
-  ];
+    ...(builderData.backgroundSkillProficiencies || []),
+    ...(builderData.speciesSkillProficiencies || []),
+    ...(builderData.featSkillProficiencies || []),
+  ]));
 
   const skills: { [key: string]: { proficient: boolean; modifier: number } } = {};
 
@@ -375,9 +589,10 @@ function mapSkillProficiencies(builderData: CharacterBuilderData, abilityScores:
 function mapSavingThrows(builderData: CharacterBuilderData, abilityScores: any, proficiencyBonus: number) {
   const savingThrows: { [key: string]: { proficient: boolean; modifier: number } } = {};
   const proficientSaves = builderData.classProficiencies?.savingThrows || [];
+  const normalizedSaves = proficientSaves.map((save) => save.toLowerCase());
 
   Object.entries(abilityScores).forEach(([ability, score]) => {
-    const isProficient = proficientSaves.includes(ability);
+    const isProficient = normalizedSaves.includes(ability.toLowerCase());
     const abilityModifier = calculateModifier(score as number);
     const modifier = isProficient ? abilityModifier + proficiencyBonus : abilityModifier;
 
@@ -401,69 +616,77 @@ function titleCase(str: string): string {
 }
 
 /**
- * Extract equipment items from the nested JSONB structure or simple choice objects
- * Handles formats:
- * - [{ type: "direct", item: { A: [...], B: [...] } }] (from backgrounds API)
- * - [{ A: [...], B: [...] }] (from CLASS_STARTING_EQUIPMENT constant)
- * - ["string"] (simple strings)
- * Always uses Option A (equipment) instead of Option B (gold)
+ * Extract equipment items from mixed background/class data.
  */
-function extractEquipmentItems(equipmentArray: any[]): string[] {
+function extractEquipmentItems(source: any): string[] {
   const items: string[] = [];
 
-  if (!Array.isArray(equipmentArray)) {
-    return items;
-  }
+  const processEntry = (entry: any) => {
+    if (!entry) return;
 
-  equipmentArray.forEach(entry => {
-    // Handle simple strings
     if (typeof entry === 'string') {
-      items.push(entry);
+      items.push(formatItemName(entry));
       return;
     }
 
-    if (!entry || typeof entry !== 'object') {
-      return;
-    }
-
-    // Handle nested arrays (shouldn't happen but just in case)
     if (Array.isArray(entry)) {
-      const nestedItems = extractEquipmentItems(entry);
-      items.push(...nestedItems);
+      entry.forEach(processEntry);
       return;
     }
 
-    // Handle format from CLASS_STARTING_EQUIPMENT: { A: [...], B: [...] }
-    if (entry.A && Array.isArray(entry.A) && !entry.type) {
-      entry.A.forEach((item: any) => {
-        if (typeof item === 'string') {
-          items.push(item);
-        }
-      });
+    if (typeof entry !== 'object') {
       return;
     }
 
-    // Handle API format from backgrounds: { type: "direct", item: { A: [...], B: [...] } }
-    if (entry.type === 'direct' && entry.item && typeof entry.item === 'object') {
-      const choices = entry.item;
+    const record = entry as Record<string, unknown>;
 
-      // Only use Option A (equipment choice, not gold)
-      if (choices.A && Array.isArray(choices.A)) {
-        choices.A.forEach((subItem: any) => {
+    if (record.A && Array.isArray(record.A) && !record.type) {
+      processEntry(record.A);
+      return;
+    }
+
+    if (record.type === 'direct' && record.item && typeof record.item === 'object') {
+      const choices = record.item as Record<string, unknown>;
+      if (Array.isArray(choices.A)) {
+        choices.A.forEach((subItem) => {
           if (typeof subItem === 'string') {
-            items.push(titleCase(subItem));
-          } else if (subItem && typeof subItem === 'object') {
-            if ('item' in subItem && typeof subItem.item === 'string') {
-              // Extract item name and remove source tag (e.g., "spear|xphb" -> "spear")
-              const itemName = subItem.item.split('|')[0];
-              items.push(titleCase(itemName));
+            items.push(formatItemName(subItem));
+          } else if (subItem && typeof subItem === 'object' && 'item' in subItem) {
+            const itemValue = (subItem as { item?: string }).item;
+            if (typeof itemValue === 'string') {
+              items.push(formatItemName(itemValue));
             }
-            // Skip gold values - we want equipment, not gold
           }
         });
       }
+      return;
     }
-  });
+
+    Object.entries(record).forEach(([key, value]) => {
+      if (key === 'choose') {
+        return;
+      }
+
+      if (typeof value === 'number') {
+        if (key.toLowerCase().includes('gold')) {
+          items.push(`${value} gp`);
+        } else {
+          const formatted = formatItemName(key);
+          items.push(value > 1 ? `${formatted} (${value})` : formatted);
+        }
+        return;
+      }
+
+      if (typeof value === 'string') {
+        items.push(formatItemName(value));
+        return;
+      }
+
+      processEntry(value);
+    });
+  };
+
+  processEntry(source);
 
   return items;
 }
@@ -474,35 +697,157 @@ function extractEquipmentItems(equipmentArray: any[]): string[] {
 function combineEquipment(builderData: CharacterBuilderData): string[] {
   const equipment: string[] = [];
 
-  // Class starting equipment (if any - currently not populated)
-  if (builderData.classStartingEquipment && Array.isArray(builderData.classStartingEquipment)) {
+  if (builderData.classStartingEquipment) {
     const classEquipment = extractEquipmentItems(builderData.classStartingEquipment);
     equipment.push(...classEquipment);
   }
 
-  // Background starting equipment (primary source)
-  if (builderData.backgroundStartingEquipment && Array.isArray(builderData.backgroundStartingEquipment)) {
+  if (builderData.backgroundStartingEquipment) {
     const backgroundEquipment = extractEquipmentItems(builderData.backgroundStartingEquipment);
     equipment.push(...backgroundEquipment);
   }
 
-  // Selected equipment from step 4 (currently removed from wizard)
   if (builderData.selectedEquipment) {
     if (builderData.selectedEquipment.armor) {
-      equipment.push(builderData.selectedEquipment.armor);
+      equipment.push(formatItemName(builderData.selectedEquipment.armor));
     }
     if (builderData.selectedEquipment.weapons && Array.isArray(builderData.selectedEquipment.weapons)) {
-      equipment.push(...builderData.selectedEquipment.weapons.filter(Boolean));
+      builderData.selectedEquipment.weapons
+        .filter(Boolean)
+        .forEach((weapon) => equipment.push(formatItemName(weapon)));
     }
     if (builderData.selectedEquipment.shield) {
-      equipment.push(builderData.selectedEquipment.shield);
+      equipment.push(formatItemName(builderData.selectedEquipment.shield));
     }
     if (builderData.selectedEquipment.equipment && Array.isArray(builderData.selectedEquipment.equipment)) {
-      equipment.push(...builderData.selectedEquipment.equipment.filter(Boolean));
+      builderData.selectedEquipment.equipment
+        .filter(Boolean)
+        .forEach((item) => equipment.push(formatItemName(item)));
     }
   }
 
   return equipment.filter(Boolean); // Remove any undefined/null values
+}
+
+function buildInventoryFromEquipment(equipment: string[]): InventoryItem[] {
+  return equipment.map((item, index) => {
+    const { name, quantity } = parseItemNameAndQuantity(item);
+    const formattedName = formatItemName(name);
+    return {
+      id: `char-gen-${index}`,
+      name: formattedName,
+      quantity,
+      equipped: false,
+      attuned: false,
+    };
+  });
+}
+
+function deriveEquipmentValues(
+  abilityScores: CharacterSheetData['abilityScores'],
+  inventory: InventoryItem[],
+  equippedItemIds: string[]
+): {
+  armorClass: number;
+  equippedArmor?: InventoryItem;
+  equippedShield?: InventoryItem;
+  equippedWeapons: InventoryItem[];
+} {
+  if (!equippedItemIds || equippedItemIds.length === 0) {
+    return {
+      armorClass: calculateArmorClassFromEquipment(abilityScores),
+      equippedWeapons: [],
+    };
+  }
+
+  const itemsById = new Map(inventory.map((item) => [item.id, item]));
+  let equippedArmor: InventoryItem | undefined;
+  let equippedShield: InventoryItem | undefined;
+  const equippedWeapons: InventoryItem[] = [];
+
+  equippedItemIds.forEach((id) => {
+    const item = itemsById.get(id);
+    if (!item) {
+      return;
+    }
+
+    if (!equippedArmor && findArmorDefinition(item.name)) {
+      equippedArmor = item;
+      return;
+    }
+
+    if (!equippedShield && looksLikeShield(item.name)) {
+      equippedShield = item;
+      return;
+    }
+
+    const weaponMatch = findWeaponDefinition(item.name);
+    if (weaponMatch) {
+      equippedWeapons.push(item);
+    }
+  });
+
+  const armorClass = calculateArmorClassFromEquipment(abilityScores, equippedArmor, equippedShield);
+
+  return {
+    armorClass,
+    ...(equippedArmor ? { equippedArmor } : {}),
+    ...(equippedShield ? { equippedShield } : {}),
+    equippedWeapons,
+  };
+}
+
+function mapInventoryToWeapons(
+  inventory: InventoryItem[],
+  abilityScores: CharacterSheetData['abilityScores'],
+  proficiencyBonus: number,
+  builderData: CharacterBuilderData
+) {
+  const weaponProficiencies = (builderData.classProficiencies?.weapons || []).map((prof) => prof.toLowerCase());
+  const summaries = new Map<string, { name: string; atkBonus: string; damage: string; notes: string }>();
+
+  inventory.forEach((item) => {
+    const match = findWeaponDefinition(item.name);
+    if (!match) {
+      return;
+    }
+
+    const abilityModifier = calculateModifier(abilityScores[match.definition.ability]);
+    const weaponName = match.key;
+    const weaponNameLower = weaponName.toLowerCase();
+
+    const isProficient = weaponProficiencies.some((prof) =>
+      prof.includes(weaponNameLower) ||
+      (prof.includes('simple') && match.definition.category === 'simple') ||
+      (prof.includes('martial') && match.definition.category === 'martial')
+    );
+
+    const attackBonus = abilityModifier + (isProficient ? proficiencyBonus : 0);
+    const damageBonus = abilityModifier;
+    const damageExpression = `${match.definition.damage}${damageBonus >= 0 ? `+${damageBonus}` : damageBonus}`;
+    const notes = match.definition.properties.join(', ');
+
+    if (!summaries.has(weaponName)) {
+      summaries.set(weaponName, {
+        name: weaponName,
+        atkBonus: attackBonus >= 0 ? `+${attackBonus}` : `${attackBonus}`,
+        damage: damageExpression,
+        notes,
+      });
+    }
+  });
+
+  return Array.from(summaries.values());
+}
+
+function mapWeaponsToActions(weapons: Array<{ name: string; atkBonus: string; damage: string }>) {
+  return weapons
+    .filter((weapon) => weapon.name)
+    .map((weapon) => ({
+      name: weapon.name,
+      atkBonus: weapon.atkBonus,
+      damage: weapon.damage,
+    }));
 }
 
 /**
@@ -585,147 +930,4 @@ function extractSpeciesTraits(builderData: CharacterBuilderData): string[] {
   }
 
   return traits;
-}
-
-/**
- * Map equipment to weapons with stats
- */
-function mapEquipmentToWeapons(equipment: (string | any)[], abilityScores: any, proficiencyBonus: number, builderData: CharacterBuilderData) {
-  const weapons = [];
-  const weaponProficiencies = builderData.classProficiencies?.weapons || [];
-
-
-  // Common weapon data - simplified mapping
-  const weaponData: { [key: string]: { damage: string; properties: string[]; ability: 'strength' | 'dexterity' } } = {
-    'Dagger': { damage: '1d4', properties: ['finesse', 'light', 'thrown'], ability: 'dexterity' },
-    'Shortsword': { damage: '1d6', properties: ['finesse', 'light'], ability: 'dexterity' },
-    'Longsword': { damage: '1d8', properties: ['versatile'], ability: 'strength' },
-    'Rapier': { damage: '1d8', properties: ['finesse'], ability: 'dexterity' },
-    'Scimitar': { damage: '1d6', properties: ['finesse', 'light'], ability: 'dexterity' },
-    'Handaxe': { damage: '1d6', properties: ['light', 'thrown'], ability: 'strength' },
-    'Javelin': { damage: '1d6', properties: ['thrown'], ability: 'strength' },
-    'Spear': { damage: '1d6', properties: ['thrown', 'versatile'], ability: 'strength' },
-    'Mace': { damage: '1d6', properties: [], ability: 'strength' },
-    'Club': { damage: '1d4', properties: ['light'], ability: 'strength' },
-    'Greataxe': { damage: '1d12', properties: ['heavy', 'two-handed'], ability: 'strength' },
-    'Greatsword': { damage: '2d6', properties: ['heavy', 'two-handed'], ability: 'strength' },
-    'Maul': { damage: '2d6', properties: ['heavy', 'two-handed'], ability: 'strength' },
-    'Light Crossbow': { damage: '1d8', properties: ['ammunition', 'loading', 'two-handed'], ability: 'dexterity' },
-    'Heavy Crossbow': { damage: '1d10', properties: ['ammunition', 'heavy', 'loading', 'two-handed'], ability: 'dexterity' },
-    'Shortbow': { damage: '1d6', properties: ['ammunition', 'two-handed'], ability: 'dexterity' },
-    'Longbow': { damage: '1d8', properties: ['ammunition', 'heavy', 'two-handed'], ability: 'dexterity' },
-  };
-
-  equipment.forEach(item => {
-
-    // Handle both string and object equipment items
-    let itemName: string;
-    if (typeof item === 'string') {
-      itemName = item;
-    } else if (item && typeof item === 'object') {
-      // Try different object properties
-      if ('item' in item && typeof item.item === 'string') {
-        itemName = item.item;
-      } else if ('name' in item && typeof item.name === 'string') {
-        itemName = item.name;
-      } else {
-        return; // Skip this item
-      }
-    } else {
-      return; // Skip this item
-    }
-
-    const weaponName = Object.keys(weaponData).find(weapon =>
-      itemName.toLowerCase().includes(weapon.toLowerCase())
-    );
-
-
-    if (weaponName) {
-      const weapon = weaponData[weaponName];
-      const ability = weapon.ability;
-      const abilityModifier = calculateModifier(abilityScores[ability]);
-
-      // Check if proficient with this weapon
-      const isProficient = weaponProficiencies.some(prof =>
-        prof.toLowerCase().includes(weaponName.toLowerCase()) ||
-        (weapon.properties.includes('simple') && prof.toLowerCase().includes('simple')) ||
-        (prof.toLowerCase().includes('martial') && !weapon.properties.includes('simple'))
-      );
-
-      const attackBonus = abilityModifier + (isProficient ? proficiencyBonus : 0);
-      const damageBonus = abilityModifier;
-
-      weapons.push({
-        name: weaponName,
-        atkBonus: attackBonus >= 0 ? `+${attackBonus}` : `${attackBonus}`,
-        damage: `${weapon.damage}${damageBonus >= 0 ? '+' + damageBonus : damageBonus}`,
-        notes: weapon.properties.join(', ')
-      });
-    }
-  });
-
-  // Fill remaining slots with empty weapons
-  while (weapons.length < 3) {
-    weapons.push({ name: '', atkBonus: '', damage: '', notes: '' });
-  }
-
-  return weapons.slice(0, 3); // Limit to 3 weapons
-}
-
-/**
- * Convert weapons to action format
- */
-function mapWeaponsToActions(weapons: any[]) {
-  return weapons
-    .filter(weapon => weapon.name) // Only weapons with names
-    .map(weapon => ({
-      name: weapon.name,
-      atkBonus: weapon.atkBonus,
-      damage: weapon.damage
-    }));
-}
-
-/**
- * Automatically determine which items should be equipped
- */
-function autoEquipItems(inventory: InventoryItem[]) {
-  let equippedArmor: InventoryItem | undefined;
-  let equippedShield: InventoryItem | undefined;
-  const equippedWeapons: InventoryItem[] = [];
-
-  // Define item patterns
-  const armorPatterns = [
-    'leather armor', 'studded leather', 'chain shirt', 'scale mail',
-    'breastplate', 'half plate', 'ring mail', 'chain mail', 'splint', 'plate'
-  ];
-  const shieldPatterns = ['shield'];
-  const weaponPatterns = [
-    'sword', 'axe', 'mace', 'dagger', 'spear', 'bow', 'crossbow',
-    'javelin', 'club', 'rapier', 'scimitar', 'maul'
-  ];
-
-  inventory.forEach(item => {
-    const itemName = item.name.toLowerCase();
-
-    // Check for armor (only equip one piece)
-    if (!equippedArmor && armorPatterns.some(pattern => itemName.includes(pattern))) {
-      equippedArmor = { ...item, equipped: true };
-      item.equipped = true;
-    }
-
-    // Check for shield (only equip one)
-    else if (!equippedShield && shieldPatterns.some(pattern => itemName.includes(pattern))) {
-      equippedShield = { ...item, equipped: true };
-      item.equipped = true;
-    }
-
-    // Check for weapons (equip up to 2)
-    else if (equippedWeapons.length < 2 && weaponPatterns.some(pattern => itemName.includes(pattern))) {
-      const equippedWeapon = { ...item, equipped: true };
-      equippedWeapons.push(equippedWeapon);
-      item.equipped = true;
-    }
-  });
-
-  return { equippedArmor, equippedShield, equippedWeapons };
 }

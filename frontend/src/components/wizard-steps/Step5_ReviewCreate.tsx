@@ -471,14 +471,10 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   // const finalScores = calculateFinalAbilityScores();
 
   const handleCreateCharacter = React.useCallback(async () => {
-    console.log('🎬 handleCreateCharacter called');
     setCreateStatus(null);
 
-    console.log('📊 Mapping generator data to character sheet');
     const characterSheetData = mapGeneratorDataToCharacterSheet(data);
-    console.log('✅ Character sheet data:', characterSheetData);
 
-    console.log('📡 Calling character service create');
     const response = await characterService.create({
       userId: user?.id || 1,
       name: characterSheetData.name,
@@ -486,7 +482,6 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
       characterData: characterSheetData,
       isPublic: false,
     });
-    console.log('📬 Response received:', response);
 
     if (isError(response) || !response.data) {
       showError(response.error ?? 'Failed to create character', response.statusCode, response.errorCode);
@@ -503,14 +498,12 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
   // Expose create handler to parent via ref
   useEffect(() => {
-    console.log('🔧 Registering handleCreate in ref');
     if (createHandlerRef) {
       createHandlerRef.current = {
         handleCreate: handleCreateCharacter
       };
-      console.log('✅ Handler registered:', createHandlerRef.current);
     } else {
-      console.warn('⚠️ createHandlerRef is undefined');
+      console.warn('createHandlerRef is undefined');
     }
   }, [createHandlerRef, handleCreateCharacter]);
 
@@ -546,10 +539,24 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     const skills: string[] = [];
     if (data.selectedClassSkills) skills.push(...data.selectedClassSkills);
     if (data.backgroundSkillProficiencies) skills.push(...data.backgroundSkillProficiencies);
+    if (data.speciesSkillProficiencies) skills.push(...data.speciesSkillProficiencies);
+    if (data.featSkillProficiencies) skills.push(...data.featSkillProficiencies);
     const unique = [...new Set(skills)];
     return unique
       .map((skill) => normaliseDisplayString(skill, { titleCase: true }))
       .filter((skill) => skill.length > 0);
+  };
+
+  const getAllToolProficiencies = (): string[] => {
+    const tools: string[] = [];
+    if (data.classProficiencies?.tools) tools.push(...data.classProficiencies.tools);
+    if (data.backgroundToolProficiencies) tools.push(...data.backgroundToolProficiencies);
+    if (data.speciesToolProficiencies) tools.push(...data.speciesToolProficiencies);
+    if (data.featToolProficiencies) tools.push(...data.featToolProficiencies);
+    const unique = [...new Set(tools)];
+    return unique
+      .map((tool) => normaliseDisplayString(tool, { titleCase: true }))
+      .filter((tool) => tool.length > 0);
   };
 
   /**
@@ -751,7 +758,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
 
             <ProficiencyCard>
               <div className="prof-title">Tools</div>
-              <div className="prof-list">{formatList(data.classProficiencies?.tools)}</div>
+              <div className="prof-list">{formatList(getAllToolProficiencies())}</div>
             </ProficiencyCard>
           </ProficienciesGrid>
         </CharacterCard>

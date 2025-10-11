@@ -1,4 +1,4 @@
-import { CharacterSheetData, formatModifier } from '../types/characterSheet';
+import { CharacterSheetData, formatModifier, skillToAbility } from '../types/characterSheet';
 import { calculateDerivedValues, getSkillModifiers } from '../services/characterCalculations';
 import {
   SkillsSection,
@@ -30,6 +30,19 @@ export default function CharacterSkillsSection({
 }: CharacterSkillsSectionProps) {
   const derivedValues = calculateDerivedValues(character);
   const skillModifiers = getSkillModifiers(character, derivedValues.proficiencyBonus);
+
+  // Helper function to get ability abbreviation
+  const getAbilityAbbreviation = (ability: string): string => {
+    const abbreviations: { [key: string]: string } = {
+      'strength': 'STR',
+      'dexterity': 'DEX',
+      'constitution': 'CON',
+      'intelligence': 'INT',
+      'wisdom': 'WIS',
+      'charisma': 'CHA',
+    };
+    return abbreviations[ability] || '';
+  };
 
   // Convert skill modifiers to the expected format
   const skillsData: Record<string, { proficient: boolean; modifier: number }> = {};
@@ -84,10 +97,12 @@ export default function CharacterSkillsSection({
             proficient: false,
             modifier: 0,
           };
+          const abilityKey = skillToAbility[skill];
+          const abilityAbbr = abilityKey ? getAbilityAbbreviation(abilityKey) : '';
 
           return (
-            <SkillItem key={skill}>
-              {editingSections.skills && (
+            <SkillItem key={skill} className={skillData.proficient ? 'proficient' : ''}>
+              {editingSections.skills ? (
                 <input
                   type="checkbox"
                   checked={skillData.proficient}
@@ -103,8 +118,12 @@ export default function CharacterSkillsSection({
                     })
                   }
                 />
+              ) : (
+                skillData.proficient && <span className="proficiency-marker">●</span>
               )}
-              <span className="skill-name">{skill}</span>
+              <span className="skill-name">
+                {skill} <span className="ability-abbr">({abilityAbbr})</span>
+              </span>
               <span className="skill-bonus">
                 {formatModifier(skillData.modifier)}
               </span>

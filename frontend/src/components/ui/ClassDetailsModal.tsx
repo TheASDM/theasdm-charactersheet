@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
 
 interface ClassDetailsModalProps {
   isOpen: boolean;
@@ -348,11 +349,14 @@ export const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
               return Object.entries(classData.classFeatures).map(([name, feature]: [string, any]) => (
                 <FeatureCard key={name}>
                   <FeatureName>{name}</FeatureName>
-                  <FeatureDescription>{feature.description}</FeatureDescription>
+                  <FeatureDescription
+                    dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(feature.description) }}
+                  />
                   {feature.details && (
-                    <FeatureDescription style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.9 }}>
-                      {feature.details}
-                    </FeatureDescription>
+                    <FeatureDescription
+                      style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.9 }}
+                      dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(feature.details) }}
+                    />
                   )}
                 </FeatureCard>
               ));

@@ -8,7 +8,7 @@
  * - Warlock Pact Magic
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, MutableRefObject } from 'react';
 import styled from 'styled-components';
 import type { Spell } from '@/types/api';
 import type { CharacterBuilderData } from '../CharacterGeneratorWizard';
@@ -38,7 +38,7 @@ interface SpellSelectionWizardProps {
   data: CharacterBuilderData;
   onUpdate: (updates: Partial<CharacterBuilderData>) => void;
   onValidityChange: (isValid: boolean) => void;
-  navigationHandlersRef?: React.MutableRefObject<{
+  navigationHandlersRef?: MutableRefObject<{
     handleNext?: () => boolean;
     handleBack?: () => boolean;
   }>;
@@ -74,12 +74,12 @@ const EmptyState = styled.div`
   font-size: 1rem;
 `;
 
-export const SpellSelectionWizard: React.FC<SpellSelectionWizardProps> = ({
+export const SpellSelectionWizard = ({
   data,
   onUpdate,
   onValidityChange,
   navigationHandlersRef,
-}) => {
+}: SpellSelectionWizardProps) => {
   const classId = data.selectedClass ?? '';
   const level = 1; // For now, always level 1
 

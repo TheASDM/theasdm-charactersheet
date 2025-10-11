@@ -89,29 +89,87 @@ const formatModifier = (modifier: number): string => {
 };
 
 // Calculate final ability scores including background bonuses
+const ABILITY_KEY_MAP: Record<string, keyof CharacterBuilderData['abilityScores']> = {
+  str: 'strength',
+  strength: 'strength',
+  dex: 'dexterity',
+  dexterity: 'dexterity',
+  con: 'constitution',
+  constitution: 'constitution',
+  int: 'intelligence',
+  intelligence: 'intelligence',
+  wis: 'wisdom',
+  wisdom: 'wisdom',
+  cha: 'charisma',
+  charisma: 'charisma',
+};
+
+const extractNumericValue = (value: unknown): number => {
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if ('amount' in record) {
+      return extractNumericValue(record.amount);
+    }
+    if ('value' in record) {
+      return extractNumericValue(record.value);
+    }
+    if ('score' in record) {
+      return extractNumericValue(record.score);
+    }
+  }
+  return 0;
+};
+
+const applyAbilityBonuses = (
+  totals: Record<keyof CharacterBuilderData['abilityScores'], number>,
+  source?: Record<string, unknown>
+) => {
+  if (!source) return;
+
+  Object.entries(source).forEach(([key, value]) => {
+    const abilityKey = ABILITY_KEY_MAP[key.toLowerCase() as keyof typeof ABILITY_KEY_MAP];
+    if (!abilityKey) return;
+
+    const numeric = extractNumericValue(value);
+    if (numeric !== 0) {
+      totals[abilityKey] += numeric;
+    }
+  });
+};
+
 const calculateFinalAbilityScores = (data: CharacterBuilderData) => {
   const baseScores = data.abilityScores;
-  const backgroundBonuses = data.backgroundAbilityScoreAllocations || {};
-
-  // Helper function to safely extract number from value
-  const getScoreValue = (value: any): number => {
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string') return parseInt(value) || 0;
-    if (typeof value === 'object' && value !== null) {
-      // Handle cases where scores might be stored as objects
-      return parseInt(value.value || value.score || 0) || 0;
-    }
-    return 0;
+  const totals: Record<keyof CharacterBuilderData['abilityScores'], number> = {
+    strength: baseScores.strength,
+    dexterity: baseScores.dexterity,
+    constitution: baseScores.constitution,
+    intelligence: baseScores.intelligence,
+    wisdom: baseScores.wisdom,
+    charisma: baseScores.charisma,
   };
 
-  return {
-    strength: getScoreValue(baseScores.strength) + (backgroundBonuses.strength || backgroundBonuses.str || 0),
-    dexterity: getScoreValue(baseScores.dexterity) + (backgroundBonuses.dexterity || backgroundBonuses.dex || 0),
-    constitution: getScoreValue(baseScores.constitution) + (backgroundBonuses.constitution || backgroundBonuses.con || 0),
-    intelligence: getScoreValue(baseScores.intelligence) + (backgroundBonuses.intelligence || backgroundBonuses.int || 0),
-    wisdom: getScoreValue(baseScores.wisdom) + (backgroundBonuses.wisdom || backgroundBonuses.wis || 0),
-    charisma: getScoreValue(baseScores.charisma) + (backgroundBonuses.charisma || backgroundBonuses.cha || 0),
-  };
+  applyAbilityBonuses(totals, data.backgroundAbilityScoreAllocations);
+  applyAbilityBonuses(totals, data.speciesAbilityScoreAllocations);
+
+  if (data.featChoices) {
+    Object.values(data.featChoices).forEach((choice) => {
+      if (choice && typeof choice === 'object' && 'abilityScores' in choice) {
+        applyAbilityBonuses(
+          totals,
+          (choice as { abilityScores?: Record<string, unknown> }).abilityScores
+        );
+      }
+    });
+  }
+
+  return totals;
 };
 
 export const AbilityScoresHeader: React.FC<AbilityScoresHeaderProps> = ({ data }) => {

@@ -63,6 +63,8 @@ export interface SpeciesState {
   selectedSpecies: string;
   isHuman: boolean;
   traits?: any[];
+  skillProficiencies?: string[];
+  toolProficiencies?: string[];
   spells?: {
     cantrips?: string[];
     level1?: string[];
@@ -71,10 +73,12 @@ export interface SpeciesState {
   };
   size?: string;
   speed?: number;
+  additionalSpeeds?: Record<string, number>;
   darkvision?: number;
   resistances?: string[];
   immunities?: string[];
   choices?: Record<string, string>;
+  abilityScoreAllocations?: Record<string, number>;
 }
 
 export interface FeatsState {
@@ -83,6 +87,8 @@ export interface FeatsState {
   featFeatures?: Record<string, any[]>;
   featSpells?: Record<string, string[]>;
   featChoices?: Record<string, any>;
+  skillProficiencies?: string[];
+  toolProficiencies?: string[];
 }
 
 export interface EquipmentState {
@@ -144,11 +150,16 @@ export const createInitialBackground = (): BackgroundState => ({
 export const createInitialSpecies = (): SpeciesState => ({
   selectedSpecies: '',
   isHuman: false,
+  skillProficiencies: [],
+  toolProficiencies: [],
+  abilityScoreAllocations: {},
 });
 
 export const createInitialFeats = (): FeatsState => ({
   selectedOriginFeats: [],
   requiredFeatCount: 1,
+  skillProficiencies: [],
+  toolProficiencies: [],
 });
 
 export const createInitialEquipment = (): EquipmentState => ({

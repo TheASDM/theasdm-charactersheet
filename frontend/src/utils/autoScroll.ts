@@ -3,8 +3,10 @@
  * Preserves focus unless explicitly requested to steal it
  */
 
+type ScrollBehaviorType = 'auto' | 'smooth' | 'instant';
+
 export interface AutoScrollOptions {
-  behavior?: ScrollBehavior; // 'smooth' | 'auto'
+  behavior?: ScrollBehaviorType; // 'smooth' | 'auto'
   offset?: number; // pixels above target
   onComplete?: () => void;
   shouldStealFocus?: boolean; // default: false
