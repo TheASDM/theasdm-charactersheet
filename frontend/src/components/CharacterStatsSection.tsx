@@ -156,33 +156,6 @@ export const CharacterStatsSection: React.FC<CharacterStatsSectionProps> = ({
         </StatBox>
       </StatsSection>
 
-      <SectionEditControls>
-        {isEditing ? (
-          <>
-            <SectionEditButton
-              variant="save"
-              onClick={toggleSectionEdit}
-            >
-              ✓
-            </SectionEditButton>
-            <SectionEditButton
-              onClick={cancelSectionEdit}
-              style={{
-                background:
-                  'linear-gradient(145deg, #dc3545, #c82333)',
-              }}
-            >
-              ✕
-            </SectionEditButton>
-          </>
-        ) : (
-          <SectionEditButton
-            onClick={toggleSectionEdit}
-          >
-            ✎
-          </SectionEditButton>
-        )}
-      </SectionEditControls>
     </StatsContainer>
   );
 };

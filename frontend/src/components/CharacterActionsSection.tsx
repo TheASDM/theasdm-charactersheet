@@ -7,8 +7,6 @@ import {
   ActionsTableCell,
   AddActionButton,
   RemoveActionButton,
-  SectionEditControls,
-  SectionEditButton,
 } from '../styles/components';
 
 interface CharacterActionsSectionProps {
@@ -179,45 +177,6 @@ export default function CharacterActionsSection({
           ⚔️ Manage Actions
         </AddActionButton>
       )}
-
-      <SectionEditControls>
-        {editingSections.actions ? (
-          <>
-            <SectionEditButton
-              variant="save"
-              onClick={() => toggleSectionEdit('actions')}
-            >
-              ✓
-            </SectionEditButton>
-            <SectionEditButton
-              onClick={() => cancelSectionEdit('actions')}
-              style={{
-                background:
-                  'linear-gradient(145deg, #dc3545, #c82333)',
-              }}
-            >
-              ✕
-            </SectionEditButton>
-          </>
-        ) : (
-          <>
-            <SectionEditButton
-              onClick={() => toggleSectionEdit('actions')}
-            >
-              ✎
-            </SectionEditButton>
-            <SectionEditButton
-              onClick={actions.handleManageActions}
-              style={{
-                background:
-                  'linear-gradient(145deg, #28a745, #20892c)',
-              }}
-            >
-              ⚔️
-            </SectionEditButton>
-          </>
-        )}
-      </SectionEditControls>
     </ActionsSection>
   );
 }

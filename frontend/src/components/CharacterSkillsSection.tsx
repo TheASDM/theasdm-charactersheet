@@ -5,8 +5,6 @@ import {
   SkillsList,
   SkillItem,
   SectionTitle,
-  SectionEditControls,
-  SectionEditButton,
 } from '../styles/components';
 
 interface CharacterSkillsSectionProps {
@@ -131,45 +129,6 @@ export default function CharacterSkillsSection({
           );
         })}
       </SkillsList>
-
-      <SectionEditControls>
-        {editingSections.skills ? (
-          <>
-            <SectionEditButton
-              variant="save"
-              onClick={() => toggleSectionEdit('skills')}
-            >
-              ✓
-            </SectionEditButton>
-            <SectionEditButton
-              onClick={() => cancelSectionEdit('skills')}
-              style={{
-                background:
-                  'linear-gradient(145deg, #dc3545, #c82333)',
-              }}
-            >
-              ✕
-            </SectionEditButton>
-          </>
-        ) : (
-          <>
-            <SectionEditButton
-              onClick={() => toggleSectionEdit('skills')}
-            >
-              ✎
-            </SectionEditButton>
-            <SectionEditButton
-              onClick={skills.handleManageSkills}
-              style={{
-                background:
-                  'linear-gradient(145deg, #6a4bc1, #5a3fa8)',
-              }}
-            >
-              🎯
-            </SectionEditButton>
-          </>
-        )}
-      </SectionEditControls>
     </SkillsSection>
   );
 }

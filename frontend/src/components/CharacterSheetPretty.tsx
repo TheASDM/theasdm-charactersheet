@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import {
   CharacterSheetData,
@@ -10,6 +10,7 @@ import {
   calculateDerivedValues,
   getSkillModifiers,
 } from '../services/characterCalculations';
+import { getEquipmentMetadata } from '../services/characterCalculations';
 import {
   // Layout
   FontImport, SheetContainer, MainLayout, LeftColumn, ThreeColumnContainer, TwoColumnLayout,
@@ -52,25 +53,40 @@ import WeaponMasterySection from './WeaponMasterySection';
 import SpellcastingBar from './SpellcastingBar';
 import { SimpleFeature } from '../utils/simpleFeatureGenerator';
 import CharacterSpellsSection from './CharacterSpellsSection';
+import {
+  OverviewInventoryCard,
+  OverviewInventoryHeader,
+  OverviewInventoryManageButton,
+  OverviewInventoryList,
+  OverviewInventoryListItem,
+  OverviewInventoryName,
+  OverviewInventoryChips,
+  OverviewInventoryChip,
+  OverviewInventoryMenuButton,
+  OverviewInventoryMenu,
+  OverviewInventoryMenuItem,
+  OverviewInventoryEmpty,
+} from '../styles/components/OverviewInventory.styles';
 import InventoryTab from './InventoryTab';
 
 const TabBar = styled.div`
-  margin: 1.75rem 0 1.25rem;
   display: inline-flex;
-  gap: 0.75rem;
-  padding: 0.35rem;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(206, 144, 22, 0.25);
+  gap: 0.4rem;
+  padding: 0.25rem;
+  background: rgba(12, 12, 12, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 `;
 
 const TabButton = styled.button<{ $active: boolean }>`
   border: none;
   border-radius: 999px;
-  padding: 0.45rem 1.35rem;
-  font-size: 0.9rem;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -83,71 +99,6 @@ const TabButton = styled.button<{ $active: boolean }>`
   &:hover {
     background: rgba(206, 144, 22, 0.15);
     color: #f8f4e1;
-  }
-`;
-
-const EquippedSummaryCard = styled.section`
-  background: rgba(17, 17, 17, 0.8);
-  border: 1px solid rgba(206, 144, 22, 0.35);
-  border-radius: 12px;
-  padding: 1rem 1.2rem;
-  margin-bottom: 1.4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-`;
-
-const EquippedHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-
-  h3 {
-    margin: 0;
-    font-size: 0.95rem;
-    font-family: 'Cinzel', serif;
-    color: #ce9016;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-`;
-
-const EquippedList = styled.ul`
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-`;
-
-const EquippedListItem = styled.li`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(206, 144, 22, 0.08);
-  border: 1px solid rgba(206, 144, 22, 0.2);
-  border-radius: 8px;
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
-  color: #f8fafc;
-`;
-
-const InventoryCTAButton = styled.button`
-  border: 1px solid rgba(206, 144, 22, 0.45);
-  background: linear-gradient(135deg, rgba(206, 144, 22, 0.22), rgba(35, 35, 35, 0.85));
-  color: #f8f4e1;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-
-  &:hover {
-    transform: translateY(-1px);
   }
 `;
 
@@ -211,6 +162,21 @@ export default function CharacterSheetPretty({
   // State to hold extracted spellcasting feature
   const [spellcastingFeature, setSpellcastingFeature] = useState<SimpleFeature | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'spells' | 'inventory'>('overview');
+  const [openMenuItemId, setOpenMenuItemId] = useState<string | null>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!openMenuItemId) return;
+
+    const handleClickOutside = () => {
+      setOpenMenuItemId(null);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openMenuItemId]);
 
   // Get dynamic resources based on character
   const characterResources = useMemo(
@@ -385,6 +351,50 @@ export default function CharacterSheetPretty({
     return inventory.filter((item) => equippedSet.has(item.id));
   }, [character.equippedItemIds, character.inventory]);
 
+  const equippedItemsDetailed = useMemo(() => {
+    if (!equippedItems.length) {
+      return [] as Array<{
+        item: InventoryItem;
+        categoryLabel: string;
+        sortOrder: number;
+      }>;
+    }
+
+    const enhance = (item: InventoryItem) => {
+      const metadata = getEquipmentMetadata(item.name);
+
+      const sortOrder =
+        metadata.category === 'armor'
+          ? 0
+          : metadata.category === 'shield'
+          ? 1
+          : metadata.category === 'weapon'
+          ? 2
+          : 3;
+
+      let label = 'Gear';
+      if (metadata.category === 'shield') {
+        label = 'Shield';
+      } else if (metadata.category === 'armor' && metadata.armorType) {
+        label = `${metadata.armorType.charAt(0).toUpperCase()}${metadata.armorType.slice(1)} Armor`;
+      } else if (metadata.category === 'weapon') {
+        const cat = metadata.weaponCategory ?? 'martial';
+        label = `${cat.charAt(0).toUpperCase()}${cat.slice(1)} Weapon`;
+      }
+
+      return { item, categoryLabel: label, sortOrder };
+    };
+
+    return equippedItems
+      .map(enhance)
+      .sort((a, b) => {
+        if (a.sortOrder !== b.sortOrder) {
+          return a.sortOrder - b.sortOrder;
+        }
+        return a.item.name.localeCompare(b.item.name);
+      });
+  }, [equippedItems]);
+
   // Calculate derived values using service
   const derivedValues = useMemo(() => {
     const calculations = calculateDerivedValues(character);
@@ -410,6 +420,32 @@ export default function CharacterSheetPretty({
     };
   }, [character]);
 
+  const tabBarComponent = (
+    <TabBar role="tablist" aria-label="Character Sheet Sections">
+      <TabButton
+        type="button"
+        $active={activeTab === 'overview'}
+        onClick={() => setActiveTab('overview')}
+      >
+        Overview
+      </TabButton>
+      <TabButton
+        type="button"
+        $active={activeTab === 'spells'}
+        onClick={() => setActiveTab('spells')}
+      >
+        Spells
+      </TabButton>
+      <TabButton
+        type="button"
+        $active={activeTab === 'inventory'}
+        onClick={() => setActiveTab('inventory')}
+      >
+        Inventory
+      </TabButton>
+    </TabBar>
+  );
+
   return (
     <>
       <FontImport />
@@ -422,6 +458,7 @@ export default function CharacterSheetPretty({
           toggleSectionEdit={toggleSectionEdit}
           cancelSectionEdit={cancelSectionEdit}
           selection={selection}
+          tabBar={tabBarComponent}
         />
 
         {/* Compact Resources Bar */}
@@ -441,64 +478,9 @@ export default function CharacterSheetPretty({
           />
         )}
 
-        <TabBar role="tablist" aria-label="Character Sheet Sections">
-          <TabButton
-            type="button"
-            $active={activeTab === 'overview'}
-            onClick={() => setActiveTab('overview')}
-          >
-            Overview
-          </TabButton>
-          <TabButton
-            type="button"
-            $active={activeTab === 'spells'}
-            onClick={() => setActiveTab('spells')}
-          >
-            Spells
-          </TabButton>
-          <TabButton
-            type="button"
-            $active={activeTab === 'inventory'}
-            onClick={() => setActiveTab('inventory')}
-          >
-            Inventory
-          </TabButton>
-        </TabBar>
-
         {activeTab === 'overview' ? (
           <MainLayout>
             <LeftColumn>
-              <EquippedSummaryCard>
-                <EquippedHeader>
-                  <h3>Equipped Items</h3>
-                  <InventoryCTAButton type="button" onClick={() => setActiveTab('inventory')}>
-                    Manage Inventory
-                  </InventoryCTAButton>
-                </EquippedHeader>
-                {equippedItems.length === 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                    <span style={{ color: 'rgba(226, 232, 240, 0.75)', fontSize: '0.8rem' }}>
-                      You have not equipped any items yet.
-                    </span>
-                    <InventoryCTAButton
-                      type="button"
-                      onClick={() => setActiveTab('inventory')}
-                    >
-                      Equip Items From Your Inventory
-                    </InventoryCTAButton>
-                  </div>
-                ) : (
-                  <EquippedList>
-                    {equippedItems.map((item) => (
-                      <EquippedListItem key={item.id}>
-                        <span>{item.name}</span>
-                        <span>x{item.quantity}</span>
-                      </EquippedListItem>
-                    ))}
-                  </EquippedList>
-                )}
-              </EquippedSummaryCard>
-
               <ThreeColumnContainer>
               {/* Ability Scores */}
               <CharacterAbilityScores
@@ -557,8 +539,103 @@ export default function CharacterSheetPretty({
 
               {/* Inventory/Proficiencies and Traits Side-by-Side Layout */}
               <TwoColumnLayout>
-                {/* Left Column: Inventory and Proficiencies stacked */}
+                {/* Left Column: Equipped Items and Proficiencies stacked */}
                 <div>
+                  <OverviewInventoryCard>
+                    <OverviewInventoryHeader>
+                      <h3>Equipped Items</h3>
+                      <OverviewInventoryManageButton
+                        type="button"
+                        onClick={() => setActiveTab('inventory')}
+                      >
+                        Manage Inventory
+                      </OverviewInventoryManageButton>
+                    </OverviewInventoryHeader>
+                    {equippedItemsDetailed.length === 0 ? (
+                      <OverviewInventoryEmpty>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'center' }}>
+                          <span>No items equipped.</span>
+                          <OverviewInventoryManageButton
+                            type="button"
+                            onClick={() => setActiveTab('inventory')}
+                          >
+                            Manage Inventory
+                          </OverviewInventoryManageButton>
+                        </div>
+                      </OverviewInventoryEmpty>
+                    ) : (
+                      <OverviewInventoryList>
+                        {equippedItemsDetailed.map(({ item, categoryLabel }) => {
+                          const inventoryIndex = inventory.normalizedInventory.findIndex((invItem) => invItem.id === item.id);
+                          const isMenuOpen = openMenuItemId === item.id;
+
+                          const handleToggleMenu = (e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            setOpenMenuItemId(isMenuOpen ? null : item.id);
+                          };
+
+                          const handleUnequip = () => {
+                            if (inventoryIndex !== -1) {
+                              inventory.handleToggleEquip(inventoryIndex);
+                            }
+                            setOpenMenuItemId(null);
+                          };
+
+                          const handleDetails = () => {
+                            inventory.handleInventoryItemClick(item.name);
+                            setOpenMenuItemId(null);
+                          };
+
+                          const handleSeeInventory = () => {
+                            setActiveTab('inventory');
+                            setOpenMenuItemId(null);
+                          };
+
+                          return (
+                            <OverviewInventoryListItem key={item.id}>
+                              <OverviewInventoryName>
+                                <strong>{item.name}</strong>
+                                <OverviewInventoryChips>
+                                  <OverviewInventoryChip $variant="category">
+                                    {categoryLabel}
+                                  </OverviewInventoryChip>
+                                </OverviewInventoryChips>
+                              </OverviewInventoryName>
+                              <OverviewInventoryMenuButton
+                                type="button"
+                                onClick={handleToggleMenu}
+                                aria-label="Item actions"
+                              >
+                                ⋯
+                              </OverviewInventoryMenuButton>
+                              <OverviewInventoryMenu $isOpen={isMenuOpen}>
+                                <OverviewInventoryMenuItem
+                                  type="button"
+                                  onClick={handleDetails}
+                                >
+                                  Details
+                                </OverviewInventoryMenuItem>
+                                <OverviewInventoryMenuItem
+                                  type="button"
+                                  $variant="danger"
+                                  onClick={handleUnequip}
+                                >
+                                  Unequip
+                                </OverviewInventoryMenuItem>
+                                <OverviewInventoryMenuItem
+                                  type="button"
+                                  onClick={handleSeeInventory}
+                                >
+                                  See Inventory
+                                </OverviewInventoryMenuItem>
+                              </OverviewInventoryMenu>
+                            </OverviewInventoryListItem>
+                          );
+                        })}
+                      </OverviewInventoryList>
+                    )}
+                  </OverviewInventoryCard>
+
                   <CharacterProficienciesSection character={character} />
                 </div>
 

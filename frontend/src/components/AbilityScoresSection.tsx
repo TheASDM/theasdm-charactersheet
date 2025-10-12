@@ -6,8 +6,6 @@ import {
   AbilityArrows,
   AbilityArrow,
   SectionTitle,
-  SectionEditControls,
-  SectionEditButton,
 } from '../styles/components';
 
 interface AbilityScoresSectionProps {
@@ -23,8 +21,6 @@ interface AbilityScoresSectionProps {
 export default function CharacterAbilityScores({
   character,
   editingSections,
-  toggleSectionEdit,
-  cancelSectionEdit,
   abilities,
 }: AbilityScoresSectionProps) {
   return (
@@ -92,33 +88,6 @@ export default function CharacterAbilityScores({
         })}
       </AbilityScoresGrid>
 
-      <SectionEditControls>
-        {editingSections.abilities ? (
-          <>
-            <SectionEditButton
-              variant="save"
-              onClick={() => toggleSectionEdit('abilities')}
-            >
-              ✓
-            </SectionEditButton>
-            <SectionEditButton
-              onClick={() => cancelSectionEdit('abilities')}
-              style={{
-                background:
-                  'linear-gradient(145deg, #dc3545, #c82333)',
-              }}
-            >
-              ✕
-            </SectionEditButton>
-          </>
-        ) : (
-          <SectionEditButton
-            onClick={() => toggleSectionEdit('abilities')}
-          >
-            ✎
-          </SectionEditButton>
-        )}
-      </SectionEditControls>
     </StyledAbilityScoresSection>
   );
 }

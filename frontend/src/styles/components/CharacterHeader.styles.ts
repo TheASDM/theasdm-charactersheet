@@ -102,12 +102,22 @@ export const TopStatBox = styled.div`
   }
 `;
 
-// Character Info Grid (Species, Class, Background, Subclass, Feats)
+// Character Info Grid (Species, Class, Tab Bar, Subclass, Background)
 export const CharacterInfoGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1fr 1fr 2fr 1fr 1fr;
   gap: 0.75rem;
-  text-align: center;
+  align-items: center;
+
+  > :nth-child(1),
+  > :nth-child(2) {
+    text-align: center;
+  }
+
+  > :nth-child(4),
+  > :nth-child(5) {
+    text-align: center;
+  }
 `;
 
 // Individual info boxes in the grid

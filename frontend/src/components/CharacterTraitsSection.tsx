@@ -218,14 +218,6 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
         >
           Features & Traits
         </TraitsTitle>
-        <SectionEditButton
-          onClick={traits.handleManageTraits}
-          style={{
-            background: 'linear-gradient(145deg, #8a2be2, #7b1fa2)',
-          }}
-        >
-          🌟
-        </SectionEditButton>
       </div>
 
       {/* Render features (proficiencies are now in a separate section) */}
