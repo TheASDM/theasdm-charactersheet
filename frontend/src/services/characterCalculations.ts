@@ -128,10 +128,10 @@ const cloneInventoryItem = (item: InventoryItem): InventoryItem => {
     id: item.id,
     name: item.name,
     quantity: item.quantity,
+    equipped: item.equipped ?? false,
+    attuned: item.attuned ?? false,
   };
 
-  if (item.equipped !== undefined) cloned.equipped = item.equipped;
-  if (item.attuned !== undefined) cloned.attuned = item.attuned;
   if (item.itemId !== undefined) cloned.itemId = item.itemId;
   if (item.customProperties) cloned.customProperties = { ...item.customProperties };
 

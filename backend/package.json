@@ -1,7 +1,7 @@
 {
   "name": "dnd-character-sheet-backend",
   "version": "1.0.0",
-  "description": "D&D 2024 Character Sheet Generator Backend API with Nimble TTRPG homebrew integration",
+  "description": "Dungeons.WTF Character Generator Backend API - D&D 2024 with Nimble TTRPG homebrew integration",
   "main": "dist/src/server.js",
   "scripts": {
     "build": "tsc",

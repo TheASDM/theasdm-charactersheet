@@ -862,7 +862,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
               const characterSheet = mapGeneratorDataToCharacterSheet(data);
               return (
                 <StructuredFeaturesDisplay
-                  features={characterSheet.features}
+                  features={characterSheet.features!}
                   compactMode={false}
                   showFilters={false}
                   characterData={data}

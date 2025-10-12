@@ -2,7 +2,7 @@
   "name": "dnd-character-sheet-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "D&D 2024 Character Sheet Generator Frontend with Nimble TTRPG homebrew integration",
+  "description": "Dungeons.WTF Character Generator Frontend - D&D 2024 with Nimble TTRPG homebrew integration",
   "type": "module",
   "dependencies": {
     "@types/node": "^20.8.10",

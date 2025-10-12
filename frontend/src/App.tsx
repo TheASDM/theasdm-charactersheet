@@ -57,7 +57,7 @@ const HomePage: React.FC = () => {
         <div style={{ marginBottom: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <img
             src="/images/wtforged-logo.png"
-            alt="WTForged"
+            alt="Dungeons.WTF Character Generator"
             style={{
               maxWidth: '600px',
               width: '100%',
@@ -309,10 +309,10 @@ const App: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>WTForged - D&D 2024 & Nimble 2.0 TTRPG</title>
+        <title>Dungeons.WTF Character Generator</title>
         <meta
           name="description"
-          content="WTForged - A Dungeons & Dragons 2024 and Nimble 2.0 inspired TTRPG created by The ASDM in conjunction with Vanya's Quest"
+          content="Dungeons.WTF Character Generator - A Dungeons & Dragons 2024 and Nimble 2.0 inspired TTRPG created by The ASDM in conjunction with Vanya's Quest"
         />
       </Helmet>
 

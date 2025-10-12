@@ -162,7 +162,7 @@ function generateDragonbornFeatures(character: CharacterSheetData): SimpleFeatur
   const features: SimpleFeature[] = [];
 
   // Get draconic ancestry from speciesChoices
-  const draconicAncestry = character.speciesChoices?.draconicAncestry || 'Red';
+  const draconicAncestry = character.speciesChoices?.draconicAncestry as string || 'Red';
 
   // Map to damage types and areas
   const dragonData = getDragonData(draconicAncestry);
@@ -352,7 +352,7 @@ function generateTieflingFeatures(character: CharacterSheetData): SimpleFeature[
     }
   };
 
-  const legacy = legacyData[fiendishLegacy] || legacyData['Infernal'];
+  const legacy = legacyData[fiendishLegacy as string] || legacyData['Infernal'];
 
   features.push({
     name: 'Fiendish Legacy',
@@ -559,7 +559,7 @@ function generateGoliathFeatures(character: CharacterSheetData): SimpleFeature[]
     }
   };
 
-  const ancestry = ancestryData[giantAncestry || "Stone's Endurance (Stone Giant)"];
+  const ancestry = ancestryData[(giantAncestry as string) || "Stone's Endurance (Stone Giant)"];
 
   features.push({
     name: 'Giant Ancestry',
@@ -659,7 +659,7 @@ export async function generateClassFeaturesWithChoiceSystem(
     const displayableFeatures = await getDisplayableFeatures(
       classData,
       level,
-      character.selectedClassChoices || {},
+      (character.selectedClassChoices as Record<string, string[]>) || {},
       character.subclass
     );
 
@@ -755,7 +755,9 @@ function generateClassFeaturesOld(character: CharacterSheetData): SimpleFeature[
     const choiceOptionNames = new Set<string>();
     if (character.selectedClassChoices) {
       Object.values(character.selectedClassChoices).forEach(options => {
-        options.forEach(opt => choiceOptionNames.add(opt));
+        if (Array.isArray(options)) {
+          options.forEach(opt => choiceOptionNames.add(opt as string));
+        }
       });
     }
 
@@ -984,7 +986,7 @@ function generateFighterFeatures(character: CharacterSheetData): SimpleFeature[]
 function detectFightingStyleChoice(character: CharacterSheetData): string | null {
   // First check the new classChoices field
   if (character.classChoices?.fightingStyle) {
-    return character.classChoices.fightingStyle;
+    return character.classChoices.fightingStyle as string;
   }
 
   // Check if fighting style is stored in classFeatures with specific choice

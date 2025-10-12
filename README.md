@@ -1,6 +1,6 @@
-# The ASDM Character Sheet
+# Dungeons.WTF Character Generator
 
-The ASDM Character Sheet is a full-stack web application for managing Dungeons & Dragons 2024 characters with curated data imports and optional Nimble 2.0-inspired homebrew hooks. The project delivers a modern React interface backed by a TypeScript/Express API and Prisma/PostgreSQL schema that tracks characters, rule content, and supporting metadata.
+Dungeons.WTF Character Generator is a full-stack web application for managing Dungeons & Dragons 2024 characters with curated data imports and optional Nimble 2.0-inspired homebrew hooks. The project delivers a modern React interface backed by a TypeScript/Express API and Prisma/PostgreSQL schema that tracks characters, rule content, and supporting metadata.
 
 ## Current Feature Set
 
@@ -122,14 +122,14 @@ Key defaults:
 ### 2. Build & run
 
 ```bash
-docker build -t wtforge-character-generator:latest .
+docker build -t dungeons-wtf-character-generator:latest .
 
 docker run -d \
-  --name wtforge \
+  --name dungeons-wtf \
   -p 8080:8080 \
   --env-file .env.production \
-  -v wtforge_data:/app/data \
-  wtforge-character-generator:latest
+  -v dungeons_wtf_data:/app/data \
+  dungeons-wtf-character-generator:latest
 ```
 
 On boot, the container will:

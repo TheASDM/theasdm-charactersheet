@@ -103,7 +103,10 @@ const TabButton = styled.button<{ $active: boolean }>`
 `;
 
 
-type CharacterSheetExtendedProps = CharacterSheetProps & { characterId?: number | undefined };
+type CharacterSheetExtendedProps = CharacterSheetProps & {
+  characterId?: number | undefined;
+  initialEditMode?: Record<string, boolean>;
+};
 
 export default function CharacterSheetPretty({
   character,

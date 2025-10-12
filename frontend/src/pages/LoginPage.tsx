@@ -61,8 +61,8 @@ export const LoginPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Login - WTForged</title>
-        <meta name="description" content="Login to your WTForged account" />
+        <title>Login - Dungeons.WTF Character Generator</title>
+        <meta name="description" content="Login to your Dungeons.WTF account" />
       </Helmet>
 
       <AuthContainer>
@@ -70,7 +70,7 @@ export const LoginPage: React.FC = () => {
           <AuthHeader>
             <img
               src="/images/wtforged-logo.png"
-              alt="WTForged"
+              alt="Dungeons.WTF Character Generator"
               style={{ maxWidth: '300px', width: '100%', height: 'auto', marginBottom: '1rem', display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
             />
             <AuthTitle>Welcome Back</AuthTitle>

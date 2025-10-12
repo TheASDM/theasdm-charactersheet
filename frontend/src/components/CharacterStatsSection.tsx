@@ -8,8 +8,6 @@ import {
   StatArrow,
   HPArrows,
   HPArrow,
-  SectionEditControls,
-  SectionEditButton,
 } from '../styles/components';
 
 interface CharacterStatsSectionProps {
@@ -26,8 +24,6 @@ export const CharacterStatsSection: React.FC<CharacterStatsSectionProps> = ({
   isEditing,
   updateCharacter,
   adjustStat,
-  toggleSectionEdit,
-  cancelSectionEdit,
 }) => {
   return (
     <StatsContainer>

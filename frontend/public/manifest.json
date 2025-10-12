@@ -1,6 +1,6 @@
 {
-  "short_name": "WTForged",
-  "name": "WTForged - D&D Character Sheet Generator",
+  "short_name": "Dungeons.WTF",
+  "name": "Dungeons.WTF Character Generator",
   "description": "Create and manage D&D 2024 characters with Nimble TTRPG homebrew mechanics",
   "icons": [
     {

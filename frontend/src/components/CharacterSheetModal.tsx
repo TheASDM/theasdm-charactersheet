@@ -273,7 +273,7 @@ export default function CharacterSheetModal({
 
         console.log('📨 Modal: API Response:', response);
 
-        if (response.error) {
+        if (!response.ok) {
           console.error('❌ Modal: API Error:', response.error);
           if (!isSilent) {
             setError(response.error);

@@ -24,8 +24,6 @@ interface CharacterActionsSectionProps {
 export default function CharacterActionsSection({
   character,
   editingSections,
-  toggleSectionEdit,
-  cancelSectionEdit,
   actions,
 }: CharacterActionsSectionProps) {
 

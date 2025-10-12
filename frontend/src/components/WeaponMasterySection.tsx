@@ -130,7 +130,7 @@ const WeaponMasterySection: React.FC<WeaponMasterySectionProps> = ({
   const handleConfirm = (masteries: Array<{ weapon: string; property: string }>) => {
     onUpdateCharacter({
       weaponMasteries: {
-        available: masteryConfig.max,
+        max: masteryConfig.max,
         active: masteries
       }
     });

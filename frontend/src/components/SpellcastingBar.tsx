@@ -3,7 +3,6 @@ import { CharacterSheetData } from '../types/characterSheet';
 import { SimpleFeature } from '../utils/simpleFeatureGenerator';
 import { calculateSpellSlots } from '../services/characterCalculations';
 import { computeManaPool } from '../helpers/manaRules';
-import { getCasterType } from '../helpers/spellRules';
 
 interface SpellcastingBarProps {
   spellcastingFeature: SimpleFeature | null;
@@ -117,9 +116,6 @@ const ManaDisplay = styled.div`
 export default function SpellcastingBar({
   spellcastingFeature,
   character,
-  editingSections,
-  updateCharacter,
-  resources,
 }: SpellcastingBarProps) {
   if (!spellcastingFeature) return null;
 
@@ -135,7 +131,6 @@ export default function SpellcastingBar({
   }, 0);
 
   // Calculate mana pool based on caster type
-  const casterType = getCasterType(character.class);
   const calculatedManaMax = computeManaPool(
     [{ classId: character.class, level: character.level }],
     proficiencyBonus,

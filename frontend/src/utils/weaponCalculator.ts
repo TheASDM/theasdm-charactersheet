@@ -85,7 +85,7 @@ function isRangedWeapon(weapon: Item | InventoryItem): boolean {
 function getWeaponDamage(weapon: Item | InventoryItem): string {
   // If it's a custom item with damage property
   if ('customProperties' in weapon && weapon.customProperties?.damage) {
-    return weapon.customProperties.damage;
+    return weapon.customProperties.damage as string;
   }
 
   // If it's an API item with damage data

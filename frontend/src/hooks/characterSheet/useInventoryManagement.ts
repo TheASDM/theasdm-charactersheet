@@ -446,7 +446,7 @@ export const useInventoryManagement = (
           updatedCharacter.equippedArmor = { ...item, equipped: true };
         } else if (EquipmentValidator.isWeapon({ name: item.name } as Item)) {
           // Add weapon to equipped weapons
-          updatedCharacter.equippedWeapons = [...character.equippedWeapons, { ...item, equipped: true }];
+          updatedCharacter.equippedWeapons = [...(character.equippedWeapons || []), { ...item, equipped: true }];
 
           // Add weapon to Actions section
           const weaponStats = calculateWeaponStats(item, character);
@@ -476,7 +476,7 @@ export const useInventoryManagement = (
           delete updatedCharacter.equippedArmor;
         } else if (EquipmentValidator.isWeapon({ name: item.name } as Item)) {
           // Remove weapon from equipped weapons
-          updatedCharacter.equippedWeapons = character.equippedWeapons.filter(w => w.id !== item.id);
+          updatedCharacter.equippedWeapons = (character.equippedWeapons || []).filter(w => w.id !== item.id);
 
           // Remove weapon from Actions section
           updatedCharacter.actions = character.actions.map(action =>

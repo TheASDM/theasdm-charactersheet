@@ -22,9 +22,6 @@ export default function CharacterSkillsSection({
   character,
   editingSections,
   updateCharacter,
-  toggleSectionEdit,
-  cancelSectionEdit,
-  skills,
 }: CharacterSkillsSectionProps) {
   const derivedValues = calculateDerivedValues(character);
   const skillModifiers = getSkillModifiers(character, derivedValues.proficiencyBonus);

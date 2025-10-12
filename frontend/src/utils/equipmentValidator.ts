@@ -110,10 +110,10 @@ export class EquipmentValidator {
 
     if (equippedArmor) {
       // Use custom properties if available, otherwise try to parse from name/description
-      const armorAC = equippedArmor.customProperties?.ac || this.getArmorACFromName(equippedArmor.name);
+      const armorAC = (equippedArmor.customProperties?.ac as number) || this.getArmorACFromName(equippedArmor.name);
       const armorType = this.getArmorTypeFromName(equippedArmor.name);
 
-      if (armorAC) {
+      if (typeof armorAC === 'number') {
         ac = armorAC;
 
         // Apply dexterity modifier limits based on armor type

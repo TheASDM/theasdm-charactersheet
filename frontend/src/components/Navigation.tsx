@@ -400,7 +400,7 @@ const Navigation: React.FC = () => {
         <NavContent>
           <LogoSection>
             <Logo to="/" onClick={handleLinkClick}>
-              <img src="/images/forge-logo.png" alt="WTForged" />
+              <img src="/images/forge-logo.png" alt="Dungeons.WTF Character Generator" />
             </Logo>
           </LogoSection>
 

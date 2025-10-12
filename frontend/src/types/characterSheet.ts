@@ -1,3 +1,27 @@
+import { CharacterFeatures } from './features';
+
+// Inventory item with full tracking properties
+export interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  equipped: boolean;
+  attuned: boolean;
+  itemId?: number; // Reference to the official item in the database
+  customProperties?: Record<string, unknown>; // For custom item data
+  // Optional properties that may come from the Item database
+  type?: string;
+  weaponCategory?: string;
+  armorCategory?: string;
+}
+
+// Equipment validation result
+export interface EquipmentValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
 // Character sheet specific types that will be stored in Character.characterData
 export interface CharacterSheetData {
   name: string;
@@ -44,10 +68,7 @@ export interface CharacterSheetData {
   resources: {
     [key: string]: number;
   };
-  inventory: Array<{
-    name: string;
-    quantity: number;
-  }>;
+  inventory: InventoryItem[];
   skills: {
     [key: string]: {
       proficient: boolean;
@@ -78,7 +99,51 @@ export interface CharacterSheetData {
     armor: string[];
     weapons: string[];
     tools: string[];
+    savingThrows?: string[];
+    skills?: string[];
   };
+  // Extended properties for advanced features
+  equippedItemIds?: string[];
+  equippedArmor?: InventoryItem;
+  equippedShield?: InventoryItem;
+  equippedWeapons?: InventoryItem[];
+  attunedItems?: InventoryItem[];
+  equipmentConstraints?: {
+    maxAttunedItems?: number;
+    weightLimit?: number;
+    maxArmor?: number;
+    maxShields?: number;
+  };
+  spellbook?: {
+    known?: string[];
+    prepared?: string[];
+    alwaysPrepared?: string[];
+    cantrips?: string[];
+    wizardSpellbook?: string[];
+    grantedSpells?: string[];
+  };
+  featSpells?: Record<string, string[]>;
+  weaponMasteries?: {
+    active?: Array<{ weapon: string; property: string; }>;
+    available?: Array<{ weapon: string; property: string; }>;
+    max?: number;
+  };
+  darkvision?: number;
+  features?: CharacterFeatures;
+  classFeatures_parsed?: any[];
+  featFeatures?: Record<string, any[]>;
+  backgroundFeatures?: any[];
+  speciesChoices?: Record<string, unknown>;
+  selectedClassChoices?: Record<string, unknown>;
+  classChoices?: Record<string, unknown>;
+  featChoices?: Record<string, Record<string, unknown>>;
+  selectedOriginFeats?: string[];
+  selectedLanguages?: string[];
+  speciesAdditionalSpeeds?: Record<string, unknown>;
+  speciesResistances?: string[];
+  speciesImmunities?: string[];
+  backgroundEquipment?: any[];
+  equipment?: any[];
 }
 
 export interface CharacterSheetProps {
@@ -218,7 +283,43 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     armor: [],
     weapons: [],
     tools: [],
+    savingThrows: [],
+    skills: [],
   },
+  equippedItemIds: [],
+  equippedWeapons: [],
+  attunedItems: [],
+  equipmentConstraints: {
+    maxAttunedItems: 3,
+  },
+  spellbook: {
+    known: [],
+    prepared: [],
+    alwaysPrepared: [],
+  },
+  featSpells: {},
+  weaponMasteries: {
+    active: [],
+    available: [],
+  },
+  features: {
+    classFeatures: [],
+    subclassFeatures: [],
+    speciesTraits: [],
+    backgroundFeatures: [],
+    feats: [],
+    magicItemFeatures: [],
+    customFeatures: [],
+  },
+  classFeatures_parsed: [],
+  featFeatures: {},
+  backgroundFeatures: [],
+  speciesChoices: {},
+  selectedClassChoices: {},
+  classChoices: {},
+  featChoices: {},
+  selectedOriginFeats: [],
+  selectedLanguages: [],
 });
 
 // Skill to ability mapping

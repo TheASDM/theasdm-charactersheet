@@ -90,8 +90,8 @@ export const RegisterPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Register - WTForged</title>
-        <meta name="description" content="Create a WTForged account" />
+        <title>Register - Dungeons.WTF Character Generator</title>
+        <meta name="description" content="Create a Dungeons.WTF account" />
       </Helmet>
 
       <AuthContainer>
@@ -99,7 +99,7 @@ export const RegisterPage: React.FC = () => {
           <AuthHeader>
             <img
               src="/images/wtforged-logo.png"
-              alt="WTForged"
+              alt="Dungeons.WTF Character Generator"
               style={{
                 maxWidth: '300px',
                 width: '100%',

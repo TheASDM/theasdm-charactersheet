@@ -3,7 +3,6 @@ import { CharacterSheetData, InventoryItem } from '../types/characterSheet';
 import {
   TraitsSection,
   TraitsTitle,
-  SectionEditButton,
   TraitsGrid,
   TraitCard,
   TraitName,
@@ -65,7 +64,6 @@ interface CharacterTraitsSectionProps {
 
 export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
   character,
-  traits,
   onUpdateCharacter,
   onSpellcastingFeatureExtracted,
 }) => {
@@ -195,7 +193,7 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
     if (onUpdateCharacter) {
       onUpdateCharacter({
         weaponMasteries: {
-          available: masteryConfig.max,
+          max: masteryConfig.max,
           active: masteries
         }
       });
