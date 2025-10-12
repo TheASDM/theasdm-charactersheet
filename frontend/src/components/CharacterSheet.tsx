@@ -91,7 +91,7 @@ const AbilityScore = styled.div`
   text-align: center;
 
   .ability-name {
-    color: #ce9016;
+    color: #d4af37;
     font-family: 'Cinzel', serif;
     font-size: 0.9rem;
     font-weight: 600;
@@ -127,7 +127,7 @@ const AbilityScore = styled.div`
   }
 
   .modifier {
-    color: #ce9016;
+    color: #d4af37;
     font-size: 1.1rem;
     font-weight: bold;
     margin-bottom: 8px;
@@ -139,7 +139,7 @@ const AbilityScore = styled.div`
     justify-content: center;
     gap: 5px;
     font-size: 0.9rem;
-    color: #b8860b;
+    color: #c9a961;
 
     input[type='checkbox'] {
       transform: scale(1.2);
@@ -147,7 +147,7 @@ const AbilityScore = styled.div`
 
     .save-modifier {
       font-weight: bold;
-      color: #ce9016;
+      color: #d4af37;
       margin-left: 5px;
     }
   }
@@ -188,13 +188,6 @@ const SkillRow = styled.div`
     transform: scale(1.1);
   }
 
-  .proficiency-marker {
-    color: #8b6914;
-    font-size: 0.7rem;
-    margin-right: 0.3rem;
-    line-height: 1;
-  }
-
   .modifier {
     margin-left: auto;
     font-weight: bold;
@@ -205,13 +198,6 @@ const SkillRow = styled.div`
 
   .skill-name {
     flex: 1;
-
-    .ability-abbr {
-      font-size: 0.75rem;
-      color: rgba(139, 105, 20, 0.5);
-      margin-left: 0.3rem;
-      font-weight: 400;
-    }
   }
 `;
 
@@ -392,7 +378,7 @@ const WeaponsSection = styled.div`
 `;
 
 const SaveButton = styled.button`
-  background: linear-gradient(145deg, #ce9016, #b8860b);
+  background: linear-gradient(145deg, #d4af37, #b8941f);
   color: #2c1810;
   border: none;
   padding: 12px 24px;
@@ -409,9 +395,9 @@ const SaveButton = styled.button`
   display: block;
 
   &:hover {
-    background: linear-gradient(145deg, #b8860b, #a0801b);
+    background: linear-gradient(145deg, #b8941f, #a0801b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(206, 144, 22, 0.4);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
   }
 
   &:active {
@@ -538,19 +524,6 @@ export default function CharacterSheet({
     'Stealth',
     'Survival',
   ];
-
-  // Helper function to get ability abbreviation
-  const getAbilityAbbreviation = (ability: string): string => {
-    const abbreviations: { [key: string]: string } = {
-      'strength': 'STR',
-      'dexterity': 'DEX',
-      'constitution': 'CON',
-      'intelligence': 'INT',
-      'wisdom': 'WIS',
-      'charisma': 'CHA',
-    };
-    return abbreviations[ability] || '';
-  };
 
   return (
     <>
@@ -706,10 +679,8 @@ export default function CharacterSheet({
                   proficient: false,
                   modifier: 0,
                 };
-                const abilityKey = skillToAbility[skill];
-                const abilityAbbr = abilityKey ? getAbilityAbbreviation(abilityKey) : '';
                 return (
-                  <SkillRow key={skill} className={skillData.proficient ? 'proficient' : ''}>
+                  <SkillRow key={skill}>
                     <input
                       type="checkbox"
                       checked={skillData.proficient}
@@ -726,10 +697,7 @@ export default function CharacterSheet({
                         })
                       }
                     />
-                    {skillData.proficient && <span className="proficiency-marker">●</span>}
-                    <span className="skill-name">
-                      {skill} <span className="ability-abbr">({abilityAbbr})</span>
-                    </span>
+                    <span className="skill-name">{skill}</span>
                     <span className="modifier">
                       {formatModifier(skillData.modifier)}
                     </span>
@@ -969,22 +937,11 @@ export default function CharacterSheet({
             />
           </SectionBox>
 
-          {character.darkvision && character.darkvision > 0 && (
-            <SectionBox>
-              <h3>Special Senses</h3>
-              <textarea
-                placeholder="Special senses..."
-                value={`Darkvision ${character.darkvision} ft`}
-                readOnly
-              />
-            </SectionBox>
-          )}
-
           <SectionBox>
             <h3>Class Features</h3>
             <textarea
               placeholder="List your class features..."
-              value={character.classFeatures?.join('\n\n') || ''}
+              value={character.classFeatures.join('\n\n')}
               onChange={(e) => {
                 const features = e.target.value
                   .split('\n\n')
@@ -998,7 +955,7 @@ export default function CharacterSheet({
             <h3>Species Traits</h3>
             <textarea
               placeholder="List your species traits..."
-              value={character.speciesTraits?.join('\n\n') || ''}
+              value={character.speciesTraits.join('\n\n')}
               onChange={(e) => {
                 const traits = e.target.value
                   .split('\n\n')
@@ -1012,7 +969,7 @@ export default function CharacterSheet({
             <h3>Feats</h3>
             <textarea
               placeholder="List your feats..."
-              value={character.feats?.join('\n\n') || ''}
+              value={character.feats.join('\n\n')}
               onChange={(e) => {
                 const feats = e.target.value
                   .split('\n\n')

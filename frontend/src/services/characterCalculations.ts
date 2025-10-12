@@ -87,7 +87,7 @@ const normaliseString = (value?: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const normaliseItemLabel = (value: string): string => normaliseString(value).replace(/\s+/g, ' ');
+const normaliseItemLabel = (value: string): string => normaliseString((value ?? '').split('|')[0]);
 
 // Helper to remove quantity markers from item names (e.g., "Handaxe (4)" -> "Handaxe")
 const stripQuantityFromName = (name: string): string => {
@@ -98,7 +98,7 @@ const stripQuantityFromName = (name: string): string => {
 const norm = (s?: string): string =>
   (s ?? '')
     .toLowerCase()
-    .replace(/[\|\(\)\-_,.]+/g, ' ')
+    .replace(/[-|()_,.]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -298,6 +298,7 @@ export const canEquipVerbose = (
   const metadata = getEquipmentMetadata(item.name);
 
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
     console.log('[canEquipVerbose] Checking item:', {
       itemName: item.name,
       metadata,
@@ -313,6 +314,7 @@ export const canEquipVerbose = (
   const profWeapons = character.proficiencies?.weapons?.map(normaliseString) ?? [];
 
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
     console.log('[canEquipVerbose] Proficiencies:', {
       profArmor,
       profWeapons
@@ -338,6 +340,7 @@ export const canEquipVerbose = (
     const isProficient = exact || hasCategory;
 
     if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
       console.log('[canEquipVerbose] Weapon check:', {
         exact,
         weaponCat,
@@ -389,6 +392,7 @@ export const canEquipVerbose = (
     );
 
     if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
       console.log('[canEquipVerbose] Armor check:', {
         armorCat,
         hasArmor,
