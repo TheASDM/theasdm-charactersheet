@@ -581,18 +581,52 @@ export function calculateSpellSlots(character: CharacterSheetData): Record<strin
   const fullCasters = ['Bard', 'Cleric', 'Druid', 'Sorcerer', 'Wizard'];
   const halfCasters = ['Paladin', 'Ranger'];
 
-  if (fullCasters.includes(character.class)) {
-    // Full caster progression (simplified)
+  // Warlock uses Pact Magic with different progression
+  if (character.class === 'Warlock') {
     const slots: Record<string, number> = {};
-    if (character.level >= 1) slots['1st'] = Math.min(4, 1 + Math.floor(character.level / 2));
-    if (character.level >= 3) slots['2nd'] = Math.min(3, Math.floor((character.level - 2) / 2));
-    if (character.level >= 5) slots['3rd'] = Math.min(3, Math.floor((character.level - 4) / 2));
-    if (character.level >= 7) slots['4th'] = Math.min(3, Math.floor((character.level - 6) / 3));
-    if (character.level >= 9) slots['5th'] = Math.min(2, Math.floor((character.level - 8) / 4));
+    // Warlocks get 1 slot at level 1, scaling up to 4 slots
+    // Slot level increases every few levels
+    const slotCount = character.level === 1 ? 1 : character.level >= 17 ? 4 : character.level >= 11 ? 3 : 2;
+
+    if (character.level >= 1 && character.level < 3) slots['1st'] = slotCount;
+    else if (character.level >= 3 && character.level < 5) slots['2nd'] = slotCount;
+    else if (character.level >= 5 && character.level < 7) slots['3rd'] = slotCount;
+    else if (character.level >= 7 && character.level < 9) slots['4th'] = slotCount;
+    else if (character.level >= 9) slots['5th'] = slotCount;
+
+    return slots;
+  }
+
+  if (fullCasters.includes(character.class)) {
+    // Full caster progression - D&D 2024 standard progression
+    const slots: Record<string, number> = {};
+    if (character.level >= 1) slots['1st'] = 2;
+    if (character.level >= 2) slots['1st'] = 3;
+    if (character.level >= 3) {
+      slots['1st'] = 4;
+      slots['2nd'] = 2;
+    }
+    if (character.level >= 4) slots['2nd'] = 3;
+    if (character.level >= 5) {
+      slots['3rd'] = 2;
+    }
+    if (character.level >= 6) slots['3rd'] = 3;
+    if (character.level >= 7) {
+      slots['4th'] = 1;
+    }
+    if (character.level >= 8) slots['4th'] = 2;
+    if (character.level >= 9) {
+      slots['4th'] = 3;
+      slots['5th'] = 1;
+    }
+    if (character.level >= 10) slots['5th'] = 2;
     if (character.level >= 11) slots['6th'] = 1;
     if (character.level >= 13) slots['7th'] = 1;
     if (character.level >= 15) slots['8th'] = 1;
     if (character.level >= 17) slots['9th'] = 1;
+    if (character.level >= 18) slots['5th'] = 3;
+    if (character.level >= 19) slots['6th'] = 2;
+    if (character.level >= 20) slots['7th'] = 2;
     return slots;
   } else if (halfCasters.includes(character.class)) {
     // Half caster progression (simplified)

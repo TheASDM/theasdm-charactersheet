@@ -27,29 +27,12 @@ const CasterBarContainer = styled.div`
   min-height: 40px;
   max-height: 40px;
   flex-wrap: nowrap;
-  overflow-x: auto;
+  overflow: hidden;
 
-  &::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(139, 105, 20, 0.3);
-    border-radius: 2px;
-  }
-
-  @media (max-width: 1200px) {
+  @media (max-width: 768px) {
     flex-wrap: wrap;
     max-height: none;
   }
-`;
-
-const CasterLabel = styled.div`
-  color: #ce9016;
-  font-weight: 600;
-  font-size: 0.8rem;
-  min-width: fit-content;
-  white-space: nowrap;
 `;
 
 const CasterInfoGroup = styled.div`
@@ -122,7 +105,7 @@ export default function SpellcastingBar({
   // Calculate proficiency bonus
   const proficiencyBonus = Math.ceil(character.level / 4) + 1;
 
-  // Calculate total spell slots weighted by level
+  // Calculate total spell slots weighted by level (e.g., 2x 1st-level = 2, 1x 4th-level = 4)
   const spellSlots = calculateSpellSlots(character);
   const totalSlots = Object.entries(spellSlots).reduce((total, [level, count]) => {
     // Extract spell level number (e.g., "1st" -> 1, "2nd" -> 2)
@@ -155,36 +138,18 @@ export default function SpellcastingBar({
 
   const info = parseSpellcastingInfo(spellcastingFeature.description);
 
-  // Determine if this is Pact Magic or regular Spellcasting
-  const isPactMagic = spellcastingFeature.name === 'Pact Magic';
-  const title = isPactMagic ? 'Pact Magic' : 'Spellcasting';
-
   return (
     <CasterBarContainer>
-      <CasterLabel>{title}</CasterLabel>
-
-      <Divider />
-
       <CasterInfoGroup>
-        <InfoLabel>Ability:</InfoLabel>
+        <InfoLabel>Spellcasting:</InfoLabel>
         <InfoValue>{info.ability}</InfoValue>
       </CasterInfoGroup>
 
-      <CasterInfoGroup>
-        <InfoLabel>Save DC:</InfoLabel>
-        <InfoValue>{info.saveDC}</InfoValue>
-      </CasterInfoGroup>
-
-      <CasterInfoGroup>
-        <InfoLabel>Attack:</InfoLabel>
-        <InfoValue>+{info.attackBonus}</InfoValue>
-      </CasterInfoGroup>
-
       <Divider />
 
       <CasterInfoGroup>
-        <InfoLabel>{info.spellsLabel}:</InfoLabel>
-        <InfoValue>{info.spellsValue}</InfoValue>
+        <InfoLabel>DC:</InfoLabel>
+        <InfoValue>{info.saveDC}</InfoValue>
       </CasterInfoGroup>
 
       <Divider />
