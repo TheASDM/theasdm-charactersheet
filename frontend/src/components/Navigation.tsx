@@ -328,6 +328,7 @@ const Navigation: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [charactersOpen, setCharactersOpen] = useState(false);
   const [referenceOpen, setReferenceOpen] = useState(false);
+  const [dmOpen, setDmOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const autoCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -335,6 +336,7 @@ const Navigation: React.FC = () => {
     setMobileMenuOpen(false);
     setCharactersOpen(false);
     setReferenceOpen(false);
+    setDmOpen(false);
     setAccountOpen(false);
 
     // Clear any pending auto-close timeouts
@@ -361,6 +363,7 @@ const Navigation: React.FC = () => {
     autoCloseTimeout.current = setTimeout(() => {
       setCharactersOpen(false);
       setReferenceOpen(false);
+      setDmOpen(false);
       setAccountOpen(false);
     }, 3000);
   };
@@ -371,6 +374,7 @@ const Navigation: React.FC = () => {
       return;
     }
     setMobileMenuOpen(false);
+    setDmOpen(false);
     setAccountOpen(false);
     navigate('/');
   };
@@ -509,6 +513,52 @@ const Navigation: React.FC = () => {
               </DropdownMenu>
             </DropdownContainer>
 
+            {user?.role === 'DM' && (
+              <DropdownContainer>
+                <DropdownButton
+                  $isActive={location.pathname.startsWith('/dm')}
+                  $isOpen={dmOpen}
+                  onClick={() => setDmOpen(!dmOpen)}
+                >
+                  <span className="icon">🧰</span>
+                  <span className="label">DM Tools</span>
+                  <span className="arrow">▼</span>
+                </DropdownButton>
+                <DropdownMenu $isOpen={dmOpen}>
+                  <DropdownItem
+                    to="/dm"
+                    $isActive={location.pathname === '/dm'}
+                    onClick={handleLinkClick}
+                  >
+                    <span className="icon">📊</span>
+                    <span>Dashboard</span>
+                  </DropdownItem>
+                  <DropdownItem
+                    to="#"
+                    $isActive={false}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      handleLinkClick();
+                    }}
+                  >
+                    <span className="icon">📓</span>
+                    <span>Session Planner (Coming Soon)</span>
+                  </DropdownItem>
+                  <DropdownItem
+                    to="#"
+                    $isActive={false}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      handleLinkClick();
+                    }}
+                  >
+                    <span className="icon">🎭</span>
+                    <span>NPC Manager (In Development)</span>
+                  </DropdownItem>
+                </DropdownMenu>
+              </DropdownContainer>
+            )}
+
             {/* My Account Dropdown */}
             <DropdownContainer>
               <DropdownButton
@@ -518,7 +568,7 @@ const Navigation: React.FC = () => {
               >
                 <span className="icon">👤</span>
                 <span className="label">
-                  {isAuthenticated ? user?.username : 'My Account'}
+                  {isAuthenticated ? user?.displayName : 'My Account'}
                 </span>
                 <span className="arrow">▼</span>
               </DropdownButton>
@@ -526,13 +576,9 @@ const Navigation: React.FC = () => {
                 {isAuthenticated ? (
                   <>
                     <DropdownItem
-                      to="#"
-                      $isActive={false}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        // TODO: Navigate to profile page when created
-                        handleLinkClick();
-                      }}
+                      to="/profile"
+                      $isActive={location.pathname === '/profile'}
+                      onClick={handleLinkClick}
                     >
                       <span className="icon">⚙️</span>
                       <span>Profile</span>

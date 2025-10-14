@@ -19,6 +19,9 @@ import {
   EquipmentPage,
   LoginPage,
   RegisterPage,
+  DiscordCallbackPage,
+  ProfilePage,
+  DMDashboardPage,
 } from './pages';
 import SpellsPage from './pages/SpellsPage';
 import CharacterGeneratorPage from './pages/CharacterGeneratorPage';
@@ -326,8 +329,25 @@ const App: React.FC = () => {
               {/* Auth routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/auth/discord/callback" element={<DiscordCallbackPage />} />
 
               {/* Protected routes - require authentication */}
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dm"
+                element={
+                  <ProtectedRoute requiredRole="DM">
+                    <DMDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/characters" element={
                 <ProtectedRoute>
                   <CharactersPage />

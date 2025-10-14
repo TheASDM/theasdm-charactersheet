@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db';
+import { UserRole } from '../types/auth.types';
 
 // Extend Express Request type to include user
 export interface AuthRequest extends Request {
   user?: {
     id: number;
-    username: string;
-    email: string;
-    isDm: boolean;
+    displayName: string;
+    role: UserRole;
+    avatarUrl?: string | null;
   };
 }
 
@@ -39,9 +40,8 @@ export const authenticate = async (
 
     const decoded = jwt.verify(token, jwtSecret) as {
       userId: number;
-      username: string;
-      email: string;
-      isDm: boolean;
+      displayName: string;
+      role: UserRole;
     };
 
     // Fetch user from database to ensure they still exist
@@ -49,9 +49,9 @@ export const authenticate = async (
       where: { id: decoded.userId },
       select: {
         id: true,
-        username: true,
-        email: true,
-        isDm: true,
+        displayName: true,
+        role: true,
+        avatarUrl: true,
       },
     });
 
@@ -61,7 +61,12 @@ export const authenticate = async (
     }
 
     // Attach user to request
-    req.user = user;
+    req.user = {
+      id: user.id,
+      displayName: user.displayName,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+    };
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
@@ -104,23 +109,27 @@ export const optionalAuthenticate = async (
 
     const decoded = jwt.verify(token, jwtSecret) as {
       userId: number;
-      username: string;
-      email: string;
-      isDm: boolean;
+      displayName: string;
+      role: UserRole;
     };
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
         id: true,
-        username: true,
-        email: true,
-        isDm: true,
+        displayName: true,
+        role: true,
+        avatarUrl: true,
       },
     });
 
     if (user) {
-      req.user = user;
+      req.user = {
+        id: user.id,
+        displayName: user.displayName,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+      };
     }
 
     next();
@@ -143,7 +152,7 @@ export const requireDM = (
     return;
   }
 
-  if (!req.user.isDm) {
+  if (req.user.role !== 'DM') {
     res.status(403).json({ error: 'DM privileges required' });
     return;
   }

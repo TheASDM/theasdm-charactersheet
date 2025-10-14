@@ -376,6 +376,15 @@ export const apiClient = {
   },
 };
 
+export const resolveApiUrl = (path: string): string => {
+  const base = axiosInstance.defaults.baseURL ?? getApiBaseUrl();
+  const normalisedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  if (!path.startsWith('/')) {
+    return `${normalisedBase}/${path}`;
+  }
+  return `${normalisedBase}${path}`;
+};
+
 export { axiosInstance };
 export const AUTH_EVENTS = {
   UNAUTHORIZED: AUTH_UNAUTHORIZED_EVENT,

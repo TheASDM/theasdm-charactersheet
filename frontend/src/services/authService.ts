@@ -1,4 +1,4 @@
-import { apiClient, request, withSignal } from './api';
+import { apiClient, request, resolveApiUrl, withSignal } from './api';
 import { ApiResult, User, ok, isError } from '@/types/api';
 import { getSessionToken } from './session';
 
@@ -8,43 +8,12 @@ export interface AuthSession {
   token: string;
 }
 
-export interface RegisterData {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
 export interface UpdateProfileData {
-  username?: string;
-  email?: string;
-}
-
-export interface UpdatePasswordData {
-  currentPassword: string;
-  newPassword: string;
-  confirmNewPassword: string;
+  displayName?: string;
 }
 
 interface AuthMeResponse {
   user: User;
-}
-
-interface SuccessMessage {
-  message: string;
-}
-
-export async function register(data: RegisterData): Promise<ApiResult<AuthSession>> {
-  return request<AuthSession>(() => apiClient.post<AuthSession>('/auth/register', data));
-}
-
-export async function login(data: LoginData): Promise<ApiResult<AuthSession>> {
-  return request<AuthSession>(() => apiClient.post<AuthSession>('/auth/login', data));
 }
 
 export async function logout(signal?: AbortSignal): Promise<ApiResult<void>> {
@@ -74,26 +43,28 @@ export async function updateProfile(
   return request<AuthSession>(() => apiClient.patch<AuthSession>('/auth/profile', data));
 }
 
-export async function updatePassword(
-  data: UpdatePasswordData
-): Promise<ApiResult<SuccessMessage>> {
-  return request<SuccessMessage>(() => apiClient.patch<SuccessMessage>('/auth/password', data));
-}
-
 export const isAuthenticated = (): boolean => !!getSessionToken();
 
 export const getToken = (): string | null => getSessionToken();
 
+export const getDiscordLoginUrl = (redirectTo?: string): string => {
+  const query = new URLSearchParams();
+  if (redirectTo) {
+    query.set('redirectTo', redirectTo);
+  }
+  const base = resolveApiUrl('/auth/discord');
+  const hasQuery = query.toString();
+  return hasQuery ? `${base}?${query.toString()}` : base;
+};
+
 export const authService = {
-  register,
-  login,
   logout,
   me,
   getCurrentUser,
   updateProfile,
-  updatePassword,
   isAuthenticated,
   getToken,
+  getDiscordLoginUrl,
 };
 
 export type { User };

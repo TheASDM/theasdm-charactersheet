@@ -146,14 +146,23 @@ export interface PaginatedResponse<T> {
 }
 
 // User Types
+export type UserRole = 'PLAYER' | 'DM';
+
 export interface User {
   id: number;
-  discordId?: string;
-  username: string;
-  email?: string;
-  isDm: boolean;
+  discordId: string;
+  displayName: string;
+  username?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  role: UserRole;
+  lastLoginAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  _count?: {
+    characters: number;
+    campaigns: number;
+  };
 }
 
 // Character Types
@@ -163,7 +172,7 @@ export type Character = Omit<PrismaCharacter, 'createdAt' | 'updatedAt' | 'chara
   characterData: Record<string, unknown>;
   user?: {
     id: number;
-    username: string;
+    displayName: string;
   };
   campaign?: {
     id: number;

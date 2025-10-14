@@ -135,6 +135,19 @@ export const SubmitButton = styled.button`
   }
 `;
 
+export const DiscordButton = styled(SubmitButton)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #5865f2 0%, #4b55d6 100%);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(88, 101, 242, 0.45);
+  }
+`;
+
 export const AuthFooter = styled.div`
   margin-top: 1.5rem;
   text-align: center;

@@ -12,3 +12,6 @@ export { default as SpeciesPage } from './SpeciesPage';
 export { default as EquipmentPage } from './EquipmentPage';
 export { default as LoginPage } from './LoginPage';
 export { default as RegisterPage } from './RegisterPage';
+export { default as DiscordCallbackPage } from './DiscordCallbackPage';
+export { default as ProfilePage } from './ProfilePage';
+export { default as DMDashboardPage } from './DMDashboardPage';

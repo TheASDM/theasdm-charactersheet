@@ -15,7 +15,7 @@ Node.js/Express backend for the D&D Character Sheet Generator with TypeScript, P
 ### 🚧 In Development
 
 - **API Endpoints**: RESTful routes for character and content management
-- **Authentication**: JWT-based user authentication system
+- **Authentication**: Discord OAuth 2.0 login with JWT session tokens
 - **Real-time Features**: Socket.io for live character updates
 
 ## 🚀 Getting Started
@@ -38,8 +38,20 @@ Node.js/Express backend for the D&D Character Sheet Generator with TypeScript, P
 
    ```bash
    cp .env.example .env
-   # Edit .env with your database and configuration details
+   # Edit .env with your database, Discord OAuth, and configuration details
    ```
+
+   **Discord OAuth variables**
+
+   | Variable | Description |
+   | --- | --- |
+   | `DISCORD_CLIENT_ID` | OAuth client ID from the Discord developer portal |
+   | `DISCORD_CLIENT_SECRET` | OAuth client secret issued by Discord |
+   | `DISCORD_REDIRECT_URI` | (Optional) Explicit callback URL for Discord to redirect to. Defaults to `<API_BASE_URL>/api/auth/discord/callback`. |
+   | `FRONTEND_URL` | Public URL of the frontend (used when redirecting back after sign-in) |
+   | `API_BASE_URL` | Base URL of the backend API (used to build default redirect URIs) |
+
+   Ensure these match the redirect URIs configured in your Discord application.
 
 3. **Database Setup**
 
@@ -47,8 +59,8 @@ Node.js/Express backend for the D&D Character Sheet Generator with TypeScript, P
    # Generate Prisma client
    npx prisma generate
 
-   # Run migrations
-   npx prisma migrate dev
+# Run migrations
+npx prisma migrate dev
 
    # Import D&D 2024 content (optional - included in seed)
    node scripts/import-spells.js
@@ -117,7 +129,7 @@ prisma/
 - **Item Model**: 30+ fields supporting weapons, armor, magic items, costs, properties
 - **Spell Model**: Complete metadata including components, school, level, damage types
 - **Character Models**: JSONB flexibility for complex character data (planned)
-- **User Models**: Authentication and Discord integration (planned)
+- **User Models**: Discord-linked accounts with role-based permissions (Player / DM)
 
 ### Import Scripts & Tools
 

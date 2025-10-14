@@ -305,7 +305,7 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
 
         <MetaInfo $hasActions={showActions}>
           <CreatedBy>
-            Created by: {character.user?.username || 'Unknown'}
+            Created by: {character.user?.displayName || 'Unknown'}
           </CreatedBy>
           <LastUpdated>
             Last updated: {new Date(character.updatedAt).toLocaleDateString()}
