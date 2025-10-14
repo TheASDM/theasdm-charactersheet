@@ -26,6 +26,13 @@ export default function CharacterActionsSection({
   editingSections,
   actions,
 }: CharacterActionsSectionProps) {
+  // Calculate how many rows to show
+  const actionCount = character.actions?.length || 0;
+  // In edit mode, show all actions + 1 empty row for adding new actions
+  // In view mode, only show rows that have content
+  const rowsToShow = editingSections.actions
+    ? Math.max(actionCount + 1, 1) // At least 1 row in edit mode
+    : actionCount; // Only show filled rows in view mode
 
   return (
     <ActionsSection style={{ flex: '2', marginTop: '0' }}>
@@ -39,7 +46,7 @@ export default function CharacterActionsSection({
         </ActionsTableHeader>
 
         {/* Dynamic Action Rows */}
-        {Array.from({ length: 8 }, (_, index) => {
+        {Array.from({ length: rowsToShow }, (_, index) => {
           const action = character.actions[index];
           const hasAction = action && action.name && action.name.trim();
 

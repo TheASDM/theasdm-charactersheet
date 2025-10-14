@@ -177,14 +177,17 @@ const formatItemName = (raw: string): string => {
 export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderData): CharacterSheetData {
   const finalAbilityScores = calculateFinalAbilityScores(builderData);
 
-  const proficiencyBonus = calculateProficiencyBonus(1);
+  const characterLevel = deriveCharacterLevel(builderData);
+  const proficiencyBonus = calculateProficiencyBonus(characterLevel);
   const constitutionModifier = calculateModifier(finalAbilityScores.constitution);
   const dexterityModifier = calculateModifier(finalAbilityScores.dexterity);
   const wisdomModifier = calculateModifier(finalAbilityScores.wisdom);
 
   const classHitDie = getClassHitDie(builderData.selectedClass);
+  const structuredFeatures = extractStructuredFeatures(builderData);
+  const hitPointAdjustment = calculateHitPointBonuses(builderData, structuredFeatures, characterLevel);
   const baseHitPoints = classHitDie + constitutionModifier;
-  const hitPoints = Math.max(1, baseHitPoints);
+  const totalHitPoints = Math.max(1, baseHitPoints + hitPointAdjustment);
 
   const skills = mapSkillProficiencies(builderData, finalAbilityScores, proficiencyBonus);
   const savingThrows = mapSavingThrows(builderData, finalAbilityScores, proficiencyBonus);
@@ -204,11 +207,9 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   const equipmentDerived = deriveEquipmentValues(finalAbilityScores, inventory, equippedItemIds);
   const armorClass = equipmentDerived.armorClass;
 
-  const structuredFeatures = extractStructuredFeatures(builderData);
-
   const characterContext = createCharacterContext({
     ...builderData,
-    level: 1,
+    level: characterLevel,
     abilityScores: finalAbilityScores,
     species: builderData.selectedSpecies,
     class: builderData.selectedClass,
@@ -297,7 +298,7 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     selectedClassChoices: builderData.selectedClassChoices || {},
 
     subclass: '',
-    level: 1,
+    level: characterLevel,
     xp: 0,
     abilityScores: finalAbilityScores,
     proficiencyBonus,
@@ -308,13 +309,13 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     passivePerception,
     darkvision: builderData.speciesDarkvision || 0,
     hitPoints: {
-      current: hitPoints,
-      max: hitPoints,
+      current: totalHitPoints,
+      max: totalHitPoints,
       temp: 0,
     },
     hitDice: {
-      current: 1,
-      max: 1,
+      current: characterLevel,
+      max: characterLevel,
       spent: 0,
     },
     deathSaves: {
@@ -795,6 +796,362 @@ function deriveEquipmentValues(
     ...(equippedShield ? { equippedShield } : {}),
     equippedWeapons,
   };
+}
+
+type HitPointFeatureCandidate = {
+  name?: string;
+  description: string;
+};
+
+function deriveCharacterLevel(builderData: CharacterBuilderData): number {
+  const looseBuilder = builderData as unknown as Record<string, unknown>;
+  const candidates = [
+    looseBuilder.level,
+    looseBuilder.characterLevel,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'number' && Number.isFinite(candidate) && candidate > 0) {
+      return Math.floor(candidate);
+    }
+  }
+
+  return 1;
+}
+
+function calculateHitPointBonuses(
+  builderData: CharacterBuilderData,
+  structuredFeatures: CharacterFeatures,
+  level: number
+): number {
+  const candidates = gatherHitPointFeatureCandidates(builderData, structuredFeatures);
+  let totalAdjustment = 0;
+  const seen = new Set<string>();
+
+  candidates.forEach((candidate) => {
+    const description = candidate.description?.trim();
+    if (!description) {
+      return;
+    }
+
+    const key = `${(candidate.name || '').trim().toLowerCase()}|${description.toLowerCase()}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+
+    totalAdjustment += extractHitPointAdjustmentFromText(description, level);
+  });
+
+  return totalAdjustment;
+}
+
+function gatherHitPointFeatureCandidates(
+  builderData: CharacterBuilderData,
+  structuredFeatures: CharacterFeatures
+): HitPointFeatureCandidate[] {
+  const candidates: HitPointFeatureCandidate[] = [];
+
+  const addCandidate = (name: string | undefined, description: string | undefined) => {
+    if (!description) {
+      return;
+    }
+    const trimmed = description.trim();
+    if (!trimmed) {
+      return;
+    }
+    const trimmedName = name?.trim();
+    const candidate: HitPointFeatureCandidate = { description: trimmed };
+    if (trimmedName) {
+      candidate.name = trimmedName;
+    }
+    candidates.push(candidate);
+  };
+
+  const structuredCollections: Array<CharacterFeature[] | undefined> = [
+    structuredFeatures.classFeatures,
+    structuredFeatures.subclassFeatures,
+    structuredFeatures.speciesTraits,
+    structuredFeatures.backgroundFeatures,
+    structuredFeatures.feats,
+    structuredFeatures.magicItemFeatures,
+    structuredFeatures.customFeatures,
+  ];
+
+  structuredCollections.forEach((collection) => {
+    collection?.forEach((feature) => addCandidate(feature.name, feature.description));
+  });
+
+  const rawSources: unknown[] = [];
+
+  if (builderData.classFeatures) {
+    rawSources.push(...builderData.classFeatures);
+  }
+  if (builderData.speciesTraits) {
+    rawSources.push(...builderData.speciesTraits);
+  }
+  if (builderData.backgroundFeatures) {
+    rawSources.push(...builderData.backgroundFeatures);
+  }
+  if (builderData.featFeatures) {
+    Object.values(builderData.featFeatures).forEach((value) => {
+      if (Array.isArray(value)) {
+        rawSources.push(...value);
+      } else if (value) {
+        rawSources.push(value);
+      }
+    });
+  }
+
+  rawSources.forEach((raw) => {
+    const parsed = normaliseRawFeature(raw);
+    if (parsed) {
+      addCandidate(parsed.name, parsed.description);
+    }
+  });
+
+  return candidates;
+}
+
+function normaliseRawFeature(raw: unknown): HitPointFeatureCandidate | null {
+  if (raw == null) {
+    return null;
+  }
+
+  if (typeof raw === 'string') {
+    const cleaned = parseDnDTemplateTag(raw).trim();
+    if (!cleaned) {
+      return null;
+    }
+
+    const colonIndex = cleaned.indexOf(':');
+    if (colonIndex > 0 && colonIndex < cleaned.length - 1) {
+      const name = cleaned.slice(0, colonIndex).trim();
+      const description = cleaned.slice(colonIndex + 1).trim();
+      const finalDescription = description || name;
+      if (!finalDescription) {
+        return null;
+      }
+      const candidate: HitPointFeatureCandidate = { description: finalDescription };
+      if (name) {
+        candidate.name = name;
+      }
+      return candidate;
+    }
+
+    return cleaned
+      ? { description: cleaned }
+      : null;
+  }
+
+  if (Array.isArray(raw)) {
+    const description = raw
+      .map((entry) => {
+        const parsed = normaliseRawFeature(entry);
+        if (parsed?.description) {
+          return parsed.description;
+        }
+        if (typeof entry === 'string') {
+          return parseDnDTemplateTag(entry);
+        }
+        return '';
+      })
+      .filter((value) => value && value.trim().length > 0)
+      .join(' ');
+
+    return description ? { description } : null;
+  }
+
+  if (typeof raw === 'object') {
+    const record = raw as Record<string, unknown>;
+    const rawName = typeof record.name === 'string'
+      ? record.name
+      : typeof record.title === 'string'
+        ? record.title
+        : undefined;
+
+    const descriptionCandidates = [
+      record.description,
+      record.desc,
+      record.entries,
+      record.text,
+    ];
+
+    for (const candidate of descriptionCandidates) {
+      const flattened = flattenDescription(candidate);
+      if (flattened) {
+        const description = flattened.trim();
+        if (!description) {
+          continue;
+        }
+        const trimmedName = rawName?.trim();
+        const candidate: HitPointFeatureCandidate = { description };
+        if (trimmedName) {
+          candidate.name = trimmedName;
+        }
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
+function flattenDescription(value: unknown): string {
+  if (!value) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return parseDnDTemplateTag(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => flattenDescription(entry))
+      .filter((text) => text && text.trim().length > 0)
+      .join(' ');
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+
+    if (record.entries) {
+      return flattenDescription(record.entries);
+    }
+    if (record.description) {
+      return flattenDescription(record.description);
+    }
+    if (record.text) {
+      return flattenDescription(record.text);
+    }
+    if (record.value) {
+      return flattenDescription(record.value);
+    }
+  }
+
+  return '';
+}
+
+function extractHitPointAdjustmentFromText(description: string, level: number): number {
+  const lower = description.toLowerCase();
+
+  if (!lower.includes('hit point')) {
+    return 0;
+  }
+
+  const immediateValues: number[] = [];
+  const perLevelValues: number[] = [];
+  let perLevelMultiplier: number | null = null;
+
+  collectNumericMatches(
+    lower,
+    /hit point(?:s)? maximum increases by ([+-]?\d+)(?!\s*(?:each|every|per)\s*level)/g,
+    immediateValues
+  );
+
+  const perLevelRegexes = [
+    /\bincreases by (?:an additional\s+)?([+-]?\d+)\s*(?:each|every|per)\s*level(?:\s*(?:of|in)\s*this\s*class)?\b/g,
+    /\bincreases by (?:an additional\s+)?([+-]?\d+)\s*(?:whenever|when)\s*you gain (?:a|another)?\s*level(?:\s*(?:of|in)\s*this\s*class)?\b/g,
+    /\byou gain (?:an additional\s+)?([+-]?\d+)\s+hit point(?:s)?\s*(?:each|every|per)\s*level\b/g,
+    /\byou gain (?:an additional\s+)?([+-]?\d+)\s+hit point(?:s)?\s*(?:whenever|when)\s*you gain (?:a|another)?\s*level\b/g,
+  ];
+
+  perLevelRegexes.forEach((regex) => collectNumericMatches(lower, regex, perLevelValues));
+
+  const perLevelMultiplierPatterns = [
+    { regex: /hit point(?:s)? maximum increases by (?:an amount equal to|equal to|by)\s+(?:your\s+)?(?:[a-z]+\s+){0,2}level\b/g, multiplier: 1 },
+    { regex: /hit point(?:s)? maximum increases by (?:twice|double)\s+(?:your\s+)?(?:[a-z]+\s+){0,2}level\b/g, multiplier: 2 },
+    { regex: /hit point(?:s)? maximum increases by (?:three times|thrice)\s+(?:your\s+)?(?:[a-z]+\s+){0,2}level\b/g, multiplier: 3 },
+  ];
+
+  perLevelMultiplierPatterns.forEach(({ regex, multiplier }) => {
+    let match: RegExpExecArray | null;
+    regex.lastIndex = 0;
+    while ((match = regex.exec(lower)) !== null) {
+      const matchIndex = match.index ?? 0;
+      if (isTemporaryHitPointContext(lower, matchIndex, match[0].length)) {
+        continue;
+      }
+      perLevelMultiplier = Math.max(perLevelMultiplier ?? 0, multiplier);
+    }
+  });
+
+  if (immediateValues.length === 0 && perLevelValues.length === 0 && perLevelMultiplier === null) {
+    return 0;
+  }
+
+  const immediateCounts = new Map<number, number>();
+  immediateValues.forEach((value) => {
+    if (value > 0) {
+      immediateCounts.set(value, (immediateCounts.get(value) ?? 0) + 1);
+    }
+  });
+
+  if (perLevelValues.length > 0) {
+    perLevelValues.forEach((value) => {
+      if (value <= 0) {
+        return;
+      }
+      const existing = immediateCounts.get(value);
+      if (existing && existing > 0) {
+        immediateCounts.set(value, existing - 1);
+      }
+    });
+  }
+
+  let flatBonus = 0;
+  immediateCounts.forEach((count, value) => {
+    if (count > 0) {
+      flatBonus += value * count;
+    }
+  });
+
+  let perLevelTotal = perLevelMultiplier ?? 0;
+  if (perLevelMultiplier === null) {
+    perLevelTotal += perLevelValues.reduce((sum, value) => (value > 0 ? sum + value : sum), 0);
+  } else {
+    perLevelTotal += perLevelValues
+      .filter((value) => value > 0 && value !== perLevelMultiplier)
+      .reduce((sum, value) => sum + value, 0);
+  }
+
+  if (flatBonus === 0 && perLevelTotal === 0) {
+    return 0;
+  }
+
+  const effectiveLevel = Math.max(1, Math.floor(level) || 1);
+  return flatBonus + perLevelTotal * effectiveLevel;
+}
+
+function collectNumericMatches(
+  text: string,
+  regex: RegExp,
+  bucket: number[]
+): void {
+  regex.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    const rawValue = match[1];
+    const numeric = parseInt(rawValue, 10);
+    if (!Number.isFinite(numeric)) {
+      continue;
+    }
+
+    const matchIndex = match.index ?? 0;
+    if (isTemporaryHitPointContext(text, matchIndex, match[0].length)) {
+      continue;
+    }
+
+    bucket.push(numeric);
+  }
+}
+
+function isTemporaryHitPointContext(text: string, start: number, length: number): boolean {
+  const windowStart = Math.max(0, start - 20);
+  const windowEnd = Math.min(text.length, start + length + 20);
+  const snippet = text.slice(windowStart, windowEnd);
+  return snippet.includes('temporary');
 }
 
 function mapInventoryToWeapons(

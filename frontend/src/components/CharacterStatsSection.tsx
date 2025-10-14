@@ -9,6 +9,8 @@ import {
   HPArrows,
   HPArrow,
 } from '../styles/components';
+import { HitDiceDisplay } from './HitDiceDisplay';
+import { HitDiceType } from './HitDiceType';
 
 interface CharacterStatsSectionProps {
   character: CharacterSheetData;
@@ -29,6 +31,11 @@ export const CharacterStatsSection: React.FC<CharacterStatsSectionProps> = ({
     <StatsContainer>
       <StatsSection>
         <StatBox>
+          <HitDiceDisplay
+            character={character}
+            isEditing={isEditing}
+            onUpdateCharacter={updateCharacter}
+          />
           <div className="stat-label">Hit Points</div>
           {isEditing ? (
             <div className="hp-edit-container">
@@ -107,6 +114,7 @@ export const CharacterStatsSection: React.FC<CharacterStatsSectionProps> = ({
               {character.hitPoints.current}/{character.hitPoints.max}
             </div>
           )}
+          <HitDiceType className={character.class} />
         </StatBox>
       </StatsSection>
 
@@ -151,7 +159,6 @@ export const CharacterStatsSection: React.FC<CharacterStatsSectionProps> = ({
           )}
         </StatBox>
       </StatsSection>
-
     </StatsContainer>
   );
 };

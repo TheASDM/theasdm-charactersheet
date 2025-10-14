@@ -2,6 +2,28 @@
 
 All notable changes to WTForged will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Hit Dice Display**: Added visual hit dice tracker to character sheet
+  - Shows hit die type (d6, d8, d10, d12) centered below HP display
+  - Shows current/max hit dice count in dedicated bar
+  - Click to adjust hit dice in edit mode
+  - Automatically detects correct die type based on character class
+
+### Improved
+- **Health Point Calculation**: Enhanced logic for detecting HP increases from feats and features
+  - Better parsing of complex feat descriptions with HP bonuses
+  - Improved detection of per-level HP increases
+  - More accurate handling of HP bonuses from multiple sources
+  - Fixed edge cases where HP bonuses weren't being properly calculated during character creation
+- **Actions Table**: Dynamic row rendering based on actual content
+  - View mode now only shows rows with actions (no empty rows)
+  - Edit mode shows existing actions plus one empty row for adding new entries
+  - Table automatically resizes based on number of actions instead of showing fixed 8 rows
+
+---
+
 ## [0.4.0] - 2025-10-08
 
 ### Fixed
