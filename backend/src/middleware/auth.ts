@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db';
+import { UserRole } from '@prisma/client';
 
 // Extend Express Request type to include user
 export interface AuthRequest extends Request {
   user?: {
     id: number;
-    username: string;
+    displayName: string;
+    role: UserRole;
     email: string;
-    isDm: boolean;
   };
 }
 
@@ -39,9 +40,8 @@ export const authenticate = async (
 
     const decoded = jwt.verify(token, jwtSecret) as {
       userId: number;
-      username: string;
-      email: string;
-      isDm: boolean;
+      displayName: string;
+      role: UserRole;
     };
 
     // Fetch user from database to ensure they still exist
@@ -49,9 +49,9 @@ export const authenticate = async (
       where: { id: decoded.userId },
       select: {
         id: true,
-        username: true,
+        displayName: true,
         email: true,
-        isDm: true,
+        role: true,
       },
     });
 
@@ -104,18 +104,17 @@ export const optionalAuthenticate = async (
 
     const decoded = jwt.verify(token, jwtSecret) as {
       userId: number;
-      username: string;
-      email: string;
-      isDm: boolean;
+      displayName: string;
+      role: UserRole;
     };
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
         id: true,
-        username: true,
+        displayName: true,
         email: true,
-        isDm: true,
+        role: true,
       },
     });
 
@@ -143,7 +142,7 @@ export const requireDM = (
     return;
   }
 
-  if (!req.user.isDm) {
+  if (req.user.role !== UserRole.DM) {
     res.status(403).json({ error: 'DM privileges required' });
     return;
   }

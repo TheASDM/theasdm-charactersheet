@@ -2,23 +2,24 @@
  * Authentication and User Types
  */
 
+import { UserRole } from '@prisma/client';
+
 export interface UserPayload {
   userId: number;
-  username: string;
-  email: string;
-  isDm: boolean;
+  displayName: string;
+  role: UserRole;
 }
 
-export interface RegisterRequest {
-  username: string;
+export interface AuthUserSummary {
+  id: number;
+  displayName: string;
+  username: string | null;
   email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
+  avatarUrl: string | null;
+  role: UserRole;
+  emailVerified: boolean;
+  lastLoginAt: Date | null;
+  createdAt: Date;
 }
 
 export interface RegisterRequest {
@@ -34,6 +35,7 @@ export interface LoginRequest {
 }
 
 export interface UpdateProfileRequest {
+  displayName?: string;
   username?: string;
   email?: string;
 }
@@ -46,22 +48,38 @@ export interface UpdatePasswordRequest {
 
 export interface AuthResponse {
   message: string;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    isDm: boolean;
-    createdAt: Date;
-  };
+  user: AuthUserSummary;
   token: string;
+}
+
+export interface DiscordOAuthTokens {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token: string;
+  scope: string;
+}
+
+export interface DiscordUser {
+  id: string;
+  username: string;
+  discriminator: string;
+  global_name?: string;
+  display_name?: string;
+  avatar: string | null;
+  email?: string;
+  verified?: boolean;
 }
 
 export interface UserProfile {
   id: number;
-  username: string;
+  displayName: string;
+  username: string | null;
   email: string;
-  isDm: boolean;
-  discordId?: bigint | null;
+  avatarUrl: string | null;
+  role: UserRole;
+  discordId?: string | null;
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
   _count: {
@@ -69,3 +87,5 @@ export interface UserProfile {
     campaigns: number;
   };
 }
+
+export { UserRole };

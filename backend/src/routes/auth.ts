@@ -127,11 +127,12 @@ const mapUserToSummary = (user: {
   id: number;
   displayName: string;
   username: string | null;
-  email: string | null;
+  email: string;
   avatarUrl: string | null;
   role: UserRole;
+  emailVerified: boolean;
+  lastLoginAt: Date | null;
   createdAt: Date;
-  updatedAt: Date;
 }): AuthUserSummary => ({
   id: user.id,
   displayName: user.displayName,
@@ -139,8 +140,9 @@ const mapUserToSummary = (user: {
   email: user.email,
   avatarUrl: user.avatarUrl,
   role: user.role,
+  emailVerified: user.emailVerified,
+  lastLoginAt: user.lastLoginAt,
   createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
 });
 
 const generateToken = (payload: UserPayload): string => {
@@ -513,8 +515,9 @@ router.patch('/profile', authenticate, async (req: AuthRequest, res) => {
         email: true,
         avatarUrl: true,
         role: true,
+        emailVerified: true,
+        lastLoginAt: true,
         createdAt: true,
-        updatedAt: true,
       },
     });
 
