@@ -405,13 +405,13 @@ const ClassModal: React.FC<ClassModalProps> = ({
 
             <MetaItem>
               <h4>Primary Abilities</h4>
-              <p>{formatPrimaryAbilities(characterClass.primaryAbility)}</p>
+              <p>{formatPrimaryAbilities(characterClass.primaryAbilities || characterClass.primaryAbility || [])}</p>
             </MetaItem>
 
             <MetaItem>
               <h4>Saving Throws</h4>
               <p>
-                {formatSavingThrows(characterClass.savingThrowProficiencies)}
+                {formatSavingThrows(characterClass.savingThrows || characterClass.savingThrowProficiencies || [])}
               </p>
             </MetaItem>
 

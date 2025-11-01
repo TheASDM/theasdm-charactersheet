@@ -276,12 +276,14 @@ export const TwoColumnLayout = styled.div`
 
   /* First child (Inventory) gets 1/3 of the width (same as Skills) */
   > :first-child {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   /* Second child (Traits) gets 2/3 of the width */
   > :nth-child(2) {
-    flex: 2;
+    flex: 2 1 0;
+    min-width: 0;
   }
 
   @media (max-width: 768px) {

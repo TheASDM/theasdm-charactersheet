@@ -306,6 +306,21 @@ const App: React.FC = () => {
     return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
   }, [navigate]);
 
+  useEffect(() => {
+    const updateViewportScale = () => {
+      const isCompact = window.innerWidth < 1500 || window.innerHeight < 900;
+      document.documentElement.classList.toggle('ui-compact', isCompact);
+      document.body.classList.toggle('ui-compact', isCompact);
+    };
+
+    updateViewportScale();
+    window.addEventListener('resize', updateViewportScale);
+
+    return () => {
+      window.removeEventListener('resize', updateViewportScale);
+    };
+  }, []);
+
   return (
     <>
       <Helmet>

@@ -31,7 +31,7 @@
       "@/middleware/*": ["src/middleware/*"]
     }
   },
-  "include": ["src/**/*", "prisma/seed.ts"],
+  "include": ["src/**/*", "prisma/seed.ts", "scripts/import/**/*.ts"],
   "exclude": ["node_modules", "dist", "tests"],
   "ts-node": {
     "require": ["tsconfig-paths/register"],

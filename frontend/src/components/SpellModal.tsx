@@ -198,12 +198,20 @@ const Tag = styled.span`
 `;
 
 const SpellModal: React.FC<SpellModalProps> = ({ spell, isOpen, onClose }) => {
-  useBodyScrollLock(isOpen);
+  useBodyScrollLock(isOpen, false); // Don't scroll to top
 
   if (!isOpen || !spell) return null;
 
   // Helper functions
-  const getSchoolName = (abbreviation: string | undefined): string => {
+  const getSchoolName = (schoolOrCode: string | { code: string; name: string } | undefined): string => {
+    // Extract code from string or object
+    let abbreviation: string | undefined;
+    if (typeof schoolOrCode === 'string') {
+      abbreviation = schoolOrCode;
+    } else if (schoolOrCode && typeof schoolOrCode === 'object') {
+      abbreviation = schoolOrCode.code;
+    }
+
     const schoolMap: { [key: string]: string } = {
       A: 'Abjuration',
       C: 'Conjuration',

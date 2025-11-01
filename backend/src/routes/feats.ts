@@ -1,139 +1,161 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import logger from '../utils/logger';
 import { prisma } from '../db';
 
 const router = Router();
 
-// Get all feats
+// Get all feats with optional filters and pagination
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { category, level, source, search } = req.query;
+    const {
+      page = '1',
+      limit = '100',
+      search = '',
+      source = '',
+      levelRequirement = '',
+      repeatable = '',
+      category = ''
+    } = req.query;
 
-    // Build where clause for filtering
-    const whereClause: any = {};
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
 
-    if (category) {
-      whereClause.category = category as string;
-    }
+    const where: any = {};
 
-    if (level) {
-      // Filter by minimum level requirement in prerequisites
-      // This is a simplified filter - in practice, prerequisites are complex
-      const levelNum = parseInt(level as string);
-      if (!isNaN(levelNum)) {
-        whereClause.prerequisites = {
-          path: ['level'],
-          lte: levelNum,
-        };
-      }
-    }
-
-    if (source) {
-      whereClause.source = source as string;
-    }
-
+    // Add search filter
     if (search) {
-      whereClause.name = {
-        contains: search as string,
-        mode: 'insensitive',
-      };
+      where.OR = [
+        {
+          name: {
+            contains: search as string,
+            mode: 'insensitive'
+          }
+        },
+        {
+          description: {
+            contains: search as string,
+            mode: 'insensitive'
+          }
+        }
+      ];
     }
 
-    const feats = await prisma.feat.findMany({
-      where: whereClause,
+    // Add source filter
+    if (source) {
+      where.source = source as string;
+    }
+
+    // Add level requirement filter
+    if (levelRequirement) {
+      const level = parseInt(levelRequirement as string);
+      where.levelRequirement = level;
+    }
+
+    // Add repeatable filter
+    if (repeatable) {
+      where.repeatable = repeatable === 'true';
+    }
+
+    // Add category filter
+    if (category) {
+      where.category = category as string;
+    }
+
+    // Get feats with raw content (no pagination needed)
+    const feats = await prisma.canonFeat.findMany({
+      where,
       orderBy: { name: 'asc' },
+      include: {
+        raw: true
+      }
     });
 
-    return res.json(feats);
+    // Transform to include mechanics at top level for frontend
+    const transformed = feats.map(f => ({
+      ...f,
+      mechanics: f.raw?.raw || {} // Full 5etools structure
+    }));
+
+    res.json(transformed);
   } catch (error) {
-    logger.error('Error fetching feats:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return res.status(500).json({
-      statusCode: 500,
-      code: 'server_error',
-      error: 'Failed to fetch feats',
-      details: errorMessage
-    });
+    console.error('Error fetching feats:', error);
+    res.status(500).json({ error: 'Failed to fetch feats' });
   }
 });
 
 // Get a single feat by ID
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-
     if (!id) {
-      return res.status(400).json({ error: 'Feat ID is required' });
+      res.status(400).json({ error: 'ID parameter is required' });
+      return;
     }
 
-    const feat = await prisma.feat.findUnique({
-      where: { id: parseInt(id) },
+    const feat = await prisma.canonFeat.findUnique({
+      where: { id: BigInt(id) },
+      include: {
+        raw: true
+      }
     });
 
     if (!feat) {
-      return res.status(404).json({ error: 'Feat not found' });
+      res.status(404).json({ error: 'Feat not found' });
+      return;
     }
 
-    return res.json(feat);
+    // Include mechanics at top level
+    const result = {
+      ...feat,
+      mechanics: feat.raw?.raw || {}
+    };
+
+    res.json(result);
   } catch (error) {
-    logger.error('Error fetching feat:', error);
-    return res.status(500).json({ error: 'Failed to fetch feat' });
+    console.error('Error fetching feat:', error);
+    res.status(500).json({ error: 'Failed to fetch feat' });
   }
 });
 
-// Get a feat by name
-router.get('/name/:name', async (req: Request, res: Response) => {
+// Get feat by slug and source
+router.get('/slug/:slug', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name } = req.params;
-
-    if (!name) {
-      return res.status(400).json({ error: 'Feat name is required' });
+    const { slug } = req.params;
+    if (!slug) {
+      res.status(400).json({ error: 'Slug parameter is required' });
+      return;
     }
+    const { source } = req.query;
+    const sourceStr = (source as string | undefined) || 'XPHB';
 
-    const feat = await prisma.feat.findFirst({
+    const feat = await prisma.canonFeat.findUnique({
       where: {
-        name: {
-          equals: name,
-          mode: 'insensitive',
-        },
+        slug_source: {
+          slug: slug,
+          source: sourceStr
+        }
       },
+      include: {
+        raw: true
+      }
     });
 
     if (!feat) {
-      return res.status(404).json({ error: 'Feat not found' });
+      res.status(404).json({ error: 'Feat not found' });
+      return;
     }
 
-    return res.json(feat);
+    // Include mechanics at top level
+    const result = {
+      ...feat,
+      mechanics: feat.raw?.raw || {}
+    };
+
+    res.json(result);
   } catch (error) {
-    logger.error('Error fetching feat by name:', error);
-    return res.status(500).json({ error: 'Failed to fetch feat' });
-  }
-});
-
-// Get feats by category
-router.get('/category/:category', async (req: Request, res: Response) => {
-  try {
-    const { category } = req.params;
-
-    if (!category) {
-      return res.status(400).json({ error: 'Category is required' });
-    }
-
-    const feats = await prisma.feat.findMany({
-      where: {
-        category: {
-          equals: category,
-          mode: 'insensitive',
-        },
-      },
-      orderBy: { name: 'asc' },
-    });
-
-    return res.json(feats);
-  } catch (error) {
-    logger.error('Error fetching feats by category:', error);
-    return res.status(500).json({ error: 'Failed to fetch feats by category' });
+    console.error('Error fetching feat by slug:', error);
+    res.status(500).json({ error: 'Failed to fetch feat' });
   }
 });
 

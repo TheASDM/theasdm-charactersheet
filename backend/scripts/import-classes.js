@@ -55,13 +55,12 @@ const SKILLS = [
 ];
 
 /**
- * Filter classes data for D&D 2024 content
+ * Filter classes data for D&D 2024 content only
+ * Explicitly rejects PHB (2014 Player's Handbook) content
  */
 function filterXPHBContent(data) {
-  // If data has a source field, filter by XPHB
-  // Otherwise, assume it's D&D 2024 content if from a trusted source
   return data.filter((item) => {
-    return !item.source || item.source === 'XPHB' || item.source === 'PHB';
+    return item.source === 'XPHB' || item.source === 'XDMG';
   });
 }
 

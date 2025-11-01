@@ -9,13 +9,18 @@ export const parseComplexDnDEntry = (entry: any): string => {
     return String(entry);
   }
 
-  // Handle arrays - recursively parse each element and join
+  // Handle arrays - recursively parse each element and join with paragraph breaks
   if (Array.isArray(entry)) {
+    console.log('🔵 Parsing array with', entry.length, 'items');
     const result = entry
       .map((item: any) => parseComplexDnDEntry(item))
       .filter((text: string) => text.trim().length > 0) // Filter out empty strings from options/refs
-      .join(' ');
-    return result;
+      .join('\n\n'); // Use double newlines for paragraph spacing
+    console.log('🔵 Array result length:', result.length, 'chars');
+    // Convert newlines to <br> tags since the joined result contains newlines
+    return result
+      .replace(/\n\n+/g, '<br><br>')  // Paragraph breaks
+      .replace(/\n/g, '<br>');         // Line breaks
   }
 
   // Handle table structures
@@ -37,6 +42,21 @@ export const parseComplexDnDEntry = (entry: any): string => {
           result += `${cleanedRow[0]}: ${cleanedRow.slice(1).join(', ')}\n`;
         }
       });
+    }
+
+    return result;
+  }
+
+  // Handle named entry sections (like "Damage Resistance" in Rage)
+  if (entry.type === 'entries' && entry.name) {
+    let result = `<strong>${entry.name}:</strong> `;
+
+    if (entry.entries && Array.isArray(entry.entries)) {
+      const entryText = entry.entries
+        .map((subEntry: any) => parseComplexDnDEntry(subEntry))
+        .filter((text: string) => text.trim().length > 0)
+        .join(' ');
+      result += entryText;
     }
 
     return result;
@@ -172,7 +192,9 @@ export const parseDnDTemplateTag = (text: string): string => {
 
       const segments = tagContent.split('|').filter((segment: string) => segment.length > 0);
       const fallback = segments[0] ?? '';
-      const altDisplay = segments.length > 2 ? segments[segments.length - 1] : fallback;
+      // For most tags, use the last segment if there are 3+ parts (for display text overrides)
+      // But for filter tags, always use the first segment (the display text)
+      const altDisplay = segments.length > 2 && tagType !== 'filter' ? segments[segments.length - 1] : fallback;
       const name = altDisplay || fallback;
 
       switch (tagType) {
@@ -245,7 +267,19 @@ export const parseDnDTemplateTag = (text: string): string => {
       }
     });
 
-  return result.replace(/\s+/g, ' ').trim();
+  // Convert markdown formatting to HTML
+  // First do bold (must come before italic to avoid conflicts)
+  let withMarkdown = result.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+  // Then do italic - simple single asterisks that aren't adjacent to other asterisks
+  withMarkdown = withMarkdown.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+
+  // Convert newlines to HTML breaks
+  // Double newlines become double <br> (paragraph-like spacing)
+  // Single newlines become single <br>
+  return withMarkdown
+    .replace(/\n\n+/g, '<br><br>')  // Paragraph breaks
+    .replace(/\n/g, '<br>')         // Line breaks
+    .trim();
 };
 
 const shouldPreserveWord = (word: string) => {

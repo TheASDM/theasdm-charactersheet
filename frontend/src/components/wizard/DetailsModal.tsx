@@ -12,7 +12,7 @@ export interface DetailsModalProps {
   footer?: React.ReactNode;
 }
 
-const Overlay = styled.div<{ isOpen: boolean }>`
+const Overlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -21,7 +21,7 @@ const Overlay = styled.div<{ isOpen: boolean }>`
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(4px);
   z-index: 2000;
-  display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
+  display: ${({ $isOpen }) => ($isOpen ? 'flex' : 'none')};
   align-items: flex-start;
   justify-content: center;
   padding: 3rem 1rem 2rem;
@@ -221,7 +221,7 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
 
   return (
     <Overlay
-      isOpen={isOpen}
+      $isOpen={isOpen}
       onClick={onClose}
       role="dialog"
       aria-modal="true"

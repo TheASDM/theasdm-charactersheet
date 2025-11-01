@@ -17,7 +17,7 @@ const ModalBackdrop = styled.div`
   inset: 0;
   background: rgba(0, 0, 0, 0.8);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 3rem 1rem 2rem;
@@ -125,8 +125,8 @@ const ModalClose = styled.button`
 `;
 
 export const SpellDetailModal = ({ spell, onClose }: SpellDetailModalProps) => {
-  // Lock body scroll when modal is open
-  useBodyScrollLock(!!spell);
+  // Lock body scroll when modal is open (but don't scroll to top)
+  useBodyScrollLock(!!spell, false);
 
   const dialogRef = useFocusTrap<HTMLDivElement>(!!spell);
   const focusManagerRef = useRef(new FocusManager());
@@ -170,17 +170,25 @@ export const SpellDetailModal = ({ spell, onClose }: SpellDetailModalProps) => {
         <ModalHeader>
           <h2>{spell.name}</h2>
           <p>
-            {formatLevel(spell.level)} &bull; {getSchoolLabel(spell.school)}
+            {formatLevel(spell.level)} &bull; {getSchoolLabel((spell as any).schoolCode || (spell.school as any)?.code || spell.school)}
             {spell.isRitual ? ' • Ritual' : ''}
             {spell.miscTags?.includes('Concentration') ? ' • Concentration' : ''}
           </p>
         </ModalHeader>
         <ModalBody>
-          {Array.isArray(spell.entries) && spell.entries.length > 0 ? (
-            <div dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(spell.entries) }} />
-          ) : (
-            <p>No additional description available.</p>
-          )}
+          {(() => {
+            // Try to get description from various sources
+            const entries = spell.entries || (spell as any).raw?.raw?.entries;
+            const description = spell.description;
+
+            if (Array.isArray(entries) && entries.length > 0) {
+              return <div dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(entries) }} />;
+            } else if (description) {
+              return <div dangerouslySetInnerHTML={{ __html: parseComplexDnDEntry(description) }} />;
+            } else {
+              return <p>No additional description available.</p>;
+            }
+          })()}
         </ModalBody>
       </ModalCard>
     </ModalBackdrop>

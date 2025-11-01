@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import {
   CharacterSheetData,
@@ -62,12 +62,17 @@ import {
   OverviewInventoryName,
   OverviewInventoryChips,
   OverviewInventoryChip,
+  OverviewInventoryMenuWrapper,
   OverviewInventoryMenuButton,
-  OverviewInventoryMenu,
-  OverviewInventoryMenuItem,
   OverviewInventoryEmpty,
 } from '../styles/components/OverviewInventory.styles';
 import InventoryTab from './InventoryTab';
+import { InventoryItemMenu } from './InventoryItemMenu';
+import { SpellDetailModal } from './spells/SpellDetailModal';
+import type { Spell } from '@/types/api';
+import { searchSpells } from '@/services/spellService';
+import { itemService } from '@/services/itemService';
+import { isError } from '@/types/api';
 
 const TabBar = styled.div`
   display: inline-flex;
@@ -166,20 +171,9 @@ export default function CharacterSheetPretty({
   const [spellcastingFeature, setSpellcastingFeature] = useState<SimpleFeature | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'spells' | 'inventory'>('overview');
   const [openMenuItemId, setOpenMenuItemId] = useState<string | null>(null);
+  const [selectedSpellForModal, setSelectedSpellForModal] = useState<Spell | null>(null);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    if (!openMenuItemId) return;
-
-    const handleClickOutside = () => {
-      setOpenMenuItemId(null);
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [openMenuItemId]);
+  // Click-outside handling is now done in InventoryItemMenu component
 
   // Get dynamic resources based on character
   const characterResources = useMemo(
@@ -242,6 +236,64 @@ export default function CharacterSheetPretty({
       [section]: false,
     }));
   };
+
+  // Handler for clicking on spell names in the action bar
+  const handleSpellNameClick = useCallback(async (spellName: string) => {
+    try {
+      const result = await searchSpells(spellName, 1);
+      if (!isError(result) && result.data && result.data.items && result.data.items.length > 0) {
+        // Find exact match or first result
+        const exactMatch = result.data.items.find(
+          (spell) => spell.name.toLowerCase() === spellName.toLowerCase()
+        );
+        setSelectedSpellForModal(exactMatch || result.data.items[0]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch spell:', error);
+    }
+  }, []);
+
+  // Handler for clicking on weapon names in the action bar
+  const handleWeaponNameClick = useCallback(async (weaponName: string) => {
+    try {
+      // Find the weapon in the inventory
+      const weaponItem = character.inventory?.find(
+        (item: any) => item?.name?.toLowerCase() === weaponName.toLowerCase()
+      );
+
+      if (!weaponItem) {
+        console.warn('Weapon not found in inventory:', weaponName);
+        return;
+      }
+
+      // Try to fetch by itemId first, otherwise search by name
+      if (weaponItem.itemId) {
+        const result = await itemService.getItem(weaponItem.itemId);
+        if (!isError(result) && result.data) {
+          inventory.handleShowItemDetails(result.data);
+        } else {
+          console.warn('Could not fetch weapon by ID:', weaponName);
+        }
+      } else {
+        // Search for the item by name - get multiple results to find exact match
+        const searchResult = await itemService.search(weaponName, 10);
+        if (!isError(searchResult) && searchResult.data?.items && searchResult.data.items.length > 0) {
+          // Try to find exact match first
+          const exactMatch = searchResult.data.items.find(
+            item => item.name.toLowerCase() === weaponName.toLowerCase()
+          );
+
+          // Use exact match if found, otherwise fall back to first result
+          const itemToShow = exactMatch || searchResult.data.items[0];
+          inventory.handleShowItemDetails(itemToShow);
+        } else {
+          console.warn('Could not find weapon in database:', weaponName);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch weapon details:', error);
+    }
+  }, [character.inventory, inventory]);
 
   const getOriginalDataForSection = (
     section: keyof typeof editingSections
@@ -524,6 +576,8 @@ export default function CharacterSheetPretty({
                     toggleSectionEdit={toggleSectionEdit}
                     cancelSectionEdit={cancelSectionEdit}
                     actions={actions}
+                    onSpellClick={handleSpellNameClick}
+                    onWeaponClick={handleWeaponNameClick}
                   />
                   <WeaponMasterySection
                     character={character}
@@ -537,6 +591,8 @@ export default function CharacterSheetPretty({
                   toggleSectionEdit={toggleSectionEdit}
                   cancelSectionEdit={cancelSectionEdit}
                   actions={actions}
+                  onSpellClick={handleSpellNameClick}
+                  onWeaponClick={handleWeaponNameClick}
                 />
               )}
 
@@ -571,9 +627,9 @@ export default function CharacterSheetPretty({
                         {equippedItemsDetailed.map(({ item, categoryLabel }) => {
                           const inventoryIndex = inventory.normalizedInventory.findIndex((invItem) => invItem.id === item.id);
                           const isMenuOpen = openMenuItemId === item.id;
+                          const buttonId = `menu-button-${item.id}`;
 
-                          const handleToggleMenu = (e: React.MouseEvent) => {
-                            e.stopPropagation();
+                          const handleToggleMenu = () => {
                             setOpenMenuItemId(isMenuOpen ? null : item.id);
                           };
 
@@ -594,44 +650,47 @@ export default function CharacterSheetPretty({
                             setOpenMenuItemId(null);
                           };
 
+                          const handleCloseMenu = () => {
+                            setOpenMenuItemId(null);
+                          };
+
                           return (
                             <OverviewInventoryListItem key={item.id}>
                               <OverviewInventoryName>
-                                <strong>{item.name}</strong>
+                                <strong
+                                  onClick={handleDetails}
+                                  style={{ cursor: 'pointer', transition: 'color 0.2s ease' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.color = '#ce9016'}
+                                  onMouseLeave={(e) => e.currentTarget.style.color = '#fdf8e5'}
+                                >
+                                  {item.name}
+                                </strong>
                                 <OverviewInventoryChips>
                                   <OverviewInventoryChip $variant="category">
                                     {categoryLabel}
                                   </OverviewInventoryChip>
                                 </OverviewInventoryChips>
                               </OverviewInventoryName>
-                              <OverviewInventoryMenuButton
-                                type="button"
-                                onClick={handleToggleMenu}
-                                aria-label="Item actions"
-                              >
-                                ⋯
-                              </OverviewInventoryMenuButton>
-                              <OverviewInventoryMenu $isOpen={isMenuOpen}>
-                                <OverviewInventoryMenuItem
+                              <OverviewInventoryMenuWrapper>
+                                <OverviewInventoryMenuButton
+                                  id={buttonId}
                                   type="button"
-                                  onClick={handleDetails}
+                                  onClick={handleToggleMenu}
+                                  aria-label="Item actions"
+                                  aria-expanded={isMenuOpen}
+                                  aria-haspopup="true"
                                 >
-                                  Details
-                                </OverviewInventoryMenuItem>
-                                <OverviewInventoryMenuItem
-                                  type="button"
-                                  $variant="danger"
-                                  onClick={handleUnequip}
-                                >
-                                  Unequip
-                                </OverviewInventoryMenuItem>
-                                <OverviewInventoryMenuItem
-                                  type="button"
-                                  onClick={handleSeeInventory}
-                                >
-                                  See Inventory
-                                </OverviewInventoryMenuItem>
-                              </OverviewInventoryMenu>
+                                  ⋯
+                                </OverviewInventoryMenuButton>
+                                <InventoryItemMenu
+                                  isOpen={isMenuOpen}
+                                  buttonId={buttonId}
+                                  onClose={handleCloseMenu}
+                                  onDetails={handleDetails}
+                                  onUnequip={handleUnequip}
+                                  onSeeInventory={handleSeeInventory}
+                                />
+                              </OverviewInventoryMenuWrapper>
                             </OverviewInventoryListItem>
                           );
                         })}
@@ -778,6 +837,11 @@ export default function CharacterSheetPretty({
             selection.handleBackgroundCancel();
           }}
           onCancel={selection.handleBackgroundCancel}
+        />
+
+        <SpellDetailModal
+          spell={selectedSpellForModal}
+          onClose={() => setSelectedSpellForModal(null)}
         />
       </SheetContainer>
     </>

@@ -88,6 +88,7 @@ export interface SimpleFeature {
  * Now async to support the new choice-based class feature system
  */
 export async function generateFeaturesForCharacter(character: CharacterSheetData): Promise<SimpleFeature[]> {
+  console.log('🚀 generateFeaturesForCharacter called for:', character.class);
   const features: SimpleFeature[] = [];
 
   // Add species features
@@ -97,13 +98,16 @@ export async function generateFeaturesForCharacter(character: CharacterSheetData
   try {
     // Dynamically import class data
     const className = character.class;
+    console.log('🎓 Loading class data for:', className);
     if (className) {
       const { loadClassData } = await import('./classDataLoader');
       const classData = await loadClassData(className);
       const classFeatures = await generateClassFeaturesWithChoiceSystem(character, classData);
+      console.log('🎓 Generated class features:', classFeatures.length, 'features');
       features.push(...classFeatures);
     }
   } catch (error) {
+    console.error('❌ Failed to load class data, falling back to old system:', error);
     logger.warn('Failed to load class data, falling back to old system:', error);
     features.push(...generateClassFeatures(character));
   }
@@ -117,7 +121,34 @@ export async function generateFeaturesForCharacter(character: CharacterSheetData
   // Add proficiencies (always last)
   features.push(...generateProficienciesFeature(character));
 
-  return features;
+  console.log('🏁 Total features before parsing:', features.length);
+  console.log('🏁 Feature names:', features.map(f => f.name).join(', '));
+
+  // Parse all feature descriptions once at the end to convert markdown and template tags to HTML
+  const parsedFeatures = features.map(feature => {
+    // Debug logging for Rage
+    if (feature.name === 'Rage') {
+      console.log('🔥 Rage before parsing:', feature.description);
+      console.log('🔥 Is array?', Array.isArray(feature.description));
+      if (Array.isArray(feature.description)) {
+        console.log('🔥 Array length:', feature.description.length);
+      }
+    }
+
+    const parsed = parseComplexDnDEntry(feature.description);
+
+    if (feature.name === 'Rage') {
+      console.log('🔥 Rage after parsing:', parsed.substring(0, 200));
+    }
+
+    return {
+      ...feature,
+      description: parsed
+    };
+  });
+
+  console.log('🏁 Returning', parsedFeatures.length, 'parsed features');
+  return parsedFeatures;
 }
 
 /**
@@ -175,12 +206,7 @@ function generateDragonbornFeatures(character: CharacterSheetData): SimpleFeatur
     category: 'Species Trait'
   });
 
-  features.push({
-    name: 'Draconic Ancestry',
-    description: `You have ${dragonData.fullName} ancestry, granting you ${dragonData.damageType} damage resistance and a ${dragonData.damageType} breath weapon that affects a ${dragonData.area}.`,
-    category: 'Species Trait'
-  });
-
+  // Only show the actual draconic abilities, not the redundant "Draconic Ancestry" wrapper
   features.push({
     name: 'Breath Weapon',
     description: `**Action:** Exhale destructive energy in a **${dragonData.area}**.\n\nEach creature in the area must make a **DC ${8 + getProficiencyBonus(character.level || 1) + getConstitutionModifier(character)} ${dragonData.saveType}** saving throw, taking **${getBreathWeaponDamage(character.level || 1)} ${dragonData.damageType}** damage on failure, or half on success.\n\n*Recharge:* Short or Long Rest`,
@@ -354,12 +380,7 @@ function generateTieflingFeatures(character: CharacterSheetData): SimpleFeature[
 
   const legacy = legacyData[fiendishLegacy as string] || legacyData['Infernal'];
 
-  features.push({
-    name: 'Fiendish Legacy',
-    description: `You have ${fiendishLegacy} fiendish legacy, granting you resistance to ${legacy.damageType} damage and magical abilities.`,
-    category: 'Species Trait'
-  });
-
+  // Only show the actual fiendish abilities, not the redundant "Fiendish Legacy" wrapper
   features.push({
     name: 'Damage Resistance',
     description: `You have resistance to **${legacy.damageType}** damage.`,
@@ -489,8 +510,10 @@ function generateGnomeFeatures(character: CharacterSheetData): SimpleFeature[] {
     features.push({
       name: 'Rock Gnome Magic',
       description: 'You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action. Intelligence is your spellcasting ability for these spells.',
-      category: 'Species Trait'
-    });
+      category: 'Species Trait',
+      // Add spell metadata so deriveGrantedSpells can find them
+      grantedSpells: character.speciesGrantedSpells || []
+    } as any);
   }
 
   return features;
@@ -561,12 +584,7 @@ function generateGoliathFeatures(character: CharacterSheetData): SimpleFeature[]
 
   const ancestry = ancestryData[(giantAncestry as string) || "Stone's Endurance (Stone Giant)"];
 
-  features.push({
-    name: 'Giant Ancestry',
-    description: `You have ${ancestry.name} ancestry, granting you supernatural abilities tied to your giant heritage.`,
-    category: 'Species Trait'
-  });
-
+  // Only show the selected ancestry trait, not the generic "Giant Ancestry" wrapper
   features.push({
     name: ancestry.name,
     description: ancestry.description,
@@ -655,6 +673,9 @@ export async function generateClassFeaturesWithChoiceSystem(
 
   // If classData is provided, use the new system
   if (classData) {
+    console.log('📊 Class data provided:', classData.className);
+    console.log('📊 Available features in classData:', classData.features?.length || 0);
+
     // Use the choice detection system to get displayable features
     const displayableFeatures = await getDisplayableFeatures(
       classData,
@@ -662,6 +683,11 @@ export async function generateClassFeaturesWithChoiceSystem(
       (character.selectedClassChoices as Record<string, string[]>) || {},
       character.subclass
     );
+
+    console.log('📊 Displayable features returned:', displayableFeatures.length);
+    if (displayableFeatures.length > 0) {
+      console.log('📊 Feature names:', displayableFeatures.map(f => f.name).join(', '));
+    }
 
     // Convert ClassFeature objects to SimpleFeature format
     displayableFeatures.forEach((feature) => {
@@ -688,36 +714,25 @@ export async function generateClassFeaturesWithChoiceSystem(
         }
       }
 
-      // Apply scaling if needed
-      let description = feature.description;
-      let mechanics = feature.mechanics;
+      // Features from database have 'entries' array, not flat 'description' string
+      // Use entries if available, fallback to description for backwards compatibility
+      let featureContent: string | any[] = feature.entries || feature.description || '';
 
+      // Apply scaling if needed (for features that have this metadata)
       if (feature.scales && feature.scalingProgression) {
         // Find applicable scaling
         for (const progression of feature.scalingProgression) {
           if (level >= progression.level) {
-            // Apply scaling changes to description
-            if (progression.changes.damage) {
-              description = description.replace(
-                /\d+d\d+/,
-                progression.changes.damage
-              );
-            }
-
-            // Update mechanics
-            if (progression.changes) {
-              mechanics = { ...mechanics, ...progression.changes };
-            }
+            // For entries arrays, scaling would need special handling
+            // For now, just note that this exists in old processed files
+            // Database features don't use this scaling system
           }
         }
       }
 
-      // Parse template tags in description
-      const parsedDescription = parseComplexDnDEntry(description);
-
       features.push({
         name: feature.name,
-        description: parsedDescription,
+        description: featureContent as any, // Will be parsed at the end (parser handles both strings and arrays)
         category: feature.featureType === 'subclass' ? 'Subclass Feature' : 'Class Feature'
       });
     });
@@ -767,8 +782,27 @@ function generateClassFeaturesOld(character: CharacterSheetData): SimpleFeature[
         return;
       }
 
-      // Skip choice option features (like Protector, Thaumaturge) - they're not parent features
-      if (choiceOptionNames.has(feature.name)) {
+      // Skip ALL choice option features (isChoice: true, requiresSelection: true)
+      // These are features like "Protector", "Thaumaturge", "Magician", "Warden"
+      if (feature.isChoice && feature.requiresSelection) {
+        // Only add this feature if it was actually chosen
+        if (choiceOptionNames.has(feature.name)) {
+          const description = JSON.stringify(feature);
+          features.push({
+            name: feature.name,
+            description: description,
+            category: 'Class Feature'
+          });
+        }
+        return; // Skip - either add it (if chosen) or skip it (if not chosen)
+      }
+
+      // Skip database-style parent features that have type: "options" in their entries
+      // These are features like "Primal Order", "Divine Order" from 5etools source data
+      const hasOptionsEntry = feature.entries && Array.isArray(feature.entries) &&
+        feature.entries.some((entry: any) => entry && typeof entry === 'object' && entry.type === 'options');
+      if (hasOptionsEntry) {
+        // This is a parent choice feature from database - skip it, the chosen option will be added separately
         return;
       }
 
@@ -781,7 +815,7 @@ function generateClassFeaturesOld(character: CharacterSheetData): SimpleFeature[
             // Find the option feature in classFeatures
             const optionFeature = character.classFeatures?.find((f: any) => f.name === optionName);
             if (optionFeature) {
-              const description = parseComplexDnDEntry(optionFeature);
+              const description = JSON.stringify(optionFeature);
               features.push({
                 name: optionName,
                 description: description,
@@ -793,8 +827,7 @@ function generateClassFeaturesOld(character: CharacterSheetData): SimpleFeature[
         return; // Skip the parent feature
       }
 
-      // Parse the feature description through the template parser
-      const description = parseComplexDnDEntry(feature);
+      const description = JSON.stringify(feature);
       features.push({
         name: feature.name,
         description: description,
@@ -1269,8 +1302,7 @@ function generateRangerFeatures(character: CharacterSheetData): SimpleFeature[] 
   if (character.classFeatures && Array.isArray(character.classFeatures)) {
     character.classFeatures.forEach((feature: any) => {
       if (feature.level === 1 || !feature.level) {
-        // Parse the feature description through the template parser
-        const description = parseComplexDnDEntry(feature);
+        const description = JSON.stringify(feature);
         features.push({
           name: feature.name,
           description: description,
@@ -1561,8 +1593,7 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
           let featureDescription = 'A feat feature.';
 
           if (typeof featFeature === 'string') {
-            // Parse template tags in string features
-            featureDescription = parseComplexDnDEntry(featFeature);
+            featureDescription = featFeature;
           } else if (featFeature && typeof featFeature === 'object') {
             const subName = featFeature.name || featFeature.title;
             featureDescription = extractFeatFeatureDescription(featFeature);
@@ -1619,8 +1650,11 @@ function generateFeatFeatures(character: CharacterSheetData): SimpleFeature[] {
  * Extract description from feat feature data
  */
 function extractFeatFeatureDescription(featFeature: any): string {
-  // Use the parseComplexDnDEntry function which handles nested structures and template tags
-  return parseComplexDnDEntry(featFeature);
+  // Return the raw feature object/text, will be parsed at the end
+  if (typeof featFeature === 'string') {
+    return featFeature;
+  }
+  return JSON.stringify(featFeature);
 }
 
 /**
@@ -1705,7 +1739,7 @@ function generateProficienciesFeature(character: CharacterSheetData): SimpleFeat
 
   return [{
     name: 'Proficiencies',
-    description: proficiencySections.join('\n\n'),
+    description: proficiencySections.join('\n'),
     category: 'Proficiencies'
   }];
 }

@@ -14,7 +14,6 @@ import { showError } from '@/utils/errorDisplay';
 import { logger } from '../../utils/logger';
 import { getCantripCount, getPreparedCount } from '@/helpers/spellRules';
 import { CLASS_CONFIG, normalizeClassId } from '@/helpers/spellcastingConfig';
-import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
 import { getSpellById } from '@/services/spellService';
 import { normaliseDisplayString } from '@/utils/dndTemplateParser';
 import type { AbilityId } from '@/types/spells';
@@ -48,6 +47,18 @@ const abilityIdToAbilityScoreKey: Record<AbilityId, keyof CharacterBuilderData['
   int: 'intelligence',
   wis: 'wisdom',
   cha: 'charisma',
+};
+
+const SPELL_ID_PATTERN = /^\d+$/;
+const normaliseSpellId = (value: unknown): string | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return SPELL_ID_PATTERN.test(trimmed) ? trimmed : null;
+  }
+  return null;
 };
 
 const CharacterCard = styled.div`
@@ -250,14 +261,23 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
   );
 
   const speciesSource = useMemo(() => {
-    if (!data.speciesSpells) {
-      return undefined;
+    const aggregated: string[] = [];
+
+    // Include speciesSpells (legacy format)
+    if (data.speciesSpells) {
+      const spellsFromLegacy = Object.values(data.speciesSpells)
+        .flat()
+        .filter((spellId): spellId is string => Boolean(spellId));
+      aggregated.push(...spellsFromLegacy);
     }
-    const aggregated = Object.values(data.speciesSpells)
-      .flat()
-      .filter((spellId): spellId is string => Boolean(spellId));
+
+    // Include speciesGrantedSpells (new format for Rock Gnome, Drow, etc.)
+    if (data.speciesGrantedSpells && Array.isArray(data.speciesGrantedSpells)) {
+      aggregated.push(...data.speciesGrantedSpells);
+    }
+
     return aggregated.length > 0 ? { grantedSpells: aggregated } : undefined;
-  }, [data.speciesSpells]);
+  }, [data.speciesSpells, data.speciesGrantedSpells]);
 
   const featSources = useMemo(() => {
     if (!data.featSpells) {
@@ -282,32 +302,61 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     return mapped.length > 0 ? mapped : undefined;
   }, [data.classFeatures]);
 
-  const backgroundFeatureSources = useMemo(() => {
-    if (!Array.isArray(data.backgroundFeatures)) {
-      return undefined;
-    }
-    const objectsOnly = data.backgroundFeatures.filter((feature): feature is Record<string, unknown> =>
-      Boolean(feature && typeof feature === 'object')
-    );
-    return objectsOnly.length > 0 ? objectsOnly : undefined;
-  }, [data.backgroundFeatures]);
+  // Note: backgroundFeatureSources removed - background features don't grant spells in D&D 2024
 
   const grantedIds = useMemo(() => {
-    const options: Parameters<typeof deriveGrantedSpells>[1] = {};
-    if (speciesSource) {
-      options.species = speciesSource;
+    const ids: string[] = [];
+
+    // Collect species granted spells (already cleaned)
+    if (speciesSource && 'grantedSpells' in speciesSource) {
+      const spells = (speciesSource as any).grantedSpells;
+      if (Array.isArray(spells)) {
+        spells.forEach((id: unknown) => {
+          const normalised = normaliseSpellId(id);
+          if (normalised) {
+            ids.push(normalised);
+          }
+        });
+      }
     }
-    if (featSources) {
-      options.feats = featSources;
+
+    // Collect feat granted spells
+    if (featSources && Array.isArray(featSources)) {
+      for (const source of featSources) {
+        if (source && typeof source === 'object' && 'grantedSpells' in source) {
+          const spells = (source as any).grantedSpells;
+          if (Array.isArray(spells)) {
+            spells.forEach((id: unknown) => {
+              const normalised = normaliseSpellId(id);
+              if (normalised) {
+                ids.push(normalised);
+              }
+            });
+          }
+        }
+      }
     }
-    if (classFeatureSources) {
-      options.classFeatures = classFeatureSources;
+
+    // Collect class feature granted spells
+    if (classFeatureSources && Array.isArray(classFeatureSources)) {
+      for (const source of classFeatureSources) {
+        if (source && typeof source === 'object' && 'grantedSpells' in source) {
+          const spells = (source as any).grantedSpells;
+          if (Array.isArray(spells)) {
+            spells.forEach((id: unknown) => {
+              const normalised = normaliseSpellId(id);
+              if (normalised) {
+                ids.push(normalised);
+              }
+            });
+          }
+        }
+      }
     }
-    if (backgroundFeatureSources) {
-      options.backgroundFeatures = backgroundFeatureSources;
-    }
-    return deriveGrantedSpells(null, options).map((id) => String(id));
-  }, [speciesSource, featSources, classFeatureSources, backgroundFeatureSources]);
+
+    // Deduplicate
+    return Array.from(new Set(ids)).filter((id) => SPELL_ID_PATTERN.test(id));
+  }, [speciesSource, featSources, classFeatureSources]);
 
   const grantedSet = useMemo(() => new Set(grantedIds), [grantedIds]);
   const knownTracked = useMemo(

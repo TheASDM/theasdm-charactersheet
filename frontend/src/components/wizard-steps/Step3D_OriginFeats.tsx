@@ -244,7 +244,7 @@ const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate })
   );
 
   useEffect(() => {
-    execute({ category: 'O' });
+    execute({ category: 'Origin' });
   }, [execute]);
 
   // Auto-scroll when feat selected

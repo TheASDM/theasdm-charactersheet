@@ -4,65 +4,129 @@ import { prisma } from '../db';
 
 const router = Router();
 
-// Get all backgrounds
+// Get all backgrounds with optional filters and pagination
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const backgrounds = await prisma.background.findMany({
-      orderBy: { name: 'asc' }
+    const {
+      page = '1',
+      limit = '50',
+      search = '',
+      source = ''
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {};
+
+    // Add search filter
+    if (search) {
+      where.name = {
+        contains: search as string,
+        mode: 'insensitive'
+      };
+    }
+
+    // Add source filter
+    if (source) {
+      where.source = source as string;
+    }
+
+    // Get backgrounds with raw content (no pagination for small dataset)
+    const backgrounds = await prisma.canonBackground.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      include: {
+        raw: true
+      }
     });
 
-    return res.json(backgrounds);
+    // Transform to include mechanics at top level for frontend
+    const transformed = backgrounds.map(b => ({
+      ...b,
+      mechanics: b.raw?.raw || {} // Full 5etools structure
+    }));
+
+    res.json(transformed);
   } catch (error) {
     console.error('Error fetching backgrounds:', error);
-    return res.status(500).json({ error: 'Failed to fetch backgrounds' });
+    res.status(500).json({ error: 'Failed to fetch backgrounds' });
   }
 });
 
 // Get a single background by ID
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    
     if (!id) {
-      return res.status(400).json({ error: 'Background ID is required' });
+      res.status(400).json({ error: 'ID parameter is required' });
+      return;
     }
-    
-    const background = await prisma.background.findUnique({
-      where: { id: parseInt(id) }
+
+    const background = await prisma.canonBackground.findUnique({
+      where: { id: BigInt(id) },
+      include: {
+        raw: true
+      }
     });
 
     if (!background) {
-      return res.status(404).json({ error: 'Background not found' });
+      res.status(404).json({ error: 'Background not found' });
+      return;
     }
 
-    return res.json(background);
+    // Include mechanics at top level
+    const result = {
+      ...background,
+      mechanics: background.raw?.raw || {}
+    };
+
+    res.json(result);
   } catch (error) {
     console.error('Error fetching background:', error);
-    return res.status(500).json({ error: 'Failed to fetch background' });
+    res.status(500).json({ error: 'Failed to fetch background' });
   }
 });
 
-// Get background by name (useful for lookups)
-router.get('/name/:name', async (req: Request, res: Response) => {
+// Get background by slug and source
+router.get('/slug/:slug', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name } = req.params;
-    
-    if (!name) {
-      return res.status(400).json({ error: 'Background name is required' });
+    const { slug } = req.params;
+    if (!slug) {
+      res.status(400).json({ error: 'Slug parameter is required' });
+      return;
     }
-    
-    const background = await prisma.background.findUnique({
-      where: { name: decodeURIComponent(name) }
+    const { source } = req.query;
+    const sourceStr = (source as string | undefined) || 'XPHB';
+
+    const background = await prisma.canonBackground.findUnique({
+      where: {
+        slug_source: {
+          slug: slug,
+          source: sourceStr
+        }
+      },
+      include: {
+        raw: true
+      }
     });
 
     if (!background) {
-      return res.status(404).json({ error: 'Background not found' });
+      res.status(404).json({ error: 'Background not found' });
+      return;
     }
 
-    return res.json(background);
+    // Include mechanics at top level
+    const result = {
+      ...background,
+      mechanics: background.raw?.raw || {}
+    };
+
+    res.json(result);
   } catch (error) {
-    console.error('Error fetching background by name:', error);
-    return res.status(500).json({ error: 'Failed to fetch background by name' });
+    console.error('Error fetching background by slug:', error);
+    res.status(500).json({ error: 'Failed to fetch background' });
   }
 });
 

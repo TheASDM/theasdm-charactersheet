@@ -16,7 +16,15 @@
     "prisma:reset": "prisma migrate reset",
     "seed": "ts-node prisma/seed.ts",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint:fix": "eslint src --ext .ts --fix",
+    "import:reference": "ts-node scripts/import/import-reference.ts",
+    "import:spells": "ts-node scripts/import/import-spells.ts",
+    "import:items": "ts-node scripts/import/import-items.ts",
+    "import:classes": "ts-node scripts/import/import-classes.ts",
+    "import:species": "ts-node scripts/import/import-species.ts",
+    "import:backgrounds": "ts-node scripts/import/import-backgrounds.ts",
+    "import:feats": "ts-node scripts/import/import-feats.ts",
+    "import:all": "ts-node scripts/import/import-all.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",

@@ -13,6 +13,10 @@ export const GlobalStyles = createGlobalStyle`
     overflow-x: hidden;
   }
 
+  html.ui-compact {
+    font-size: 14.25px;
+  }
+
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -103,6 +107,21 @@ export const GlobalStyles = createGlobalStyle`
   @media (min-width: 1025px) {
     html {
       font-size: 16px;
+    }
+
+    html.ui-compact {
+      font-size: 14.25px;
+    }
+
+    body.ui-compact {
+      zoom: 0.9;
+    }
+
+    @supports not (zoom: 0.9) {
+      body.ui-compact {
+        transform: scale(0.9);
+        transform-origin: top center;
+      }
     }
   }
 `;

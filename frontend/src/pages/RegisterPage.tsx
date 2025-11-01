@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
 import { isError } from '@/types/api';
@@ -9,81 +9,104 @@ import {
   AuthHeader,
   AuthTitle,
   AuthSubtitle,
-  AuthForm,
-  FormGroup,
-  Label,
-  Input,
-  ErrorMessage,
-  SubmitButton,
   AuthFooter,
   FooterText,
   FooterLink,
-  PasswordRequirements,
+  DiscordButton,
 } from '../styles/authStyles';
+import styled from 'styled-components';
+
+const FormGroup = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: #7289da;
+  }
+`;
+
+const Button = styled.button`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #5865f2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 1rem;
+
+  &:hover:not(:disabled) {
+    background-color: #4752c4;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const Divider = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+  }
+
+  span {
+    padding: 0 1rem;
+    color: #666;
+    font-size: 0.9rem;
+  }
+`;
 
 export const RegisterPage: React.FC = () => {
+  const { beginDiscordLogin, register, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
 
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPasswordReqs, setShowPasswordReqs] = useState(false);
-
-  // Password validation
-  const passwordValidation = useMemo(() => {
-    const password = formData.password;
-    return {
-      minLength: password.length >= 8,
-      hasUpper: /[A-Z]/.test(password),
-      hasLower: /[a-z]/.test(password),
-      hasNumber: /\d/.test(password),
-    };
-  }, [formData.password]);
-
-  const isPasswordValid = Object.values(passwordValidation).every(Boolean);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error when user starts typing
-    if (error) setError('');
+  const handleDiscordRegister = () => {
+    beginDiscordLogin('/characters');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    // Client-side validation
-    if (!isPasswordValid) {
-      setError('Password does not meet requirements');
-      return;
+    const data: any = {
+      email,
+      password,
+      displayName,
+    };
+    if (username) {
+      data.username = username;
     }
+    const result = await register(data);
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await register(formData);
-      if (isError(result)) {
-        setError(result.error ?? 'Registration failed. Please try again.');
-        return;
-      }
-      navigate('/characters'); // Redirect to characters page after registration
-    } finally {
-      setIsLoading(false);
+    if (!isError(result)) {
+      navigate('/characters');
     }
   };
 
@@ -111,43 +134,46 @@ export const RegisterPage: React.FC = () => {
               }}
             />
             <AuthTitle>Join the Adventure</AuthTitle>
-            <AuthSubtitle>Create your account to get started</AuthSubtitle>
+            <AuthSubtitle>Create your account to get started.</AuthSubtitle>
           </AuthHeader>
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-
-          <AuthForm onSubmit={handleSubmit}>
-            <FormGroup>
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                name="username"
-                placeholder="adventurer123"
-                value={formData.username}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-                autoComplete="username"
-                minLength={3}
-                maxLength={50}
-                pattern="[a-zA-Z0-9]+"
-                title="Username must be alphanumeric"
-              />
-            </FormGroup>
-
+          <form onSubmit={handleEmailRegister}>
             <FormGroup>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                name="email"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={handleChange}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                autoComplete="email"
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+                minLength={2}
+                maxLength={100}
+                disabled={isLoading}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="username">Username (optional)</Label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                minLength={2}
+                maxLength={60}
+                disabled={isLoading}
               />
             </FormGroup>
 
@@ -156,55 +182,28 @@ export const RegisterPage: React.FC = () => {
               <Input
                 id="password"
                 type="password"
-                name="password"
-                placeholder="Create a strong password"
-                value={formData.password}
-                onChange={handleChange}
-                onFocus={() => setShowPasswordReqs(true)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={8}
+                maxLength={128}
                 disabled={isLoading}
-                autoComplete="new-password"
               />
-              {showPasswordReqs && formData.password && (
-                <PasswordRequirements>
-                  <li className={passwordValidation.minLength ? 'met' : ''}>
-                    At least 8 characters
-                  </li>
-                  <li className={passwordValidation.hasUpper ? 'met' : ''}>
-                    One uppercase letter
-                  </li>
-                  <li className={passwordValidation.hasLower ? 'met' : ''}>
-                    One lowercase letter
-                  </li>
-                  <li className={passwordValidation.hasNumber ? 'met' : ''}>One number</li>
-                </PasswordRequirements>
-              )}
             </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                name="confirmPassword"
-                placeholder="Re-enter your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-                autoComplete="new-password"
-              />
-              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                <div style={{ color: '#ff6b6b', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                  Passwords do not match
-                </div>
-              )}
-            </FormGroup>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Creating account...' : 'Create Account'}
+            </Button>
+          </form>
 
-            <SubmitButton type="submit" disabled={isLoading || !isPasswordValid}>
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </SubmitButton>
-          </AuthForm>
+          <Divider>
+            <span>OR</span>
+          </Divider>
+
+          <DiscordButton type="button" onClick={handleDiscordRegister} disabled={isLoading}>
+            <span role="img" aria-hidden="true">🧙‍♂️</span>
+            {isLoading ? 'Connecting to Discord...' : 'Sign up with Discord'}
+          </DiscordButton>
 
           <AuthFooter>
             <FooterText>

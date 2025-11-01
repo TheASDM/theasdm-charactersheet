@@ -1,10 +1,29 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { CharacterSheetData } from '../../types/characterSheet';
 import { classService, CLASS_SKILL_CHOICES } from '../../services/classService';
 import { isError } from '@/types/api';
 import { logger } from '../../utils/logger';
+import { loadClassData } from '../../utils/classDataLoader';
 // import { speciesChoices } from '../../components/SpeciesSelectionModal'; // Removed - now uses API
 // import { backgroundsData } from '../../components/BackgroundSelectionModal'; // Removed - now uses API
+
+const normalizeSelectedClassChoices = (
+  choices?: Record<string, unknown>
+): { [key: string]: string[] } => {
+  if (!choices) {
+    return {};
+  }
+
+  return Object.entries(choices).reduce((acc, [key, value]) => {
+    if (Array.isArray(value)) {
+      const filtered = value.filter((item): item is string => typeof item === 'string');
+      if (filtered.length > 0) {
+        acc[key] = filtered;
+      }
+    }
+    return acc;
+  }, {} as { [key: string]: string[] });
+};
 
 export const useSelectionModals = (
   character: CharacterSheetData,
@@ -20,7 +39,9 @@ export const useSelectionModals = (
   const [showClassPopup, setShowClassPopup] = useState(false);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedClassSkills, setSelectedClassSkills] = useState<string[]>([]);
-  const [selectedClassChoices, setSelectedClassChoices] = useState<{[key: string]: string[]}>({});
+  const [selectedClassChoices, setSelectedClassChoices] = useState<{[key: string]: string[]}>(
+    normalizeSelectedClassChoices(character.selectedClassChoices as Record<string, unknown>)
+  );
   const [classChoicesStep, setClassChoicesStep] = useState(1);
   const [currentClassData, setCurrentClassData] = useState<any>(null);
 
@@ -31,6 +52,14 @@ export const useSelectionModals = (
   // Feat selection state
   const [isManageFeatModalOpen, setIsManageFeatModalOpen] = useState(false);
   const [selectedFeats, setSelectedFeats] = useState<string[]>(character.feats || []);
+
+  useEffect(() => {
+    if (!showClassPopup) {
+      setSelectedClassChoices(
+        normalizeSelectedClassChoices(character.selectedClassChoices as Record<string, unknown>)
+      );
+    }
+  }, [character.selectedClassChoices, showClassPopup]);
 
   // Species handlers
   const handleSpeciesSelect = useCallback((species: string) => {
@@ -75,7 +104,18 @@ export const useSelectionModals = (
       logger.error('Error fetching class data:', response.error);
       return;
     }
-    setCurrentClassData(response.data);
+
+    let detailedClassData = null;
+    try {
+      detailedClassData = await loadClassData(className);
+    } catch (error) {
+      logger.error(`Failed to load detailed class data for ${className}:`, error);
+    }
+
+    setCurrentClassData({
+      ...response.data,
+      detailedClassData
+    });
 
     setShowClassPopup(true);
   }, []);
@@ -126,10 +166,12 @@ export const useSelectionModals = (
     setShowClassPopup(false);
     setSelectedClass('');
     setSelectedClassSkills([]);
-    setSelectedClassChoices({});
+    setSelectedClassChoices(
+      normalizeSelectedClassChoices(character.selectedClassChoices as Record<string, unknown>)
+    );
     setClassChoicesStep(1);
     setCurrentClassData(null);
-  }, []);
+  }, [character.selectedClassChoices]);
 
   const handleClassConfirm = useCallback(async () => {
     if (!selectedClass || !currentClassData) return;
@@ -193,18 +235,36 @@ export const useSelectionModals = (
       }
     });
 
+    const updatedClassChoicesRecord: Record<string, unknown> = {
+      ...(character.classChoices || {})
+    };
+
+    const fightingStyleChoice =
+      selectedClassChoices['fighting-style-1']?.[0] ||
+      selectedClassChoices['fighting-style-2']?.[0];
+
+    if (fightingStyleChoice) {
+      updatedClassChoicesRecord.fightingStyle = fightingStyleChoice;
+    } else if (updatedClassChoicesRecord.fightingStyle) {
+      delete updatedClassChoicesRecord.fightingStyle;
+    }
+
     // Build final updated character
     const updatedCharacter = {
       ...character,
       class: selectedClass,
       classFeatures: traits,
-      skills: updatedSkills
+      skills: updatedSkills,
+      selectedClassChoices,
+      classChoices: updatedClassChoicesRecord
     };
 
     updateCharacter({
       class: selectedClass,
       classFeatures: traits,
-      skills: updatedSkills
+      skills: updatedSkills,
+      selectedClassChoices,
+      classChoices: updatedClassChoicesRecord
     });
 
     if (onSave) {

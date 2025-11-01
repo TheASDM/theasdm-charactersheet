@@ -5,6 +5,9 @@ import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { listSpecies } from '@/services/speciesService';
 import { Species as ApiSpecies } from '@/types/api';
 import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
+import { extractSpeciesGrantedSpells, flattenSpellReferences, filterSpellGrantsByLevel } from '@/utils/speciesSpellExtractor';
+import { resolveAndDeduplicateSpells } from '@/utils/spellResolver';
+import { extractSpeciesFlavorText } from '@/utils/flavorTextExtractor';
 import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { AbilityScoresHeader } from './AbilityScoresHeader';
@@ -387,6 +390,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
   const [selectedLineage, setSelectedLineage] = useState<string | null>(null);
   const [selectedAncestry, setSelectedAncestry] = useState<string | null>(null);
   const [selectedLegacy, setSelectedLegacy] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   const { data: species, isLoading, error, execute } = useApiCall<Species[], []>(
     listSpecies
@@ -415,9 +419,10 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
     setSelectedLineage(null);
     setSelectedAncestry(null);
     setSelectedLegacy(null);
+    setSelectedSize(null);
   };
 
-  const handleConfirmSelection = () => {
+  const handleConfirmSelection = async () => {
     if (!selectSpecies) return;
 
     const normalizeName = (value: string) =>
@@ -486,11 +491,49 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
     const resistances = extractDamageKeywords(selectSpecies.traits, 'resistance');
     const immunities = extractDamageKeywords(selectSpecies.traits, 'immunity');
     const speciesAbilityScores = extractAbilityScoreMap((selectSpecies as any)?.abilityScoreIncrease);
-    const primarySize = Array.isArray(selectSpecies.size)
-      ? selectSpecies.size[0]
-      : typeof selectSpecies.size === 'string'
-        ? selectSpecies.size
-        : undefined;
+
+    // Use selected size if provided, otherwise use default
+    const primarySize = selectedSize
+      ? selectedSize
+      : Array.isArray(selectSpecies.size)
+        ? selectSpecies.size[0]
+        : typeof selectSpecies.size === 'string'
+          ? selectSpecies.size
+          : undefined;
+
+    // Extract granted spells from species mechanics (for Rock Gnome, Drow, etc.)
+    const extractGrantedSpells = async () => {
+      const mechanics = selectSpecies.mechanics;
+
+      // Determine which lineage/legacy was chosen
+      const lineageChoice = selectedLineage || selectedLegacy || undefined;
+
+      // Extract spell grants from mechanics
+      const spellGrants = extractSpeciesGrantedSpells(mechanics, lineageChoice);
+
+      // Filter by character level (currently level 1)
+      const characterLevel = 1;
+      const availableGrants = filterSpellGrantsByLevel(spellGrants, characterLevel);
+
+      // Flatten all spell references
+      const spellRefs = flattenSpellReferences(availableGrants);
+
+      // Resolve spell slugs to database IDs
+      if (spellRefs.length > 0) {
+        try {
+          const spellIds = await resolveAndDeduplicateSpells(spellRefs);
+          return spellIds;
+        } catch (error) {
+          console.error('Failed to resolve granted spells:', error);
+          return [];
+        }
+      }
+
+      return [];
+    };
+
+    // Extract granted spells asynchronously
+    const grantedSpellIds = await extractGrantedSpells();
 
     const updates: Partial<CharacterBuilderData> = {
       selectedSpecies: selectSpecies.name,
@@ -516,6 +559,7 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
       ...(resistances.length > 0 ? { speciesResistances: resistances.map(normalizeName) } : {}),
       ...(immunities.length > 0 ? { speciesImmunities: immunities.map(normalizeName) } : {}),
       ...(Object.keys(speciesAbilityScores).length > 0 ? { speciesAbilityScoreAllocations: speciesAbilityScores } : {}),
+      ...(grantedSpellIds.length > 0 ? { speciesGrantedSpells: grantedSpellIds } : {}),
     };
 
     onUpdate(updates);
@@ -523,37 +567,61 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
   };
 
   const renderSpeciesDetails = (species: Species) => {
-    // Parse the traits array through the template parser
-    const parsedTraits = parseComplexDnDEntry(species.traits);
+    const mechanics = species.mechanics as any;
+
+    // Extract trait entries from mechanics.entries (skip first lore entry)
+    const traits: Array<{name: string, description: string}> = [];
+    if (mechanics?.entries && Array.isArray(mechanics.entries)) {
+      for (let i = 1; i < mechanics.entries.length; i++) {
+        const entry = mechanics.entries[i];
+        if (entry && typeof entry === 'object' && entry.type === 'entries' && entry.name) {
+          const description = parseComplexDnDEntry(entry.entries || []);
+          traits.push({ name: entry.name, description });
+        }
+      }
+    }
+
+    // Special fields
+    const darkvision = mechanics?.darkvision;
+    const speed = typeof species.speed === 'object'
+      ? Object.entries(species.speed).map(([type, val]) => `${type}: ${val} ft`).join(', ')
+      : `${species.speed} feet`;
 
     return (
       <DetailsContent>
         {species.description && <p>{species.description}</p>}
 
-        <h3>Traits</h3>
-        <div style={{ whiteSpace: 'pre-wrap' }}>{parsedTraits}</div>
-
         <h3>Basic Info</h3>
         <p><FeatureLabel>Creature Type:</FeatureLabel> {species.creatureType}</p>
-        <p><FeatureLabel>Size:</FeatureLabel> {Array.isArray(species.size) ? species.size.join(', ') : species.size}</p>
-        <p><FeatureLabel>Speed:</FeatureLabel> {typeof species.speed === 'object' ? JSON.stringify(species.speed) : `${species.speed} feet`}</p>
+        <p><FeatureLabel>Size:</FeatureLabel> {Array.isArray(species.size) ? species.size.join(' or ') : species.size}</p>
+        <p><FeatureLabel>Speed:</FeatureLabel> {speed}</p>
+        {darkvision && <p><FeatureLabel>Darkvision:</FeatureLabel> {darkvision} feet</p>}
         {species.languages && species.languages.length > 0 && (
           <p><FeatureLabel>Languages:</FeatureLabel> {species.languages.join(', ')}</p>
+        )}
+
+        <h3>Traits</h3>
+        {traits.length > 0 ? (
+          traits.map((trait, index) => (
+            <div key={index} style={{ marginBottom: '1rem' }}>
+              <FeatureLabel>{trait.name}:</FeatureLabel>
+              <div style={{ marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{trait.description}</div>
+            </div>
+          ))
+        ) : (
+          <p>No trait information available.</p>
         )}
       </DetailsContent>
     );
   };
 
   const getSpeciesSummary = (species: Species): string => {
-    const parts: string[] = [];
-
-    if (species.creatureType) parts.push(species.creatureType);
-    if (species.size) {
-      const sizeStr = Array.isArray(species.size) ? species.size[0] : species.size;
-      parts.push(sizeStr);
-    }
-
-    return parts.join(' • ');
+    // Extract lore flavor text, skipping mechanical trait entries
+    const flavorText = extractSpeciesFlavorText(species.mechanics);
+    if (!flavorText) return '';
+    // Parse any template tags and return first ~100 chars
+    const parsed = parseComplexDnDEntry(flavorText);
+    return parsed.substring(0, 100) + (parsed.length > 100 ? '...' : '');
   };
 
   const renderSelectConfiguration = () => {
@@ -564,7 +632,25 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
     const needsAncestryChoice = selectSpecies.name === 'Dragonborn' || selectSpecies.name === 'Goliath';
     const needsLegacyChoice = selectSpecies.name === 'Tiefling';
 
-    const hasChoices = needsSkillChoice || needsLineageChoice || needsAncestryChoice || needsLegacyChoice;
+    // Check if size choice is available from mechanics.size
+    let sizeOptions: string[] = [];
+    const mechanics = selectSpecies.mechanics as any;
+    if (mechanics?.size && Array.isArray(mechanics.size)) {
+      // Check if it's a simple array of size options (e.g., ["S", "M"])
+      if (mechanics.size.length > 1 && typeof mechanics.size[0] === 'string') {
+        sizeOptions = mechanics.size;
+      }
+      // Check for choose structure (future-proofing)
+      else {
+        const sizeEntry = mechanics.size.find((entry: any) => entry.choose);
+        if (sizeEntry?.choose?.from && Array.isArray(sizeEntry.choose.from)) {
+          sizeOptions = sizeEntry.choose.from;
+        }
+      }
+    }
+    const needsSizeChoice = sizeOptions.length > 0;
+
+    const hasChoices = needsSkillChoice || needsLineageChoice || needsAncestryChoice || needsLegacyChoice || needsSizeChoice;
 
     if (!hasChoices) {
       return (
@@ -713,6 +799,28 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
             </OptionGrid>
           </ConfigSection>
         )}
+
+        {needsSizeChoice && (
+          <ConfigSection>
+            <SectionTitle>Choose Size</SectionTitle>
+            <SelectionCount>Selected: {selectedSize ? '1' : '0'} / 1</SelectionCount>
+            <OptionGrid>
+              {sizeOptions.map((size) => (
+                <OptionButton
+                  key={size}
+                  $isSelected={selectedSize === size}
+                  onClick={() => setSelectedSize(size)}
+                >
+                  <div className="option-name">{size === 'S' ? 'Small' : size === 'M' ? 'Medium' : size}</div>
+                  <div className="option-description">
+                    {size === 'S' && 'Small creatures are between 2 and 4 feet tall'}
+                    {size === 'M' && 'Medium creatures are between 4 and 8 feet tall'}
+                  </div>
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </ConfigSection>
+        )}
       </>
     );
   };
@@ -720,11 +828,41 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
   const isConfigurationValid = (): boolean => {
     if (!selectSpecies) return false;
 
-    if (selectSpecies.name === 'Human') return !!selectedSkill;
-    if (selectSpecies.name === 'Elf') return !!selectedLineage && !!selectedSkill;
-    if (selectSpecies.name === 'Gnome') return !!selectedLineage;
-    if (selectSpecies.name === 'Dragonborn' || selectSpecies.name === 'Goliath') return !!selectedAncestry;
-    if (selectSpecies.name === 'Tiefling') return !!selectedLegacy;
+    // Check if size choice is required
+    const mechanics = selectSpecies.mechanics as any;
+    let needsSizeChoice = false;
+    if (mechanics?.size && Array.isArray(mechanics.size)) {
+      // Check if it's a simple array of size options (e.g., ["S", "M"])
+      if (mechanics.size.length > 1 && typeof mechanics.size[0] === 'string') {
+        needsSizeChoice = true;
+      }
+      // Check for choose structure (future-proofing)
+      else {
+        const sizeEntry = mechanics.size.find((entry: any) => entry.choose);
+        needsSizeChoice = !!sizeEntry;
+      }
+    }
+
+    if (selectSpecies.name === 'Human') {
+      return !!selectedSkill && (!needsSizeChoice || !!selectedSize);
+    }
+    if (selectSpecies.name === 'Elf') {
+      return !!selectedLineage && !!selectedSkill && (!needsSizeChoice || !!selectedSize);
+    }
+    if (selectSpecies.name === 'Gnome') {
+      return !!selectedLineage && (!needsSizeChoice || !!selectedSize);
+    }
+    if (selectSpecies.name === 'Dragonborn' || selectSpecies.name === 'Goliath') {
+      return !!selectedAncestry && (!needsSizeChoice || !!selectedSize);
+    }
+    if (selectSpecies.name === 'Tiefling') {
+      return !!selectedLegacy && (!needsSizeChoice || !!selectedSize);
+    }
+
+    // For other species, only check size choice if required
+    if (needsSizeChoice) {
+      return !!selectedSize;
+    }
 
     // No configuration needed for other species
     return true;

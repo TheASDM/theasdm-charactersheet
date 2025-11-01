@@ -11,6 +11,7 @@ import { logger } from './logger';
  */
 
 import { ClassData, ClassFeature, ChoicePrompt, ChoiceDetectionResult } from '../types/classFeatures';
+import { parseComplexDnDEntry } from './dndTemplateParser';
 
 /**
  * Get all required choices for a character at a specific level
@@ -30,25 +31,33 @@ export function detectRequiredChoices(
   const prompts: ChoicePrompt[] = [];
 
   // Collect all features available at this level (base + subclass)
+  // Note: Database features don't have featureType set, so treat undefined as 'base'
   let availableFeatures = classData.features.filter(
-    (f) => f.level <= characterLevel && f.featureType === 'base'
+    (f) => f.level <= characterLevel && (!f.featureType || f.featureType === 'base')
   );
 
   // Add subclass features if subclass is selected
-  if (selectedSubclass && classData.subclasses[selectedSubclass]) {
+  if (selectedSubclass && classData.subclasses && !Array.isArray(classData.subclasses) && classData.subclasses[selectedSubclass]) {
     const subclassFeatures = classData.subclasses[selectedSubclass].filter(
-      (f) => f.level <= characterLevel
+      (f: ClassFeature) => f.level <= characterLevel
     );
     availableFeatures = [...availableFeatures, ...subclassFeatures];
   }
 
   // Find all features that require selection
-  // This includes both:
-  // 1. Old-style embedded choices with choiceGroup (Cleric, Druid)
-  // 2. New-style external references with choiceType (Warlock, Fighter, etc.)
+  // This includes:
+  // 1. Old-style embedded choices with choiceGroup (processed JSON files)
+  // 2. New-style external references with choiceType (processed JSON files)
+  // 3. Database-style choices with type:"options" in entries array
   const choiceFeatures = availableFeatures.filter(
     (f) => f.isChoice && f.requiresSelection
   );
+
+  // Also detect database-style choices (features with "options" entries)
+  const databaseChoiceFeatures = availableFeatures.filter((f) => {
+    if (!f.entries || !Array.isArray(f.entries)) return false;
+    return f.entries.some((entry: any) => entry && typeof entry === 'object' && entry.type === 'options');
+  });
 
   // Separate embedded choices from external references
   const embeddedChoices = choiceFeatures.filter((f) => f.choiceGroup);
@@ -78,10 +87,26 @@ export function detectRequiredChoices(
     prompts.push(prompt);
 
     // Mark as incomplete if no selection made or not enough selections
-    const existingSelection = existingChoices[feature.id];
+    const featureId = feature.id || feature.name;
+    const existingSelection = existingChoices[featureId];
     const requiredCount = feature.externalReference?.count || 1;
     if (!existingSelection || existingSelection.length < requiredCount) {
       incompletePrompts.push(prompt);
+    }
+  }
+
+  // Handle database-style choices (features with "options" in entries)
+  for (const feature of databaseChoiceFeatures) {
+    const prompt = createDatabaseChoicePrompt(feature, classData);
+    if (prompt) {
+      prompts.push(prompt);
+
+      // Mark as incomplete if no selection made
+      const featureId = feature.id || feature.name;
+      const existingSelection = existingChoices[featureId];
+      if (!existingSelection || existingSelection.length === 0) {
+        incompletePrompts.push(prompt);
+      }
     }
   }
 
@@ -163,10 +188,10 @@ function createExternalChoicePrompt(feature: ClassFeature): ChoicePrompt {
   const count = ref.count || 1;
 
   const prompt: ChoicePrompt = {
-    choiceGroup: feature.id, // Use feature ID as the choice group for external refs
+    choiceGroup: feature.id || feature.name, // Use feature ID as the choice group for external refs
     level: feature.level,
     title: feature.name,
-    description: feature.description,
+    description: feature.description || '',
     selectionMode: count > 1 ? 'multiple' : 'single',
     options: [], // Will be populated by UI when loading external data
     isRequired: true,
@@ -378,14 +403,15 @@ export async function getDisplayableFeatures(
   const displayableFeatures: ClassFeature[] = [];
 
   // Get all base features for this level
+  // Note: Database features don't have featureType set, so treat undefined as 'base'
   let allFeatures = classData.features.filter(
-    (f) => f.level <= characterLevel && f.featureType === 'base'
+    (f) => f.level <= characterLevel && (!f.featureType || f.featureType === 'base')
   );
 
   // Add subclass features if subclass is selected
-  if (selectedSubclass && classData.subclasses[selectedSubclass]) {
+  if (selectedSubclass && classData.subclasses && !Array.isArray(classData.subclasses) && classData.subclasses[selectedSubclass]) {
     const subclassFeatures = classData.subclasses[selectedSubclass].filter(
-      (f) => f.level <= characterLevel
+      (f: ClassFeature) => f.level <= characterLevel
     );
     allFeatures = [...allFeatures, ...subclassFeatures];
   }
@@ -394,15 +420,85 @@ export async function getDisplayableFeatures(
   const embeddedChoiceFeatures = allFeatures.filter((f) => f.isChoice && f.requiresSelection && f.choiceGroup);
   const externalChoiceFeatures = allFeatures.filter((f) => f.isChoice && f.requiresSelection && f.choiceType && f.externalReference);
 
+  // Helper: Check if feature is a database-style parent choice feature (from 5etools raw data)
+  // These have entries with type: "options" (e.g., "Primal Order", "Divine Order")
+  const isDatabaseChoiceParent = (f: ClassFeature): boolean => {
+    if (!f.entries || !Array.isArray(f.entries)) return false;
+    return f.entries.some((entry: any) =>
+      entry && typeof entry === 'object' && entry.type === 'options'
+    );
+  };
+
+  // Helper: Check if feature is a database-style choice option (from 5etools raw data)
+  // These are referenced by parent features (e.g., "Magician", "Warden", "Protector", "Thaumaturge")
+  const isDatabaseChoiceOption = (f: ClassFeature): boolean => {
+    // Find any parent features that reference this feature
+    return allFeatures.some(parent => {
+      if (!parent.entries || !Array.isArray(parent.entries)) return false;
+      const optionsEntry = parent.entries.find((entry: any) =>
+        entry && typeof entry === 'object' && entry.type === 'options'
+      );
+      if (!optionsEntry || !optionsEntry.entries) return false;
+
+      // Check if this feature is referenced in the options
+      return optionsEntry.entries.some((ref: any) => {
+        if (!ref || ref.type !== 'refClassFeature') return false;
+        const [refName] = (ref.classFeature || '').split('|');
+        return refName === f.name;
+      });
+    });
+  };
+
   // Non-choice features are those that don't require selection
-  // Exclude both embedded and external choice features
+  // Exclude: embedded choices, external choices, database parents, and unselected database options
   const nonChoiceFeatures = allFeatures.filter((f) => {
     const isEmbeddedChoice = f.isChoice && f.requiresSelection && f.choiceGroup;
     const isExternalChoice = f.isChoice && f.requiresSelection && f.choiceType && f.externalReference;
-    return !isEmbeddedChoice && !isExternalChoice;
+    const isDatabaseParent = isDatabaseChoiceParent(f);
+    const isDatabaseOption = isDatabaseChoiceOption(f);
+
+    // Exclude embedded choices, external choices, and database parent features
+    if (isEmbeddedChoice || isExternalChoice || isDatabaseParent) {
+      return false;
+    }
+
+    // If it's a database option, only include if selected
+    if (isDatabaseOption) {
+      // Find the parent feature to get the choice group key
+      const parentFeature = allFeatures.find(parent => {
+        if (!parent.entries || !Array.isArray(parent.entries)) return false;
+        const optionsEntry = parent.entries.find((entry: any) =>
+          entry && typeof entry === 'object' && entry.type === 'options'
+        );
+        if (!optionsEntry || !optionsEntry.entries) return false;
+        return optionsEntry.entries.some((ref: any) => {
+          if (!ref || ref.type !== 'refClassFeature') return false;
+          const [refName] = (ref.classFeature || '').split('|');
+          return refName === f.name;
+        });
+      });
+
+      if (parentFeature) {
+        // Use parent feature name as the choice group key (e.g., "Primal Order", "Divine Order")
+        const choiceGroupKey = parentFeature.name;
+        const selectedOptions = selectedChoices[choiceGroupKey];
+
+        if (!selectedOptions || !Array.isArray(selectedOptions)) {
+          return false; // No selection made, exclude this option
+        }
+
+        // Check if this option was selected (by name or ID)
+        return selectedOptions.includes(f.name) || selectedOptions.includes(f.id || '');
+      }
+
+      return false; // No parent found, exclude it
+    }
+
+    // Not a choice feature at all - include it
+    return true;
   });
 
-  // Add all non-choice features
+  // Add all non-choice features (now includes only selected database-style options)
   displayableFeatures.push(...nonChoiceFeatures);
 
   // For embedded choice features, only add the selected ones
@@ -420,7 +516,8 @@ export async function getDisplayableFeatures(
 
   // For external choice features, load the actual data from external files
   for (const externalFeature of externalChoiceFeatures) {
-    const selectedIds = selectedChoices[externalFeature.id] || [];
+    const featureId = externalFeature.id || externalFeature.name;
+    const selectedIds = selectedChoices[featureId] || [];
 
     if (selectedIds.length === 0 || !externalFeature.externalReference) {
       continue; // No selections made
@@ -450,7 +547,7 @@ export async function getDisplayableFeatures(
       for (const selectedId of selectedIds) {
         const featureName = selectedId
           .split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
           .join(' ');
 
         displayableFeatures.push({
@@ -458,10 +555,10 @@ export async function getDisplayableFeatures(
           name: featureName,
           level: externalFeature.level,
           source: externalFeature.source,
-          page: externalFeature.page,
+          page: externalFeature.page || 0,
           featureType: 'base',
           description: `Selected: ${featureName}`,
-          mechanics: externalFeature.mechanics,
+          mechanics: externalFeature.mechanics || {} as any,
           isChoice: false,
           prerequisites: [],
           scales: false,
@@ -472,6 +569,65 @@ export async function getDisplayableFeatures(
   }
 
   return displayableFeatures;
+}
+
+/**
+ * Create a choice prompt for database-style features (with "options" in entries)
+ * For example, Cleric's "Divine Order" with Protector/Thaumaturge options
+ */
+function createDatabaseChoicePrompt(feature: ClassFeature, classData: ClassData): ChoicePrompt | null {
+  if (!feature.entries || !Array.isArray(feature.entries)) return null;
+
+  // Find the options entry
+  const optionsEntry = feature.entries.find(
+    (entry: any) => entry && typeof entry === 'object' && entry.type === 'options'
+  );
+
+  if (!optionsEntry || !optionsEntry.entries || !Array.isArray(optionsEntry.entries)) {
+    return null;
+  }
+
+  // Extract option references (e.g., "Protector|Cleric|XPHB|1|XPHB")
+  const optionRefs = optionsEntry.entries
+    .filter((entry: any) => entry && entry.type === 'refClassFeature')
+    .map((entry: any) => entry.classFeature);
+
+  // Find the actual option features from classData and add parsed descriptions
+  const optionFeatures = optionRefs
+    .map((ref: string) => {
+      const [optionName] = ref.split('|');
+      const foundFeature = classData.features.find(f => f.name === optionName);
+      if (!foundFeature) return null;
+
+      // Parse the entries array to create a description
+      let description = '';
+      if (foundFeature.entries && Array.isArray(foundFeature.entries)) {
+        description = parseComplexDnDEntry(foundFeature.entries);
+      } else if (foundFeature.description) {
+        description = foundFeature.description;
+      }
+
+      return {
+        ...foundFeature,
+        description
+      };
+    })
+    .filter(Boolean) as ClassFeature[];
+
+  if (optionFeatures.length === 0) return null;
+
+  const count = optionsEntry.count || 1;
+
+  return {
+    choiceGroup: feature.id || feature.name,
+    level: feature.level,
+    title: feature.name,
+    description: `Choose ${count} option${count > 1 ? 's' : ''}`,
+    selectionMode: count > 1 ? 'multiple' : 'single',
+    maxSelections: count,
+    options: optionFeatures as ClassFeature[],
+    isRequired: true
+  };
 }
 
 /**

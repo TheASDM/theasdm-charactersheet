@@ -205,6 +205,10 @@ export default function CharacterSheetModal({
         newData = createDefaultCharacterSheet();
       }
 
+      // Migrate spell actions if needed
+      const { migrateSpellActions } = await import('../services/characterCalculations');
+      newData = await migrateSpellActions(newData);
+
       setCharacterSheetData(newData);
     };
 

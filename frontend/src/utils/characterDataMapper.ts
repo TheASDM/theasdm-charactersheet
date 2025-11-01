@@ -1,5 +1,5 @@
 import { CharacterBuilderData } from '../components/CharacterGeneratorWizard';
-import { CharacterSheetData, calculateProficiencyBonus, calculateModifier, InventoryItem } from '../types/characterSheet';
+import { CharacterSheetData, calculateProficiencyBonus, calculateModifier, InventoryItem, CharacterAction, createDefaultCharacterSheet } from '../types/characterSheet';
 import { CharacterFeatures, CharacterFeature } from '../types/features';
 import { logger } from './logger';
 import {
@@ -12,6 +12,7 @@ import { parseDnDTemplateTag } from './dndTemplateParser';
 import { getAllQualifiedFeatureVariants } from '../services/featureVariantsService';
 import { renderFeature, createCharacterContext } from './featureTemplateRenderer';
 import { deriveGrantedSpells } from '../helpers/deriveGrantedSpells';
+import { buildWeaponAction } from './weaponCalculator';
 
 /**
  * Parse item name and quantity from strings like "Handaxes (4)" or "Rope"
@@ -34,6 +35,22 @@ function parseItemNameAndQuantity(itemString: string): { name: string; quantity:
     quantity: 1
   };
 }
+
+const cloneAction = (action: CharacterAction): CharacterAction => ({
+  ...action,
+  attack: action.attack ? { ...action.attack } : action.attack ?? null,
+  save: action.save ? { ...action.save } : action.save ?? null,
+  damage: action.damage ? action.damage.map((damage) => ({ ...damage })) : action.damage ?? null,
+  healing: action.healing ? action.healing.map((healing) => ({ ...healing })) : action.healing ?? null,
+  ...(action.displayOverrides ? { displayOverrides: { ...action.displayOverrides } } : {}),
+  ...(action.legacy ? { legacy: { ...action.legacy } } : {}),
+  ...(action.tags ? { tags: [...action.tags] } : {}),
+  ...(action.notes !== undefined ? { notes: action.notes } : {}),
+  type: action.type,
+  name: action.name,
+  ...(action.spellId ? { spellId: action.spellId } : {}),
+  ...(action.sourceId ? { sourceId: action.sourceId } : {}),
+});
 
 type ArmorDefinition = {
   pattern: string;
@@ -197,7 +214,6 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
   const equippedItemIds: string[] = [];
 
   const weapons = mapInventoryToWeapons(inventory, finalAbilityScores, proficiencyBonus, builderData);
-  const weaponActions = mapWeaponsToActions(weapons);
 
   const equippedLookup = new Set(equippedItemIds);
   inventory.forEach((item) => {
@@ -268,6 +284,10 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     ...(builderData.spellbook?.prepared ? { prepared: [...builderData.spellbook.prepared] } : {}),
     ...(builderData.spellbook?.cantrips ? { cantrips: [...builderData.spellbook.cantrips] } : {}),
     ...(builderData.spellbook?.wizardSpellbook ? { wizardSpellbook: [...builderData.spellbook.wizardSpellbook] } : {}),
+    // Include species-granted spells (Rock Gnome, Drow, etc.)
+    ...(builderData.speciesGrantedSpells && builderData.speciesGrantedSpells.length > 0
+      ? { grantedSpells: [...builderData.speciesGrantedSpells] }
+      : {}),
   };
 
   const characterData: CharacterSheetData = {
@@ -276,6 +296,7 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     class: builderData.selectedClass || '',
     species: builderData.selectedSpecies || '',
     speciesChoices: builderData.speciesChoices || {},
+    speciesGrantedSpells: builderData.speciesGrantedSpells || [],
     speciesAdditionalSpeeds: builderData.speciesAdditionalSpeeds ?? {},
     speciesResistances: builderData.speciesResistances || [],
     speciesImmunities: builderData.speciesImmunities || [],
@@ -353,10 +374,39 @@ export function mapGeneratorDataToCharacterSheet(builderData: CharacterBuilderDa
     feats: legacyFeats,
 
     weapons,
-    actions: weaponActions,
+    actions: [],
     proficiencies,
     equippedItemIds,
   };
+
+  const defaultActionTemplate: CharacterAction[] = createDefaultCharacterSheet().actions;
+  const presetActions = defaultActionTemplate
+    .filter((action) => action.name && action.name.trim().length > 0)
+    .map((action) => cloneAction(action));
+  const blankSlots = defaultActionTemplate
+    .filter((action) => !action.name || action.name.trim().length === 0)
+    .map((action) => cloneAction(action));
+
+  const weaponActionsComputed = (characterData.equippedWeapons ?? []).map((weapon) =>
+    buildWeaponAction(weapon, characterData)
+  );
+
+  const uniqueWeaponActions = weaponActionsComputed.reduce<CharacterAction[]>((acc, action) => {
+    if (!action.name) return acc;
+    const alreadyIncluded = acc.some((existing) => existing.name?.toLowerCase() === action.name.toLowerCase());
+    if (!alreadyIncluded) {
+      acc.push(action);
+    }
+    return acc;
+  }, []);
+
+  const combinedActions: CharacterAction[] = [...presetActions, ...uniqueWeaponActions];
+
+  blankSlots.forEach((slot) => {
+    combinedActions.push(cloneAction(slot));
+  });
+
+  characterData.actions = combinedActions;
 
   const grantedSpells = deriveGrantedSpells({ characterData } as any);
   if (grantedSpells.length > 0) {
@@ -568,10 +618,14 @@ function mapSkillProficiencies(builderData: CharacterBuilderData, abilityScores:
     ...(builderData.featSkillProficiencies || []),
   ]));
 
+  // Create a lowercase version for case-insensitive matching
+  const proficientSkillsLower = allProficientSkills.map(s => s.toLowerCase());
+
   const skills: { [key: string]: { proficient: boolean; modifier: number } } = {};
 
   Object.entries(skillToAbility).forEach(([skill, ability]) => {
-    const isProficient = allProficientSkills.includes(skill);
+    // Case-insensitive proficiency check
+    const isProficient = proficientSkillsLower.includes(skill.toLowerCase());
     const abilityModifier = calculateModifier(abilityScores[ability]);
     const modifier = isProficient ? abilityModifier + proficiencyBonus : abilityModifier;
 
@@ -1195,16 +1249,6 @@ function mapInventoryToWeapons(
   });
 
   return Array.from(summaries.values());
-}
-
-function mapWeaponsToActions(weapons: Array<{ name: string; atkBonus: string; damage: string }>) {
-  return weapons
-    .filter((weapon) => weapon.name)
-    .map((weapon) => ({
-      name: weapon.name,
-      atkBonus: weapon.atkBonus,
-      damage: weapon.damage,
-    }));
 }
 
 /**

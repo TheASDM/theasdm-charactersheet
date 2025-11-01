@@ -10,6 +10,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { CompactList } from '../wizard/CompactList';
 import { DetailsModal } from '../wizard/DetailsModal';
 import { SelectModal } from '../wizard/SelectModal';
+import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
+import { extractBackgroundFlavorText } from '@/utils/flavorTextExtractor';
 
 interface Step3ABackgroundSelectionProps {
   data: CharacterBuilderData;
@@ -195,12 +197,25 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   const handleSelectClick = (background: Background) => {
     setSelectBackground(background);
 
-    // Initialize allocations
+    // Initialize allocations - parse from mechanics.ability
     const initialAllocations: { [ability: string]: number } = {};
-    const asi = background.abilityScoreIncrease as { choose?: number; options?: string[] } | undefined;
-    if (asi?.options) {
-      asi.options.forEach((ability: string) => {
-        initialAllocations[ability] = 0;
+    const mechanics = background.mechanics as any;
+    if (mechanics?.ability && Array.isArray(mechanics.ability)) {
+      // Find the ability entry with choose structure
+      const abilityEntry = mechanics.ability.find((entry: any) => entry.choose);
+      let abilities: string[] = [];
+
+      // Check for weighted.from structure first (D&D 2024 format)
+      if (abilityEntry?.choose?.weighted?.from && Array.isArray(abilityEntry.choose.weighted.from)) {
+        abilities = abilityEntry.choose.weighted.from;
+      }
+      // Fallback to plain choose.from
+      else if (abilityEntry?.choose?.from && Array.isArray(abilityEntry.choose.from)) {
+        abilities = abilityEntry.choose.from;
+      }
+
+      abilities.forEach((ability: string) => {
+        initialAllocations[ability.toLowerCase()] = 0;
       });
     }
     setAbilityScoreAllocations(initialAllocations);
@@ -216,6 +231,8 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   };
 
   const canSelectLanguage = (language: string): boolean => {
+    // Common cannot be selected (all characters know Common by default)
+    if (language === 'Common') return false;
     return selectedLanguages.includes(language) || selectedLanguages.length < 2;
   };
 
@@ -234,11 +251,16 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   };
 
   const isAllocationValid = (): boolean => {
-    if (!selectBackground?.abilityScoreIncrease) return true;
+    if (!selectBackground) return true;
 
-    const asi = selectBackground.abilityScoreIncrease as { choose?: number; options?: string[] } | undefined;
-    if (asi?.choose) {
-      return getTotalPointsAllocated() === asi.choose;
+    // Parse from mechanics.ability
+    const mechanics = selectBackground.mechanics as any;
+    if (mechanics?.ability && Array.isArray(mechanics.ability)) {
+      const abilityEntry = mechanics.ability.find((entry: any) => entry.choose);
+      if (abilityEntry?.choose?.count) {
+        // D&D 2024 backgrounds allocate 3 points total (+2/+1 or +1/+1/+1)
+        return getTotalPointsAllocated() === 3;
+      }
     }
     return true;
   };
@@ -273,7 +295,20 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
       }
 
       if (Array.isArray(skillData)) {
-        skillData.forEach(addSkill);
+        // Check if the array contains objects with boolean skill flags
+        // e.g., [{ persuasion: true, investigation: true }]
+        skillData.forEach(item => {
+          if (typeof item === 'object' && item !== null) {
+            const itemRecord = item as Record<string, unknown>;
+            Object.entries(itemRecord).forEach(([key, value]) => {
+              if (typeof value === 'boolean' && value) {
+                result.push(normalizeSkill(key));
+              }
+            });
+          } else {
+            addSkill(item);
+          }
+        });
         return result;
       }
 
@@ -320,30 +355,118 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   };
 
   const renderBackgroundDetails = (background: Background) => {
-    const asi = background.abilityScoreIncrease as { choose?: number; options?: string[] } | undefined;
-    const skills = background.skillProficiencies
-      ? Object.keys(background.skillProficiencies).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')
-      : 'None';
+    // Parse ASI from mechanics.ability
+    const mechanics = background.mechanics as any;
+    let asiOptions: string[] = [];
+    if (mechanics?.ability && Array.isArray(mechanics.ability)) {
+      const abilityEntry = mechanics.ability.find((entry: any) => entry.choose);
+      // Check for weighted.from structure first (D&D 2024 format)
+      if (abilityEntry?.choose?.weighted?.from && Array.isArray(abilityEntry.choose.weighted.from)) {
+        asiOptions = abilityEntry.choose.weighted.from.map((a: string) => a.toUpperCase());
+      }
+      // Fallback to plain choose.from
+      else if (abilityEntry?.choose?.from && Array.isArray(abilityEntry.choose.from)) {
+        asiOptions = abilityEntry.choose.from.map((a: string) => a.toUpperCase());
+      }
+    }
+
+    // Parse skills from mechanics.skillProficiencies
+    let skills: string[] = [];
+    if (mechanics?.skillProficiencies && Array.isArray(mechanics.skillProficiencies) && mechanics.skillProficiencies[0]) {
+      const skillsObj = mechanics.skillProficiencies[0];
+      skills = Object.keys(skillsObj).filter(key => skillsObj[key] === true);
+    }
+
+    // Parse tool proficiencies from mechanics.toolProficiencies
+    let tools: string[] = [];
+    if (mechanics?.toolProficiencies && Array.isArray(mechanics.toolProficiencies) && mechanics.toolProficiencies[0]) {
+      const toolsObj = mechanics.toolProficiencies[0];
+      tools = Object.entries(toolsObj)
+        .filter(([_, value]) => value)
+        .map(([key, value]) => {
+          // Handle special tool names
+          if (key === 'anyMusicalInstrument') return `Any Musical Instrument (${value})`;
+          if (key === 'anyArtisansTool') return `Any Artisan's Tool (${value})`;
+          // Capitalize and format normal tool names
+          return key.split(/(?=[A-Z])/).join(' ').replace(/^\w/, c => c.toUpperCase());
+        });
+    }
+
+    // Get origin feat from background.originFeat or mechanics.feat
+    const originFeat = background.originFeat || mechanics?.feat;
+
+    // Parse equipment from mechanics.startingEquipment
+    const equipmentOptions: string[] = [];
+    if (mechanics?.startingEquipment && Array.isArray(mechanics.startingEquipment) && mechanics.startingEquipment[0]) {
+      const equipObj = mechanics.startingEquipment[0];
+
+      // Parse Option A
+      if (equipObj.A && Array.isArray(equipObj.A)) {
+        const itemsA = equipObj.A.map((entry: any) => {
+          if (entry.item) {
+            const itemName = entry.displayName || entry.item.split('|')[0];
+            const qty = entry.quantity ? `${entry.quantity}× ` : '';
+            return qty + itemName;
+          }
+          if (entry.value) return `${entry.value / 100} GP`;
+          return null;
+        }).filter(Boolean);
+        equipmentOptions.push(`Option A: ${itemsA.join(', ')}`);
+      }
+
+      // Parse Option B
+      if (equipObj.B && Array.isArray(equipObj.B)) {
+        const itemsB = equipObj.B.map((entry: any) => {
+          if (entry.item) {
+            const itemName = entry.displayName || entry.item.split('|')[0];
+            const qty = entry.quantity ? `${entry.quantity}× ` : '';
+            return qty + itemName;
+          }
+          if (entry.value) return `${entry.value / 100} GP`;
+          return null;
+        }).filter(Boolean);
+        equipmentOptions.push(`Option B: ${itemsB.join(', ')}`);
+      }
+    }
 
     return (
       <DetailsContent>
         <p>{background.description || 'No description available.'}</p>
 
         <h3>Features</h3>
-        <p><FeatureLabel>Skills:</FeatureLabel> {skills}</p>
+        {skills.length > 0 && (
+          <p>
+            <FeatureLabel>Skills:</FeatureLabel>{' '}
+            {skills.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}
+          </p>
+        )}
+        {tools.length > 0 && (
+          <p>
+            <FeatureLabel>Tool Proficiencies:</FeatureLabel> {tools.join(', ')}
+          </p>
+        )}
         <p><FeatureLabel>Languages:</FeatureLabel> Choose 2</p>
 
-        {asi?.options && asi.choose && (
+        {asiOptions.length > 0 && (
           <p>
             <FeatureLabel>Ability Scores:</FeatureLabel>{' '}
-            {`Choose ${asi.choose} from ${asi.options.join(', ')}`}
+            {`Allocate +2/+1 or +1/+1/+1 among ${asiOptions.join(', ')}`}
           </p>
         )}
 
-        {background.originFeat && (
+        {equipmentOptions.length > 0 && (
+          <>
+            <h3>Starting Equipment</h3>
+            {equipmentOptions.map((option, idx) => (
+              <p key={idx}>{option}</p>
+            ))}
+          </>
+        )}
+
+        {originFeat && (
           <>
             <h3>Origin Feat</h3>
-            <p><FeatureLabel>{background.originFeat}</FeatureLabel></p>
+            <p><FeatureLabel>{originFeat}</FeatureLabel></p>
           </>
         )}
       </DetailsContent>
@@ -353,14 +476,23 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
   const renderSelectConfiguration = () => {
     if (!selectBackground) return null;
 
-    const asi = selectBackground.abilityScoreIncrease as {
-      type?: string;
-      options?: string[];
-      weights?: number[];
-    } | undefined;
+    // Parse ASI from mechanics.ability
+    const mechanics = selectBackground.mechanics as any;
+    let asiOptions: string[] = [];
+    if (mechanics?.ability && Array.isArray(mechanics.ability)) {
+      const abilityEntry = mechanics.ability.find((entry: any) => entry.choose);
+      // Check for weighted.from structure first (D&D 2024 format)
+      if (abilityEntry?.choose?.weighted?.from && Array.isArray(abilityEntry.choose.weighted.from)) {
+        asiOptions = abilityEntry.choose.weighted.from;
+      }
+      // Fallback to plain choose.from
+      else if (abilityEntry?.choose?.from && Array.isArray(abilityEntry.choose.from)) {
+        asiOptions = abilityEntry.choose.from;
+      }
+    }
 
-    // For backgrounds, it's a weighted_choice with 3 abilities where you allocate +2/+1 or +1/+1/+1
-    const hasAbilityChoice = asi?.type === 'weighted_choice' && asi.options && asi.options.length === 3;
+    // For D&D 2024 backgrounds, allocate +2/+1 or +1/+1/+1 among 3 abilities
+    const hasAbilityChoice = asiOptions.length === 3;
 
     return (
       <>
@@ -393,7 +525,7 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
               Allocated: {getTotalPointsAllocated()} / 3 points
             </SelectionCount>
             <AbilityScoreGrid>
-              {asi.options!.map((ability) => (
+              {asiOptions.map((ability) => (
                 <AbilityBox key={ability}>
                   <AbilityLabel>{ability.toUpperCase()}</AbilityLabel>
                   <AbilityControls>
@@ -457,9 +589,12 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
         onSelect={handleSelectClick}
         renderName={(bg) => bg.name}
         renderSummary={(bg) => {
-          if (!bg.skillProficiencies) return '';
-          const skills = Object.keys(bg.skillProficiencies);
-          return skills.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+          // Extract narrative flavor text, skipping mechanical entries
+          const flavorText = extractBackgroundFlavorText(bg.mechanics);
+          if (!flavorText) return '';
+          // Parse any template tags and return first ~100 chars
+          const parsed = parseComplexDnDEntry(flavorText);
+          return parsed.substring(0, 100) + (parsed.length > 100 ? '...' : '');
         }}
       />
 

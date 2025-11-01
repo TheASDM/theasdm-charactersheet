@@ -82,6 +82,16 @@ const CREATURE_TYPES = [
 ];
 
 /**
+ * Filter spell data for D&D 2024 content only
+ * Explicitly rejects PHB (2014 Player's Handbook) content
+ */
+function filterXPHBContent(data) {
+  return data.filter((item) => {
+    return item.source === 'XPHB' || item.source === 'XDMG';
+  });
+}
+
+/**
  * Initialize reference data in the database
  */
 async function initializeReferenceData() {
@@ -163,8 +173,12 @@ async function importSpells(jsonFilePath) {
     throw new Error('Invalid spell data format. Expected { spell: [...] }');
   }
 
-  const spells = spellData.spell;
-  console.log(`🎯 Found ${spells.length} spells to import`);
+  const allSpells = spellData.spell;
+  console.log(`🎯 Found ${allSpells.length} total spells`);
+
+  // Filter for D&D 2024 content only
+  const spells = filterXPHBContent(allSpells);
+  console.log(`📖 Filtered to ${spells.length} D&D 2024 spells (XPHB/XDMG source)`);
 
   let imported = 0;
   let skipped = 0;

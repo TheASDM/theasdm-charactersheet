@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { detectRequiredChoices } from '../utils/classChoiceDetection';
+import type { ChoicePrompt, ClassData, ClassFeature } from '../types/classFeatures';
+import { loadExternalChoiceData } from '../utils/externalChoiceLoader';
+import { logger } from '../utils/logger';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
@@ -137,70 +141,203 @@ const ConfirmButton = styled(Button)<{ disabled?: boolean }>`
   }
 `;
 
-// Helper function to parse class level 1 choices from features
-const parseClassChoices = (classFeatures: any[]) => {
-  const choices: { [category: string]: { options: string[], count: number } } = {};
+interface ParsedChoiceOption {
+  id: string;
+  label: string;
+  name: string;
+  description?: string;
+}
 
-  classFeatures.forEach(feature => {
-    // Check for Eldritch Invocations (Warlock)
-    if (feature.name === 'Eldritch Invocations') {
-      const invocationOptions = feature.entries?.find((entry: any) => entry.type === 'options');
-      if (invocationOptions) {
-        choices['Eldritch Invocations'] = {
-          options: invocationOptions.entries.map((entry: any) =>
-            entry.optionalfeature?.split('|')[0] || 'Unknown Option'
-          ).slice(0, 2), // Limit to 2 choices at level 1
-          count: 2
-        };
+interface ParsedChoiceGroup {
+  id: string;
+  title: string;
+  description?: string;
+  options: ParsedChoiceOption[];
+  minSelections: number;
+  maxSelections: number;
+  isRequired: boolean;
+}
+
+const formatChoiceTitle = (prompt: ChoicePrompt): string => {
+  if (prompt.title) {
+    const cleaned = prompt.title
+      .replace(/^Choose\s+/i, '')
+      .replace(/\s+Option(s)?$/i, '')
+      .trim();
+    if (cleaned) {
+      return cleaned;
+    }
+  }
+
+  const firstOptionName = prompt.options[0]?.name;
+  if (firstOptionName) {
+    if (firstOptionName.includes(':')) {
+      return firstOptionName.split(':')[0].trim();
+    }
+    if (firstOptionName.includes('-')) {
+      return firstOptionName.split('-')[0].trim();
+    }
+    return firstOptionName;
+  }
+
+  return 'Class Choice';
+};
+
+const formatChoiceOptionLabel = (name: string): string => {
+  if (!name) return 'Option';
+  const colonIndex = name.indexOf(':');
+  if (colonIndex >= 0 && colonIndex < name.length - 1) {
+    return name.slice(colonIndex + 1).trim();
+  }
+  return name.trim();
+};
+
+// Helper function to build class choice groups (supports external references)
+const buildClassChoiceGroups = async (
+  classData: any,
+  existingChoices: Record<string, string[]>
+): Promise<ParsedChoiceGroup[]> => {
+  if (!classData) {
+    return [];
+  }
+
+  let features: ClassFeature[] = [];
+
+  if (Array.isArray(classData.features)) {
+    features = [...classData.features];
+  }
+
+  if (Array.isArray(classData.classFeatures)) {
+    features = [...features, ...classData.classFeatures];
+  } else if (classData.classFeatures && typeof classData.classFeatures === 'object') {
+    Object.values(classData.classFeatures).forEach((featureList) => {
+      if (Array.isArray(featureList)) {
+        features = [...features, ...featureList];
       }
-    }
+    });
+  }
 
-    // Check for Fighting Style (Fighter, Paladin, Ranger)
-    if (feature.name === 'Fighting Style') {
-      const styleOptions = feature.entries?.find((entry: any) => entry.type === 'options');
-      if (styleOptions) {
-        choices['Fighting Style'] = {
-          options: styleOptions.entries.map((entry: any) =>
-            entry.name || 'Unknown Style'
-          ),
-          count: 1
-        };
-      }
-    }
+  const normalizedFeatures: ClassFeature[] = features
+    .filter((feature: any): feature is ClassFeature => feature && typeof feature.level === 'number')
+    .map((feature) => ({
+      ...feature,
+      name: feature.name || 'Unknown Feature'
+    }));
 
-    // Check for Metamagic (Sorcerer)
-    if (feature.name === 'Metamagic' && feature.entries) {
-      const metamagicOptions = feature.entries.find((entry: any) => entry.type === 'options');
-      if (metamagicOptions) {
-        choices['Metamagic'] = {
-          options: metamagicOptions.entries.map((entry: any) =>
-            entry.name || 'Unknown Metamagic'
-          ),
-          count: 2
-        };
-      }
-    }
+  if (normalizedFeatures.length === 0) {
+    return [];
+  }
 
-    // Check for Wild Shape (Druid)
-    if (feature.name === 'Wild Shape') {
-      // Druids don't typically have choices at level 1 for Wild Shape
-      // But we can add this for future levels
-    }
+  const normalizedClassData: ClassData = {
+    className: classData.className || classData.name || 'Unknown Class',
+    source: classData.source || normalizedFeatures[0]?.source || '',
+    features: normalizedFeatures,
+    subclasses: classData.subclasses ?? {},
+    mechanics: classData.mechanics
+  };
 
-    // Check for additional class-specific features
-    if (feature.entries) {
-      feature.entries.forEach((entry: any) => {
-        if (entry.type === 'options' && !choices[feature.name]) {
-          choices[feature.name] = {
-            options: entry.entries.map((opt: any) => opt.name || opt.optionalfeature?.split('|')[0] || 'Unknown'),
-            count: entry.count || 1
+  const detection = detectRequiredChoices(
+    normalizedClassData,
+    1,
+    existingChoices || {}
+  );
+
+  const promptsWithOptions: ChoicePrompt[] = await Promise.all(
+    detection.prompts.map(async (prompt) => {
+      if (prompt.externalReference && prompt.choiceType) {
+        try {
+          const externalOptions = await loadExternalChoiceData(
+            prompt.externalReference,
+            1,
+            existingChoices || {}
+          );
+
+          return {
+            ...prompt,
+            options: externalOptions
           };
+        } catch (error) {
+          logger.error(`Failed to load external options for ${prompt.title}:`, error);
+          return prompt;
         }
-      });
-    }
-  });
+      }
 
-  return choices;
+      return prompt;
+    })
+  );
+
+  const dedupedPrompts: ChoicePrompt[] = [];
+  const seenOptionSignatures = new Set<string>();
+  const seenChoiceGroups = new Set<string>();
+
+  for (const prompt of promptsWithOptions) {
+    const normalizedGroupKey = (prompt.choiceGroup || prompt.title || '')
+      .toLowerCase()
+      .replace(/[^a-z]/g, '');
+
+    if (normalizedGroupKey && seenChoiceGroups.has(normalizedGroupKey)) {
+      continue;
+    }
+
+    const optionSignature = (prompt.options || [])
+      .map((opt) => (opt.name || opt.id || '').toLowerCase())
+      .sort()
+      .join('|');
+
+    if (optionSignature.length === 0) {
+      dedupedPrompts.push(prompt);
+      continue;
+    }
+
+    if (seenOptionSignatures.has(optionSignature)) {
+      continue;
+    }
+
+    if (normalizedGroupKey) {
+      seenChoiceGroups.add(normalizedGroupKey);
+    }
+    seenOptionSignatures.add(optionSignature);
+    dedupedPrompts.push(prompt);
+  }
+
+  return dedupedPrompts
+    .filter((prompt) => prompt.isRequired && prompt.level === 1 && prompt.options.length > 0)
+    .map((prompt) => {
+      const maxSelections =
+        prompt.maxSelections ??
+        (prompt.selectionMode === 'single' ? 1 : prompt.options.length);
+      const minSelections =
+        prompt.minSelections ?? (prompt.selectionMode === 'single' ? 1 : 0);
+
+      const options: ParsedChoiceOption[] = prompt.options.map((option) => {
+        const parsedOption: ParsedChoiceOption = {
+          id: option.id || option.name,
+          label: formatChoiceOptionLabel(option.name),
+          name: option.name
+        };
+
+        if (option.description) {
+          parsedOption.description = option.description;
+        }
+
+        return parsedOption;
+      });
+
+      const parsedGroup: ParsedChoiceGroup = {
+        id: prompt.choiceGroup,
+        title: formatChoiceTitle(prompt),
+        options,
+        minSelections,
+        maxSelections,
+        isRequired: prompt.isRequired
+      };
+
+      if (prompt.description) {
+        parsedGroup.description = prompt.description;
+      }
+
+      return parsedGroup;
+    });
 };
 
 // Props interface
@@ -240,6 +377,73 @@ const ClassSelectionModal: React.FC<ClassSelectionModalProps> = ({
   // Extract skills and skill count from API data
   const classSkills = currentClassData?.skillProficiencies || [];
   const requiredSkillCount = currentClassData?.skillChoices || 2;
+  const [classChoices, setClassChoices] = useState<ParsedChoiceGroup[]>([]);
+  const [isLoadingChoices, setIsLoadingChoices] = useState(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadChoices = async () => {
+      if (!currentClassData) {
+        if (!isCancelled) {
+          setClassChoices([]);
+        }
+        return;
+      }
+
+      setIsLoadingChoices(true);
+      try {
+        const detectionSource =
+          currentClassData.detailedClassData || currentClassData;
+        const choices = await buildClassChoiceGroups(detectionSource, selectedClassChoices);
+        if (!isCancelled) {
+          setClassChoices(choices);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setClassChoices([]);
+        }
+        logger.error('Failed to prepare class choices:', error);
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingChoices(false);
+        }
+      }
+    };
+
+    loadChoices();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentClassData, selectedClassChoices]);
+
+  const areRequiredChoicesComplete = useMemo(() => {
+    if (isLoadingChoices) {
+      return false;
+    }
+
+    return classChoices.every((choice) => {
+      if (!choice.isRequired) {
+        return true;
+      }
+
+      const selectedCount = selectedClassChoices[choice.id]?.length || 0;
+      const minSelections = choice.minSelections ?? (choice.isRequired ? 1 : 0);
+      const fallbackMax = choice.options.length > 0 ? choice.options.length : Math.max(minSelections, 1);
+      const maxSelections = choice.maxSelections ?? fallbackMax;
+
+      if (selectedCount < minSelections) {
+        return false;
+      }
+
+      if (selectedCount > maxSelections) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [classChoices, isLoadingChoices, selectedClassChoices]);
 
   return (
     <ModalOverlay isOpen={isOpen} onClick={(e) => {
@@ -286,30 +490,47 @@ const ClassSelectionModal: React.FC<ClassSelectionModalProps> = ({
                   <div style={{ textAlign: 'center', color: '#8b6914', fontStyle: 'italic', padding: '20px' }}>
                     Loading class features...
                   </div>
+                ) : isLoadingChoices ? (
+                  <div style={{ textAlign: 'center', color: '#8b6914', fontStyle: 'italic', padding: '20px' }}>
+                    Loading class choices...
+                  </div>
                 ) : (
                   <>
-                    {Object.entries(parseClassChoices(Array.isArray(currentClassData.classFeatures) ? currentClassData.classFeatures.filter((f: any) => f.level === 1) : [])).map(([category, choiceData]) => (
-                      <div key={category} style={{ marginBottom: '20px' }}>
-                        <ClassSkillsTitle>
-                          Choose {choiceData.count} {category}:
-                        </ClassSkillsTitle>
-                        <ClassSkillsGrid>
-                          {choiceData.options.map((option) => (
-                            <ClassSkillChoice
-                              key={option}
-                              selected={selectedClassChoices[category]?.includes(option) || false}
-                              onClick={() => onChoiceToggle(category, option, choiceData.count)}
-                            >
-                              {option}
-                            </ClassSkillChoice>
-                          ))}
-                        </ClassSkillsGrid>
-                        <div style={{ textAlign: 'center', marginTop: '10px', color: '#8b6914' }}>
-                          Selected: {selectedClassChoices[category]?.length || 0} / {choiceData.count}
+                    {classChoices.length > 0 ? classChoices.map((choice) => {
+                      const selectionTarget = Math.max(choice.maxSelections ?? choice.minSelections ?? 1, 1);
+                      return (
+                        <div key={choice.id} style={{ marginBottom: '20px' }}>
+                          <ClassSkillsTitle>
+                            Choose {selectionTarget}{' '}
+                            {selectionTarget > 1 ? `${choice.title} Options` : choice.title}:
+                          </ClassSkillsTitle>
+                          {choice.description && (
+                            <div style={{ textAlign: 'center', color: '#b0b0b0', fontSize: '0.85rem', marginBottom: '10px' }}>
+                              {choice.description}
+                            </div>
+                          )}
+                          <ClassSkillsGrid>
+                            {choice.options.map((option) => {
+                              const optionId = option.id;
+                              const isSelected = selectedClassChoices[choice.id]?.includes(optionId) || false;
+                              const maxSelections = Math.max(choice.maxSelections ?? choice.minSelections ?? 1, 1);
+                              return (
+                                <ClassSkillChoice
+                                  key={optionId}
+                                  selected={isSelected}
+                                  onClick={() => onChoiceToggle(choice.id, optionId, maxSelections)}
+                                >
+                                  {option.label}
+                                </ClassSkillChoice>
+                              );
+                            })}
+                          </ClassSkillsGrid>
+                          <div style={{ textAlign: 'center', marginTop: '10px', color: '#8b6914' }}>
+                            Selected: {selectedClassChoices[choice.id]?.length || 0} / {selectionTarget}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    {Object.keys(parseClassChoices(Array.isArray(currentClassData.classFeatures) ? currentClassData.classFeatures.filter((f: any) => f.level === 1) : [])).length === 0 && (
+                      );
+                    }) : (
                       <div style={{ textAlign: 'center', color: '#8b6914', fontStyle: 'italic', padding: '20px' }}>
                         No additional level 1 choices for {selectedClass}
                       </div>
@@ -340,9 +561,7 @@ const ClassSelectionModal: React.FC<ClassSelectionModalProps> = ({
                   </CancelButton>
                   <ConfirmButton
                     onClick={onConfirm}
-                    disabled={!currentClassData ? false : Object.entries(parseClassChoices(Array.isArray(currentClassData.classFeatures) ? currentClassData.classFeatures.filter((f: any) => f.level === 1) : [])).some(([category, choiceData]) =>
-                      (selectedClassChoices[category]?.length || 0) !== choiceData.count
-                    )}
+                    disabled={!currentClassData ? false : isLoadingChoices || !areRequiredChoicesComplete}
                   >
                     Confirm Selection
                   </ConfirmButton>
@@ -357,4 +576,3 @@ const ClassSelectionModal: React.FC<ClassSelectionModalProps> = ({
 };
 
 export default ClassSelectionModal;
-export { parseClassChoices };

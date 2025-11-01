@@ -1,4 +1,4 @@
-import { apiClient, request, withSignal } from './api';
+import { apiClient, request, resolveApiUrl, withSignal } from './api';
 import { ApiResult, User, ok, isError } from '@/types/api';
 import { getSessionToken } from './session';
 
@@ -9,10 +9,10 @@ export interface AuthSession {
 }
 
 export interface RegisterData {
-  username: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  displayName: string;
+  username?: string;
 }
 
 export interface LoginData {
@@ -21,22 +21,11 @@ export interface LoginData {
 }
 
 export interface UpdateProfileData {
-  username?: string;
-  email?: string;
-}
-
-export interface UpdatePasswordData {
-  currentPassword: string;
-  newPassword: string;
-  confirmNewPassword: string;
+  displayName?: string;
 }
 
 interface AuthMeResponse {
   user: User;
-}
-
-interface SuccessMessage {
-  message: string;
 }
 
 export async function register(data: RegisterData): Promise<ApiResult<AuthSession>> {
@@ -74,15 +63,19 @@ export async function updateProfile(
   return request<AuthSession>(() => apiClient.patch<AuthSession>('/auth/profile', data));
 }
 
-export async function updatePassword(
-  data: UpdatePasswordData
-): Promise<ApiResult<SuccessMessage>> {
-  return request<SuccessMessage>(() => apiClient.patch<SuccessMessage>('/auth/password', data));
-}
-
 export const isAuthenticated = (): boolean => !!getSessionToken();
 
 export const getToken = (): string | null => getSessionToken();
+
+export const getDiscordLoginUrl = (redirectTo?: string): string => {
+  const query = new URLSearchParams();
+  if (redirectTo) {
+    query.set('redirectTo', redirectTo);
+  }
+  const base = resolveApiUrl('/auth/discord');
+  const hasQuery = query.toString();
+  return hasQuery ? `${base}?${query.toString()}` : base;
+};
 
 export const authService = {
   register,
@@ -91,9 +84,9 @@ export const authService = {
   me,
   getCurrentUser,
   updateProfile,
-  updatePassword,
   isAuthenticated,
   getToken,
+  getDiscordLoginUrl,
 };
 
 export type { User };

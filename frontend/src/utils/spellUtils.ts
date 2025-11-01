@@ -21,9 +21,17 @@ export const formatLevel = (level: number): string => {
 };
 
 /**
- * Get the school name from a school code
+ * Get the school name from a school code or school object
  */
-export const getSchoolLabel = (code?: string): string => {
+export const getSchoolLabel = (schoolOrCode?: string | { code: string; name: string } | null): string => {
+  // Extract the code from various formats
+  let code: string | undefined;
+  if (typeof schoolOrCode === 'string') {
+    code = schoolOrCode;
+  } else if (schoolOrCode && typeof schoolOrCode === 'object' && 'code' in schoolOrCode) {
+    code = schoolOrCode.code;
+  }
+
   const match = SCHOOL_OPTIONS.find((option) => option.value === code);
   return match?.label ?? 'Unknown';
 };

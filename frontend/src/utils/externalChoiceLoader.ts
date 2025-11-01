@@ -83,29 +83,79 @@ async function loadInvocations(
 }
 
 /**
- * Load Fighting Style feats
+ * Load Fighting Style feats from the database API
  */
 async function loadFightingStyles(externalRef: ExternalReference): Promise<ClassFeature[]> {
   try {
-    const response = await fetch('/processed-data/FightingStyles.json');
-    if (!response.ok) {
-      throw new Error(`Failed to load FightingStyles.json: ${response.status}`);
+    // Import the featsService dynamically to avoid circular dependencies
+    const { listFeatsByCategory } = await import('../services/featsService');
+
+    // Fetch Fighting Style feats from the API
+    const category = externalRef.category || 'Fighting Style';
+    const categoryFallbacks = category === 'Fighting Style'
+      ? [category, 'FS']
+      : [category];
+
+    let styles: any[] = [];
+    let lastError: string | undefined;
+
+    for (const categoryOption of categoryFallbacks) {
+      const result = await listFeatsByCategory(categoryOption);
+      if (!result.ok) {
+        lastError = result.error;
+        continue;
+      }
+
+      styles = result.data || [];
+      if (styles.length > 0) {
+        break;
+      }
     }
 
-    const data = await response.json();
-    const styles: FightingStyle[] = data.fightingStyles || [];
-
-    // Add custom option if specified (e.g., Blind Fighting for Fighter, Druidic Warrior for Ranger)
-    const options = [...styles];
-    if (externalRef.customOption) {
-      // The custom option is already in the list, so we don't need to add it
-      // Just filter if needed
+    if (styles.length === 0) {
+      throw new Error(lastError || 'No fighting styles found');
     }
 
     // Convert to ClassFeature format for UI
-    return options.map((style) => convertFightingStyleToFeature(style));
+    const options = styles.map((style) => convertFeatToClassFeature(style));
+
+    if (externalRef.allowCustomOption && externalRef.customOption) {
+      const customOptionId = externalRef.customOption.id;
+      const hasExistingOption = options.some((option) => option.id === customOptionId);
+
+      if (!hasExistingOption) {
+        options.push({
+          id: customOptionId,
+          name: externalRef.customOption.name,
+          level: 1,
+          source: externalRef.source || 'XPHB',
+          page: 0,
+          featureType: 'base',
+          description: externalRef.customOption.description,
+          mechanics: {
+            diceRolls: [],
+            damageTypes: [],
+            abilities: [],
+            actionType: null,
+            range: null,
+            duration: null,
+            savingThrow: null,
+            proficiencies: [],
+            spellsGranted: [],
+            scales: false
+          },
+          isChoice: true,
+          requiresSelection: true,
+          prerequisites: [],
+          scales: false,
+          scalingProgression: []
+        });
+      }
+    }
+
+    return options;
   } catch (error) {
-    logger.error('Failed to load fighting styles:', error);
+    logger.error('Failed to load fighting styles from API:', error);
     return [];
   }
 }
@@ -252,18 +302,32 @@ function convertInvocationToFeature(invocation: EldritchInvocation): ClassFeatur
   };
 }
 
+
 /**
- * Convert Fighting Style to ClassFeature format for UI
+ * Convert a Feat from the database to ClassFeature format for UI
  */
-function convertFightingStyleToFeature(style: FightingStyle): ClassFeature {
+function convertFeatToClassFeature(feat: any): ClassFeature {
+  // Extract the description - it may be wrapped in quotes from JSON serialization
+  let description = feat.description || '';
+
+  // Remove outer quotes if present
+  if (description.startsWith('"') && description.endsWith('"')) {
+    description = description.slice(1, -1);
+  }
+
+  // If we have raw.raw.entries, use that for richer content
+  if (feat.raw?.raw?.entries && Array.isArray(feat.raw.raw.entries)) {
+    description = feat.raw.raw.entries.join('\n\n');
+  }
+
   return {
-    id: style.id,
-    name: style.name,
-    level: 1,
-    source: 'XPHB',
-    page: 123,
+    id: feat.slug, // Use slug as ID for consistency
+    name: feat.name,
+    level: feat.levelRequirement || 1,
+    source: feat.source || 'XPHB',
+    page: feat.raw?.raw?.page || 0,
     featureType: 'base',
-    description: style.description,
+    description,
     mechanics: {
       diceRolls: [],
       damageTypes: [],
@@ -278,7 +342,7 @@ function convertFightingStyleToFeature(style: FightingStyle): ClassFeature {
     },
     isChoice: true,
     requiresSelection: true,
-    prerequisites: style.prerequisite ? [style.prerequisite] : [],
+    prerequisites: feat.prerequisiteSummary ? [feat.prerequisiteSummary] : [],
     scales: false,
     scalingProgression: []
   };
@@ -299,10 +363,10 @@ export function getChoiceCountForLevel(
   }
 
   // Find the highest level scaling that applies
-  const baseCount = feature.externalReference?.count || feature.mechanics.invocations || 1;
+  const baseCount = feature.externalReference?.count || feature.mechanics?.invocations || 1;
   let currentCount = baseCount;
 
-  for (const scaling of feature.scalingProgression) {
+  for (const scaling of feature.scalingProgression || []) {
     if (scaling.level <= characterLevel) {
       // This scaling applies
       if (scaling.changes.invocations !== undefined) {

@@ -7,6 +7,7 @@ import {
   FeatureSource,
 } from '../types/features';
 import { renderFeature, RenderedFeature, createCharacterContext } from '../utils/featureTemplateRenderer';
+import { parseComplexDnDEntry } from '../utils/dndTemplateParser';
 
 interface StructuredFeaturesDisplayProps {
   features: CharacterFeatures;
@@ -269,17 +270,27 @@ export const StructuredFeaturesDisplay: React.FC<
       : feature as RenderedFeature;
 
     if (compactMode) {
+      // Parse and strip HTML for compact summary display
+      const getSummaryText = () => {
+        const rawText = renderedFeature.resolvedShortDescription || renderedFeature.shortDescription ||
+          (typeof renderedFeature.resolvedDescription === 'string'
+            ? renderedFeature.resolvedDescription
+            : typeof renderedFeature.description === 'string'
+            ? renderedFeature.description
+            : JSON.stringify(renderedFeature.description));
+
+        // Parse template tags first, then strip HTML for plain text summary
+        const parsed = parseComplexDnDEntry(rawText);
+        const stripped = parsed.replace(/<[^>]*>/g, '');
+        return stripped.substring(0, 60) + (stripped.length > 60 ? '...' : '');
+      };
+
       return (
         <div key={feature.id} className="feature-item">
           <div>
             <div className="feature-name">{renderedFeature.resolvedName || renderedFeature.name}</div>
             <div className="feature-summary">
-              {renderedFeature.resolvedShortDescription || renderedFeature.shortDescription ||
-                (typeof renderedFeature.resolvedDescription === 'string'
-                  ? renderedFeature.resolvedDescription.substring(0, 60) + '...'
-                  : typeof renderedFeature.description === 'string'
-                  ? renderedFeature.description.substring(0, 60) + '...'
-                  : JSON.stringify(renderedFeature.description).substring(0, 60) + '...')}
+              {getSummaryText()}
             </div>
           </div>
           <FeatureBadge $variant="type">{feature.type}</FeatureBadge>
@@ -305,13 +316,17 @@ export const StructuredFeaturesDisplay: React.FC<
           </div>
         </div>
 
-        <div className="feature-description">
-          {renderedFeature.resolvedDescription ||
-           (typeof feature.description === 'string'
-            ? feature.description
-            : JSON.stringify(feature.description))
-          }
-        </div>
+        <div
+          className="feature-description"
+          dangerouslySetInnerHTML={{
+            __html: parseComplexDnDEntry(
+              renderedFeature.resolvedDescription ||
+              (typeof feature.description === 'string'
+                ? feature.description
+                : JSON.stringify(feature.description))
+            )
+          }}
+        />
 
         {/* Enhanced mechanics display with resolved values */}
         {((renderedFeature.resolvedAction || feature.action) ||

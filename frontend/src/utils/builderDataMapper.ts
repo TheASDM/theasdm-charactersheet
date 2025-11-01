@@ -66,6 +66,7 @@ export const FIELD_TO_STORE_MAPPING: FieldMapping = {
   isHuman: { storeFn: 'updateSpecies', storeKey: 'isHuman' },
   speciesTraits: { storeFn: 'updateSpecies', storeKey: 'traits' },
   speciesSpells: { storeFn: 'updateSpecies', storeKey: 'spells' },
+  speciesGrantedSpells: { storeFn: 'updateSpecies', storeKey: 'grantedSpells' },
   speciesSize: { storeFn: 'updateSpecies', storeKey: 'size' },
   speciesSpeed: { storeFn: 'updateSpecies', storeKey: 'speed' },
   speciesAdditionalSpeeds: { storeFn: 'updateSpecies', storeKey: 'additionalSpeeds' },

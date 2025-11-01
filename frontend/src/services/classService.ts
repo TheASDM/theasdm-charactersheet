@@ -25,7 +25,7 @@ export const getClassByName = (
   request<CharacterClass>(
     () =>
       apiClient.get<CharacterClass>(
-        `/classes/name/${encodeURIComponent(name)}`,
+        `/classes/${encodeURIComponent(name)}`,
         withSignal(undefined, signal)
       ),
     { retry: true }

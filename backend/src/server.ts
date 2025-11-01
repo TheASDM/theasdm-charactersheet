@@ -33,6 +33,11 @@ dotenv.config();
 // Re-export shared Prisma client for backward compatibility
 export { prisma };
 
+// Fix BigInt serialization for JSON responses
+(BigInt.prototype as any).toJSON = function() {
+  return this.toString();
+};
+
 // Create Express app
 const app = express();
 const server = createServer(app);

@@ -93,7 +93,10 @@ export function useSpellFiltering(
 
       // School filter
       if (options.school && options.school !== 'all') {
-        if (spell.school?.toLowerCase() !== options.school.toLowerCase()) {
+        // Handle both schoolCode (string) and school (object or string)
+        const schoolCode = (spell as any).schoolCode ||
+                          (typeof spell.school === 'object' ? (spell.school as any)?.code : spell.school);
+        if (schoolCode?.toUpperCase() !== options.school.toUpperCase()) {
           return false;
         }
       }

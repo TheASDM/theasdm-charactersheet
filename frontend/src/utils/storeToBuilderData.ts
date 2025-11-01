@@ -129,6 +129,9 @@ export function storeToBuilderData(store: {
   if (species.spells !== undefined) {
     result.speciesSpells = species.spells;
   }
+  if (species.grantedSpells !== undefined) {
+    result.speciesGrantedSpells = species.grantedSpells;
+  }
   if (species.size !== undefined) {
     result.speciesSize = species.size;
   }

@@ -85,6 +85,7 @@ export interface CharacterBuilderData {
     level3?: string[];
     level5?: string[];
   };
+  speciesGrantedSpells?: string[]; // Spell IDs granted by species/lineage (for Rock Gnome, Drow, etc.)
   speciesSize?: string;
   speciesSpeed?: number;
   speciesAdditionalSpeeds?: Record<string, number>;

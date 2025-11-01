@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
 import { isError } from '@/types/api';
@@ -9,52 +9,94 @@ import {
   AuthHeader,
   AuthTitle,
   AuthSubtitle,
-  AuthForm,
-  FormGroup,
-  Label,
-  Input,
-  ErrorMessage,
-  SubmitButton,
   AuthFooter,
   FooterText,
   FooterLink,
+  DiscordButton,
 } from '../styles/authStyles';
+import styled from 'styled-components';
+
+const FormGroup = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: #7289da;
+  }
+`;
+
+const Button = styled.button`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #5865f2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 1rem;
+
+  &:hover:not(:disabled) {
+    background-color: #4752c4;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const Divider = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+  }
+
+  span {
+    padding: 0 1rem;
+    color: #666;
+    font-size: 0.9rem;
+  }
+`;
 
 export const LoginPage: React.FC = () => {
+  const { beginDiscordLogin, login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error when user starts typing
-    if (error) setError('');
+  const handleDiscordLogin = () => {
+    beginDiscordLogin('/characters');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    const result = await login({ email, password });
 
-    try {
-      const result = await login(formData);
-      if (isError(result)) {
-        setError(result.error ?? 'Login failed. Please try again.');
-        return;
-      }
-      navigate('/characters'); // Redirect to characters page after login
-    } finally {
-      setIsLoading(false);
+    if (!isError(result)) {
+      navigate('/characters');
     }
   };
 
@@ -74,24 +116,19 @@ export const LoginPage: React.FC = () => {
               style={{ maxWidth: '300px', width: '100%', height: 'auto', marginBottom: '1rem', display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
             />
             <AuthTitle>Welcome Back</AuthTitle>
-            <AuthSubtitle>Log in to continue your adventure</AuthSubtitle>
+            <AuthSubtitle>Log in to continue your adventure.</AuthSubtitle>
           </AuthHeader>
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-
-          <AuthForm onSubmit={handleSubmit}>
+          <form onSubmit={handleEmailLogin}>
             <FormGroup>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                name="email"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={handleChange}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                autoComplete="email"
               />
             </FormGroup>
 
@@ -100,20 +137,26 @@ export const LoginPage: React.FC = () => {
               <Input
                 id="password"
                 type="password"
-                name="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                autoComplete="current-password"
               />
             </FormGroup>
 
-            <SubmitButton type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Logging in...' : 'Log In'}
-            </SubmitButton>
-          </AuthForm>
+            </Button>
+          </form>
+
+          <Divider>
+            <span>OR</span>
+          </Divider>
+
+          <DiscordButton type="button" onClick={handleDiscordLogin} disabled={isLoading}>
+            <span role="img" aria-hidden="true">🛡️</span>
+            {isLoading ? 'Connecting to Discord...' : 'Sign in with Discord'}
+          </DiscordButton>
 
           <AuthFooter>
             <FooterText>
@@ -122,12 +165,6 @@ export const LoginPage: React.FC = () => {
                 Register
               </FooterLink>
             </FooterText>
-            {/* Future: Add forgot password link */}
-            {/* <FooterText>
-              <FooterLink as={Link} to="/forgot-password">
-                Forgot password?
-              </FooterLink>
-            </FooterText> */}
           </AuthFooter>
         </AuthCard>
       </AuthContainer>

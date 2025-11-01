@@ -1,7 +1,7 @@
 import styled from 'styled-components';
-import { CharacterSheetData } from '../types/characterSheet';
+import { CharacterSheetData, calculateModifier } from '../types/characterSheet';
 import { SimpleFeature } from '../utils/simpleFeatureGenerator';
-import { calculateSpellSlots } from '../services/characterCalculations';
+import { calculateSpellSlots, getSpellcastingStats } from '../services/characterCalculations';
 import { computeManaPool } from '../helpers/manaRules';
 
 interface SpellcastingBarProps {
@@ -105,6 +105,33 @@ export default function SpellcastingBar({
   // Calculate proficiency bonus
   const proficiencyBonus = Math.ceil(character.level / 4) + 1;
 
+  // Calculate ability modifiers
+  const abilityModifiers = {
+    strength: calculateModifier(character.abilityScores.strength),
+    dexterity: calculateModifier(character.abilityScores.dexterity),
+    constitution: calculateModifier(character.abilityScores.constitution),
+    intelligence: calculateModifier(character.abilityScores.intelligence),
+    wisdom: calculateModifier(character.abilityScores.wisdom),
+    charisma: calculateModifier(character.abilityScores.charisma),
+  };
+
+  // Get spellcasting stats
+  const spellcastingStats = getSpellcastingStats(character, proficiencyBonus, abilityModifiers);
+
+  // Determine spellcasting ability based on class
+  const spellcastingAbilityMap: Record<string, string> = {
+    'Bard': 'Charisma',
+    'Cleric': 'Wisdom',
+    'Druid': 'Wisdom',
+    'Paladin': 'Charisma',
+    'Ranger': 'Wisdom',
+    'Sorcerer': 'Charisma',
+    'Warlock': 'Charisma',
+    'Wizard': 'Intelligence',
+  };
+
+  const spellcastingAbility = spellcastingAbilityMap[character.class] || 'Unknown';
+
   // Calculate total spell slots weighted by level (e.g., 2x 1st-level = 2, 1x 4th-level = 4)
   const spellSlots = calculateSpellSlots(character);
   const totalSlots = Object.entries(spellSlots).reduce((total, [level, count]) => {
@@ -120,36 +147,25 @@ export default function SpellcastingBar({
     totalSlots
   );
 
-  // Parse the spellcasting info from the description
-  const parseSpellcastingInfo = (description: string) => {
-    const abilityMatch = description.match(/\*\*Spellcasting Ability:\*\*\s*(\w+)/);
-    const saveDCMatch = description.match(/\*\*Spell Save DC:\*\*\s*(\d+)/);
-    const attackBonusMatch = description.match(/\*\*Spell Attack Bonus:\*\*\s*\+(\d+)/);
-    const spellsKnownMatch = description.match(/\*\*(Spells Known|Spells Prepared|Spells in Spellbook):\*\*\s*([^\n]+)/);
-
-    return {
-      ability: abilityMatch?.[1] || 'Unknown',
-      saveDC: saveDCMatch?.[1] || '0',
-      attackBonus: attackBonusMatch?.[1] || '0',
-      spellsLabel: spellsKnownMatch?.[1] || 'Spells',
-      spellsValue: spellsKnownMatch?.[2] || '0',
-    };
-  };
-
-  const info = parseSpellcastingInfo(spellcastingFeature.description);
-
   return (
     <CasterBarContainer>
       <CasterInfoGroup>
         <InfoLabel>Spellcasting:</InfoLabel>
-        <InfoValue>{info.ability}</InfoValue>
+        <InfoValue>{spellcastingAbility}</InfoValue>
       </CasterInfoGroup>
 
       <Divider />
 
       <CasterInfoGroup>
         <InfoLabel>DC:</InfoLabel>
-        <InfoValue>{info.saveDC}</InfoValue>
+        <InfoValue>{spellcastingStats.spellSaveDC}</InfoValue>
+      </CasterInfoGroup>
+
+      <Divider />
+
+      <CasterInfoGroup>
+        <InfoLabel>Attack:</InfoLabel>
+        <InfoValue>+{spellcastingStats.spellAttackBonus}</InfoValue>
       </CasterInfoGroup>
 
       <Divider />

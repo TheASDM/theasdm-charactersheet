@@ -191,8 +191,16 @@ const SpellCard: React.FC<SpellCardProps> = ({
   onClick,
   compact = false,
 }) => {
-  // Helper function to get school name from abbreviation
-  const getSchoolName = (abbreviation: string | undefined): string => {
+  // Helper function to get school name from abbreviation or school object
+  const getSchoolName = (schoolOrCode: string | { code: string; name: string } | undefined): string => {
+    // Extract code from string or object
+    let abbreviation: string | undefined;
+    if (typeof schoolOrCode === 'string') {
+      abbreviation = schoolOrCode;
+    } else if (schoolOrCode && typeof schoolOrCode === 'object') {
+      abbreviation = schoolOrCode.code;
+    }
+
     const schoolMap: { [key: string]: string } = {
       A: 'Abjuration',
       C: 'Conjuration',

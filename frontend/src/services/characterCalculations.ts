@@ -7,6 +7,10 @@ import {
 } from '../types/characterSheet';
 import { getCharacterResources } from '../utils/resourceDetection';
 import { EquipmentValidator } from '../utils/equipmentValidator';
+import { buildWeaponAction } from '../utils/weaponCalculator';
+import { buildSpellAction } from '../utils/spellActionBuilder';
+import { getSpellById } from './spellService';
+import { isError } from '../types/api';
 
 type ArmorWeightClass = 'light' | 'medium' | 'heavy';
 type WeaponCategory = 'simple' | 'martial';
@@ -185,6 +189,55 @@ const buildEquippedWeapons = (
     .filter((item) => equippedSet.has(item.id) && getEquipmentMetadata(item.name).category === 'weapon')
     .map((item) => cloneInventoryItem({ ...item, equipped: true }));
 
+const syncWeaponsToActions = (
+  character: CharacterSheetData,
+  equippedWeapons: InventoryItem[]
+): CharacterSheetData => {
+  // Get current actions or empty array
+  const currentActions = character.actions || [];
+
+  // Get weapon IDs that are equipped
+  const equippedWeaponIds = new Set(equippedWeapons.map(w => w.id));
+
+  // Remove actions for weapons that are no longer equipped AND filter out empty actions
+  const filteredActions = currentActions.filter(action => {
+    // Remove empty actions
+    if (!action?.name || action.name.trim().length === 0) return false;
+
+    // Keep non-weapon actions
+    if (action.type !== 'weapon' || !action.sourceId) return true;
+
+    // For weapon actions, only keep if weapon is still equipped
+    const weaponId = action.sourceId.replace('inventory:', '');
+    return equippedWeaponIds.has(weaponId);
+  });
+
+  // Add/update actions for equipped weapons
+  const updatedActions = [...filteredActions];
+
+  equippedWeapons.forEach(weapon => {
+    const sourceId = `inventory:${weapon.id}`;
+    const existingIndex = updatedActions.findIndex(
+      action => action.sourceId === sourceId
+    );
+
+    const weaponAction = buildWeaponAction(weapon, character);
+
+    if (existingIndex !== -1) {
+      // Update existing action
+      updatedActions[existingIndex] = weaponAction;
+    } else {
+      // Add new action
+      updatedActions.push(weaponAction);
+    }
+  });
+
+  return {
+    ...character,
+    actions: updatedActions,
+  };
+};
+
 export const applyEquippedItems = (
   character: CharacterSheetData,
   equippedItemIdsInput: string[]
@@ -246,7 +299,10 @@ export const applyEquippedItems = (
 
   nextCharacter.armorClass = EquipmentValidator.calculateArmorClass(nextCharacter);
 
-  return nextCharacter;
+  // Sync equipped weapons to actions
+  const withActions = syncWeaponsToActions(nextCharacter, equippedWeapons);
+
+  return withActions;
 };
 
 type EquipCheck = { ok: boolean; reason?: string };
@@ -705,4 +761,72 @@ export function hasProficiency(
  */
 export function getActiveResources(character: CharacterSheetData) {
   return getCharacterResources(character);
+}
+
+/**
+ * Migrates spell actions that are missing attack/damage data by rebuilding them
+ * from the spell database using buildSpellAction()
+ */
+export async function migrateSpellActions(
+  character: CharacterSheetData
+): Promise<CharacterSheetData> {
+  const actions = character.actions || [];
+
+  // Find spell actions that need migration (missing attack AND damage data)
+  const spellActionsToMigrate = actions.filter(action => {
+    if (action.type !== 'spell' || !action.spellId) return false;
+
+    // Check if this spell action is missing critical data
+    const missingAttack = !action.attack && !action.save;
+    const missingDamage = !action.damage && !action.healing;
+
+    return missingAttack || missingDamage;
+  });
+
+  if (spellActionsToMigrate.length === 0) {
+    // No migration needed
+    return character;
+  }
+
+  console.log(`🔧 Migrating ${spellActionsToMigrate.length} spell actions...`);
+
+  // Fetch spell data and rebuild actions
+  const migratedActions = await Promise.all(
+    actions.map(async (action) => {
+      // Skip non-spell actions or spell actions that don't need migration
+      const needsMigration = spellActionsToMigrate.some(s => s.spellId === action.spellId);
+      if (!needsMigration) {
+        return action;
+      }
+
+      try {
+        // Fetch spell data from API
+        const spellResult = await getSpellById(action.spellId!);
+
+        if (isError(spellResult)) {
+          console.warn(`Failed to fetch spell ${action.name} (${action.spellId})`);
+          return action; // Keep original if fetch fails
+        }
+
+        if (!spellResult.data) {
+          console.warn(`No spell data returned for ${action.name} (${action.spellId})`);
+          return action;
+        }
+
+        // Rebuild the action using buildSpellAction
+        const rebuiltAction = buildSpellAction(spellResult.data);
+        console.log(`✅ Migrated spell action: ${action.name}`);
+
+        return rebuiltAction;
+      } catch (error) {
+        console.error(`Error migrating spell action ${action.name}:`, error);
+        return action; // Keep original if error occurs
+      }
+    })
+  );
+
+  return {
+    ...character,
+    actions: migratedActions,
+  };
 }

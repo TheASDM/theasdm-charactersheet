@@ -146,8 +146,8 @@ const ClassList: React.FC<ClassListProps> = ({
     } else {
       const filtered = classes.filter(
         (cls) =>
-          cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cls.primaryAbility.some((ability) =>
+          (cls.className || cls.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (cls.primaryAbilities || cls.primaryAbility || []).some((ability) =>
             ability.toLowerCase().includes(searchTerm.toLowerCase())
           ) ||
           (cls.spellcastingAbility &&

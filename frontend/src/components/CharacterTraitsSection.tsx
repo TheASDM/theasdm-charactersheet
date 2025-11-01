@@ -12,6 +12,7 @@ import {
 } from '../styles/components';
 import { generateFeaturesForCharacter, SimpleFeature } from '../utils/simpleFeatureGenerator';
 import WeaponMasteryModal from './WeaponMasteryModal';
+import { FeatureDetailModal } from './FeatureDetailModal';
 import styled from 'styled-components';
 
 const FeatureButton = styled.button`
@@ -33,26 +34,6 @@ const FeatureButton = styled.button`
   }
 `;
 
-// Helper function to render markdown-style text with bold and italic
-const renderMarkdownText = (text: string) => {
-  // First split by bold (**text**), then handle italic in the remaining parts
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-  return parts.map((part, index) => {
-    // Handle bold
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index} style={{ color: '#e0a523', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-    }
-    // Handle italic in non-bold parts
-    const italicParts = part.split(/(\*.*?\*)/g);
-    return italicParts.map((italicPart, italicIndex) => {
-      if (italicPart.startsWith('*') && italicPart.endsWith('*') && italicPart.length > 2) {
-        return <em key={`${index}-${italicIndex}`} style={{ color: '#aaa', fontStyle: 'italic' }}>{italicPart.slice(1, -1)}</em>;
-      }
-      return <span key={`${index}-${italicIndex}`}>{italicPart}</span>;
-    });
-  });
-};
-
 interface CharacterTraitsSectionProps {
   character: CharacterSheetData;
   traits: {
@@ -68,6 +49,7 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
   onSpellcastingFeatureExtracted,
 }) => {
   const [isWeaponMasteryModalOpen, setIsWeaponMasteryModalOpen] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<SimpleFeature | null>(null);
   const [generatedFeatures, setGeneratedFeatures] = useState<SimpleFeature[]>([]);
 
   // Generate features directly from character data - now async to support choice system!
@@ -223,14 +205,15 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
         <TraitsGrid>
           {regularFeatures.map((feature, index) => (
             <TraitCard key={`feature-${index}`}>
-              <TraitName>{feature.name}</TraitName>
-              <TraitDescription>
-                {feature.description.split('\n\n').map((section: string, sectionIndex: number) => (
-                  <div key={sectionIndex} style={{ marginBottom: sectionIndex < feature.description.split('\n\n').length - 1 ? '0.5rem' : 0 }}>
-                    {renderMarkdownText(section)}
-                  </div>
-                ))}
-              </TraitDescription>
+              <TraitName
+                $clickable
+                onClick={() => setSelectedFeature(feature)}
+              >
+                {feature.name}
+              </TraitName>
+              <TraitDescription
+                dangerouslySetInnerHTML={{ __html: feature.description }}
+              />
               {feature.category && !feature.category.includes('Legacy') && (
                 <TraitCategory>
                   {feature.category}
@@ -263,6 +246,13 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
           ownedWeapons={ownedWeaponNames}
         />
       )}
+
+      {/* Feature Detail Modal */}
+      <FeatureDetailModal
+        feature={selectedFeature}
+        isOpen={!!selectedFeature}
+        onClose={() => setSelectedFeature(null)}
+      />
     </TraitsSection>
   );
 };

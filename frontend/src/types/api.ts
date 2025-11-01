@@ -160,7 +160,7 @@ export interface User {
 export type Character = Omit<PrismaCharacter, 'createdAt' | 'updatedAt' | 'characterData'> & {
   createdAt: string;
   updatedAt: string;
-  characterData: Record<string, unknown>;
+  characterData: CharacterSheetData;
   user?: {
     id: number;
     username: string;
@@ -169,6 +169,12 @@ export type Character = Omit<PrismaCharacter, 'createdAt' | 'updatedAt' | 'chara
     id: number;
     name: string;
   };
+};
+
+// Helper type for functions that work with partial character data (tests, incremental updates)
+// Makes characterData optional and partial when it exists
+export type PartialCharacter = Omit<Partial<Character>, 'characterData'> & {
+  characterData?: Partial<CharacterSheetData>;
 };
 
 export interface CreateCharacterRequest {
@@ -203,7 +209,10 @@ export interface Spell {
   source?: string;
   page?: number;
   level: number;
-  school?: string;
+  school?: string | { code: string; name: string; description?: string }; // Can be code string or full object
+  schoolCode?: string; // Single letter code (A, C, D, E, V, I, N, T)
+  classes?: string[]; // Array of class names (lowercase) that can use this spell
+  description?: string; // Simplified text description from database
   time?: DnDTime[]; // JSONB - complex time structure
   range?: DnDRange; // JSONB - complex range structure
   components?: DnDComponents; // JSONB - component structure
@@ -212,6 +221,7 @@ export interface Spell {
   entriesHigherLevel?: any; // JSONB - higher level effects
   scalingLevelDice?: Record<string, string>; // JSONB - cantrip scaling
   damageInflict?: string[];
+  spellAttack?: string[];
   conditionInflict?: string[];
   savingThrow?: string[];
   affectsCreatureType?: string[];
@@ -223,38 +233,55 @@ export interface Spell {
   sourceBook?: string;
   contentVersion?: string;
   isHomebrew?: boolean;
+  raw?: any; // Full raw content from 5etools (includes raw.raw.entries)
+  mechanics?: any; // Full 5etools structure from raw.content.raw - used by spellActionBuilder
   createdAt: string;
   updatedAt: string;
 }
 
 // Class Types
 export interface CharacterClass {
-  id: number;
-  name: string;
+  id: string; // Changed from number to string (backend returns string)
+  name: string; // For compatibility
+  className?: string; // New field from database API
+  slug?: string;
   source?: string;
   page?: number;
   hitDie: number;
-  primaryAbility: string[];
-  savingThrowProficiencies: string[];
-  armorProficiencies?: Record<string, unknown>; // JSONB
-  weaponProficiencies?: Record<string, unknown>; // JSONB
-  toolProficiencies?: Record<string, unknown>; // JSONB
-  skillProficiencies?: Record<string, unknown>; // JSONB
-  skillProficiencyOptions?: Record<string, unknown>; // JSONB
-  equipmentProficiencies?: Record<string, unknown>; // JSONB
-  startingEquipment?: Record<string, unknown>; // JSONB
-  classFeatures?: Record<string, unknown>; // JSONB
-  subclassFeatures?: Record<string, unknown>; // JSONB - Contains subclass data
+  primaryAbilities: string[]; // Transformed from 5etools format to readable names (e.g., ["Strength", "Dexterity"])
+  savingThrows: string[]; // Transformed from abbreviations to full names (e.g., ["Strength", "Constitution"])
+  proficiencies?: {
+    armor?: string[];
+    weapons?: string[];
+    tools?: any[];
+    skills?: any;
+    savingThrows?: string[];
+  };
   spellcastingAbility?: string;
+  subclassTitle?: string;
+  mechanics?: Record<string, any>; // Full 5etools raw structure
+  features?: any[]; // Flat array of features from 5etools
+  classFeatures?: Record<string, any[]>; // Features grouped by level (e.g., {"1": [...], "2": [...]})
+  // Legacy fields - may be deprecated
+  primaryAbility?: string[];
+  savingThrowProficiencies?: string[];
+  armorProficiencies?: Record<string, unknown>;
+  weaponProficiencies?: Record<string, unknown>;
+  toolProficiencies?: Record<string, unknown>;
+  skillProficiencies?: Record<string, unknown>;
+  skillProficiencyOptions?: Record<string, unknown>;
+  equipmentProficiencies?: Record<string, unknown>;
+  startingEquipment?: Record<string, unknown>;
+  subclassFeatures?: Record<string, unknown>;
   spellcastingFocus?: string;
-  spellsKnownProgression?: Record<string, unknown>; // JSONB
-  spellSlotProgression?: Record<string, unknown>; // JSONB
-  subclasses?: Record<string, unknown>; // JSONB (deprecated - use subclassFeatures)
+  spellsKnownProgression?: Record<string, unknown>;
+  spellSlotProgression?: Record<string, unknown>;
+  subclasses?: Record<string, unknown>;
   srd52?: boolean;
   basicRules2024?: boolean;
-  contentVersion: string;
-  createdAt: string;
-  updatedAt: string;
+  contentVersion?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Species Types
@@ -277,6 +304,7 @@ export interface Species {
   toolProficiencies?: Record<string, unknown>; // JSONB
   weaponProficiencies?: Record<string, unknown>; // JSONB
   innateSpells?: Record<string, unknown>; // JSONB
+  mechanics?: Record<string, any>; // Full 5etools structure from raw.raw
   srd52?: boolean;
   basicRules2024?: boolean;
   sourceBook?: string;
@@ -297,6 +325,7 @@ export interface Background {
   feature?: Record<string, unknown>; // JSONB
   originFeat?: string;
   abilityScoreIncrease?: Record<string, unknown>; // JSONB
+  mechanics?: Record<string, any>; // Full 5etools structure from raw.raw
   contentVersion: string;
 }
 

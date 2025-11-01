@@ -44,7 +44,8 @@ export default function CharacterSkillsSection({
   Object.entries(skillModifiers).forEach(([skill, baseModifier]) => {
     // Check both character.skills and character.proficiencies.skills for proficiency
     const isManuallyProficient = character.skills[skill]?.proficient || false;
-    const isSystemProficient = character.proficiencies?.skills?.includes(skill) || false;
+    // Case-insensitive check for system proficiency
+    const isSystemProficient = character.proficiencies?.skills?.some(s => s.toLowerCase() === skill.toLowerCase()) || false;
     const isProficient = isManuallyProficient || isSystemProficient;
 
     // Note: skillModifiers from getSkillModifiers already includes proficiency bonus

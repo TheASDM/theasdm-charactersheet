@@ -1,243 +1,277 @@
 import { Item } from '../types/api';
-import { CharacterSheetData, InventoryItem } from '../types/characterSheet';
+import {
+  CharacterSheetData,
+  InventoryItem,
+  CharacterAction,
+  AbilityScoreName,
+  ActionDamageDefinition,
+} from '../types/characterSheet';
+import { calculateModifier } from '../types/characterSheet';
 
-interface WeaponStats {
-  attackBonus: string;
-  damage: string;
+type WeaponCategory = 'simple' | 'martial';
+
+interface WeaponProfile {
+  name: string;
+  baseDice: string;
+  damageType: string;
+  category: WeaponCategory;
+  properties?: string[];
+  versatileDice?: string;
+  finesse?: boolean;
+  ranged?: boolean;
 }
 
-/**
- * Calculate weapon attack bonus and damage for a character
- */
-export function calculateWeaponStats(
-  weapon: Item | InventoryItem,
+const WEAPON_PROFILES: WeaponProfile[] = [
+  { name: 'club', baseDice: '1d4', damageType: 'bludgeoning', category: 'simple', properties: ['light'] },
+  { name: 'dagger', baseDice: '1d4', damageType: 'piercing', category: 'simple', properties: ['finesse', 'light', 'thrown'], finesse: true, ranged: false },
+  { name: 'dart', baseDice: '1d4', damageType: 'piercing', category: 'simple', ranged: true, properties: ['finesse', 'thrown'], finesse: true },
+  { name: 'greatclub', baseDice: '1d8', damageType: 'bludgeoning', category: 'simple', properties: ['two-handed'] },
+  { name: 'handaxe', baseDice: '1d6', damageType: 'slashing', category: 'simple', properties: ['light', 'thrown'] },
+  { name: 'javelin', baseDice: '1d6', damageType: 'piercing', category: 'simple', properties: ['thrown'], ranged: true },
+  { name: 'light hammer', baseDice: '1d4', damageType: 'bludgeoning', category: 'simple', properties: ['light', 'thrown'] },
+  { name: 'mace', baseDice: '1d6', damageType: 'bludgeoning', category: 'simple', properties: [] },
+  { name: 'quarterstaff', baseDice: '1d6', damageType: 'bludgeoning', category: 'simple', versatileDice: '1d8', properties: ['versatile'] },
+  { name: 'sickle', baseDice: '1d4', damageType: 'slashing', category: 'simple', properties: ['light'] },
+  { name: 'spear', baseDice: '1d6', damageType: 'piercing', category: 'simple', versatileDice: '1d8', properties: ['thrown', 'versatile'] },
+  { name: 'light crossbow', baseDice: '1d8', damageType: 'piercing', category: 'simple', ranged: true, properties: ['loading', 'two-handed'] },
+  { name: 'shortbow', baseDice: '1d6', damageType: 'piercing', category: 'simple', ranged: true, properties: ['two-handed'] },
+  { name: 'sling', baseDice: '1d4', damageType: 'bludgeoning', category: 'simple', ranged: true, properties: ['ammunition'] },
+
+  { name: 'battleaxe', baseDice: '1d8', damageType: 'slashing', category: 'martial', versatileDice: '1d10', properties: ['versatile'] },
+  { name: 'flail', baseDice: '1d8', damageType: 'bludgeoning', category: 'martial', properties: [] },
+  { name: 'glaive', baseDice: '1d10', damageType: 'slashing', category: 'martial', properties: ['reach', 'heavy', 'two-handed'] },
+  { name: 'greataxe', baseDice: '1d12', damageType: 'slashing', category: 'martial', properties: ['heavy', 'two-handed'] },
+  { name: 'greatsword', baseDice: '2d6', damageType: 'slashing', category: 'martial', properties: ['heavy', 'two-handed'] },
+  { name: 'halberd', baseDice: '1d10', damageType: 'slashing', category: 'martial', properties: ['reach', 'heavy', 'two-handed'] },
+  { name: 'lance', baseDice: '1d12', damageType: 'piercing', category: 'martial', properties: ['reach', 'special'] },
+  { name: 'longsword', baseDice: '1d8', damageType: 'slashing', category: 'martial', versatileDice: '1d10', properties: ['versatile'] },
+  { name: 'maul', baseDice: '2d6', damageType: 'bludgeoning', category: 'martial', properties: ['heavy', 'two-handed'] },
+  { name: 'morningstar', baseDice: '1d8', damageType: 'piercing', category: 'martial', properties: [] },
+  { name: 'pike', baseDice: '1d10', damageType: 'piercing', category: 'martial', properties: ['reach', 'heavy', 'two-handed'] },
+  { name: 'rapier', baseDice: '1d8', damageType: 'piercing', category: 'martial', properties: ['finesse'], finesse: true },
+  { name: 'scimitar', baseDice: '1d6', damageType: 'slashing', category: 'martial', properties: ['finesse', 'light'], finesse: true },
+  { name: 'shortsword', baseDice: '1d6', damageType: 'piercing', category: 'martial', properties: ['finesse', 'light'], finesse: true },
+  { name: 'trident', baseDice: '1d6', damageType: 'piercing', category: 'martial', versatileDice: '1d8', properties: ['thrown', 'versatile'] },
+  { name: 'war pick', baseDice: '1d8', damageType: 'piercing', category: 'martial', properties: [] },
+  { name: 'warhammer', baseDice: '1d8', damageType: 'bludgeoning', category: 'martial', versatileDice: '1d10', properties: ['versatile'] },
+  { name: 'whip', baseDice: '1d4', damageType: 'slashing', category: 'martial', properties: ['finesse', 'reach'], finesse: true },
+  { name: 'blowgun', baseDice: '1', damageType: 'piercing', category: 'martial', ranged: true, properties: ['loading'] },
+  { name: 'hand crossbow', baseDice: '1d6', damageType: 'piercing', category: 'martial', ranged: true, properties: ['light', 'loading'] },
+  { name: 'heavy crossbow', baseDice: '1d10', damageType: 'piercing', category: 'martial', ranged: true, properties: ['heavy', 'loading', 'two-handed'] },
+  { name: 'longbow', baseDice: '1d8', damageType: 'piercing', category: 'martial', ranged: true, properties: ['heavy', 'two-handed'] },
+  { name: 'net', baseDice: '0', damageType: 'bludgeoning', category: 'martial', properties: ['special'] },
+];
+
+const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
+const normaliseLabel = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/\s*\(\d+\)\s*/g, '')
+    .replace(/\|.*$/, '')
+    .trim();
+
+const findProfile = (weaponName: string): WeaponProfile | undefined => {
+  const label = normaliseLabel(weaponName);
+  return WEAPON_PROFILES.find((profile) => label.includes(profile.name));
+};
+
+const getAbilityForWeapon = (
+  profile: WeaponProfile | undefined,
   character: CharacterSheetData
-): WeaponStats {
-  // Calculate proficiency bonus
-  const proficiencyBonus = Math.ceil(character.level / 4) + 1;
-
-  // Get ability modifiers
-  const strMod = Math.floor((character.abilityScores.strength - 10) / 2);
-  const dexMod = Math.floor((character.abilityScores.dexterity - 10) / 2);
-
-  // Determine if weapon is finesse or ranged
-  const isFinesse = isFinessWeapon(weapon);
-  const isRanged = isRangedWeapon(weapon);
-
-  // Choose ability modifier (finesse weapons can use STR or DEX, pick higher)
-  let abilityMod = strMod;
-  if (isRanged) {
-    abilityMod = dexMod;
-  } else if (isFinesse) {
-    abilityMod = Math.max(strMod, dexMod);
+): AbilityScoreName => {
+  if (profile?.ranged) {
+    return 'dexterity';
   }
 
-  // Check if character is proficient with this weapon
-  const isProficient = isWeaponProficient(weapon, character);
+  if (profile?.finesse) {
+    const str = calculateModifier(character.abilityScores.strength);
+    const dex = calculateModifier(character.abilityScores.dexterity);
+    return dex >= str ? 'dexterity' : 'strength';
+  }
 
-  // Calculate attack bonus
-  const attackBonus = abilityMod + (isProficient ? proficiencyBonus : 0);
+  return 'strength';
+};
 
-  // Get weapon damage and add ability modifier
-  const baseDamage = getWeaponDamage(weapon);
-  const damageType = getWeaponDamageType(weapon);
+const extractNumericProperty = (weapon: Item | InventoryItem, key: string): number => {
+  if ('customProperties' in weapon && weapon.customProperties) {
+    const value = weapon.customProperties[key as keyof typeof weapon.customProperties];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const numeric = parseInt(value, 10);
+      if (!Number.isNaN(numeric)) {
+        return numeric;
+      }
+    }
+  }
+  return 0;
+};
 
-  // Format results
-  const attackBonusStr = attackBonus >= 0 ? `+${attackBonus}` : `${attackBonus}`;
-  const abilityModStr = abilityMod >= 0 ? `+${abilityMod}` : `${abilityMod}`;
-  const damageStr = baseDamage ? `${baseDamage}${abilityModStr} ${damageType}` : '—';
+const extractMagicBonus = (weapon: Item | InventoryItem): number => {
+  const nameMatch = weapon.name.match(/^\s*\+(\d+)/);
+  if (nameMatch) {
+    const parsed = parseInt(nameMatch[1], 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
 
-  return {
-    attackBonus: attackBonusStr,
-    damage: damageStr
+  const customBonus = extractNumericProperty(weapon, 'attackBonus');
+  if (customBonus) {
+    return customBonus;
+  }
+
+  const genericBonus = extractNumericProperty(weapon, 'bonus');
+  return genericBonus;
+};
+
+const extractDamageBonus = (weapon: Item | InventoryItem): number => {
+  const customDamage = extractNumericProperty(weapon, 'damageBonus');
+  if (customDamage) {
+    return customDamage;
+  }
+  return extractMagicBonus(weapon);
+};
+
+const determineProficiency = (
+  weapon: Item | InventoryItem,
+  character: CharacterSheetData,
+  profile: WeaponProfile | undefined
+): boolean => {
+  const proficiencies = character.proficiencies?.weapons ?? [];
+  const label = weapon.name.toLowerCase();
+
+  if (proficiencies.some((prof) => label.includes(prof.toLowerCase()))) {
+    return true;
+  }
+
+  const className = character.class.toLowerCase();
+  const classProficiencies: Record<string, Array<string | WeaponCategory>> = {
+    fighter: ['simple', 'martial'],
+    paladin: ['simple', 'martial'],
+    ranger: ['simple', 'martial'],
+    barbarian: ['simple', 'martial'],
+    rogue: ['simple', 'hand crossbow', 'longsword', 'rapier', 'shortsword'],
+    monk: ['simple', 'shortsword'],
+    cleric: ['simple'],
+    druid: ['simple'],
+    wizard: ['dagger', 'dart', 'sling', 'quarterstaff', 'light crossbow'],
+    sorcerer: ['dagger', 'dart', 'sling', 'quarterstaff', 'light crossbow'],
+    warlock: ['simple'],
+    bard: ['simple', 'hand crossbow', 'longsword', 'rapier', 'shortsword'],
+    artificer: ['simple', 'martial'],
   };
-}
 
-/**
- * Check if weapon has finesse property
- */
-function isFinessWeapon(weapon: Item | InventoryItem): boolean {
-  if ('property' in weapon && weapon.property) {
-    return weapon.property.includes('finesse') || weapon.property.includes('F');
+  const classList = classProficiencies[className] ?? [];
+  if (profile) {
+    if (classList.includes(profile.category)) {
+      return true;
+    }
   }
 
-  // Check by name for common finesse weapons
-  const finessWeapons = ['rapier', 'shortsword', 'scimitar', 'dagger', 'dart'];
-  return finessWeapons.some(fw => weapon.name.toLowerCase().includes(fw));
-}
+  return classList.some((entry) => {
+    if (entry === 'simple' || entry === 'martial') {
+      return profile?.category === entry;
+    }
+    return label.includes(entry.toString());
+  });
+};
 
-/**
- * Check if weapon is ranged
- */
-function isRangedWeapon(weapon: Item | InventoryItem): boolean {
-  if ('type' in weapon) {
-    return weapon.type === 'R' || weapon.type === 'A'; // Ranged or Ammunition
+const buildDamageComponent = (
+  baseDice: string,
+  damageType: string,
+  ability: AbilityScoreName,
+  damageBonus: number,
+  profile: WeaponProfile | undefined
+): ActionDamageDefinition => {
+  const noteParts: string[] = [];
+  if (profile?.versatileDice) {
+    noteParts.push(`Versatile ${profile.versatileDice}`);
+  }
+  // Note: Weapon properties are added to action.notes in buildWeaponAction, not here
+  // to avoid duplication when deriveActionDisplay combines notes
+  const component: ActionDamageDefinition = {
+    dice: baseDice,
+    damageType,
+    abilityMod: baseDice !== '0',
+    ability,
+  };
+
+  if (damageBonus) {
+    component.bonus = damageBonus;
   }
 
-  // Check by name for common ranged weapons
-  const rangedWeapons = ['bow', 'crossbow', 'dart', 'javelin', 'sling', 'blowgun'];
-  return rangedWeapons.some(rw => weapon.name.toLowerCase().includes(rw));
-}
+  if (noteParts.length) {
+    component.note = noteParts.join(' • ');
+  }
 
-/**
- * Get weapon base damage
- */
-function getWeaponDamage(weapon: Item | InventoryItem): string {
-  // If it's a custom item with damage property
+  return component;
+};
+
+const inferDamageType = (weapon: Item | InventoryItem, profile: WeaponProfile | undefined): string => {
+  if ('dmgType' in weapon && weapon.dmgType) {
+    return weapon.dmgType.toLowerCase();
+  }
+  return profile?.damageType ?? 'slashing';
+};
+
+const inferBaseDice = (weapon: Item | InventoryItem, profile: WeaponProfile | undefined): string => {
   if ('customProperties' in weapon && weapon.customProperties?.damage) {
-    return weapon.customProperties.damage as string;
+    return String(weapon.customProperties.damage);
   }
 
-  // If it's an API item with damage data
   if ('dmg1' in weapon && weapon.dmg1) {
     return weapon.dmg1;
   }
 
-  // Common weapon damage by name
-  const weaponDamageMap: { [key: string]: string } = {
-    'dagger': '1d4',
-    'shortsword': '1d6',
-    'rapier': '1d8',
-    'longsword': '1d8',
-    'greatsword': '2d6',
-    'greataxe': '1d12',
-    'handaxe': '1d6',
-    'battleaxe': '1d8',
-    'mace': '1d6',
-    'warhammer': '1d8',
-    'maul': '2d6',
-    'club': '1d4',
-    'quarterstaff': '1d6',
-    'spear': '1d6',
-    'pike': '1d10',
-    'shortbow': '1d6',
-    'longbow': '1d8',
-    'light crossbow': '1d8',
-    'heavy crossbow': '1d10',
-    'dart': '1d4',
-    'javelin': '1d6',
-    'sling': '1d4',
+  return profile?.baseDice ?? '1d6';
+};
+
+export const buildWeaponAction = (
+  weapon: Item | InventoryItem,
+  character: CharacterSheetData
+): CharacterAction => {
+  const profile = findProfile(weapon.name);
+  const ability = getAbilityForWeapon(profile, character);
+  const proficient = determineProficiency(weapon, character, profile);
+  const attackBonus = extractMagicBonus(weapon);
+  const damageBonus = extractDamageBonus(weapon);
+
+  const damageComponent = buildDamageComponent(
+    inferBaseDice(weapon, profile),
+    inferDamageType(weapon, profile),
+    ability,
+    damageBonus,
+    profile
+  );
+
+  const inventoryId = 'id' in weapon ? (weapon as InventoryItem).id : undefined;
+  const sourceId = inventoryId ? `inventory:${inventoryId}` : undefined;
+
+  const action: CharacterAction = {
+    name: weapon.name,
+    type: 'weapon',
+    attack: {
+      kind: 'weapon',
+      ability,
+      proficient,
+      ...(attackBonus ? { bonus: attackBonus } : {}),
+    },
+    damage: [damageComponent],
+    healing: null,
+    ...(profile?.properties?.length
+      ? {
+          notes: profile.properties.map((prop) => capitalize(prop)).join(', '),
+        }
+      : {}),
+    tags: ['weapon'],
   };
 
-  const lowerName = weapon.name.toLowerCase();
-  for (const [weaponName, damage] of Object.entries(weaponDamageMap)) {
-    if (lowerName.includes(weaponName)) {
-      return damage;
-    }
+  if (sourceId) {
+    action.sourceId = sourceId;
   }
 
-  return '1d6'; // Default damage
-}
-
-/**
- * Get weapon damage type
- */
-function getWeaponDamageType(weapon: Item | InventoryItem): string {
-  // If it's an API item with damage type
-  if ('dmgType' in weapon && weapon.dmgType) {
-    return weapon.dmgType;
-  }
-
-  // Common damage types by weapon name
-  const weaponTypeMap: { [key: string]: string } = {
-    'sword': 'slashing',
-    'axe': 'slashing',
-    'mace': 'bludgeoning',
-    'hammer': 'bludgeoning',
-    'club': 'bludgeoning',
-    'maul': 'bludgeoning',
-    'dagger': 'piercing',
-    'spear': 'piercing',
-    'pike': 'piercing',
-    'rapier': 'piercing',
-    'bow': 'piercing',
-    'crossbow': 'piercing',
-    'dart': 'piercing',
-    'javelin': 'piercing',
-    'sling': 'bludgeoning',
-  };
-
-  const lowerName = weapon.name.toLowerCase();
-  for (const [weaponType, damageType] of Object.entries(weaponTypeMap)) {
-    if (lowerName.includes(weaponType)) {
-      return damageType;
-    }
-  }
-
-  return 'slashing'; // Default damage type
-}
-
-/**
- * Check if character is proficient with weapon
- */
-function isWeaponProficient(weapon: Item | InventoryItem, character: CharacterSheetData): boolean {
-  // Check explicit weapon proficiencies
-  const weaponProfs = character.proficiencies?.weapons || [];
-  if (weaponProfs.some(prof => weapon.name.toLowerCase().includes(prof.toLowerCase()))) {
-    return true;
-  }
-
-  // Class-based proficiencies (simplified)
-  const classProficiencies: { [key: string]: string[] } = {
-    'fighter': ['simple', 'martial'],
-    'paladin': ['simple', 'martial'],
-    'ranger': ['simple', 'martial'],
-    'barbarian': ['simple', 'martial'],
-    'rogue': ['simple', 'hand crossbow', 'longsword', 'rapier', 'shortsword'],
-    'monk': ['simple', 'shortsword'],
-    'cleric': ['simple'],
-    'druid': ['simple'],
-    'wizard': ['dagger', 'dart', 'sling', 'quarterstaff', 'light crossbow'],
-    'sorcerer': ['dagger', 'dart', 'sling', 'quarterstaff', 'light crossbow'],
-    'warlock': ['simple'],
-    'bard': ['simple', 'hand crossbow', 'longsword', 'rapier', 'shortsword'],
-  };
-
-  const classProfs = classProficiencies[character.class.toLowerCase()] || [];
-
-  // Check if proficient with weapon category
-  if (classProfs.includes('simple') && isSimpleWeapon(weapon)) {
-    return true;
-  }
-
-  if (classProfs.includes('martial') && isMartialWeapon(weapon)) {
-    return true;
-  }
-
-  // Check specific weapon proficiencies
-  return classProfs.some(prof => weapon.name.toLowerCase().includes(prof));
-}
-
-/**
- * Check if weapon is a simple weapon
- */
-function isSimpleWeapon(weapon: Item | InventoryItem): boolean {
-  if ('weaponCategory' in weapon) {
-    return weapon.weaponCategory === 'simple';
-  }
-
-  const simpleWeapons = [
-    'club', 'dagger', 'dart', 'javelin', 'mace', 'quarterstaff', 'sickle', 'spear',
-    'light crossbow', 'shortbow', 'sling'
-  ];
-
-  return simpleWeapons.some(sw => weapon.name.toLowerCase().includes(sw));
-}
-
-/**
- * Check if weapon is a martial weapon
- */
-function isMartialWeapon(weapon: Item | InventoryItem): boolean {
-  if ('weaponCategory' in weapon) {
-    return weapon.weaponCategory === 'martial';
-  }
-
-  const martialWeapons = [
-    'battleaxe', 'flail', 'glaive', 'greataxe', 'greatsword', 'halberd', 'lance',
-    'longsword', 'maul', 'morningstar', 'pike', 'rapier', 'scimitar', 'shortsword',
-    'trident', 'war pick', 'warhammer', 'whip', 'blowgun', 'hand crossbow',
-    'heavy crossbow', 'longbow', 'net'
-  ];
-
-  return martialWeapons.some(mw => weapon.name.toLowerCase().includes(mw));
-}
+  return action;
+};

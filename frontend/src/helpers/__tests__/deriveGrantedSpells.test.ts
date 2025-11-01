@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deriveGrantedSpells } from '../deriveGrantedSpells';
-import type { ClassFeature } from '@/types/classFeatures';
+import type { PartialCharacter } from '@/types/api';
 
 describe('deriveGrantedSpells', () => {
   it('collects spells from character data, features, and options', () => {
@@ -31,7 +31,7 @@ describe('deriveGrantedSpells', () => {
           feats: [{ grantedSpells: ['structured-feat-spell'] }],
         },
       },
-    } as const;
+    } as unknown as PartialCharacter;
 
     const result = deriveGrantedSpells(character, {
       species: {
@@ -47,13 +47,13 @@ describe('deriveGrantedSpells', () => {
       classFeatures: [
         {
           grantedSpells: ['class-option-spell'],
-          mechanics: { grantedSpells: ['class-mechanic-spell'] } as unknown as ClassFeature['mechanics'],
+          mechanics: { grantedSpells: ['class-mechanic-spell'] } as any,
         },
       ],
       subclassFeatures: [
         {
           grantedSpells: ['subclass-option-spell'],
-          mechanics: { grantedSpells: ['subclass-mechanic-spell'] } as unknown as ClassFeature['mechanics'],
+          mechanics: { grantedSpells: ['subclass-mechanic-spell'] } as any,
         },
       ],
       background: {
@@ -104,7 +104,7 @@ describe('deriveGrantedSpells', () => {
       characterData: {
         grantedSpells: [null, undefined, ''],
       },
-    } as const;
+    } as PartialCharacter;
 
     const result = deriveGrantedSpells(character, {
       backgroundFeatures: [

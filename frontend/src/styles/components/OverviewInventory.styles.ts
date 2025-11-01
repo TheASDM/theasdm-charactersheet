@@ -1,15 +1,16 @@
 import styled from 'styled-components';
 
 export const OverviewInventoryCard = styled.section`
-  background: rgba(12, 12, 12, 0.82);
-  border: 1px solid rgba(206, 144, 22, 0.38);
-  border-radius: 10px;
-  padding: 0.75rem 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 2px solid #333;
+  border-radius: 6px;
+  padding: 0.5rem;
   margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  min-width: 0;
 `;
 
 export const OverviewInventoryHeader = styled.header`
@@ -60,21 +61,10 @@ export const OverviewInventoryList = styled.ul`
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-height: 300px;
-  overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    width: 5px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(206, 144, 22, 0.25);
-    border-radius: 999px;
-  }
+  overflow: visible;
 `;
 
 export const OverviewInventoryListItem = styled.li`
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -85,6 +75,7 @@ export const OverviewInventoryListItem = styled.li`
   padding: 0.5rem 0.65rem;
   font-size: 0.78rem;
   transition: background 0.2s ease, border-color 0.2s ease;
+  min-width: 0;
 
   &:hover {
     background: rgba(26, 26, 26, 0.75);
@@ -106,7 +97,10 @@ export const OverviewInventoryName = styled.div`
     letter-spacing: 0.01em;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
   }
 `;
 
@@ -159,6 +153,10 @@ export const OverviewInventoryChip = styled.span<{ $variant?: 'equipped' | 'stor
   border: ${({ $variant }) => ($variant === 'category' ? '1px solid rgba(206, 144, 22, 0.55)' : 'none')};
 `;
 
+export const OverviewInventoryMenuWrapper = styled.div`
+  position: relative;
+`;
+
 export const OverviewInventoryMenuButton = styled.button`
   background: transparent;
   border: none;
@@ -187,17 +185,45 @@ export const OverviewInventoryMenuButton = styled.button`
 
 export const OverviewInventoryMenu = styled.div<{ $isOpen: boolean }>`
   position: absolute;
-  right: 0.5rem;
+  right: 0;
   top: calc(100% + 0.25rem);
   background: rgba(20, 20, 20, 0.98);
   border: 1px solid rgba(206, 144, 22, 0.5);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  z-index: 100;
+  z-index: 9999;
   min-width: 140px;
   display: ${({ $isOpen }) => ($isOpen ? 'flex' : 'none')};
   flex-direction: column;
   overflow: hidden;
+`;
+
+// Portal version - renders outside scroll container
+export const OverviewInventoryMenuPortal = styled.div`
+  position: fixed;
+  background: rgba(20, 20, 20, 0.98);
+  border: 1px solid rgba(206, 144, 22, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Smooth appearance */
+  animation: menuFadeIn 0.15s ease-out;
+
+  @keyframes menuFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 export const OverviewInventoryMenuItem = styled.button<{ $variant?: 'danger' }>`

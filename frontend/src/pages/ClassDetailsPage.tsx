@@ -1019,7 +1019,7 @@ const ClassDetailsPage: React.FC = () => {
                     )}
                     <li>
                       <strong>Saving Throws:</strong>{' '}
-                      {characterClass.savingThrowProficiencies.join(', ')}
+                      {(characterClass.savingThrows || characterClass.savingThrowProficiencies || []).join(', ')}
                     </li>
                     {characterClass.skillProficiencies && (
                       <li>

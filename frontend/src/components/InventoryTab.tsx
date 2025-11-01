@@ -117,10 +117,20 @@ const Row = styled.div<{ $equipped: boolean }>`
   }
 `;
 
-const ItemName = styled.div`
+const ItemName = styled.div<{ $clickable?: boolean }>`
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+  transition: color 0.2s ease;
+
+  ${({ $clickable }) =>
+    $clickable &&
+    `
+    &:hover {
+      color: #ce9016;
+    }
+  `}
 `;
 
 const ItemMeta = styled.div`
@@ -414,7 +424,12 @@ const InventoryTab = ({
             return (
               <Row key={item.id} $equipped={isEquipped}>
                 <div>
-                  <ItemName>{item.name}</ItemName>
+                  <ItemName
+                    $clickable={!!onInspectItem}
+                    onClick={() => onInspectItem && onInspectItem(item.name)}
+                  >
+                    {item.name}
+                  </ItemName>
                   <ItemMeta>
                     {isEquipped && <MetaTag $variant="equipped">Equipped</MetaTag>}
                     {tags.map((tag) => (

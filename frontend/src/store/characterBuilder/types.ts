@@ -71,6 +71,7 @@ export interface SpeciesState {
     level3?: string[];
     level5?: string[];
   };
+  grantedSpells?: string[]; // Spell IDs granted by species/lineage (for Rock Gnome, Drow, etc.)
   size?: string;
   speed?: number;
   additionalSpeeds?: Record<string, number>;

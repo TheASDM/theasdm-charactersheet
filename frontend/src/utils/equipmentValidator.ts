@@ -190,10 +190,24 @@ export class EquipmentValidator {
            this.isWeaponByName(item.name);
   }
 
+  static isInventoryWeapon(item: InventoryItem): boolean {
+    if (item.weaponCategory) {
+      return true;
+    }
+    if (item.customProperties && typeof item.customProperties.weapon === 'boolean') {
+      return Boolean(item.customProperties.weapon);
+    }
+    return this.isWeaponByName(item.name);
+  }
+
   static isArmor(item: Item): boolean {
     return ['LA', 'MA', 'HA'].includes(item.type || '') ||
            ['light', 'medium', 'heavy'].includes(item.armorType || '') ||
            (Boolean(item.ac) && item.armorType !== 'shield');
+  }
+
+  static isWeaponFromInventory(item: InventoryItem): boolean {
+    return this.isWeaponByName(item.name);
   }
 
   private static isWeaponByName(name: string): boolean {

@@ -2,11 +2,11 @@ import styled from 'styled-components';
 
 // Actions Section Styles - Redesigned to match sheet aesthetic
 export const ActionsSection = styled.div`
-  border: 2px solid #333;
-  border-radius: 6px;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(206, 144, 22, 0.25);
+  border-radius: 8px;
+  padding: 0.6rem;
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(8px);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -15,14 +15,14 @@ export const ActionsSection = styled.div`
 export const ActionsTitle = styled.h3`
   color: #ce9016;
   font-family: 'Cinzel', serif;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 600;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.45rem 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   text-align: center;
-  border-bottom: 1px solid #333;
-  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(206, 144, 22, 0.2);
+  padding-bottom: 0.3rem;
 `;
 
 export const ActionsTable = styled.div`
@@ -56,63 +56,104 @@ export const ActionsTableHeader = styled.div<{ $column: number }>`
 
 export const ActionsTableCell = styled.div<{ $column: number; $editable?: boolean }>`
   display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr;
-  gap: 0.5rem;
-  padding: 0.3rem 0.5rem;
-  background: rgba(26, 26, 26, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid #333;
-  border-radius: 3px;
+  grid-template-columns: 2fr 1fr 1.2fr;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(18, 18, 18, 0.85);
+  border: 1px solid rgba(206, 144, 22, 0.2);
+  border-radius: 6px;
   align-items: center;
-  font-size: 0.75rem;
-  color: #e0e0e0;
-  transition: all 0.2s ease;
+  font-size: 0.76rem;
+  color: #f0f0f0;
+  transition: background 0.2s ease, border-color 0.2s ease;
 
   &:hover {
     background: rgba(206, 144, 22, 0.08);
-    border-color: rgba(206, 144, 22, 0.3);
+    border-color: rgba(206, 144, 22, 0.35);
   }
 
-  .action-name {
+  /* Show drag handle on hover for draggable rows */
+  &.draggable-row:hover {
+    & > div:first-child {
+      opacity: 1 !important;
+    }
+  }
+
+  .cell-name {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .name-line {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     font-weight: 600;
-    color: #ce9016;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: #f7f4e8;
+    min-height: 1rem;
   }
 
-  .action-bonus, .action-damage {
+  .name-line input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cell-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: ${({ $editable }) => ($editable ? 'stretch' : 'center')};
     text-align: center;
-    font-weight: 500;
+  }
+
+  .metric-primary {
+    font-weight: 600;
+    color: #f5e8c5;
+  }
+
+  .metric-secondary {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: rgba(123, 237, 159, 0.85);
+  }
+
+  .notes {
+    font-size: 0.65rem;
+    color: rgba(229, 210, 170, 0.75);
+  }
+
+  .tag-row {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
   }
 
   input {
-    background: rgba(15, 15, 15, 0.8);
-    border: 1px solid transparent;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(206, 144, 22, 0.25);
+    border-radius: 4px;
     color: inherit;
     font-family: inherit;
     font-size: inherit;
     font-weight: inherit;
     width: 100%;
-    padding: 0.2rem 0.3rem;
-    border-radius: 3px;
-    text-align: inherit;
+    padding: 0.25rem 0.35rem;
 
     &:focus {
       outline: none;
-      border: 1px solid #ce9016;
-      background: rgba(206, 144, 22, 0.15);
-      box-shadow: 0 0 3px rgba(206, 144, 22, 0.3);
+      border-color: rgba(206, 144, 22, 0.6);
+      box-shadow: 0 0 4px rgba(206, 144, 22, 0.3);
     }
   }
 `;
 
 export const AddActionButton = styled.button`
-  background: rgba(206, 144, 22, 0.15);
-  border: 1px solid #ce9016;
-  color: #ce9016;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
+  background: rgba(206, 144, 22, 0.18);
+  border: 1px solid rgba(206, 144, 22, 0.45);
+  color: #f4d27a;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
@@ -120,14 +161,14 @@ export const AddActionButton = styled.button`
   font-family: 'Cinzel', serif;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  margin-top: 0.25rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  margin-top: 0.3rem;
   align-self: flex-start;
 
   &:hover {
-    background: rgba(206, 144, 22, 0.25);
+    background: rgba(206, 144, 22, 0.28);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(206, 144, 22, 0.3);
+    box-shadow: 0 3px 9px rgba(206, 144, 22, 0.25);
   }
 
   &:active {
@@ -217,14 +258,29 @@ export const TraitCard = styled.div`
   }
 `;
 
-export const TraitName = styled.h3`
-  color: #ce9016;
+export const TraitName = styled.h3<{ $clickable?: boolean }>`
+  color: #ce9016 !important;
   font-family: 'Cinzel', serif;
   font-size: 0.8rem;
   font-weight: 600;
   margin: 0 0 0.2rem 0;
   text-transform: capitalize;
   line-height: 1.2;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+  transition: opacity 0.2s ease;
+
+  ${({ $clickable }) =>
+    $clickable &&
+    `
+    &:hover {
+      opacity: 0.8;
+    }
+  `}
+
+  /* Prevent visited link color from changing */
+  &:visited {
+    color: #ce9016 !important;
+  }
 `;
 
 export const TraitDescription = styled.div`
@@ -300,7 +356,7 @@ export const ProficienciesContent = styled.div`
 
   /* Handle bold markdown formatting */
   strong {
-    color: #6fa8dc;
+    color: #ce9016;
     font-weight: 600;
   }
 

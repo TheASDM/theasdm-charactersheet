@@ -1,5 +1,114 @@
 import { CharacterFeatures } from './features';
 
+export type AbilityScoreName = 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma';
+
+export interface ActionAttackDefinition {
+  /** Type of attack roll involved. */
+  kind: 'weapon' | 'spell' | 'custom';
+  /**
+   * Ability score that contributes to the attack roll.
+   * Use `'spellcasting'` to indicate the character's primary spellcasting ability.
+   */
+  ability?: AbilityScoreName | 'spellcasting';
+  /** Whether proficiency should be applied to the attack roll. */
+  proficient?: boolean;
+  /** Additional flat bonus (e.g., from a +1 weapon). */
+  bonus?: number;
+  /** Optional custom label override (e.g., "Spell Attack +5"). */
+  label?: string;
+}
+
+export interface ActionSaveDefinition {
+  ability: AbilityScoreName;
+  /**
+   * Ability used to calculate the save DC. Defaults to the caster's spellcasting ability.
+   * For martial maneuvers this might be a specific score such as Strength.
+   */
+  dcAbility?: AbilityScoreName | 'spellcasting';
+  /** Additional flat bonus on top of the default DC formula. */
+  bonus?: number;
+  label?: string;
+}
+
+export type DamageScalingDefinition =
+  | {
+      type: 'cantrip';
+      progression: Record<number, string>;
+    }
+  | {
+      type: 'spell-slot';
+      baseLevel: number;
+      incrementDice: string;
+      note?: string;
+    }
+  | {
+      type: 'custom';
+      label: string;
+    };
+
+export interface ActionDamageDefinition {
+  /** Dice formula such as `1d8` or `2d6+3`. */
+  dice?: string;
+  /** Optional flat bonus to damage (applied after dice roll). */
+  bonus?: number;
+  /** Damage type string (e.g., "fire"). */
+  damageType?: string;
+  /** Whether the relevant ability modifier should be added. */
+  abilityMod?: boolean;
+  /** Specific ability to use for the modifier; `'spellcasting'` uses the class ability. */
+  ability?: AbilityScoreName | 'spellcasting';
+  /** Additional dice that apply on certain conditions (e.g., versatile). */
+  alternateDice?: string;
+  /** Notes to append to the damage string. */
+  note?: string;
+  /** Whether damage is halved on a successful save. */
+  halfOnSave?: boolean;
+  /** Scaling information (cantrip level scaling or upcasting). */
+  scaling?: DamageScalingDefinition;
+}
+
+export interface ActionHealingDefinition {
+  dice?: string;
+  bonus?: number;
+  abilityMod?: boolean;
+  ability?: AbilityScoreName | 'spellcasting';
+  scaling?: DamageScalingDefinition;
+  note?: string;
+}
+
+export type CharacterActionKind = 'default' | 'weapon' | 'spell' | 'feature' | 'custom';
+
+export interface CharacterAction {
+  name: string;
+  type: CharacterActionKind;
+  /** Primary attack roll configuration, if any. */
+  attack?: ActionAttackDefinition | null;
+  /** Saving throw configuration, if applicable. */
+  save?: ActionSaveDefinition | null;
+  /** Damage components applied by the action. */
+  damage?: ActionDamageDefinition[] | null;
+  /** Healing components applied by the action. */
+  healing?: ActionHealingDefinition[] | null;
+  /** Free-form notes or reminders. */
+  notes?: string;
+  /** Tags used for filtering or styling (e.g., ["spell", "cantrip"]). */
+  tags?: string[];
+  /** Identifier linking the action to a spell in the spellbook, if applicable. */
+  spellId?: string;
+  /** Identifier for an underlying inventory item (weapon, etc.). */
+  sourceId?: string;
+  /** Overrides for legacy/manual display fields. */
+  displayOverrides?: {
+    attack?: string;
+    damage?: string;
+  };
+  /** Legacy structure kept for backward compatibility with stored data. */
+  legacy?: {
+    atkBonus?: string;
+    damage?: string;
+  };
+}
+
 // Inventory item with full tracking properties
 export interface InventoryItem {
   id: string;
@@ -90,11 +199,7 @@ export interface CharacterSheetData {
     damage: string;
     notes: string;
   }>;
-  actions: Array<{
-    name: string;
-    atkBonus: string;
-    damage: string;
-  }>;
+  actions: CharacterAction[];
   proficiencies: {
     armor: string[];
     weapons: string[];
@@ -134,6 +239,7 @@ export interface CharacterSheetData {
   featFeatures?: Record<string, any[]>;
   backgroundFeatures?: any[];
   speciesChoices?: Record<string, unknown>;
+  speciesGrantedSpells?: string[]; // Spell IDs granted by species/lineage (Rock Gnome, Drow, etc.)
   selectedClassChoices?: Record<string, unknown>;
   classChoices?: Record<string, unknown>;
   featChoices?: Record<string, Record<string, unknown>>;
@@ -269,16 +375,7 @@ export const createDefaultCharacterSheet = (): CharacterSheetData => ({
     { name: '', atkBonus: '', damage: '', notes: '' },
     { name: '', atkBonus: '', damage: '', notes: '' },
   ],
-  actions: [
-    { name: 'Dash', atkBonus: '—', damage: 'Move Speed × 2' },
-    { name: 'Dodge', atkBonus: '—', damage: '—' },
-    { name: 'Help', atkBonus: '—', damage: '—' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-    { name: '', atkBonus: '', damage: '' },
-  ],
+  actions: [],
   proficiencies: {
     armor: [],
     weapons: [],

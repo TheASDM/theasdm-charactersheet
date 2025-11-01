@@ -81,25 +81,27 @@ export const ChoiceSelectionModal: React.FC<ChoiceSelectionModalProps> = ({
         )}
 
         <OptionsContainer>
-          {prompt.options.map((option) => (
-            <OptionCard
-              key={option.id}
-              $selected={selectedIds.includes(option.id)}
-              onClick={() => handleToggleSelection(option.id)}
-              $disabled={isLoading}
-            >
-              <OptionHeader>
-                <SelectionIndicator $selectionMode={prompt.selectionMode}>
-                  {prompt.selectionMode === 'single' ? (
-                    <RadioButton $checked={selectedIds.includes(option.id)} />
-                  ) : (
-                    <Checkbox $checked={selectedIds.includes(option.id)}>
-                      {selectedIds.includes(option.id) && '✓'}
-                    </Checkbox>
-                  )}
-                </SelectionIndicator>
-                <OptionTitle>{option.name}</OptionTitle>
-              </OptionHeader>
+          {prompt.options.map((option) => {
+            const optionId = option.id || option.name; // Fallback to name if id is missing
+            return (
+              <OptionCard
+                key={optionId}
+                $selected={selectedIds.includes(optionId)}
+                onClick={() => handleToggleSelection(optionId)}
+                $disabled={isLoading}
+              >
+                <OptionHeader>
+                  <SelectionIndicator $selectionMode={prompt.selectionMode}>
+                    {prompt.selectionMode === 'single' ? (
+                      <RadioButton $checked={selectedIds.includes(optionId)} />
+                    ) : (
+                      <Checkbox $checked={selectedIds.includes(optionId)}>
+                        {selectedIds.includes(optionId) && '✓'}
+                      </Checkbox>
+                    )}
+                  </SelectionIndicator>
+                  <OptionTitle>{option.name}</OptionTitle>
+                </OptionHeader>
 
               <OptionDescription
                 dangerouslySetInnerHTML={{
@@ -111,7 +113,8 @@ export const ChoiceSelectionModal: React.FC<ChoiceSelectionModalProps> = ({
 
               {option.mechanics && renderMechanics(option.mechanics)}
             </OptionCard>
-          ))}
+            );
+          })}
         </OptionsContainer>
 
         {errors.length > 0 && (

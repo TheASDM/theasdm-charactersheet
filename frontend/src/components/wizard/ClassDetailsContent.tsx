@@ -6,17 +6,18 @@ interface ClassDetailsContentProps {
     name: string;
     description?: string;
     hitDie: number;
-    primaryAbility: string | string[];
-    savingThrows?: string;
+    primaryAbility?: string | string[]; // Legacy field
+    primaryAbilities?: string[]; // New field from API
+    savingThrows?: string | string[]; // Can be string or array
     savingThrowProficiencies?: string[];
     features?: string[];
     classFeatures?: Record<string, any>;
     proficiencies?: {
-      armor?: string;
-      weapons?: string;
-      tools?: string;
-      savingThrows?: string;
-      skills?: string;
+      armor?: string | string[];
+      weapons?: string | string[];
+      tools?: string | any[];
+      savingThrows?: string | string[];
+      skills?: string | any;
     };
   };
 }
@@ -116,7 +117,15 @@ export const ClassDetailsContent: React.FC<ClassDetailsContentProps> = ({ classD
   const getLevel1Features = () => {
     if (features) return features;
     if (classFeatures && classFeatures['1']) {
-      return classFeatures['1'].map((f: any) => f.name);
+      return classFeatures['1']
+        .map((f: any) => {
+          // Handle different feature structures
+          if (typeof f === 'string') return f;
+          if (f.name) return f.name;
+          if (f.choose) return `Choice: ${f.choose.from?.length || 'Multiple'} options`;
+          return null;
+        })
+        .filter(Boolean); // Remove any null values
     }
     return [];
   };

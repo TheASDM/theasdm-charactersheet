@@ -1,4 +1,4 @@
-import type { Background, Character, Feat, Species } from '@/types/api';
+import type { Background, Feat, Species, PartialCharacter } from '@/types/api';
 import type { ClassFeature } from '@/types/classFeatures';
 
 type MaybeGranted = {
@@ -100,7 +100,7 @@ const ingestFeatureCollection = (collection: unknown, bucket: Set<string>): void
 };
 
 export function deriveGrantedSpells(
-  character: Partial<Character> | null,
+  character: PartialCharacter | null,
   opts: {
     species?: (Partial<Species> & MaybeGranted) | null;
     feats?: Array<Partial<Feat> & MaybeGranted>;
@@ -211,7 +211,9 @@ export function deriveGrantedSpells(
     ingestFeatureLike(feature, granted);
   });
 
-  return Array.from(granted);
+  const SPELL_ID_PATTERN = /^\d+$/;
+
+  return Array.from(granted).filter((id) => SPELL_ID_PATTERN.test(id));
 }
 
 /**

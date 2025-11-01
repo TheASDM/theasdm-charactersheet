@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { CharacterAction } from '../types/characterSheet';
+import { buildWeaponAction } from '@/utils/weaponCalculator';
 
 // Modal Overlay
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
@@ -267,19 +269,23 @@ const EmptyState = styled.div`
   font-size: 1.1rem;
 `;
 
-// Types
-interface Action {
+type ActionDraft = {
   name: string;
-  atkBonus: string;
+  attack: string;
   damage: string;
-}
+};
+
+type EditableAction = {
+  draft: ActionDraft;
+  original: CharacterAction | null;
+};
 
 interface ActionsManagementModalProps {
   isOpen: boolean;
-  actions: Action[];
+  actions: CharacterAction[];
   equippedItems?: any[]; // Will be passed from parent
   characterData?: any; // For calculating attack bonuses
-  onSave: (actions: Action[]) => void;
+  onSave: (actions: CharacterAction[]) => void;
   onCancel: () => void;
 }
 
@@ -291,150 +297,125 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
   onSave,
   onCancel
 }) => {
-  const [currentActions, setCurrentActions] = useState<Action[]>([]);
-  const [newAction, setNewAction] = useState<Action>({
+  const createEmptyCharacterAction = (): CharacterAction => ({
     name: '',
-    atkBonus: '',
+    type: 'custom',
+    attack: null,
+    damage: null,
+    healing: null,
+    displayOverrides: { attack: '', damage: '' },
+    legacy: { atkBonus: '', damage: '' },
+  });
+
+  const toDraft = (action: CharacterAction): ActionDraft => ({
+    name: action.name ?? '',
+    attack: action.displayOverrides?.attack ?? action.legacy?.atkBonus ?? '',
+    damage: action.displayOverrides?.damage ?? action.legacy?.damage ?? '',
+  });
+
+  const [currentActions, setCurrentActions] = useState<EditableAction[]>([]);
+  const [newAction, setNewAction] = useState<ActionDraft>({
+    name: '',
+    attack: '',
     damage: ''
   });
 
   // Initialize with provided actions when modal opens
   useEffect(() => {
     if (isOpen) {
-      setCurrentActions([...actions]);
-      setNewAction({ name: '', atkBonus: '', damage: '' });
+      setCurrentActions(actions.map((action) => ({
+        original: action,
+        draft: toDraft(action),
+      })));
+      setNewAction({ name: '', attack: '', damage: '' });
     }
   }, [isOpen, actions]);
 
-  const handleActionUpdate = (index: number, field: keyof Action, value: string) => {
-    const updatedActions = [...currentActions];
-    updatedActions[index] = {
-      ...updatedActions[index],
-      [field]: value
-    };
-    setCurrentActions(updatedActions);
+  const handleActionUpdate = (index: number, field: keyof ActionDraft, value: string) => {
+    setCurrentActions((prev) => {
+      const next = [...prev];
+      const existing = next[index] ?? { original: null, draft: { name: '', attack: '', damage: '' } };
+      next[index] = {
+        original: existing.original,
+        draft: {
+          ...existing.draft,
+          [field]: value,
+        },
+      };
+      return next;
+    });
   };
 
   const handleRemoveAction = (index: number) => {
-    const updatedActions = currentActions.filter((_, i) => i !== index);
-    setCurrentActions(updatedActions);
+    setCurrentActions((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddAction = () => {
     if (!newAction.name.trim()) return;
 
-    setCurrentActions([...currentActions, { ...newAction }]);
-    setNewAction({ name: '', atkBonus: '', damage: '' });
+    setCurrentActions((prev) => [
+      ...prev,
+      {
+        original: null,
+        draft: { ...newAction },
+      },
+    ]);
+    setNewAction({ name: '', attack: '', damage: '' });
   };
 
   const handlePopulateFromEquipped = () => {
     if (!equippedItems || !characterData) return;
 
-    // Calculate proficiency bonus
-    const profBonus = Math.floor((characterData.level - 1) / 4) + 2;
+    const weaponDrafts: EditableAction[] = [];
 
-    // Calculate ability modifiers
-    const strMod = Math.floor((characterData.abilityScores?.strength || 10) / 2) - 5;
-    const dexMod = Math.floor((characterData.abilityScores?.dexterity || 10) / 2) - 5;
-
-    const weaponActions: Action[] = [];
-
-    equippedItems.forEach(item => {
+    equippedItems.forEach((item) => {
       if (!item || !item.name) return;
 
-      const itemName = item.name.toLowerCase();
-
-      // Check if it's a weapon using comprehensive weapon list
-      const weaponTypes = [
-        // Melee weapons
-        'sword', 'axe', 'mace', 'dagger', 'spear', 'javelin', 'club', 'rapier', 'scimitar',
-        'hammer', 'flail', 'morningstar', 'pike', 'glaive', 'halberd', 'lance', 'trident',
-        'whip', 'quarterstaff', 'staff', 'maul', 'greataxe', 'greatsword', 'longsword',
-        'shortsword', 'sickle', 'handaxe', 'battleaxe', 'warhammer',
-        // Ranged weapons
-        'bow', 'crossbow', 'longbow', 'shortbow', 'blowgun', 'sling', 'dart', 'net'
-      ];
-
-      const isWeapon = weaponTypes.some(type => itemName.includes(type));
-
-      if (isWeapon) {
-        // Determine if it's finesse or ranged
-        const isFinesse = ['dagger', 'rapier', 'scimitar', 'shortsword', 'whip', 'dart'].some(w => itemName.includes(w));
-        const isRanged = ['bow', 'crossbow', 'longbow', 'shortbow', 'blowgun', 'sling', 'dart', 'net'].some(w => itemName.includes(w));
-
-        // Calculate attack bonus
-        let atkMod = isRanged || isFinesse ? Math.max(strMod, dexMod) : strMod;
-        const magicBonus = item.name.match(/^\+(\d+)/) ? parseInt(item.name.match(/^\+(\d+)/)[1]) : 0;
-        const attackBonus = profBonus + atkMod + magicBonus;
-
-        // Determine damage (this is simplified - ideally would look up actual weapon damage)
-        let damage = item.customProperties?.damage || '';
-        if (!damage) {
-          // Default damage dice based on weapon type
-          if (itemName.includes('dagger') || itemName.includes('dart')) damage = '1d4';
-          else if (itemName.includes('shortsword') || itemName.includes('scimitar')) damage = '1d6';
-          else if (itemName.includes('longsword') || itemName.includes('rapier')) damage = '1d8';
-          else if (itemName.includes('greatsword') || itemName.includes('maul')) damage = '2d6';
-          else if (itemName.includes('greataxe')) damage = '1d12';
-          else if (itemName.includes('handaxe')) damage = '1d6';
-          else if (itemName.includes('battleaxe') || itemName.includes('warhammer')) damage = '1d8';
-          else if (itemName.includes('club') || itemName.includes('sling')) damage = '1d4';
-          else if (itemName.includes('mace') || itemName.includes('quarterstaff')) damage = '1d6';
-          else if (itemName.includes('flail') || itemName.includes('morningstar') || itemName.includes('pike')) damage = '1d8';
-          else if (itemName.includes('glaive') || itemName.includes('halberd')) damage = '1d10';
-          else if (itemName.includes('lance')) damage = '1d12';
-          else if (itemName.includes('spear') || itemName.includes('trident') || itemName.includes('javelin')) damage = '1d6';
-          else if (itemName.includes('whip')) damage = '1d4';
-          else if (itemName.includes('shortbow')) damage = '1d6';
-          else if (itemName.includes('longbow') || itemName.includes('crossbow')) damage = '1d8';
-          else if (itemName.includes('blowgun')) damage = '1';
-          else if (itemName.includes('net')) damage = '—';
-          else damage = '1d6'; // Default
-        }
-
-        // Add damage modifier
-        if (damage && damage !== '—') {
-          const modifier = atkMod + magicBonus;
-          const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
-          damage = `${damage}${modifierStr}`;
-
-          // Add damage type
-          if (itemName.includes('bow') || itemName.includes('crossbow') || itemName.includes('sling') || itemName.includes('dart') || itemName.includes('blowgun')) {
-            damage += ' piercing';
-          } else if (itemName.includes('sword') || itemName.includes('dagger') || itemName.includes('rapier') || itemName.includes('scimitar') || itemName.includes('glaive') || itemName.includes('halberd') || itemName.includes('axe')) {
-            damage += ' slashing';
-          } else if (itemName.includes('spear') || itemName.includes('pike') || itemName.includes('javelin') || itemName.includes('trident') || itemName.includes('lance')) {
-            damage += ' piercing';
-          } else if (itemName.includes('net')) {
-            damage = 'Restrained';
-          } else {
-            damage += ' bludgeoning';
-          }
-        }
-
-        weaponActions.push({
-          name: item.name,
-          atkBonus: `+${attackBonus}`,
-          damage: damage
+      try {
+        const action = buildWeaponAction(item, characterData);
+        weaponDrafts.push({
+          original: action,
+          draft: toDraft(action),
         });
+      } catch (error) {
+        console.warn('Unable to derive weapon action for item', item, error);
       }
     });
 
-    // Replace current actions with weapon actions, keeping any non-weapon actions
-    const nonWeaponActions = currentActions.filter(action => {
-      const actionName = action.name.toLowerCase();
-      return !equippedItems.some(item => item && item.name && item.name.toLowerCase() === actionName);
-    });
+    if (weaponDrafts.length === 0) {
+      return;
+    }
 
-    setCurrentActions([...weaponActions, ...nonWeaponActions]);
+    setCurrentActions((prev) => {
+      const nonWeapon = prev.filter(({ original }) => original?.type !== 'weapon');
+      return [...weaponDrafts, ...nonWeapon];
+    });
   };
 
   const handleSave = () => {
-    // Filter out empty actions
-    const validActions = currentActions.filter(action =>
-      action.name.trim() !== ''
-    );
-    onSave(validActions);
+    const transformed = currentActions
+      .map(({ original, draft }) => {
+        if (!draft.name.trim()) {
+          return null;
+        }
+
+        const base = original ? { ...original } : createEmptyCharacterAction();
+        base.name = draft.name;
+        base.displayOverrides = {
+          ...(base.displayOverrides ?? {}),
+          attack: draft.attack,
+          damage: draft.damage,
+        };
+        base.legacy = {
+          ...(base.legacy ?? {}),
+          atkBonus: draft.attack,
+          damage: draft.damage,
+        };
+        return base;
+      })
+      .filter((action): action is CharacterAction => Boolean(action));
+
+    onSave(transformed);
   };
 
   const isNewActionValid = newAction.name.trim() !== '';
@@ -465,10 +446,10 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
               No actions yet. Add your first action below!
             </EmptyState>
           ) : (
-            currentActions.map((action, index) => (
+            currentActions.map(({ draft }, index) => (
               <ActionCard key={index}>
                 <ActionHeader>
-                  <ActionName>{action.name || `Action ${index + 1}`}</ActionName>
+                  <ActionName>{draft.name || `Action ${index + 1}`}</ActionName>
                   <DeleteActionButton onClick={() => handleRemoveAction(index)}>
                     ✕
                   </DeleteActionButton>
@@ -479,7 +460,7 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
                     <Label>Action Name</Label>
                     <Input
                       type="text"
-                      value={action.name}
+                      value={draft.name}
                       placeholder="e.g., Longsword, Fire Bolt, Dash"
                       onChange={(e) => handleActionUpdate(index, 'name', e.target.value)}
                     />
@@ -489,9 +470,9 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
                     <Label>Attack Bonus / DC</Label>
                     <Input
                       type="text"
-                      value={action.atkBonus}
+                      value={draft.attack}
                       placeholder="e.g., +5, DC 13"
-                      onChange={(e) => handleActionUpdate(index, 'atkBonus', e.target.value)}
+                      onChange={(e) => handleActionUpdate(index, 'attack', e.target.value)}
                     />
                   </FormGroup>
 
@@ -499,7 +480,7 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
                     <Label>Damage & Type</Label>
                     <Input
                       type="text"
-                      value={action.damage}
+                      value={draft.damage}
                       placeholder="e.g., 1d8+3 slashing, 1d10 fire"
                       onChange={(e) => handleActionUpdate(index, 'damage', e.target.value)}
                     />
@@ -528,9 +509,9 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
               <Label>Attack Bonus / DC</Label>
               <Input
                 type="text"
-                value={newAction.atkBonus}
+                value={newAction.attack}
                 placeholder="e.g., +5, DC 13"
-                onChange={(e) => setNewAction({...newAction, atkBonus: e.target.value})}
+                onChange={(e) => setNewAction({ ...newAction, attack: e.target.value })}
               />
             </FormGroup>
 
@@ -540,7 +521,7 @@ const ActionsManagementModal: React.FC<ActionsManagementModalProps> = ({
                 type="text"
                 value={newAction.damage}
                 placeholder="e.g., 1d8+3 slashing, 1d10 fire"
-                onChange={(e) => setNewAction({...newAction, damage: e.target.value})}
+                onChange={(e) => setNewAction({ ...newAction, damage: e.target.value })}
               />
             </FullWidthGroup>
           </ActionForm>

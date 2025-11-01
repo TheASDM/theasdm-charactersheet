@@ -148,13 +148,23 @@ const CharacterViewPage: React.FC = () => {
     }
 
     setOriginalCharacter(fetchedCharacter);
-    const characterSheetData: CharacterSheetData = {
-      ...createDefaultCharacterSheet(),
-      ...fetchedCharacter.characterData,
-      name: fetchedCharacter.name,
-      level: fetchedCharacter.level,
+
+    const loadAndMigrateCharacter = async () => {
+      let characterSheetData: CharacterSheetData = {
+        ...createDefaultCharacterSheet(),
+        ...fetchedCharacter.characterData,
+        name: fetchedCharacter.name,
+        level: fetchedCharacter.level,
+      };
+
+      // Migrate spell actions if needed
+      const { migrateSpellActions } = await import('../services/characterCalculations');
+      characterSheetData = await migrateSpellActions(characterSheetData);
+
+      setCharacter(characterSheetData);
     };
-    setCharacter(characterSheetData);
+
+    void loadAndMigrateCharacter();
   }, [fetchedCharacter]);
 
   const handleCharacterUpdate = (updatedCharacter: CharacterSheetData) => {

@@ -1,7 +1,6 @@
 // Export all components
 export { default as CharacterCard } from './CharacterCard';
 export { default as CharacterList } from './CharacterList';
-export { default as CharacterSheet } from './CharacterSheet';
 export { default as CharacterSheetModal } from './CharacterSheetModal';
 export { default as SpellCard } from './SpellCard';
 export { default as SpellList } from './SpellList';
@@ -25,6 +24,7 @@ export { default as ClassSelectionModal } from './ClassSelectionModal';
 export { default as ActionsManagementModal } from './ActionsManagementModal';
 export { default as SkillsManagementModal } from './SkillsManagementModal';
 export { default as TraitsManagementModal } from './TraitsManagementModal';
+export { FeatureDetailModal } from './FeatureDetailModal';
 
 // Item Management Components
 export * from './ItemManagementModals';

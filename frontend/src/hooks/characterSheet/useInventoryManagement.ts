@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { CharacterSheetData, InventoryItem } from '../../types/characterSheet';
+import { CharacterSheetData, InventoryItem, CharacterAction } from '../../types/characterSheet';
 import { Item } from '../../types/api';
 import { itemService } from '../../services/itemService';
 import { EquipmentValidator } from '../../utils/equipmentValidator';
 import { SpecialItemsRegistry } from '../../utils/specialItemsRegistry';
-import { calculateWeaponStats } from '../../utils/weaponCalculator';
+import { buildWeaponAction } from '../../utils/weaponCalculator';
 import { isError } from '@/types/api';
 import { showError } from '@/utils/errorDisplay';
 import { logger } from '../../utils/logger';
@@ -29,6 +29,16 @@ const isArmorByName = (name: string): boolean => {
   const genericArmors = ['leather', 'breastplate', 'splint', 'plate', 'armor'];
   return genericArmors.some(type => lowerName.includes(type));
 };
+
+const createEmptyAction = (): CharacterAction => ({
+  name: '',
+  type: 'custom',
+  attack: null,
+  damage: null,
+  healing: null,
+  displayOverrides: { attack: '', damage: '' },
+  legacy: { atkBonus: '', damage: '' },
+});
 
 
 // Helper function to migrate old inventory format to new format
@@ -339,10 +349,8 @@ export const useInventoryManagement = (
       );
 
       // Remove from actions if applicable
-      updatedCharacter.actions = character.actions.map(action =>
-        action.name === itemToRemove.name
-          ? { name: '', atkBonus: '', damage: '' }
-          : action
+      updatedCharacter.actions = character.actions.map((action) =>
+        action.name === itemToRemove.name ? createEmptyAction() : action
       );
 
       // Recalculate AC
@@ -444,27 +452,30 @@ export const useInventoryManagement = (
             );
           }
           updatedCharacter.equippedArmor = { ...item, equipped: true };
-        } else if (EquipmentValidator.isWeapon({ name: item.name } as Item)) {
+        } else if (EquipmentValidator.isInventoryWeapon(item)) {
           // Add weapon to equipped weapons
           updatedCharacter.equippedWeapons = [...(character.equippedWeapons || []), { ...item, equipped: true }];
 
           // Add weapon to Actions section
-          const weaponStats = calculateWeaponStats(item, character);
-          const updatedActions = [...character.actions];
-          const emptyActionIndex = updatedActions.findIndex(action => !action.name || action.name.trim() === '');
+          const weaponAction = buildWeaponAction(item, updatedCharacter);
+          const updatedActions = [...(character.actions || [])];
+          const lowerName = item.name.toLowerCase();
+          const existingIndex = updatedActions.findIndex(
+            (action) => action?.name?.toLowerCase() === lowerName
+          );
 
-          const newAction = {
-            name: item.name,
-            atkBonus: weaponStats.attackBonus,
-            damage: weaponStats.damage,
-          };
-
-          if (emptyActionIndex !== -1) {
-            // Use existing empty slot
-            updatedActions[emptyActionIndex] = newAction;
+          if (existingIndex !== -1) {
+            updatedActions[existingIndex] = weaponAction;
           } else {
-            // Add new action (infinite equipped weapons allowed)
-            updatedActions.push(newAction);
+            const emptyActionIndex = updatedActions.findIndex(
+              (action) => !action || !action.name || !action.name.trim()
+            );
+
+            if (emptyActionIndex !== -1) {
+              updatedActions[emptyActionIndex] = weaponAction;
+            } else {
+              updatedActions.push(weaponAction);
+            }
           }
 
           updatedCharacter.actions = updatedActions;
@@ -474,15 +485,14 @@ export const useInventoryManagement = (
           delete updatedCharacter.equippedShield;
         } else if (isArmorByName(item.name)) {
           delete updatedCharacter.equippedArmor;
-        } else if (EquipmentValidator.isWeapon({ name: item.name } as Item)) {
+        } else if (EquipmentValidator.isInventoryWeapon(item)) {
           // Remove weapon from equipped weapons
           updatedCharacter.equippedWeapons = (character.equippedWeapons || []).filter(w => w.id !== item.id);
 
           // Remove weapon from Actions section
-          updatedCharacter.actions = character.actions.map(action =>
-            action.name === item.name
-              ? { name: '', atkBonus: '', damage: '' }
-              : action
+          const lowerName = item.name.toLowerCase();
+          updatedCharacter.actions = (character.actions || []).map((action) =>
+            action?.name?.toLowerCase() === lowerName ? createEmptyAction() : action
           );
         }
       }
@@ -599,6 +609,22 @@ export const useInventoryManagement = (
     handleInventoryItemClick: async (itemName: string) => {
       if (!itemName?.trim()) return;
 
+      // First check if we have the item in inventory with an itemId
+      const inventoryItem = normalizedInventory.find(
+        item => item.name?.toLowerCase() === itemName.toLowerCase()
+      );
+
+      // If we have an itemId, use it for direct lookup
+      if (inventoryItem?.itemId) {
+        const response = await itemService.getItem(inventoryItem.itemId);
+        if (!isError(response) && response.data) {
+          setSelectedItemForDetails(response.data);
+          setShowItemDetails(true);
+          return;
+        }
+      }
+
+      // Otherwise, search by name
       const response = await itemService.search(itemName, 10);
       if (isError(response)) {
         showError(response.error ?? 'Failed to load item details', response.statusCode, response.errorCode);
@@ -606,8 +632,10 @@ export const useInventoryManagement = (
       }
 
       const items = response.data?.items ?? [];
+      // Try exact match first
       let foundItem = items.find(item => item.name.toLowerCase() === itemName.toLowerCase());
 
+      // Fall back to partial match only if no exact match
       if (!foundItem) {
         foundItem = items.find(item =>
           item.name.toLowerCase().includes(itemName.toLowerCase()) ||

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import type { CharacterSheetData } from '../types/characterSheet';
+import type { CharacterSheetData, CharacterAction } from '../types/characterSheet';
 import type { Spell } from '@/types/api';
 import { getSpellById } from '@/services/spellService';
 import { isError } from '@/types/api';
-import { deriveGrantedSpells } from '@/helpers/deriveGrantedSpells';
 import { getCantripCount, getPreparedCount, usesSpellbook } from '@/helpers/spellRules';
 import { CLASS_CONFIG, normalizeClassId } from '@/helpers/spellcastingConfig';
 import { logger } from '@/utils/logger';
@@ -13,17 +12,16 @@ import {
   selectClassSpells,
   selectClassStatus,
 } from '@/store/spellLibraryStore';
-import {
-  calculateModifier,
-  calculateProficiencyBonus,
-} from '../types/characterSheet';
+import { calculateModifier } from '../types/characterSheet';
 import WizardModal from './wizard/WizardModal';
+import { SpellDetailModal } from './spells/SpellDetailModal';
+import { buildSpellAction } from '@/utils/spellActionBuilder';
 
 interface CharacterSpellsSectionProps {
   character: CharacterSheetData;
   onUpdateCharacter: (updates: Partial<CharacterSheetData>) => void;
   actions: {
-    addAction: (action: { name: string; atkBonus: string; damage: string }) => void;
+    addAction: (action: CharacterAction) => void;
     removeActionByName: (name: string) => void;
     hasAction: (name: string) => boolean;
   };
@@ -54,6 +52,18 @@ const abilityKeyToScore: Record<string, keyof CharacterSheetData['abilityScores'
   int: 'intelligence',
   wis: 'wisdom',
   cha: 'charisma',
+};
+
+const SPELL_ID_PATTERN = /^\d+$/;
+const normaliseSpellId = (value: unknown): string | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return SPELL_ID_PATTERN.test(trimmed) ? trimmed : null;
+  }
+  return null;
 };
 
 const Container = styled.div`
@@ -184,6 +194,12 @@ const SpellTitleRow = styled.div`
     font-size: 1rem;
     font-weight: 600;
     color: #f8f4e1;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #ce9016;
+    }
   }
 `;
 
@@ -457,8 +473,19 @@ const formatLevelLabel = (level: number | undefined) => {
   return `${level}${suffix}-level`;
 };
 
-const getSchoolLabel = (school?: string | null) => {
-  if (!school) return 'Unknown School';
+const getSchoolLabel = (schoolOrCode?: string | { code: string; name: string } | null) => {
+  if (!schoolOrCode) return 'Unknown School';
+
+  // Extract code from string or object
+  let school: string;
+  if (typeof schoolOrCode === 'string') {
+    school = schoolOrCode;
+  } else if (typeof schoolOrCode === 'object' && 'code' in schoolOrCode) {
+    school = schoolOrCode.code;
+  } else {
+    return 'Unknown School';
+  }
+
   const lookup: Record<string, string> = {
     A: 'Abjuration',
     C: 'Conjuration',
@@ -725,9 +752,6 @@ export function CharacterSpellsSection({
 
   const speciesTraits = (character.features?.speciesTraits ?? character.speciesTraits ?? []) as unknown[];
   const featFeatureEntries = (character.features?.feats ?? []) as unknown[];
-  const backgroundFeatureEntries = (character.features?.backgroundFeatures ?? character.backgroundFeatures ?? []) as unknown[];
-  const classFeatureEntries = (character.features?.classFeatures ?? character.classFeatures ?? []) as unknown[];
-  const subclassFeatureEntries = (character.features?.subclassFeatures ?? []) as unknown[];
 
   const featSpellSources = useMemo(
     () =>
@@ -738,11 +762,31 @@ export function CharacterSpellsSection({
   );
 
   const speciesSource = useMemo(() => {
-    if (!speciesTraits.length) {
-      return undefined;
+    const spellIds: string[] = [];
+
+    // Extract spell IDs from species traits that have grantedSpells metadata
+    for (const trait of speciesTraits) {
+      if (trait && typeof trait === 'object' && 'grantedSpells' in trait) {
+        const traitSpells = (trait as any).grantedSpells;
+        if (Array.isArray(traitSpells)) {
+          spellIds.push(...traitSpells.filter((id: any) => typeof id === 'string' || typeof id === 'number').map(String));
+        }
+      }
     }
-    return { grantedSpells: speciesTraits } as unknown;
-  }, [speciesTraits]);
+
+    // Include direct species granted spells (Rock Gnome, Drow, etc.)
+    if (character.speciesGrantedSpells && Array.isArray(character.speciesGrantedSpells)) {
+      spellIds.push(...character.speciesGrantedSpells);
+    }
+
+    // Also check spellbook.grantedSpells for species-granted spells
+    if (character.spellbook?.grantedSpells && Array.isArray(character.spellbook.grantedSpells)) {
+      spellIds.push(...character.spellbook.grantedSpells);
+    }
+
+    // Return as simple array of spell IDs wrapped in grantedSpells object
+    return spellIds.length > 0 ? ({ grantedSpells: spellIds } as unknown) : undefined;
+  }, [speciesTraits, character.speciesGrantedSpells, character.spellbook?.grantedSpells]);
 
   const featSources = useMemo(() => {
     const combined = [...featSpellSources, ...featFeatureEntries];
@@ -750,30 +794,59 @@ export function CharacterSpellsSection({
   }, [featFeatureEntries, featSpellSources]);
 
   const grantedIds = useMemo(() => {
-    const options: Parameters<typeof deriveGrantedSpells>[1] = {};
-    if (speciesSource) {
-      options.species = speciesSource as any;
-    }
-    if (featSources) {
-      options.feats = featSources as any;
-    }
-    if (classFeatureEntries.length > 0) {
-      options.classFeatures = classFeatureEntries as any;
-    }
-    if (subclassFeatureEntries.length > 0) {
-      options.subclassFeatures = subclassFeatureEntries as any;
-    }
-    if (backgroundFeatureEntries.length > 0) {
-      options.backgroundFeatures = backgroundFeatureEntries as any;
+    const grantedSpellIds: string[] = [];
+
+    // 1. Primary source: spellbook.grantedSpells (most reliable, set during character creation)
+    if (character.spellbook?.grantedSpells && Array.isArray(character.spellbook.grantedSpells)) {
+        character.spellbook.grantedSpells.forEach((id) => {
+          const normalised = normaliseSpellId(id);
+          if (normalised) {
+            grantedSpellIds.push(normalised);
+          }
+        });
     }
 
-    try {
-      return deriveGrantedSpells(null, options).map((id) => String(id));
-    } catch (error) {
-      logger.warn('Failed to derive granted spells for character sheet', error);
-      return [];
+    // 2. Direct species grants (Rock Gnome, Drow, etc.)
+    if (character.speciesGrantedSpells && Array.isArray(character.speciesGrantedSpells)) {
+      character.speciesGrantedSpells.forEach((id) => {
+        const normalised = normaliseSpellId(id);
+        if (normalised) {
+          grantedSpellIds.push(normalised);
+        }
+      });
     }
-  }, [speciesSource, featSources, classFeatureEntries, subclassFeatureEntries, backgroundFeatureEntries]);
+
+    // 3. Extract from species traits with explicit grantedSpells metadata
+    if (speciesSource && typeof speciesSource === 'object' && 'grantedSpells' in speciesSource) {
+      const sourceSpells = (speciesSource as any).grantedSpells;
+      if (Array.isArray(sourceSpells)) {
+        sourceSpells.forEach((id: any) => {
+          const normalised = normaliseSpellId(id);
+          if (normalised) {
+            grantedSpellIds.push(normalised);
+          }
+        });
+      }
+    }
+
+    // 4. Extract from feat features with explicit grantedSpells metadata
+    for (const feat of featSources || []) {
+      if (feat && typeof feat === 'object' && 'grantedSpells' in feat) {
+        const featSpells = (feat as any).grantedSpells;
+        if (Array.isArray(featSpells)) {
+          featSpells.forEach((id: any) => {
+            const normalised = normaliseSpellId(id);
+            if (normalised) {
+              grantedSpellIds.push(normalised);
+            }
+          });
+        }
+      }
+    }
+
+    // Deduplicate and return
+    return Array.from(new Set(grantedSpellIds)).filter((id) => SPELL_ID_PATTERN.test(id));
+  }, [character.spellbook?.grantedSpells, character.speciesGrantedSpells, speciesSource, featSources]);
 
   const grantedSet = useMemo(() => new Set(grantedIds), [grantedIds]);
   const preparedSet = useMemo(() => new Set(preparedIds), [preparedIds]);
@@ -931,11 +1004,6 @@ export function CharacterSpellsSection({
     [spellLookup]
   );
 
-  const proficiencyBonus = character.proficiencyBonus ?? calculateProficiencyBonus(character.level ?? 1);
-  const abilityModifier = abilityMod;
-  const spellAttackBonus = proficiencyBonus + abilityModifier;
-  const spellSaveDC = 8 + proficiencyBonus + abilityModifier;
-
   const cantripOverflow = cantripMax !== null && cantripDisplayIds.length > cantripMax;
   const preparedOverflow = preparedLimit !== null && preparedTrackedIds.length > preparedLimit;
 
@@ -951,6 +1019,7 @@ export function CharacterSpellsSection({
   }, [cantripOverflow, preparedOverflow]);
 
   const [isManagePreparedOpen, setIsManagePreparedOpen] = useState(false);
+  const [selectedSpellForDetail, setSelectedSpellForDetail] = useState<Spell | null>(null);
 
   const availableSpellEntries = useMemo(() => {
     const entries = new Map<string, { id: string; spell: Spell | null }>();
@@ -1025,27 +1094,17 @@ export function CharacterSpellsSection({
         return;
       }
 
-      let atkLabel = `Spell Attack ${spellAttackBonus >= 0 ? `+${spellAttackBonus}` : spellAttackBonus}`;
-      if (spell.savingThrow && spell.savingThrow.length > 0) {
-        const saveTypes = spell.savingThrow.join('/');
-        atkLabel = `Save DC ${spellSaveDC} (${saveTypes})`;
-      }
-
-      let damageLabel = '—';
-      if (spell.damageInflict && spell.damageInflict.length > 0) {
-        damageLabel = spell.damageInflict.join(', ');
-      } else if (spell.miscTags?.some((tag) => /heal/i.test(tag))) {
-        damageLabel = 'Healing';
-      }
-
-      actions.addAction({
-        name: actionName,
-        atkBonus: atkLabel,
-        damage: damageLabel,
-      });
+      const builtAction = buildSpellAction(spell);
+      actions.addAction(builtAction);
     },
-    [actions, spellAttackBonus, spellSaveDC]
+    [actions]
   );
+
+  const handleSpellClick = useCallback((spell: Spell | null) => {
+    if (spell) {
+      setSelectedSpellForDetail(spell);
+    }
+  }, []);
 
   const renderSpellCard = (
     spellId: string,
@@ -1068,7 +1127,7 @@ export function CharacterSpellsSection({
     return (
       <SpellCard key={spellId} $prepared={isPrepared && !isGranted} $granted={isGranted}>
         <SpellTitleRow>
-          <h4>{label}</h4>
+          <h4 onClick={() => handleSpellClick(spell)}>{label}</h4>
           <Tag $tone={isCantrip ? 'cantrip' : 'default'}>{formatLevelLabel(level)}</Tag>
         </SpellTitleRow>
         <SpellMetaRow>
@@ -1252,6 +1311,11 @@ export function CharacterSpellsSection({
         isLoading={classSpellStatus.isLoading}
         error={classSpellStatus.error}
         onSave={updatePreparedSpells}
+      />
+
+      <SpellDetailModal
+        spell={selectedSpellForDetail}
+        onClose={() => setSelectedSpellForDetail(null)}
       />
     </Container>
   );

@@ -60,20 +60,26 @@ export interface ExternalReference {
 }
 
 /**
- * A single class feature from the processed class data
+ * A single class feature from the processed class data OR database
  */
 export interface ClassFeature {
-  id: string;
+  id?: string;
   name: string;
   level: number;
   source: string;
-  page: number;
-  featureType: 'base' | 'subclass';
-  description: string;
-  mechanics: FeatureMechanics;
+  page?: number;
+  featureType?: 'base' | 'subclass';
+
+  // Old format: flat description string (from processed JSON files)
+  description?: string;
+
+  // New format: nested entries array (from database)
+  entries?: any[]; // 5etools entry array structure
+
+  mechanics?: FeatureMechanics;
 
   // Choice system properties
-  isChoice: boolean;
+  isChoice?: boolean;
   requiresSelection?: boolean;
   choiceGroup?: string; // For embedded choices (old system)
 
@@ -87,13 +93,15 @@ export interface ClassFeature {
   usageType?: 'granted-option';
 
   // Scaling system
-  scales: boolean;
-  scalingProgression: ScalingProgression[];
+  scales?: boolean;
+  scalingProgression?: ScalingProgression[];
 
   // Subclass tracking
   subclass?: string;
+  className?: string;
+  classSource?: string;
 
-  prerequisites: string[];
+  prerequisites?: string[];
 }
 
 /**
@@ -101,15 +109,27 @@ export interface ClassFeature {
  */
 export interface ClassData {
   className: string;
+  slug?: string;
   source: string;
-  spellcasting: {
+  hitDie?: number;
+  primaryAbilities?: string[];
+  savingThrows?: string[];
+  proficiencies?: {
+    armor?: string[];
+    weapons?: string[];
+    tools?: string[];
+  };
+  spellcastingAbility?: string;
+  subclassTitle?: string;
+  spellcasting?: {
     ability: string;
     progression: string;
   } | null;
   features: ClassFeature[];
-  subclasses: {
+  subclasses?: {
     [subclassName: string]: ClassFeature[];
-  };
+  } | any[];
+  mechanics?: any; // Full 5etools raw structure
 }
 
 /**

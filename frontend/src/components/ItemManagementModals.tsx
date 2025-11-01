@@ -92,7 +92,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   background: rgba(0, 0, 0, 0.9);
   display: ${props => props.$isOpen ? 'flex' : 'none'};
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
   padding: 3rem 1rem 2rem;
@@ -319,30 +319,30 @@ const ItemDescription = styled.div`
   line-height: 1.6;
 `;
 
-const AddItemButton = styled.button<{ inInventory?: boolean }>`
+const AddItemButton = styled.button<{ $inInventory?: boolean }>`
   width: 100%;
   padding: 12px;
   margin-top: 20px;
-  background: ${props => props.inInventory
+  background: ${props => props.$inInventory
     ? 'rgba(255, 255, 255, 0.05)'
     : 'rgba(206, 144, 22, 0.15)'
   };
-  border: ${props => props.inInventory ? 'none' : '1px solid #ce9016'};
-  color: ${props => props.inInventory ? '#666' : '#ce9016'};
+  border: ${props => props.$inInventory ? 'none' : '1px solid #ce9016'};
+  color: ${props => props.$inInventory ? '#666' : '#ce9016'};
   border-radius: 6px;
   font-weight: 600;
   font-family: 'Cinzel', serif;
-  cursor: ${props => props.inInventory ? 'not-allowed' : 'pointer'};
+  cursor: ${props => props.$inInventory ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   text-transform: uppercase;
 
   &:hover:not(:disabled) {
-    background: ${props => props.inInventory
+    background: ${props => props.$inInventory
       ? 'rgba(255, 255, 255, 0.05)'
       : 'rgba(206, 144, 22, 0.25)'
     };
-    transform: ${props => props.inInventory ? 'none' : 'translateY(-2px)'};
-    box-shadow: ${props => props.inInventory ? 'none' : '0 6px 20px rgba(206, 144, 22, 0.4)'};
+    transform: ${props => props.$inInventory ? 'none' : 'translateY(-2px)'};
+    box-shadow: ${props => props.$inInventory ? 'none' : '0 6px 20px rgba(206, 144, 22, 0.4)'};
   }
 `;
 
@@ -725,7 +725,7 @@ export const ItemDetailsModalComponent: React.FC<ItemDetailsModalProps> = ({
           )}
 
           <AddItemButton
-            inInventory={inInventory}
+            $inInventory={inInventory}
             onClick={() => {
               if (!inInventory) {
                 onAddToInventory(item);

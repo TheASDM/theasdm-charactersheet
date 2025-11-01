@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Hero, CharacterSheet } from '../components';
+import { Hero, CharacterSheetPretty } from '../components';
 import {
   CharacterSheetData,
   createDefaultCharacterSheet,
@@ -311,7 +311,7 @@ const CharacterSheetTestPage: React.FC = () => {
                 </TestButton>
               </TestControls>
 
-              <CharacterSheet
+              <CharacterSheetPretty
                 character={characterData}
                 onUpdate={handleUpdate}
                 onSave={handleSave}

@@ -945,16 +945,23 @@ const extractProficiencies = (info: any) => {
   }
 
   const proficiencies = info.proficiencies || {};
+
+  // Helper to normalize proficiency data (handle both string and array formats)
+  const normalizeProf = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      if (value === 'None') return [];
+      return value.split(', ');
+    }
+    return [];
+  };
+
   return {
-    armor: proficiencies.armor ? proficiencies.armor.split(', ') : [],
-    weapons: proficiencies.weapons ? proficiencies.weapons.split(', ') : [],
-    tools:
-      proficiencies.tools === 'None'
-        ? []
-        : proficiencies.tools?.split(', ') || [],
-    savingThrows: proficiencies.savingThrows
-      ? proficiencies.savingThrows.split(', ')
-      : [],
+    armor: normalizeProf(proficiencies.armor),
+    weapons: normalizeProf(proficiencies.weapons),
+    tools: normalizeProf(proficiencies.tools),
+    savingThrows: normalizeProf(proficiencies.savingThrows),
   };
 };
 
@@ -1107,7 +1114,41 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
           })
         );
 
-        setDetectedChoices(promptsWithExternalOptions);
+        const dedupedPrompts: ChoicePrompt[] = [];
+        const seenOptionSignatures = new Set<string>();
+        const seenChoiceGroups = new Set<string>();
+
+        for (const prompt of promptsWithExternalOptions) {
+          const normalizedGroupKey = (prompt.choiceGroup || prompt.title || '')
+            .toLowerCase()
+            .replace(/[^a-z]/g, '');
+
+          if (normalizedGroupKey && seenChoiceGroups.has(normalizedGroupKey)) {
+            continue;
+          }
+
+          const optionSignature = (prompt.options || [])
+            .map((opt) => (opt.name || opt.id || '').toLowerCase())
+            .sort()
+            .join('|');
+
+          if (optionSignature.length === 0) {
+            dedupedPrompts.push(prompt);
+            continue;
+          }
+
+          if (seenOptionSignatures.has(optionSignature)) {
+            continue;
+          }
+
+          if (normalizedGroupKey) {
+            seenChoiceGroups.add(normalizedGroupKey);
+          }
+          seenOptionSignatures.add(optionSignature);
+          dedupedPrompts.push(prompt);
+        }
+
+        setDetectedChoices(dedupedPrompts);
       } catch (error) {
         logger.error('Failed to load class data:', error);
         setDetectedChoices([]);
@@ -1172,7 +1213,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   // Helper function to get class data (prioritize API, fallback to hardcoded)
   const getClassData = (className: string) => {
     // Try to find in API classes first (2024 data)
-    const apiClass = apiClasses.find(c => c.name === className);
+    const apiClass = apiClasses.find(c => (c.className || c.name) === className);
     if (apiClass) {
       // Add extracted choices to API class data
       const choices = extractChoicesFromAPI(apiClass);
@@ -1182,6 +1223,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
       };
     }
     // Fallback to hardcoded CLASS_DATA if API hasn't loaded yet
+    console.warn('⚠️ API class not found, falling back to hardcoded CLASS_DATA for:', className);
     return CLASS_DATA[className as keyof typeof CLASS_DATA];
   };
 
@@ -1214,9 +1256,14 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
       classProficiencies: proficiencies,
       classFeatures,
       hitDice: `d${classData.hitDie}`,
-      primaryAbility: Array.isArray(classData.primaryAbility)
-        ? classData.primaryAbility
-        : [classData.primaryAbility],
+      primaryAbility: (() => {
+        // Handle both API format (primaryAbilities array) and hardcoded format (primaryAbility string)
+        const abilities = (classData as any).primaryAbilities || (classData as any).primaryAbility;
+        if (Array.isArray(abilities)) {
+          return abilities.filter((a: any): a is string => typeof a === 'string' && a !== undefined);
+        }
+        return typeof abilities === 'string' ? [abilities] : [];
+      })(),
       spellcaster: isSpellcaster,
       spellcastingAbility: spellcastingAbility,
       classStartingEquipment: classEquipment,
@@ -1416,15 +1463,16 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
 
               <ChoiceGrid>
                 {prompt.options.map((option) => {
-                  const isSelected = currentSelections.includes(option.id);
+                  const optionId = option.id || option.name;
+                  const isSelected = currentSelections.includes(optionId);
                   const isAtLimit = !isSelected && currentSelections.length >= maxSelections;
 
                   return (
                     <ModalChoiceCard
-                      key={option.id}
+                      key={optionId}
                       type="button"
                       $selected={isSelected}
-                      onClick={() => !isAtLimit && handleClassChoiceToggle(prompt.choiceGroup, option.id, maxSelections)}
+                      onClick={() => !isAtLimit && handleClassChoiceToggle(prompt.choiceGroup, optionId, maxSelections)}
                     >
                       <ModalChoiceTitle>{option.name}</ModalChoiceTitle>
                       <ModalChoiceOptionText>
