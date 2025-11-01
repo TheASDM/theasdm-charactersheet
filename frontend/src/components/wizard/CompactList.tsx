@@ -6,11 +6,13 @@ export interface CompactListProps<T> {
   isSelected?: (item: T) => boolean;
   onDetails: (item: T) => void;
   onSelect: (item: T) => void;
+  onUnselect?: (item: T) => void; // Optional unselect handler for toggle behavior
   renderName: (item: T) => React.ReactNode;
   renderSummary?: (item: T) => React.ReactNode;
   renderPreview?: (item: T) => React.ReactNode; // Enhanced preview with key stats/mechanics
   detailsLabel?: string;
   selectLabel?: string;
+  unselectLabel?: string;
   className?: string;
 }
 
@@ -156,17 +158,34 @@ export function CompactList<T>({
   isSelected,
   onDetails,
   onSelect,
+  onUnselect,
   renderName,
   renderSummary,
   renderPreview,
   detailsLabel = 'Details',
   selectLabel = 'Select',
+  unselectLabel = 'Unselect',
   className,
 }: CompactListProps<T>) {
   return (
     <ListContainer className={className}>
       {items.map((item, index) => {
         const selected = isSelected?.(item) ?? false;
+
+        // Determine action handler - toggle if onUnselect is provided
+        const handleSelectClick = () => {
+          if (selected && onUnselect) {
+            onUnselect(item);
+          } else {
+            onSelect(item);
+          }
+        };
+
+        // Determine button label
+        const actionLabel = selected && onUnselect ? unselectLabel : selectLabel;
+        const actionAriaLabel = selected && onUnselect
+          ? `Unselect ${renderName(item)}`
+          : `Select ${renderName(item)}`;
 
         return (
           <ListItem key={index} $isSelected={selected}>
@@ -191,10 +210,10 @@ export function CompactList<T>({
               </ActionButton>
               <ActionButton
                 variant="primary"
-                onClick={() => onSelect(item)}
-                aria-label={`Select ${renderName(item)}`}
+                onClick={handleSelectClick}
+                aria-label={actionAriaLabel}
               >
-                {selectLabel}
+                {actionLabel}
               </ActionButton>
             </Actions>
           </ListItem>
