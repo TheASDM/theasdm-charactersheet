@@ -329,18 +329,19 @@ const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate })
 
   const renderFeatDetails = (feat: Feat) => {
     // Parse the entries array through the template parser
-    // Fall back to message if entries is not available
-    const content = feat.entries || 'No description available';
+    // Feat data structure: feat.entries might be undefined, but mechanics.entries should have the data
+    const mechanics = (feat as any).mechanics || {};
+    const content = feat.entries || mechanics.entries || 'No description available';
     const parsedEntries = parseComplexDnDEntry(content);
 
     return (
       <DetailsContent>
         <div style={{ whiteSpace: 'pre-wrap' }}>{parsedEntries}</div>
 
-        {feat.prerequisites && (
+        {(feat.prerequisites || mechanics.prerequisite) && (
           <>
             <h3>Prerequisites</h3>
-            <p>{JSON.stringify(feat.prerequisites)}</p>
+            <p>{parseComplexDnDEntry(feat.prerequisites || mechanics.prerequisite)}</p>
           </>
         )}
       </DetailsContent>
@@ -349,8 +350,11 @@ const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate })
 
   const getFeatSummary = (feat: Feat): string => {
     // Extract first sentence or key benefit from feat
-    if (feat.entries && Array.isArray(feat.entries) && feat.entries.length > 0) {
-      const firstEntry = feat.entries[0];
+    const mechanics = (feat as any).mechanics || {};
+    const entries = feat.entries || mechanics.entries;
+
+    if (entries && Array.isArray(entries) && entries.length > 0) {
+      const firstEntry = entries[0];
       if (typeof firstEntry === 'string') {
         const match = firstEntry.match(/^[^.!?]+[.!?]/);
         return match ? match[0] : firstEntry.slice(0, 100) + '...';
