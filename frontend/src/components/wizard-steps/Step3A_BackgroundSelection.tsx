@@ -431,8 +431,6 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
 
     return (
       <DetailsContent>
-        <p>{background.description || 'No description available.'}</p>
-
         <h3>Features</h3>
         {skills.length > 0 && (
           <p>

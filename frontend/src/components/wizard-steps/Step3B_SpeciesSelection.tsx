@@ -589,8 +589,6 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
 
     return (
       <DetailsContent>
-        {species.description && <p>{species.description}</p>}
-
         <h3>Basic Info</h3>
         <p><FeatureLabel>Creature Type:</FeatureLabel> {species.creatureType}</p>
         <p><FeatureLabel>Size:</FeatureLabel> {Array.isArray(species.size) ? species.size.join(' or ') : species.size}</p>
