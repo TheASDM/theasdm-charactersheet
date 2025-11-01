@@ -226,6 +226,44 @@ const ClassSelectionInfo = styled.div`
   }
 `;
 
+const PrimaryAbilitiesBox = styled.div`
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
+  border: 2px solid rgba(76, 175, 80, 0.4);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  h4 {
+    color: #6aa84f;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    margin: 0 0 0.75rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &::before {
+      content: '⚔️';
+      font-size: 1.2rem;
+    }
+  }
+
+  p {
+    color: #c0aa70;
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+
+    strong {
+      color: #6aa84f;
+      font-weight: 600;
+    }
+  }
+`;
+
 
 const ModalChoiceCard = styled.button<{ $selected?: boolean }>`
   display: flex;
@@ -1552,6 +1590,20 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
             Click "Details" to review class information, or "Select" to choose and configure your class.
           </p>
         </ClassSelectionInfo>
+
+        {data.selectedClass && (() => {
+          const selectedClassData = getClassData(data.selectedClass);
+          const primaryAbility = selectedClassData?.primaryAbility || 'Various';
+          return (
+            <PrimaryAbilitiesBox>
+              <h4>Primary Ability</h4>
+              <p>
+                Your <strong>{data.selectedClass}</strong> primarily uses <strong>{primaryAbility}</strong> for class features and abilities.
+                Focus on this ability score during character creation for optimal effectiveness.
+              </p>
+            </PrimaryAbilitiesBox>
+          );
+        })()}
 
         <CompactList
           items={classOptions.map((className) => ({
