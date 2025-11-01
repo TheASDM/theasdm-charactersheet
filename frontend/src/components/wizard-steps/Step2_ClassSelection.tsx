@@ -1592,24 +1592,34 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         </ClassSelectionInfo>
 
         {data.selectedClass && (() => {
-          const selectedClassData = getClassData(data.selectedClass);
-          const primaryAbility = selectedClassData?.primaryAbility || 'Various';
+          // Find the actual class data from API
+          const apiClass = apiClasses.find((c: any) => c.name === data.selectedClass || c.className === data.selectedClass);
+          const primaryAbilities = apiClass?.primaryAbilities || [];
+          const primaryAbilityText = primaryAbilities.length > 0
+            ? primaryAbilities.join(' or ')
+            : 'Various';
+
           return (
             <PrimaryAbilitiesBox>
-              <h4>Primary Ability</h4>
+              <h4>Primary {primaryAbilities.length > 1 ? 'Abilities' : 'Ability'}</h4>
               <p>
-                Your <strong>{data.selectedClass}</strong> primarily uses <strong>{primaryAbility}</strong> for class features and abilities.
-                Focus on this ability score during character creation for optimal effectiveness.
+                Your <strong>{data.selectedClass}</strong> primarily uses <strong>{primaryAbilityText}</strong> for class features and abilities.
+                Focus on {primaryAbilities.length > 1 ? 'these ability scores' : 'this ability score'} during character creation for optimal effectiveness.
               </p>
             </PrimaryAbilitiesBox>
           );
         })()}
 
         <CompactList
-          items={classOptions.map((className) => ({
-            name: className,
-            ...getClassData(className),
-          }))}
+          items={classOptions.map((className) => {
+            // Find the API class data for this class
+            const apiClass = apiClasses.find((c: any) => c.name === className || c.className === className);
+            return {
+              name: className,
+              ...getClassData(className),
+              apiData: apiClass, // Include API data
+            };
+          })}
           isSelected={(cls) => cls.name === data.selectedClass}
           onDetails={(cls) => setDetailsClass(cls.name)}
           onSelect={(cls) => handleClassSelect(cls.name)}
@@ -1619,9 +1629,12 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
           }
           renderPreview={(cls) => {
             const classData = cls as any;
+            const apiData = classData.apiData;
+            const primaryAbilities = apiData?.primaryAbilities || [];
+            const primaryText = primaryAbilities.length > 0 ? primaryAbilities.join('/') : 'Varied';
             return (
               <>
-                <strong>Hit Die:</strong> d{classData.hitDie || '?'} • <strong>Primary:</strong> {classData.primaryAbility || 'Varied'}
+                <strong>Hit Die:</strong> d{apiData?.hitDie || classData.hitDie || '?'} • <strong>Primary:</strong> {primaryText}
               </>
             );
           }}
