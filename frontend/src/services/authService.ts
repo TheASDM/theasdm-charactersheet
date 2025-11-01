@@ -1,4 +1,4 @@
-import { apiClient, request, resolveApiUrl, withSignal } from './api';
+import { apiClient, request, withSignal, getApiBaseUrl } from './api';
 import { ApiResult, User, ok, isError } from '@/types/api';
 import { getSessionToken } from './session';
 
@@ -72,7 +72,7 @@ export const getDiscordLoginUrl = (redirectTo?: string): string => {
   if (redirectTo) {
     query.set('redirectTo', redirectTo);
   }
-  const base = resolveApiUrl('/auth/discord');
+  const base = `${getApiBaseUrl()}/auth/discord`;
   const hasQuery = query.toString();
   return hasQuery ? `${base}?${query.toString()}` : base;
 };

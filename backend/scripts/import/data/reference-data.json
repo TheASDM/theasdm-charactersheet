@@ -1,0 +1,44 @@
+{
+  "spell_schools": [
+    { "code": "A", "name": "Abjuration", "description": "Protective and warding magic." },
+    { "code": "C", "name": "Conjuration", "description": "Summoning objects and creatures or teleporting." },
+    { "code": "D", "name": "Divination", "description": "Revealing information through magic." },
+    { "code": "E", "name": "Enchantment", "description": "Influencing and charming other beings." },
+    { "code": "I", "name": "Illusion", "description": "Deceiving the senses with false images." },
+    { "code": "N", "name": "Necromancy", "description": "Manipulating life force and undead." },
+    { "code": "T", "name": "Transmutation", "description": "Changing the properties of creatures or objects." },
+    { "code": "V", "name": "Evocation", "description": "Projecting elemental energy and raw magic." }
+  ],
+  "damage_types": [
+    { "slug": "acid", "name": "Acid", "description": "Corrosive substances that burn away material." },
+    { "slug": "bludgeoning", "name": "Bludgeoning", "description": "Impact from weapons or falling objects." },
+    { "slug": "cold", "name": "Cold", "description": "Extreme low temperatures that freeze." },
+    { "slug": "fire", "name": "Fire", "description": "Flames and intense heat." },
+    { "slug": "force", "name": "Force", "description": "Pure magical energy." },
+    { "slug": "lightning", "name": "Lightning", "description": "Electric discharges and storms." },
+    { "slug": "necrotic", "name": "Necrotic", "description": "Decay, entropy, and draining life force." },
+    { "slug": "piercing", "name": "Piercing", "description": "Attacks from pointed weapons." },
+    { "slug": "poison", "name": "Poison", "description": "Toxins that weaken or kill." },
+    { "slug": "psychic", "name": "Psychic", "description": "Mental assaults and telepathic force." },
+    { "slug": "radiant", "name": "Radiant", "description": "Holy light and celestial energy." },
+    { "slug": "slashing", "name": "Slashing", "description": "Cuts from sharpened weapons." },
+    { "slug": "thunder", "name": "Thunder", "description": "Resounding booms and concussive force." }
+  ],
+  "conditions": [
+    { "slug": "blinded", "name": "Blinded", "description": "A blinded creature can't see and automatically fails any ability check that requires sight." },
+    { "slug": "charmed", "name": "Charmed", "description": "A charmed creature can't attack the charmer or target the charmer with harmful abilities or magical effects." },
+    { "slug": "deafened", "name": "Deafened", "description": "A deafened creature can't hear and automatically fails any ability check that requires hearing." },
+    { "slug": "exhaustion", "name": "Exhaustion", "description": "Progressive penalties from extreme physical or mental strain." },
+    { "slug": "frightened", "name": "Frightened", "description": "A frightened creature has disadvantage on ability checks and attack rolls while the source of its fear is within line of sight." },
+    { "slug": "grappled", "name": "Grappled", "description": "Speed becomes 0, and the grappled creature can't benefit from any bonus to its speed." },
+    { "slug": "incapacitated", "name": "Incapacitated", "description": "An incapacitated creature can't take actions or reactions." },
+    { "slug": "invisible", "name": "Invisible", "description": "An invisible creature is impossible to see without the aid of magic or a special sense." },
+    { "slug": "paralyzed", "name": "Paralyzed", "description": "A paralyzed creature is incapacitated and can't move or speak." },
+    { "slug": "petrified", "name": "Petrified", "description": "A petrified creature is transformed into a solid inanimate substance." },
+    { "slug": "poisoned", "name": "Poisoned", "description": "A poisoned creature has disadvantage on attack rolls and ability checks." },
+    { "slug": "prone", "name": "Prone", "description": "A prone creature's only movement option is to crawl." },
+    { "slug": "restrained", "name": "Restrained", "description": "Speed becomes 0, and attack rolls against the creature have advantage." },
+    { "slug": "stunned", "name": "Stunned", "description": "A stunned creature is incapacitated and can't move." },
+    { "slug": "unconscious", "name": "Unconscious", "description": "An unconscious creature is incapacitated, can't move or speak, and is unaware of its surroundings." }
+  ]
+}

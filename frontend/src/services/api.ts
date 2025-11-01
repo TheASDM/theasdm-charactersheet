@@ -42,7 +42,7 @@ export const setAuthTokenGetter = (getter: AuthTokenGetter | null) => {
   authTokenGetter = getter;
 };
 
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }

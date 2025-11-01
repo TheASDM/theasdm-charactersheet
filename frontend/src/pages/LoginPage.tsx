@@ -12,7 +12,6 @@ import {
   AuthFooter,
   FooterText,
   FooterLink,
-  DiscordButton,
 } from '../styles/authStyles';
 import styled from 'styled-components';
 
@@ -78,6 +77,31 @@ const Divider = styled.div`
     padding: 0 1rem;
     color: #666;
     font-size: 0.9rem;
+  }
+`;
+
+const DiscordButton = styled.button`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #5865f2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:hover:not(:disabled) {
+    background-color: #4752c4;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 
