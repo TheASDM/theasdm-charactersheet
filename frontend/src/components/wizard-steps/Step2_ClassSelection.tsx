@@ -1565,6 +1565,14 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
           renderSummary={(cls) =>
             (cls as any).description || `A ${cls.name.toLowerCase()} adventurer with unique abilities and skills.`
           }
+          renderPreview={(cls) => {
+            const classData = cls as any;
+            return (
+              <>
+                <strong>Hit Die:</strong> d{classData.hitDie || '?'} • <strong>Primary:</strong> {classData.primaryAbility || 'Varied'}
+              </>
+            );
+          }}
           detailsLabel="Details"
           selectLabel="Select"
         />

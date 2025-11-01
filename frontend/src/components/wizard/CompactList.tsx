@@ -8,6 +8,7 @@ export interface CompactListProps<T> {
   onSelect: (item: T) => void;
   renderName: (item: T) => React.ReactNode;
   renderSummary?: (item: T) => React.ReactNode;
+  renderPreview?: (item: T) => React.ReactNode; // Enhanced preview with key stats/mechanics
   detailsLabel?: string;
   selectLabel?: string;
   className?: string;
@@ -66,6 +67,20 @@ const ItemSummary = styled.div`
   color: #c0aa70;
   font-size: 0.8rem;
   line-height: 1.3;
+`;
+
+const ItemPreview = styled.div`
+  color: #a69468;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(206, 144, 22, 0.2);
+
+  strong {
+    color: #ce9016;
+    font-weight: 600;
+  }
 `;
 
 const SelectedIndicator = styled.div`
@@ -143,6 +158,7 @@ export function CompactList<T>({
   onSelect,
   renderName,
   renderSummary,
+  renderPreview,
   detailsLabel = 'Details',
   selectLabel = 'Select',
   className,
@@ -158,6 +174,9 @@ export function CompactList<T>({
               <ItemName>{renderName(item)}</ItemName>
               {renderSummary && (
                 <ItemSummary>{renderSummary(item)}</ItemSummary>
+              )}
+              {renderPreview && (
+                <ItemPreview>{renderPreview(item)}</ItemPreview>
               )}
               {selected && <SelectedIndicator>Selected</SelectedIndicator>}
             </ItemInfo>
