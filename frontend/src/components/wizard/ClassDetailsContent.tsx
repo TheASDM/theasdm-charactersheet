@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
 
 interface ClassDetailsContentProps {
   classData: {
@@ -147,7 +148,7 @@ export const ClassDetailsContent: React.FC<ClassDetailsContentProps> = ({ classD
 
   return (
     <DetailsContainer>
-      {description && <Description>{description}</Description>}
+      {description && <Description>{parseComplexDnDEntry(description)}</Description>}
 
       <Section>
         <SectionTitle>Basic Information</SectionTitle>
@@ -200,7 +201,7 @@ export const ClassDetailsContent: React.FC<ClassDetailsContentProps> = ({ classD
           <SectionTitle>Level 1 Features</SectionTitle>
           <FeatureList>
             {getLevel1Features().map((feature: string, index: number) => (
-              <FeatureItem key={index}>{feature}</FeatureItem>
+              <FeatureItem key={index}>{parseComplexDnDEntry(feature)}</FeatureItem>
             ))}
           </FeatureList>
         </Section>
