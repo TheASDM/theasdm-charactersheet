@@ -114,6 +114,21 @@ export const ClassDetailsContent: React.FC<ClassDetailsContentProps> = ({ classD
     return primaryAbility;
   };
 
+  const formatProficiency = (value: string | string[] | any[] | any | undefined): string => {
+    if (!value) return 'None';
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+      // Filter out any non-string values and join with commas
+      const stringValues = value.filter((v: any) => typeof v === 'string');
+      return stringValues.length > 0 ? stringValues.join(', ') : 'None';
+    }
+    // For objects or other types, try to extract meaningful data
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    return 'None';
+  };
+
   const getLevel1Features = () => {
     if (features) return features;
     if (classFeatures && classFeatures['1']) {
@@ -155,25 +170,25 @@ export const ClassDetailsContent: React.FC<ClassDetailsContentProps> = ({ classD
             {proficiencies.armor && (
               <>
                 <StatLabel>Armor:</StatLabel>
-                <StatValue>{proficiencies.armor}</StatValue>
+                <StatValue>{formatProficiency(proficiencies.armor)}</StatValue>
               </>
             )}
             {proficiencies.weapons && (
               <>
                 <StatLabel>Weapons:</StatLabel>
-                <StatValue>{proficiencies.weapons}</StatValue>
+                <StatValue>{formatProficiency(proficiencies.weapons)}</StatValue>
               </>
             )}
             {proficiencies.tools && (
               <>
                 <StatLabel>Tools:</StatLabel>
-                <StatValue>{proficiencies.tools}</StatValue>
+                <StatValue>{formatProficiency(proficiencies.tools)}</StatValue>
               </>
             )}
             {proficiencies.skills && (
               <>
                 <StatLabel>Skills:</StatLabel>
-                <StatValue>{proficiencies.skills}</StatValue>
+                <StatValue>{formatProficiency(proficiencies.skills)}</StatValue>
               </>
             )}
           </StatGrid>

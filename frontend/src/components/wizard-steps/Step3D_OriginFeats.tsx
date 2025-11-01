@@ -329,7 +329,9 @@ const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate })
 
   const renderFeatDetails = (feat: Feat) => {
     // Parse the entries array through the template parser
-    const parsedEntries = parseComplexDnDEntry(feat.entries);
+    // Fall back to description if entries is not available
+    const content = feat.entries || feat.description || 'No description available';
+    const parsedEntries = parseComplexDnDEntry(content);
 
     return (
       <DetailsContent>
