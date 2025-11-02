@@ -207,6 +207,17 @@ export const EditableInput = styled.input`
     border-bottom: 1px solid #ce9016;
     background: rgba(206, 144, 22, 0.1);
   }
+
+  /* Hide number input spinners */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
 `;
 
 // Edit controls for sections

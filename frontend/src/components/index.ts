@@ -15,6 +15,7 @@ export { default as Hero } from './Hero';
 
 // Character Sheet Components
 export { default as CharacterSheetPretty } from './CharacterSheetPretty';
+export { default as CharacterFeaturesTab } from './CharacterFeaturesTab';
 
 // Modal Components
 export { default as BackgroundSelectionModal } from './BackgroundSelectionModal';

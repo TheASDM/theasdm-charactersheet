@@ -6,7 +6,6 @@ import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import type { Equipment } from '@/types/api';
 import { EquipmentItemModal } from '../EquipmentItemModal';
-import { AbilityScoresHeader } from './AbilityScoresHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { logger } from '../../utils/logger';
 import {
@@ -791,7 +790,6 @@ export const Step4EquipmentSelection: FC<Step4EquipmentSelectionProps> = ({
         Complete equipment list from the database. Click items to select them for your character.
       </div>
 
-      <AbilityScoresHeader data={data} />
 
       {smartDefaults.length > 0 && (
         <SmartDefaultsSection>

@@ -17,7 +17,7 @@ import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { CompactList } from '../wizard/CompactList';
 import { DetailsModal } from '../wizard/DetailsModal';
 import { ClassDetailsContent } from '../wizard/ClassDetailsContent';
-import { CLASS_STARTING_EQUIPMENT } from '../../constants/startingEquipment';
+// CLASS_STARTING_EQUIPMENT is now deprecated - we extract from API data instead
 
 // Complete list of all D&D skills for classes that can choose "any" skill
 const ALL_SKILLS = [
@@ -206,64 +206,6 @@ const SelectionStatus = styled.div<{ $complete?: boolean }>`
   color: ${({ $complete }) => ($complete ? '#6aa84f' : '#ce9016')};
   letter-spacing: 0.4px;
 `;
-
-const ClassSelectionInfo = styled.div`
-  background: rgba(206, 144, 22, 0.1);
-  border: 1px solid rgba(206, 144, 22, 0.3);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-
-  h4 {
-    color: #ce9016;
-    margin: 0 0 0.5rem 0;
-  }
-
-  p {
-    color: #ccc;
-    margin: 0;
-    font-size: 0.9rem;
-  }
-`;
-
-const PrimaryAbilitiesBox = styled.div`
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(26, 26, 26, 0.8) 100%);
-  border: 2px solid rgba(76, 175, 80, 0.4);
-  border-radius: 10px;
-  padding: 1.25rem;
-  margin: 1.5rem 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-
-  h4 {
-    color: #6aa84f;
-    font-family: 'Cinzel', serif;
-    font-size: 1.1rem;
-    margin: 0 0 0.75rem 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-
-    &::before {
-      content: '⚔️';
-      font-size: 1.2rem;
-    }
-  }
-
-  p {
-    color: #c0aa70;
-    margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.6;
-
-    strong {
-      color: #6aa84f;
-      font-weight: 600;
-    }
-  }
-`;
-
 
 const ModalChoiceCard = styled.button<{ $selected?: boolean }>`
   display: flex;
@@ -999,7 +941,8 @@ const extractProficiencies = (info: any) => {
     armor: normalizeProf(proficiencies.armor),
     weapons: normalizeProf(proficiencies.weapons),
     tools: normalizeProf(proficiencies.tools),
-    savingThrows: normalizeProf(proficiencies.savingThrows),
+    // savingThrows comes from top-level of class data, not proficiencies object
+    savingThrows: normalizeProf(info.savingThrows),
   };
 };
 
@@ -1070,6 +1013,51 @@ const extractClassFeatures = (info: any) => {
 
 const getSpellcastingAbility = (name: string) => SPELLCASTING_ABILITIES[name];
 
+/**
+ * Extract ALL equipment items from class starting equipment API data
+ * User wants every possible item, not just one choice option
+ * Excludes coinage (GP/SP/CP)
+ */
+const extractAllClassEquipment = (startingEquipment: any): string[] => {
+  if (!startingEquipment) return [];
+
+  const items: string[] = [];
+
+  // Handle defaultData structure from API
+  if (startingEquipment.defaultData && Array.isArray(startingEquipment.defaultData)) {
+    startingEquipment.defaultData.forEach((choiceSet: any) => {
+      // Extract from all options (A, B, C, etc.) - we want ALL items
+      Object.values(choiceSet).forEach((optionItems: any) => {
+        if (Array.isArray(optionItems)) {
+          optionItems.forEach((equipItem: any) => {
+            // Skip gold/currency
+            if (equipItem && typeof equipItem === 'object' && equipItem.value !== undefined) {
+              return; // Skip coinage
+            }
+
+            if (equipItem && typeof equipItem === 'object' && equipItem.item) {
+              // Extract item name, remove source suffix like |xphb
+              const itemName = equipItem.item.replace(/\|.*$/, '');
+              const quantity = equipItem.quantity || 1;
+
+              // Format with quantity if > 1
+              if (quantity > 1) {
+                items.push(`${itemName} (${quantity})`);
+              } else {
+                items.push(itemName);
+              }
+            } else if (typeof equipItem === 'string') {
+              items.push(equipItem.replace(/\|.*$/, ''));
+            }
+          });
+        }
+      });
+    });
+  }
+
+  return items;
+};
+
 export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   data,
   onUpdate
@@ -1105,6 +1093,14 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
   }, [fetchClasses]);
 
   const apiClasses = fetchedClasses ?? [];
+
+  // DEBUG: Log API classes to see what we're getting
+  useEffect(() => {
+    if (fetchedClasses) {
+      console.log('📊 API Classes loaded:', fetchedClasses.length, 'classes');
+      console.log('📊 First class example:', fetchedClasses[0]);
+    }
+  }, [fetchedClasses]);
 
   // Load class data and detect choices when class is selected
   useEffect(() => {
@@ -1262,6 +1258,7 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     }
     // Fallback to hardcoded CLASS_DATA if API hasn't loaded yet
     console.warn('⚠️ API class not found, falling back to hardcoded CLASS_DATA for:', className);
+    console.warn('   Available API classes:', apiClasses.map(c => c.className || c.name));
     return CLASS_DATA[className as keyof typeof CLASS_DATA];
   };
 
@@ -1283,8 +1280,18 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     const isSpellcaster = SPELLCASTER_CLASSES.has(className);
     const spellcastingAbility = getSpellcastingAbility(className);
 
-    // Get starting equipment for this class
-    const classEquipment = CLASS_STARTING_EQUIPMENT[className] || [];
+    // Get starting equipment for this class - extract ALL items from API data
+    const classEquipment = (() => {
+      // Try to get from API mechanics data first
+      if (classData && (classData as any).mechanics?.class) {
+        const xphbClass = (classData as any).mechanics.class.find((c: any) => c.source === 'XPHB');
+        if (xphbClass?.startingEquipment) {
+          return extractAllClassEquipment(xphbClass.startingEquipment);
+        }
+      }
+      // Fallback to empty if no equipment found
+      return [];
+    })();
 
     onUpdate({
       selectedClass: className,
@@ -1573,6 +1580,16 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
     );
   }
 
+  // Don't render until we have API data
+  if (!fetchedClasses || fetchedClasses.length === 0) {
+    return (
+      <StepContainer>
+        <div className="step-title">Class</div>
+        <LoadingSpinner message="Loading class data..." />
+      </StepContainer>
+    );
+  }
+
   return (
     <>
       <StepContainer>
@@ -1583,32 +1600,6 @@ export const Step2ClassSelection: React.FC<Step2ClassSelectionProps> = ({
         <div className="step-description">
           Your class is the foundation of your character, determining your capabilities, hit points, and core features.
         </div>
-
-        <ClassSelectionInfo>
-          <h4>Class Selection - Following 2024 PHB</h4>
-          <p>
-            Click "Details" to review class information, or "Select" to choose and configure your class.
-          </p>
-        </ClassSelectionInfo>
-
-        {data.selectedClass && (() => {
-          // Find the actual class data from API
-          const apiClass = apiClasses.find((c: any) => c.name === data.selectedClass || c.className === data.selectedClass);
-          const primaryAbilities = apiClass?.primaryAbilities || [];
-          const primaryAbilityText = primaryAbilities.length > 0
-            ? primaryAbilities.join(' or ')
-            : 'Various';
-
-          return (
-            <PrimaryAbilitiesBox>
-              <h4>Primary {primaryAbilities.length > 1 ? 'Abilities' : 'Ability'}</h4>
-              <p>
-                Your <strong>{data.selectedClass}</strong> primarily uses <strong>{primaryAbilityText}</strong> for class features and abilities.
-                Focus on {primaryAbilities.length > 1 ? 'these ability scores' : 'this ability score'} during character creation for optimal effectiveness.
-              </p>
-            </PrimaryAbilitiesBox>
-          );
-        })()}
 
         <CompactList
           items={classOptions.map((className) => {

@@ -10,7 +10,6 @@ import { resolveAndDeduplicateSpells } from '@/utils/spellResolver';
 import { extractSpeciesFlavorText } from '@/utils/flavorTextExtractor';
 import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { AbilityScoresHeader } from './AbilityScoresHeader';
 import { CompactList } from '../wizard/CompactList';
 import { DetailsModal } from '../wizard/DetailsModal';
 import { SelectModal } from '../wizard/SelectModal';
@@ -888,8 +887,6 @@ export const Step3BSpeciesSelection: React.FC<Step3BSpeciesSelectionProps> = ({ 
 
   return (
     <StepContainer>
-      <AbilityScoresHeader data={data} />
-
       <div className="step-description" style={{ marginBottom: '1rem' }}>
         Choose your character's species. Each species grants unique traits and abilities.
       </div>

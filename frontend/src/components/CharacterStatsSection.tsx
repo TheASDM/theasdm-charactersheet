@@ -1,4 +1,5 @@
 import React from 'react';
+import styled from 'styled-components';
 import { CharacterSheetData } from '../types/characterSheet';
 import {
   StatsContainer,
@@ -9,6 +10,60 @@ import {
   HPArrows,
   HPArrow,
 } from '../styles/components';
+
+// Map class names to hit die types
+const CLASS_HIT_DICE: Record<string, string> = {
+  'Barbarian': 'd12',
+  'Fighter': 'd10',
+  'Paladin': 'd10',
+  'Ranger': 'd10',
+  'Bard': 'd8',
+  'Cleric': 'd8',
+  'Druid': 'd8',
+  'Monk': 'd8',
+  'Rogue': 'd8',
+  'Warlock': 'd8',
+  'Sorcerer': 'd6',
+  'Wizard': 'd6',
+};
+
+const HitDiceContainer = styled.div`
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(51, 51, 51, 0.5);
+  text-align: center;
+`;
+
+const HitDiceLabel = styled.div`
+  font-size: 0.65rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.3rem;
+`;
+
+const HitDiceCheckboxContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 0.2rem;
+  margin-top: 0.25rem;
+`;
+
+const HitDiceCheckbox = styled.button<{ $used: boolean }>`
+  width: 12px;
+  height: 12px;
+  border: 1px solid ${props => props.$used ? '#555' : '#ce9016'};
+  background: ${props => props.$used ? 'rgba(85, 85, 85, 0.3)' : 'transparent'};
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+
+  &:hover {
+    background: ${props => props.$used ? 'rgba(85, 85, 85, 0.5)' : 'rgba(206, 144, 22, 0.2)'};
+    border-color: #ce9016;
+  }
+`;
 
 interface CharacterStatsSectionProps {
   character: CharacterSheetData;
@@ -25,6 +80,24 @@ export const CharacterStatsSection: React.FC<CharacterStatsSectionProps> = ({
   updateCharacter,
   adjustStat,
 }) => {
+  // Get hit die type based on class
+  const hitDieType = CLASS_HIT_DICE[character.class] || 'd8';
+  const hitDiceTotal = character.hitDice.max;
+  const hitDiceSpent = character.hitDice.spent;
+  const hitDiceRemaining = hitDiceTotal - hitDiceSpent;
+
+  // Toggle hit dice spent/available
+  const toggleHitDice = (index: number) => {
+    const newSpent = index < hitDiceSpent ? hitDiceSpent - 1 : hitDiceSpent + 1;
+    updateCharacter({
+      hitDice: {
+        ...character.hitDice,
+        spent: Math.max(0, Math.min(hitDiceTotal, newSpent)),
+        current: hitDiceTotal - newSpent,
+      },
+    });
+  };
+
   return (
     <StatsContainer>
       <StatsSection>
@@ -107,6 +180,21 @@ export const CharacterStatsSection: React.FC<CharacterStatsSectionProps> = ({
               {character.hitPoints.current}/{character.hitPoints.max}
             </div>
           )}
+
+          {/* Hit Dice Display */}
+          <HitDiceContainer>
+            <HitDiceLabel>Hit Dice: {hitDiceRemaining} ({hitDieType})</HitDiceLabel>
+            <HitDiceCheckboxContainer>
+              {Array.from({ length: hitDiceTotal }).map((_, index) => (
+                <HitDiceCheckbox
+                  key={index}
+                  $used={index < hitDiceSpent}
+                  onClick={() => toggleHitDice(index)}
+                  title={index < hitDiceSpent ? 'Click to restore' : 'Click to spend'}
+                />
+              ))}
+            </HitDiceCheckboxContainer>
+          </HitDiceContainer>
         </StatBox>
       </StatsSection>
 

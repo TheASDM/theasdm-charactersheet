@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import { AbilityScoresHeader } from './AbilityScoresHeader';
 import { mapGeneratorDataToCharacterSheet } from '../../utils/characterDataMapper';
 import { characterService } from '../../services/characterService';
 import { StructuredFeaturesDisplay } from '../StructuredFeaturesDisplay';
@@ -636,7 +635,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
     equipmentArray.forEach((entry) => {
       // Handle simple strings
       if (typeof entry === 'string') {
-        items.push(entry);
+        items.push(titleCase(parseDnDTemplateTag(entry)));
         return;
       }
 
@@ -655,7 +654,7 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
       if (entry.A && Array.isArray(entry.A) && !entry.type) {
         entry.A.forEach((item: any) => {
           if (typeof item === 'string') {
-            items.push(parseDnDTemplateTag(item));
+            items.push(titleCase(parseDnDTemplateTag(item)));
           }
         });
         return;
@@ -728,7 +727,6 @@ export const Step5ReviewCreate: React.FC<Step5ReviewCreateProps> = ({
         Review your character details and create your D&D 2024 character sheet.
       </div>
 
-      <AbilityScoresHeader data={data} />
 
       <ReviewContainer>
         {/* Left Column - Character Overview */}

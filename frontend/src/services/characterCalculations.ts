@@ -513,13 +513,17 @@ export function calculateDerivedValues(character: CharacterSheetData) {
     isPerceptionProficient
   );
 
+  // Calculate max mana from spell slots
+  const maxMana = calculateMaxMana(character);
+
   return {
     proficiencyBonus,
     abilityModifiers,
     savingThrows,
     armorClass,
     initiative,
-    passivePerception
+    passivePerception,
+    maxMana
   };
 }
 
@@ -696,6 +700,27 @@ export function calculateSpellSlots(character: CharacterSheetData): Record<strin
   }
 
   return {};
+}
+
+/**
+ * Calculate maximum mana from spell slots
+ * Formula: Each slot costs its level in mana
+ * Example: 4 × 1st level = 4 mana, 3 × 2nd level = 6 mana, etc.
+ */
+export function calculateMaxMana(character: CharacterSheetData): number {
+  const spellSlots = calculateSpellSlots(character);
+  let totalMana = 0;
+
+  // Convert slot level strings to numbers and calculate mana
+  Object.entries(spellSlots).forEach(([slotLevel, slotCount]) => {
+    // Extract the numeric level from strings like "1st", "2nd", "3rd", etc.
+    const level = parseInt(slotLevel);
+    if (!isNaN(level)) {
+      totalMana += level * slotCount;
+    }
+  });
+
+  return totalMana;
 }
 
 /**

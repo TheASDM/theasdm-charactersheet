@@ -1,12 +1,12 @@
 import styled from 'styled-components';
 import { CharacterSheetData, calculateModifier } from '../types/characterSheet';
 import { SimpleFeature } from '../utils/simpleFeatureGenerator';
-import { calculateSpellSlots, getSpellcastingStats } from '../services/characterCalculations';
-import { computeManaPool } from '../helpers/manaRules';
+import { getSpellcastingStats } from '../services/characterCalculations';
 
 interface SpellcastingBarProps {
   spellcastingFeature: SimpleFeature | null;
   character: CharacterSheetData;
+  maxMana: number; // Calculated max mana from derivedValues
   editingSections: { mana: boolean };
   updateCharacter: (updates: Partial<CharacterSheetData>) => void;
   resources: {
@@ -99,6 +99,7 @@ const ManaDisplay = styled.div`
 export default function SpellcastingBar({
   spellcastingFeature,
   character,
+  maxMana,
 }: SpellcastingBarProps) {
   if (!spellcastingFeature) return null;
 
@@ -132,21 +133,6 @@ export default function SpellcastingBar({
 
   const spellcastingAbility = spellcastingAbilityMap[character.class] || 'Unknown';
 
-  // Calculate total spell slots weighted by level (e.g., 2x 1st-level = 2, 1x 4th-level = 4)
-  const spellSlots = calculateSpellSlots(character);
-  const totalSlots = Object.entries(spellSlots).reduce((total, [level, count]) => {
-    // Extract spell level number (e.g., "1st" -> 1, "2nd" -> 2)
-    const spellLevel = parseInt(level.replace(/\D/g, '')) || 1;
-    return total + (spellLevel * count);
-  }, 0);
-
-  // Calculate mana pool based on caster type
-  const calculatedManaMax = computeManaPool(
-    [{ classId: character.class, level: character.level }],
-    proficiencyBonus,
-    totalSlots
-  );
-
   return (
     <CasterBarContainer>
       <CasterInfoGroup>
@@ -179,7 +165,7 @@ export default function SpellcastingBar({
           </div>
           <div className="mana-separator">/</div>
           <div className="mana-max">
-            {calculatedManaMax}
+            {maxMana}
           </div>
         </ManaDisplay>
       </CasterInfoGroup>

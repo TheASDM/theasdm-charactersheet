@@ -17,6 +17,7 @@ import Step3DOriginFeats from './wizard-steps/Step3D_OriginFeats';
 import { Step5ReviewCreate } from './wizard-steps/Step5_ReviewCreate';
 import { SpellSelectionWizard } from './wizard-steps/SpellSelectionWizard';
 import { AbilityScoresHeader } from './wizard-steps/AbilityScoresHeader';
+import { PrimaryAbilityInfo } from './wizard-steps/PrimaryAbilityInfo';
 import { useCharacterBuilderStore, WizardStep } from '../store/characterBuilderStore';
 import { shallow } from 'zustand/shallow';
 import WizardModal from './wizard/WizardModal';
@@ -738,6 +739,7 @@ export default function CharacterGeneratorWizard() {
           {currentStep === 'class-selection' && (
             <>
               <AbilityScoresHeader data={builderData} />
+              <PrimaryAbilityInfo data={builderData} />
               <Step2ClassSelection
                 data={builderData}
                 onUpdate={updateBuilderData}
@@ -747,6 +749,7 @@ export default function CharacterGeneratorWizard() {
           {currentStep === 'background-selection' && (
             <>
               <AbilityScoresHeader data={builderData} />
+              <PrimaryAbilityInfo data={builderData} />
               <Step3ABackgroundSelection
                 data={builderData}
                 onUpdate={updateBuilderData}
@@ -754,37 +757,53 @@ export default function CharacterGeneratorWizard() {
             </>
           )}
           {currentStep === 'species-selection' && (
-            <Step3BSpeciesSelection
-              data={builderData}
-              onUpdate={updateBuilderData}
-            />
+            <>
+              <AbilityScoresHeader data={builderData} />
+              <PrimaryAbilityInfo data={builderData} />
+              <Step3BSpeciesSelection
+                data={builderData}
+                onUpdate={updateBuilderData}
+              />
+            </>
           )}
           {currentStep === 'origin-feats' && (
-            <Step3DOriginFeats
-              data={builderData}
-              onUpdate={updateBuilderData}
-            />
+            <>
+              <AbilityScoresHeader data={builderData} />
+              <PrimaryAbilityInfo data={builderData} />
+              <Step3DOriginFeats
+                data={builderData}
+                onUpdate={updateBuilderData}
+              />
+            </>
           )}
           {currentStep === 'spell-selection' && shouldShowSpellStep && (
-            <SpellSelectionWizard
-              data={builderData}
-              onUpdate={updateBuilderData}
-              onValidityChange={() => {}} // No-op - validation no longer blocks
-              navigationHandlersRef={spellWizardNavigationRef}
-            />
+            <>
+              <AbilityScoresHeader data={builderData} />
+              <PrimaryAbilityInfo data={builderData} />
+              <SpellSelectionWizard
+                data={builderData}
+                onUpdate={updateBuilderData}
+                onValidityChange={() => {}} // No-op - validation no longer blocks
+                navigationHandlersRef={spellWizardNavigationRef}
+              />
+            </>
           )}
           {/* Equipment selection step removed per UX spec - equipment is auto-derived */}
           {currentStep === 'review-create' && (
-            <Step5ReviewCreate
-              data={builderData}
-              onComplete={(characterId: number) => {
-                // Reset wizard state before navigating
-                resetBuilder();
-                // Navigate directly to character sheet - choices are now handled in Step2
-                navigate(`/characters/${characterId}`);
-              }}
-              createHandlerRef={reviewCreateHandlerRef}
-            />
+            <>
+              <AbilityScoresHeader data={builderData} />
+              <PrimaryAbilityInfo data={builderData} />
+              <Step5ReviewCreate
+                data={builderData}
+                onComplete={(characterId: number) => {
+                  // Reset wizard state before navigating
+                  resetBuilder();
+                  // Navigate directly to character sheet - choices are now handled in Step2
+                  navigate(`/characters/${characterId}`);
+                }}
+                createHandlerRef={reviewCreateHandlerRef}
+              />
+            </>
           )}
           {!['character-info', 'ability-scores', 'class-selection', 'background-selection', 'species-selection', 'origin-feats', 'spell-selection', 'review-create'].includes(currentStep) && (
             <div className="step-placeholder">

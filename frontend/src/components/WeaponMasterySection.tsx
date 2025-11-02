@@ -8,33 +8,59 @@ const MasterySection = styled.div`
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border-radius: 8px;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid #333;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  height: fit-content;
+  width: 100%;
+`;
+
+const MasteryHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #333;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-start;
+  }
 `;
 
 const MasteryTitle = styled.h3`
   color: #ce9016;
-  margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
-  text-align: center;
-  border-bottom: 1px solid #333;
-  padding-bottom: 0.4rem;
+  margin: 0;
+  font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+`;
+
+const MasteryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const MasteryCard = styled.div`
   background: rgba(26, 26, 26, 0.8);
   border: 1px solid #333;
-  border-radius: 6px;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+  transition: all 0.2s ease;
 
-  &:last-child {
-    margin-bottom: 0;
+  &:hover {
+    border-color: rgba(206, 144, 22, 0.5);
+    box-shadow: 0 2px 8px rgba(206, 144, 22, 0.15);
   }
 `;
 
@@ -42,34 +68,38 @@ const WeaponName = styled.div`
   color: #ce9016;
   font-weight: 600;
   font-size: 0.8rem;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.1rem;
 `;
 
 const PropertyName = styled.div`
   color: #4ade80;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 `;
 
 const PropertyDescription = styled.div`
   color: #b0b0b0;
+  font-size: 0.68rem;
+  line-height: 1.25;
+`;
+
+const MasteryCount = styled.div`
+  color: #888;
   font-size: 0.7rem;
-  line-height: 1.3;
+  font-weight: 600;
 `;
 
 const ManageButton = styled.button`
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  margin-top: 0.5rem;
+  padding: 0.4rem 0.8rem;
   background: rgba(255, 255, 255, 0.03);
   color: #ce9016;
   border: 1px solid #333;
   border-radius: 4px;
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
   text-transform: uppercase;
@@ -81,14 +111,21 @@ const ManageButton = styled.button`
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(206, 144, 22, 0.2);
   }
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const EmptyState = styled.div`
   color: #888;
   text-align: center;
-  padding: 0.75rem;
+  padding: 1rem;
   font-style: italic;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
+  background: rgba(26, 26, 26, 0.5);
+  border-radius: 6px;
+  border: 1px dashed #333;
 `;
 
 interface WeaponMasterySectionProps {
@@ -144,10 +181,18 @@ const WeaponMasterySection: React.FC<WeaponMasterySectionProps> = ({
   return (
     <>
       <MasterySection>
-        <MasteryTitle>⚔️ Weapon Mastery</MasteryTitle>
+        <MasteryHeader>
+          <MasteryTitle>
+            ⚔️ Weapon Mastery
+            <MasteryCount>({activeMasteries.length}/{masteryConfig.max})</MasteryCount>
+          </MasteryTitle>
+          <ManageButton onClick={() => setIsModalOpen(true)}>
+            Manage Masteries
+          </ManageButton>
+        </MasteryHeader>
 
         {activeMasteries.length > 0 ? (
-          <>
+          <MasteryGrid>
             {activeMasteries.map((mastery, index) => (
               <MasteryCard key={index}>
                 <WeaponName>{mastery.weapon}</WeaponName>
@@ -157,16 +202,12 @@ const WeaponMasterySection: React.FC<WeaponMasterySectionProps> = ({
                 </PropertyDescription>
               </MasteryCard>
             ))}
-          </>
+          </MasteryGrid>
         ) : (
           <EmptyState>
-            No weapon masteries selected
+            No weapon masteries selected. Click "Manage Masteries" to choose your weapons.
           </EmptyState>
         )}
-
-        <ManageButton onClick={() => setIsModalOpen(true)}>
-          Manage Masteries ({activeMasteries.length}/{masteryConfig.max})
-        </ManageButton>
       </MasterySection>
 
       <WeaponMasteryModal

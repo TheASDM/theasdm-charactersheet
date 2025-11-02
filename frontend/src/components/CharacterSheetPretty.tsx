@@ -69,6 +69,7 @@ import {
 import InventoryTab from './InventoryTab';
 import { InventoryItemMenu } from './InventoryItemMenu';
 import { SpellDetailModal } from './spells/SpellDetailModal';
+import CharacterFeaturesTab from './CharacterFeaturesTab';
 import type { Spell } from '@/types/api';
 import { searchSpells } from '@/services/spellService';
 import { itemService } from '@/services/itemService';
@@ -76,20 +77,27 @@ import { isError } from '@/types/api';
 
 const TabBar = styled.div`
   display: inline-flex;
-  gap: 0.4rem;
-  padding: 0.25rem;
+  gap: 0.25rem;
+  padding: 0.2rem;
   background: rgba(12, 12, 12, 0.95);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(206, 144, 22, 0.3);
   border-radius: 999px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    gap: 0.2rem;
+    padding: 0.15rem;
+  }
 `;
 
 const TabButton = styled.button<{ $active: boolean }>`
   border: none;
   border-radius: 999px;
-  padding: 0.3rem 0.85rem;
-  font-size: 0.7rem;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -100,10 +108,22 @@ const TabButton = styled.button<{ $active: boolean }>`
   color: ${({ $active }) => ($active ? '#f8f4e1' : 'rgba(248, 244, 225, 0.75)')};
   border: ${({ $active }) =>
     $active ? '1px solid rgba(206, 144, 22, 0.55)' : '1px solid transparent'};
+  flex-shrink: 0;
 
   &:hover {
     background: rgba(206, 144, 22, 0.15);
     color: #f8f4e1;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.25rem 0.55rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.2px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.55rem;
   }
 `;
 
@@ -169,7 +189,7 @@ export default function CharacterSheetPretty({
 
   // State to hold extracted spellcasting feature
   const [spellcastingFeature, setSpellcastingFeature] = useState<SimpleFeature | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'spells' | 'inventory'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'spells' | 'inventory' | 'features'>('overview');
   const [openMenuItemId, setOpenMenuItemId] = useState<string | null>(null);
   const [selectedSpellForModal, setSelectedSpellForModal] = useState<Spell | null>(null);
 
@@ -493,6 +513,13 @@ export default function CharacterSheetPretty({
       </TabButton>
       <TabButton
         type="button"
+        $active={activeTab === 'features'}
+        onClick={() => setActiveTab('features')}
+      >
+        Features
+      </TabButton>
+      <TabButton
+        type="button"
         $active={activeTab === 'inventory'}
         onClick={() => setActiveTab('inventory')}
       >
@@ -507,12 +534,8 @@ export default function CharacterSheetPretty({
       <SheetContainer>
         <CharacterHeader
           character={character}
-          editingSections={{ characterInfo: editingSections.characterInfo }}
           updateCharacter={updateCharacter}
           onSave={onSave}
-          toggleSectionEdit={toggleSectionEdit}
-          cancelSectionEdit={cancelSectionEdit}
-          selection={selection}
           tabBar={tabBarComponent}
         />
 
@@ -527,6 +550,7 @@ export default function CharacterSheetPretty({
           <SpellcastingBar
             spellcastingFeature={spellcastingFeature}
             character={character}
+            maxMana={derivedValues.maxMana}
             editingSections={{ mana: editingSections.mana }}
             updateCharacter={updateCharacter}
             resources={resources}
@@ -567,32 +591,22 @@ export default function CharacterSheetPretty({
               />
               </ThreeColumnContainer>
 
-              {/* Actions Section - Conditional Layout */}
-              {hasWeaponMastery ? (
-                <TwoColumnLayout style={{ gridTemplateColumns: '2fr 1fr' }}>
-                  <CharacterActionsSection
-                    character={character}
-                    editingSections={{ actions: editingSections.actions }}
-                    toggleSectionEdit={toggleSectionEdit}
-                    cancelSectionEdit={cancelSectionEdit}
-                    actions={actions}
-                    onSpellClick={handleSpellNameClick}
-                    onWeaponClick={handleWeaponNameClick}
-                  />
-                  <WeaponMasterySection
-                    character={character}
-                    onUpdateCharacter={updateCharacter}
-                  />
-                </TwoColumnLayout>
-              ) : (
-                <CharacterActionsSection
+              {/* Actions Section - Always Full Width */}
+              <CharacterActionsSection
+                character={character}
+                editingSections={{ actions: editingSections.actions }}
+                toggleSectionEdit={toggleSectionEdit}
+                cancelSectionEdit={cancelSectionEdit}
+                actions={actions}
+                onSpellClick={handleSpellNameClick}
+                onWeaponClick={handleWeaponNameClick}
+              />
+
+              {/* Weapon Mastery Section - Full Width Below Actions */}
+              {hasWeaponMastery && (
+                <WeaponMasterySection
                   character={character}
-                  editingSections={{ actions: editingSections.actions }}
-                  toggleSectionEdit={toggleSectionEdit}
-                  cancelSectionEdit={cancelSectionEdit}
-                  actions={actions}
-                  onSpellClick={handleSpellNameClick}
-                  onWeaponClick={handleWeaponNameClick}
+                  onUpdateCharacter={updateCharacter}
                 />
               )}
 
@@ -720,6 +734,11 @@ export default function CharacterSheetPretty({
               removeActionByName: actions.removeActionByName,
               hasAction: actions.hasAction,
             }}
+          />
+        ) : activeTab === 'features' ? (
+          <CharacterFeaturesTab
+            character={character}
+            onUpdateCharacter={updateCharacter}
           />
         ) : (
           <InventoryTab

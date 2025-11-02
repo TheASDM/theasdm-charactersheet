@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.styles';
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
-import { AbilityScoresHeader } from './AbilityScoresHeader';
 
 interface Step3CSpeciesChoicesProps {
   data: CharacterBuilderData;
@@ -486,8 +485,6 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
           Your selected species ({data.selectedSpecies}) doesn't require additional choices.
         </div>
 
-        <AbilityScoresHeader data={data} />
-
         <div className="step-content">
           <SelectionSummary>
             <div className="summary-title">No Additional Choices Required</div>
@@ -506,8 +503,6 @@ export const Step3CSpeciesChoices: React.FC<Step3CSpeciesChoicesProps> = ({
       <div className="step-description">
         Make choices specific to your selected species to customize your character's abilities.
       </div>
-
-      <AbilityScoresHeader data={data} />
 
       <div className="step-content">
         <ChoicesContainer>

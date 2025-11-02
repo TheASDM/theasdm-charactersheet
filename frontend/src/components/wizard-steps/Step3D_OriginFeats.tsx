@@ -5,7 +5,6 @@ import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { listFeats } from '@/services/featsService';
 import { Feat } from '@/types/api';
 import { parseComplexDnDEntry } from '@/utils/dndTemplateParser';
-import { AbilityScoresHeader } from './AbilityScoresHeader';
 import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { CompactList } from '../wizard/CompactList';
@@ -587,8 +586,6 @@ const Step3DOriginFeats: React.FC<Step3DOriginFeatsProps> = ({ data, onUpdate })
 
   return (
     <StepContainer>
-      <AbilityScoresHeader data={data} />
-
       <FeatsContainer>
         <div className="feats-header">
           <div className="header-title">Choose Your Origin Feat{data.selectedSpecies?.toLowerCase() === 'human' ? 's' : ''}</div>

@@ -14,8 +14,6 @@ import {
   ManaContent,
   ManaDisplay,
   SectionTitle,
-  SectionEditControls,
-  SectionEditButton,
 } from '../styles/components';
 
 interface ResourceData {
@@ -30,10 +28,8 @@ interface ResourcesAndManaSectionProps {
   character: CharacterSheetData;
   characterResources: ResourceData[];
   needsManaTracking: boolean;
-  editingSections: { mana: boolean };
+  maxMana: number; // Calculated max mana from derivedValues
   updateCharacter: (updates: Partial<CharacterSheetData>) => void;
-  toggleSectionEdit: (section: 'abilities' | 'stats' | 'skills' | 'spells' | 'mana' | 'characterInfo' | 'actions' | 'inventory') => void;
-  cancelSectionEdit: (section: 'abilities' | 'stats' | 'skills' | 'spells' | 'mana' | 'characterInfo' | 'actions' | 'inventory') => void;
   resources: {
     handleResourceUpdate: (resourceId: string, newValue: number) => void;
     handleManaUpdate: (type: 'current' | 'max', change: number) => void;
@@ -44,10 +40,8 @@ export default function ResourcesAndManaSection({
   character,
   characterResources,
   needsManaTracking,
-  editingSections,
+  maxMana,
   updateCharacter,
-  toggleSectionEdit,
-  cancelSectionEdit,
   resources,
 }: ResourcesAndManaSectionProps) {
   return (
@@ -229,26 +223,7 @@ export default function ResourcesAndManaSection({
               </div>
               <div className="mana-separator">/</div>
               <div className="mana-max">
-                {editingSections.mana ? (
-                  <input
-                    type="number"
-                    value={character.mana.max}
-                    min="0"
-                    onChange={(e) =>
-                      updateCharacter({
-                        mana: {
-                          ...character.mana,
-                          max: Math.max(
-                            0,
-                            parseInt(e.target.value) || 0
-                          ),
-                        },
-                      })
-                    }
-                  />
-                ) : (
-                  character.mana.max
-                )}
+                {maxMana}
               </div>
               <div className="mana-controls">
                 <button
@@ -270,56 +245,8 @@ export default function ResourcesAndManaSection({
                   ▼
                 </button>
               </div>
-              {editingSections.mana && (
-                <div className="mana-controls">
-                  <button
-                    className="mana-control-btn"
-                    onClick={() => resources.handleManaUpdate('max', 1)}
-                    title="Increase Max Mana"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    className="mana-control-btn"
-                    onClick={() =>
-                      resources.handleManaUpdate('max', -1)
-                    }
-                    title="Decrease Max Mana"
-                  >
-                    ▼
-                  </button>
-                </div>
-              )}
             </ManaDisplay>
           </ManaContent>
-
-          <SectionEditControls>
-            {editingSections.mana ? (
-              <>
-                <SectionEditButton
-                  variant="save"
-                  onClick={() => toggleSectionEdit('mana')}
-                >
-                  ✓
-                </SectionEditButton>
-                <SectionEditButton
-                  onClick={() => cancelSectionEdit('mana')}
-                  style={{
-                    background:
-                      'linear-gradient(145deg, #dc3545, #c82333)',
-                  }}
-                >
-                  ✕
-                </SectionEditButton>
-              </>
-            ) : (
-              <SectionEditButton
-                onClick={() => toggleSectionEdit('mana')}
-              >
-                ✎
-              </SectionEditButton>
-            )}
-          </SectionEditControls>
         </ManaSection>
       )}
     </TwoColumnLayout>

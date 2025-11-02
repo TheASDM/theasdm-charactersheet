@@ -250,6 +250,8 @@ export interface CharacterSheetData {
   speciesImmunities?: string[];
   backgroundEquipment?: any[];
   equipment?: any[];
+  hiddenFeatures?: string[]; // Array of feature IDs that are hidden from main view
+  featureOrder?: string[]; // Custom ordering of feature IDs for drag-and-drop
 }
 
 export interface CharacterSheetProps {

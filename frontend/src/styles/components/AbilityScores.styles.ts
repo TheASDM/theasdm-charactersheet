@@ -59,6 +59,8 @@ export const AbilityScore = styled.div`
   background: rgba(26, 26, 26, 0.8);
   backdrop-filter: blur(10px);
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   .ability-name {
     font-size: 0.65rem;
@@ -66,6 +68,13 @@ export const AbilityScore = styled.div`
     color: #888;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    margin-bottom: 0.1rem;
+  }
+
+  .raw-score {
+    font-size: 0.55rem;
+    color: rgba(136, 136, 136, 0.4);
+    font-weight: 400;
     margin-bottom: 0.2rem;
   }
 
@@ -81,6 +90,36 @@ export const AbilityScore = styled.div`
     font-size: 0.7rem;
     color: #e0e0e0;
     font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+
+  .save-container {
+    border-top: 1px solid rgba(51, 51, 51, 0.5);
+    padding-top: 0.25rem;
+    margin-top: auto;
+  }
+
+  .save-label {
+    font-size: 0.5rem;
+    color: rgba(206, 144, 22, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.1rem;
+    font-weight: 500;
+  }
+
+  .save-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    &.proficient {
+      color: #4caf50;
+      font-weight: 700;
+    }
+
+    &.not-proficient {
+      color: #999;
+    }
   }
 `;
 

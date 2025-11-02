@@ -23,6 +23,16 @@ export default function CharacterAbilityScores({
   editingSections,
   abilities,
 }: AbilityScoresSectionProps) {
+  // Map ability keys to full names for saving throw proficiency lookup
+  const abilityNameMap: Record<keyof CharacterSheetData['abilityScores'], string> = {
+    strength: 'Strength',
+    dexterity: 'Dexterity',
+    constitution: 'Constitution',
+    intelligence: 'Intelligence',
+    wisdom: 'Wisdom',
+    charisma: 'Charisma',
+  };
+
   return (
     <StyledAbilityScoresSection>
       <SectionTitle>Ability Scores</SectionTitle>
@@ -40,9 +50,15 @@ export default function CharacterAbilityScores({
           const score = character.abilityScores[ability];
           const modifier = calculateModifier(score);
 
+          // Check if character is proficient in this saving throw
+          const savingThrowData = character.savingThrows?.[abilityNameMap[ability].toLowerCase()];
+          const isProficient = savingThrowData?.proficient || false;
+          const savingThrowValue = savingThrowData?.modifier ?? modifier;
+
           return (
             <AbilityScore key={ability}>
               <div className="ability-name">{ability}</div>
+              <div className="raw-score">({score})</div>
 
               {editingSections.abilities ? (
                 <>
@@ -83,6 +99,13 @@ export default function CharacterAbilityScores({
                   </AbilityArrow>
                 </AbilityArrows>
               )}
+
+              <div className="save-container">
+                <div className="save-label">Save</div>
+                <div className={`save-value ${isProficient ? 'proficient' : 'not-proficient'}`}>
+                  {formatModifier(savingThrowValue)}
+                </div>
+              </div>
             </AbilityScore>
           );
         })}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { CharacterSheetData, InventoryItem } from '../types/characterSheet';
 import {
   TraitsSection,
@@ -14,6 +14,7 @@ import { generateFeaturesForCharacter, SimpleFeature } from '../utils/simpleFeat
 import WeaponMasteryModal from './WeaponMasteryModal';
 import { FeatureDetailModal } from './FeatureDetailModal';
 import styled from 'styled-components';
+import { addFeatureIds, isFeatureHidden, sortFeaturesByOrder, reorderFeatures } from '../utils/featureId';
 
 const FeatureButton = styled.button`
   margin-top: 0.75rem;
@@ -34,6 +35,47 @@ const FeatureButton = styled.button`
   }
 `;
 
+const FeatureCount = styled.span`
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-left: 0.5rem;
+  font-style: italic;
+`;
+
+const DragHandle = styled.div`
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  cursor: grab;
+  padding: 0.25rem;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.8rem;
+  user-select: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+  opacity: 0;
+  z-index: 10;
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+`;
+
+const DraggableTraitCard = styled(TraitCard)<{ $isDragging?: boolean }>`
+  position: relative;
+  padding-left: 2rem;
+  cursor: ${({ $isDragging }) => $isDragging ? 'grabbing' : 'default'};
+  opacity: ${({ $isDragging }) => $isDragging ? 0.5 : 1};
+
+  &:hover .drag-handle {
+    opacity: 1;
+  }
+`;
+
 interface CharacterTraitsSectionProps {
   character: CharacterSheetData;
   traits: {
@@ -51,6 +93,10 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
   const [isWeaponMasteryModalOpen, setIsWeaponMasteryModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<SimpleFeature | null>(null);
   const [generatedFeatures, setGeneratedFeatures] = useState<SimpleFeature[]>([]);
+
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Generate features directly from character data - now async to support choice system!
   React.useEffect(() => {
@@ -123,6 +169,11 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
 
   const allFeatures = [...generatedFeatures, ...legacyFeatures];
 
+  // Add IDs to features for hidden feature tracking
+  const featuresWithIds = useMemo(() => {
+    return addFeatureIds(allFeatures);
+  }, [allFeatures]);
+
   // Extract spellcasting feature and pass it up to parent
   const spellcastingFeature = useMemo(() => {
     return allFeatures.find((feature: SimpleFeature) =>
@@ -138,13 +189,28 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
   }, [spellcastingFeature, onSpellcastingFeatureExtracted]);
 
   // Filter out proficiencies AND spellcasting features - they're displayed in separate sections now
+  // Also filter out hidden features and apply custom ordering
   const regularFeatures = useMemo(() => {
-    return allFeatures.filter((feature: SimpleFeature) =>
+    const filtered = featuresWithIds.filter((feature) =>
+      feature.category !== 'Proficiencies' &&
+      feature.name !== 'Spellcasting' &&
+      feature.name !== 'Pact Magic' &&
+      !isFeatureHidden(feature.id, character.hiddenFeatures)
+    );
+    return sortFeaturesByOrder(filtered, character.featureOrder);
+  }, [featuresWithIds, character.hiddenFeatures, character.featureOrder]);
+
+  // Calculate total count (before hiding)
+  const totalFeatureCount = useMemo(() => {
+    return featuresWithIds.filter((feature) =>
       feature.category !== 'Proficiencies' &&
       feature.name !== 'Spellcasting' &&
       feature.name !== 'Pact Magic'
-    );
-  }, [allFeatures]);
+    ).length;
+  }, [featuresWithIds]);
+
+  // Count of hidden features
+  const hiddenCount = totalFeatureCount - regularFeatures.length;
 
   // Determine max masteries and restrictions based on class
   const getMasteryConfig = () => {
@@ -183,6 +249,56 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
     setIsWeaponMasteryModalOpen(false);
   };
 
+  // Drag and drop handlers
+  const handleDragStart = useCallback((index: number) => (e: React.DragEvent) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  }, []);
+
+  const handleDragOver = useCallback((index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDrop = useCallback((toIndex: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+
+    if (draggedIndex !== null && draggedIndex !== toIndex && onUpdateCharacter) {
+      const allFeatureIds = featuresWithIds.map(f => f.id);
+      const visibleIds = regularFeatures.map(f => f.id);
+
+      // Get current order or create new one
+      const currentOrder = character.featureOrder || allFeatureIds;
+
+      // Reorder only the visible features
+      const reorderedVisibleIds = reorderFeatures(visibleIds, draggedIndex, toIndex);
+
+      // Build new complete order by preserving hidden/filtered feature positions
+      const newOrder = currentOrder.filter(id => !visibleIds.includes(id));
+
+      // Find where to insert the reordered visible features
+      const firstVisibleFeature = regularFeatures[0];
+      const insertIndex = currentOrder.indexOf(firstVisibleFeature.id);
+      newOrder.splice(insertIndex, 0, ...reorderedVisibleIds);
+
+      onUpdateCharacter({ featureOrder: newOrder });
+    }
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  }, [draggedIndex, featuresWithIds, regularFeatures, character.featureOrder, onUpdateCharacter]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  }, []);
+
   return (
     <TraitsSection>
       <div
@@ -197,36 +313,59 @@ export const CharacterTraitsSection: React.FC<CharacterTraitsSectionProps> = ({
           style={{ margin: 0, borderBottom: 'none', paddingBottom: 0 }}
         >
           Features & Traits
+          {hiddenCount > 0 && (
+            <FeatureCount>
+              Showing {regularFeatures.length} of {totalFeatureCount} features
+            </FeatureCount>
+          )}
         </TraitsTitle>
       </div>
 
       {/* Render features (proficiencies are now in a separate section) */}
       {regularFeatures.length > 0 ? (
         <TraitsGrid>
-          {regularFeatures.map((feature, index) => (
-            <TraitCard key={`feature-${index}`}>
-              <TraitName
-                $clickable
-                onClick={() => setSelectedFeature(feature)}
+          {regularFeatures.map((feature, index) => {
+            const isDragging = draggedIndex === index;
+            const isDragOver = dragOverIndex === index;
+
+            return (
+              <DraggableTraitCard
+                key={feature.id}
+                $isDragging={isDragging}
+                draggable
+                onDragStart={handleDragStart(index)}
+                onDragOver={handleDragOver(index)}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop(index)}
+                onDragEnd={handleDragEnd}
+                style={{
+                  borderTop: isDragOver && !isDragging ? '2px solid #ce9016' : undefined,
+                }}
               >
-                {feature.name}
-              </TraitName>
-              <TraitDescription
-                dangerouslySetInnerHTML={{ __html: feature.description }}
-              />
-              {feature.category && !feature.category.includes('Legacy') && (
-                <TraitCategory>
-                  {feature.category}
-                </TraitCategory>
-              )}
-              {/* Add button for Weapon Mastery feature */}
-              {feature.name === 'Weapon Mastery' && masteryConfig.max > 0 && onUpdateCharacter && (
-                <FeatureButton onClick={() => setIsWeaponMasteryModalOpen(true)}>
-                  ⚔️ Manage Weapon Masteries
-                </FeatureButton>
-              )}
-            </TraitCard>
-          ))}
+                <DragHandle className="drag-handle">⋮⋮</DragHandle>
+                <TraitName
+                  $clickable
+                  onClick={() => setSelectedFeature(feature)}
+                >
+                  {feature.name}
+                </TraitName>
+                <TraitDescription
+                  dangerouslySetInnerHTML={{ __html: feature.description }}
+                />
+                {feature.category && !feature.category.includes('Legacy') && (
+                  <TraitCategory>
+                    {feature.category}
+                  </TraitCategory>
+                )}
+                {/* Add button for Weapon Mastery feature */}
+                {feature.name === 'Weapon Mastery' && masteryConfig.max > 0 && onUpdateCharacter && (
+                  <FeatureButton onClick={() => setIsWeaponMasteryModalOpen(true)}>
+                    ⚔️ Manage Weapon Masteries
+                  </FeatureButton>
+                )}
+              </DraggableTraitCard>
+            );
+          })}
         </TraitsGrid>
       ) : (
         <EmptyTraitsMessage>

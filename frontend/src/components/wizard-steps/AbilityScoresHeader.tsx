@@ -46,8 +46,16 @@ const AbilityName = styled.div`
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
   letter-spacing: 0.5px;
+`;
+
+const RawScore = styled.div`
+  color: rgba(240, 240, 240, 0.4);
+  font-size: 0.65rem;
+  font-weight: 400;
+  margin-bottom: 0.25rem;
+  font-family: 'Inter', sans-serif;
 `;
 
 const AbilityScore = styled.div`
@@ -63,6 +71,30 @@ const AbilityModifier = styled.div`
   font-weight: 700;
   font-family: 'Inter', sans-serif;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  margin-bottom: 0.5rem;
+`;
+
+const SavingThrowContainer = styled.div`
+  border-top: 1px solid rgba(206, 144, 22, 0.2);
+  padding-top: 0.4rem;
+  margin-top: 0.4rem;
+`;
+
+const SavingThrowLabel = styled.div`
+  color: rgba(206, 144, 22, 0.6);
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 0.15rem;
+  font-family: 'Inter', sans-serif;
+`;
+
+const SavingThrowValue = styled.div<{ $isProficient: boolean }>`
+  color: ${props => props.$isProficient ? '#4caf50' : '#999'};
+  font-size: 0.9rem;
+  font-weight: ${props => props.$isProficient ? '700' : '600'};
+  font-family: 'Inter', sans-serif;
 `;
 
 const HeaderTitle = styled.h3`
@@ -174,6 +206,21 @@ const calculateFinalAbilityScores = (data: CharacterBuilderData) => {
 
 export const AbilityScoresHeader: React.FC<AbilityScoresHeaderProps> = ({ data }) => {
   const finalScores = calculateFinalAbilityScores(data);
+  const baseScores = data.abilityScores;
+
+  // Get saving throw proficiencies from class
+  const savingThrowProficiencies = data.classProficiencies?.savingThrows || [];
+  const proficiencyBonus = 2; // Level 1 characters always have +2 proficiency bonus
+
+  // Map ability keys to full names for comparison with saving throw proficiencies
+  const abilityNameMap: Record<keyof typeof finalScores, string> = {
+    strength: 'Strength',
+    dexterity: 'Dexterity',
+    constitution: 'Constitution',
+    intelligence: 'Intelligence',
+    wisdom: 'Wisdom',
+    charisma: 'Charisma',
+  };
 
   const abilities = [
     { name: 'STR', key: 'strength' as keyof typeof finalScores },
@@ -195,14 +242,30 @@ export const AbilityScoresHeader: React.FC<AbilityScoresHeaderProps> = ({ data }
       <HeaderTitle>Ability Scores</HeaderTitle>
       <AbilityGrid>
         {abilities.map(({ name, key }) => {
-          const score = finalScores[key];
-          const modifier = calculateModifier(score);
+          const rawScore = baseScores[key];
+          const finalScore = finalScores[key];
+          const modifier = calculateModifier(finalScore);
+
+          // Check if this ability has saving throw proficiency
+          const isProficient = savingThrowProficiencies.some(
+            prof => prof.toLowerCase() === abilityNameMap[key].toLowerCase()
+          );
+
+          // Calculate saving throw (modifier + proficiency bonus if proficient)
+          const savingThrow = modifier + (isProficient ? proficiencyBonus : 0);
 
           return (
             <AbilityCard key={key}>
               <AbilityName>{name}</AbilityName>
-              <AbilityScore>{score}</AbilityScore>
+              <RawScore>({rawScore})</RawScore>
+              <AbilityScore>{finalScore}</AbilityScore>
               <AbilityModifier>{formatModifier(modifier)}</AbilityModifier>
+              <SavingThrowContainer>
+                <SavingThrowLabel>Save</SavingThrowLabel>
+                <SavingThrowValue $isProficient={isProficient}>
+                  {formatModifier(savingThrow)}
+                </SavingThrowValue>
+              </SavingThrowContainer>
             </AbilityCard>
           );
         })}

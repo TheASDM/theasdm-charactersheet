@@ -4,7 +4,6 @@ import { StepContainer } from '../../styles/components/CharacterGeneratorWizard.
 import { CharacterBuilderData } from '../CharacterGeneratorWizard';
 import { listFeats } from '@/services/featsService';
 import { Feat } from '@/types/api';
-import { AbilityScoresHeader } from './AbilityScoresHeader';
 import { useApiCall } from '@/hooks/useApiCall';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -561,7 +560,6 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
       return (
         <StepContainer>
           <div className="step-title">Feat Choices</div>
-          <AbilityScoresHeader data={data} />
           <div className="step-content">
             <LoadingSpinner message="Loading feat details..." />
           </div>
@@ -573,7 +571,6 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
       return (
         <StepContainer>
           <div className="step-title">Feat Choices</div>
-          <AbilityScoresHeader data={data} />
           <div className="step-content">
             <SelectionSummary>
               <div className="summary-title">Unable to load feat details</div>
@@ -590,7 +587,6 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
     return (
       <StepContainer>
         <div className="step-title">Feat Choices</div>
-        <AbilityScoresHeader data={data} />
         <div className="step-content">
           <SelectionSummary>
             <div className="summary-title">Missing feat details</div>
@@ -611,7 +607,6 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
           Your selected feats don't require additional choices.
         </div>
 
-        <AbilityScoresHeader data={data} />
 
         <div className="step-content">
           <SelectionSummary>
@@ -632,7 +627,6 @@ export const Step3EFeatChoices: React.FC<Step3EFeatChoicesProps> = ({
         Some of your selected feats require additional choices. Make all required selections below.
       </div>
 
-      <AbilityScoresHeader data={data} />
 
       <div className="step-content">
         <ChoicesContainer>

@@ -160,6 +160,62 @@ const FeatureLabel = styled.span`
   font-weight: 600;
 `;
 
+/**
+ * Extract ALL equipment items from background entries
+ * User wants every possible item, not just one choice option
+ * Excludes coinage (GP/SP/CP)
+ */
+const extractBackgroundEquipment = (background: Background): string[] => {
+  const items: string[] = [];
+
+  if (!background.mechanics) return items;
+
+  const mechanics = background.mechanics as any;
+  if (!mechanics.entries || !Array.isArray(mechanics.entries)) return items;
+
+  // Find the Equipment entry
+  for (const listEntry of mechanics.entries) {
+    if (listEntry && listEntry.type === 'list' && Array.isArray(listEntry.items)) {
+      for (const item of listEntry.items) {
+        if (item && item.name === 'Equipment:' && item.entry) {
+          // Parse the equipment entry
+          // Format: "Choose A or B: (A) item1, item2, item3, GP; or (B) GP"
+          const entry = item.entry as string;
+
+          // Extract items from option A (before "or (B)")
+          const optionAMatch = entry.match(/\(A\)\s*([^;]+)/);
+          if (optionAMatch) {
+            const optionAText = optionAMatch[1];
+
+            // Split by comma and parse each item
+            const rawItems = optionAText.split(',');
+
+            rawItems.forEach((rawItem: string) => {
+              // Remove template tags like {@item Holy Symbol|XPHB}
+              let cleaned = rawItem.replace(/{@item\s+([^|}]+)(?:\|[^}]+)?}/g, '$1');
+
+              // Remove "or (B)" and everything after
+              cleaned = cleaned.replace(/\s+or\s+\(B\).*/i, '');
+
+              cleaned = cleaned.trim();
+
+              // Skip gold/currency and empty strings
+              if (!cleaned || /^\d+\s*(gp|sp|cp|gold|silver|copper)/i.test(cleaned)) {
+                return;
+              }
+
+              // Handle quantities like "Book (prayers)" or "Parchment (10 sheets)"
+              items.push(cleaned);
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return items;
+};
+
 export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps> = ({
   data,
   onUpdate,
@@ -339,16 +395,49 @@ export const Step3ABackgroundSelection: React.FC<Step3ABackgroundSelectionProps>
     const backgroundSkills = extractBackgroundSkills();
     const uniqueBackgroundSkills = Array.from(new Set(backgroundSkills));
 
+    // Extract tool proficiencies from background
+    const extractBackgroundTools = (): string[] => {
+      const mechanics = selectBackground.mechanics as any;
+      const tools: string[] = [];
+
+      if (mechanics?.toolProficiencies && Array.isArray(mechanics.toolProficiencies)) {
+        mechanics.toolProficiencies.forEach((toolObj: any) => {
+          if (typeof toolObj === 'object') {
+            Object.entries(toolObj).forEach(([key, value]) => {
+              if (value === true) {
+                // Format tool name (e.g., "calligrapher's supplies" -> "Calligrapher's Supplies")
+                const formattedTool = key
+                  .split(/(?=[A-Z])/)
+                  .join(' ')
+                  .split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+                tools.push(formattedTool);
+              }
+            });
+          }
+        });
+      }
+
+      return tools;
+    };
+
+    const backgroundTools = extractBackgroundTools();
+
+    // Extract equipment from background mechanics (ALL items from option A, no gold)
+    const backgroundEquipment = extractBackgroundEquipment(selectBackground);
+
     // Update with selected background data
     onUpdate({
       selectedBackground: selectBackground.name,
       selectedLanguages: selectedLanguages,
       backgroundAbilityScoreAllocations: abilityScoreAllocations,
-      backgroundStartingEquipment: selectBackground.equipment || [],
+      backgroundStartingEquipment: backgroundEquipment,
       backgroundFeatures: selectBackground.feature
         ? (Array.isArray(selectBackground.feature) ? selectBackground.feature : [selectBackground.feature])
         : [],
       backgroundSkillProficiencies: uniqueBackgroundSkills,
+      backgroundToolProficiencies: backgroundTools,
     });
 
     setSelectBackground(null);
